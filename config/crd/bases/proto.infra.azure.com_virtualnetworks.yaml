@@ -40,6 +40,10 @@ spec:
               type: string
             name:
               type: string
+            tags:
+              additionalProperties:
+                type: string
+              type: object
           type: object
         status:
           description: VirtualNetworkStatus defines the observed state of VirtualNetwork

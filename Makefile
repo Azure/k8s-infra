@@ -1,9 +1,12 @@
 SHELL := /bin/bash
 
+timestamp := $(shell /bin/date "+%Y%m%d-%H%M%S")
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= k8s-infra-contoller:$(timestamp)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
+
+KIND_CLUSTER_NAME ?= k8s-infra
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -62,9 +65,18 @@ lint-full: $(GOLANGCI_LINT) ## Run slower linters to detect possible issues
 manager: generate fmt
 	go build -o bin/manager main.go
 
-# Run against the configured Kubernetes cluster in ~/.kube/config
-run: generate fmt manifests
+run: export KUBECONFIG = $(shell kind get kubeconfig-path --name="k8s-infra")
+run: .k8s-infra.cluster generate fmt manifests install
 	go run ./main.go
+
+.k8s-infra.cluster:
+	kind create cluster --name=$(KIND_CLUSTER_NAME) --image=kindest/node:v1.16.2
+	touch .$(KIND_CLUSTER_NAME).cluster
+
+.PHONY: kind-reset
+kind-reset: ## Destroys the "k8s-infra" kind cluster.
+	kind delete cluster --name=$(KIND_CLUSTER_NAME) || true
+	rm .$(KIND_CLUSTER_NAME).cluster
 
 # Install CRDs into a cluster
 install: manifests
