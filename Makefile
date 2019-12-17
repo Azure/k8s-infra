@@ -18,6 +18,7 @@ TOOLS_DIR := hack/tools
 TOOLS_BIN_DIR := $(TOOLS_DIR)/bin
 
 # Binaries.
+GOLANGCI_LINT := $(TOOLS_BIN_DIR)/golangci-lint
 CONTROLLER_GEN := $(TOOLS_BIN_DIR)/controller-gen
 KUBECTL=$(TOOLS_BIN_DIR)/kubectl
 KUBE_APISERVER=$(TOOLS_BIN_DIR)/kube-apiserver
@@ -34,7 +35,7 @@ test: export TEST_ASSET_KUBE_APISERVER = $(ROOT_DIR)/$(KUBE_APISERVER)
 test: export TEST_ASSET_ETCD = $(ROOT_DIR)/$(ETCD)
 
 # Run tests
-test: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) generate fmt vet manifests
+test: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) generate lint manifests
 	go test ./... -coverprofile cover.out
 
 $(KUBECTL) $(KUBE_APISERVER) $(ETCD): ## install test asset kubectl, kube-apiserver, etcd
@@ -43,12 +44,26 @@ $(KUBECTL) $(KUBE_APISERVER) $(ETCD): ## install test asset kubectl, kube-apiser
 $(CONTROLLER_GEN): $(TOOLS_DIR)/go.mod # Build controller-gen from tools folder.
 	cd $(TOOLS_DIR); go build -tags=tools -o bin/controller-gen sigs.k8s.io/controller-tools/cmd/controller-gen
 
+$(GOLANGCI_LINT): $(TOOLS_DIR)/go.mod # Build golangci-lint from tools folder.
+	cd $(TOOLS_DIR); go build -tags=tools -o bin/golangci-lint github.com/golangci/golangci-lint/cmd/golangci-lint
+
+## --------------------------------------
+## Linting
+## --------------------------------------
+
+.PHONY: lint
+lint: $(GOLANGCI_LINT) ## Lint codebase
+	$(GOLANGCI_LINT) run -v
+
+lint-full: $(GOLANGCI_LINT) ## Run slower linters to detect possible issues
+	$(GOLANGCI_LINT) run -v --fast=false
+
 # Build manager binary
-manager: generate fmt vet
+manager: generate fmt
 	go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
-run: generate fmt vet manifests
+run: generate fmt manifests
 	go run ./main.go
 
 # Install CRDs into a cluster
