@@ -34,11 +34,7 @@ spec:
         spec:
           description: VirtualNetworkSpec defines the desired state of VirtualNetwork
           properties:
-            id:
-              type: string
             location:
-              type: string
-            name:
               type: string
             tags:
               additionalProperties:
@@ -48,6 +44,8 @@ spec:
         status:
           description: VirtualNetworkStatus defines the observed state of VirtualNetwork
           properties:
+            id:
+              type: string
             state:
               type: string
           type: object

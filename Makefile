@@ -40,6 +40,9 @@ test: export TEST_ASSET_KUBE_APISERVER = $(ROOT_DIR)/$(KUBE_APISERVER)
 test: export TEST_ASSET_ETCD = $(ROOT_DIR)/$(ETCD)
 
 test: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) generate lint manifests ## Run tests
+	go test -v ./...
+
+test-cover: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) generate lint manifests ## Run tests w/ code coverage (./cover.out)
 	go test ./... -coverprofile cover.out
 
 $(KUBECTL) $(KUBE_APISERVER) $(ETCD): ## Install test asset kubectl, kube-apiserver, etcd

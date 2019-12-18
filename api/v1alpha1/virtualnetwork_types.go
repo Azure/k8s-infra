@@ -7,8 +7,10 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/Azure/k8s-infra/api/azmetav1"
+	"github.com/Azure/k8s-infra/pkg/zips"
 )
 
 type AddressSpace struct {
@@ -24,7 +26,7 @@ type SubnetProperties struct {
 }
 
 type Subnet struct {
-	azmetav1.NestedResourceSpec `json:",inline"`
+	Properties SubnetProperties `json:"properties,omitempty"`
 }
 
 // VirtualNetworkSpec defines the desired state of VirtualNetwork
@@ -34,7 +36,7 @@ type VirtualNetworkSpec struct {
 
 // VirtualNetworkStatus defines the observed state of VirtualNetwork
 type VirtualNetworkStatus struct {
-	State string `json:"state,omitempty"`
+	azmetav1.ResourceStatus `json:",inline"`
 }
 
 // +kubebuilder:object:root=true
@@ -55,6 +57,16 @@ type VirtualNetworkList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []VirtualNetwork `json:"items"`
+}
+
+func (vnet *VirtualNetwork) ToResource() (zips.Resource, error) {
+	// TODO: fill in with appropriate logic
+	return zips.Resource{}, nil
+}
+
+func (vnet *VirtualNetwork)  FromResource(zips.Resource) (runtime.Object, error) {
+	// TODO: fill in with appropriate logic
+	return vnet, nil
 }
 
 func init() {

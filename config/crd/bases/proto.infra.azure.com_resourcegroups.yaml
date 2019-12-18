@@ -34,11 +34,7 @@ spec:
         spec:
           description: ResourceGroupSpec defines the desired state of ResourceGroup
           properties:
-            id:
-              type: string
             location:
-              type: string
-            name:
               type: string
             tags:
               additionalProperties:
@@ -48,6 +44,8 @@ spec:
         status:
           description: ResourceGroupStatus defines the observed state of ResourceGroup
           properties:
+            id:
+              type: string
             state:
               type: string
           type: object
