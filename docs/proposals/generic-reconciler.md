@@ -10,7 +10,7 @@ The goal would be to make the generic handling as widely applicable as possible,
 
 ### Understanding the relationship between resources
 
-In `azbrowse` we don't currently have a requirement to process the swagger body content, however the swagger ingestion process does take the flat data structures and apply a hierarchical grouping based on the URLS. Due to the conventions in ARM, this hierarchy puts the top-level entities nearer the root of the tree. This hierarchy might prove useful in mapping out CRDs.
+In `azbrowse` we don't currently have a requirement to process the swagger body content, however the swagger ingestion process does take the flat data structures and apply a hierarchical grouping based on the URLs. Due to the conventions in ARM, this hierarchy puts the top-level entities nearer the root of the tree. This hierarchy might prove useful in mapping out CRDs.
 
 ### Spec vs status
 
@@ -20,19 +20,16 @@ There a likely a number of heuristic that can be pulled out from the RP's swagge
 
 #### Option 1: Diff between `METHOD` and accepted fields
 
-Based on our current knowledge of the ARM API definitions, these distinctions aren't clearly marked. However, mutable resource in ARM tend to have endpoints that support `CREATE`, `POST`,`PUT`, `GET` (and `DELETE`). Here is is assumed that `POST` is used to create a new resource in a collection and `PUT` is used to update. By comparing the properties for the different methods, it might be possible to assemble this knowledge:
+Based on our current knowledge of the ARM API definitions, these distinctions aren't clearly marked. However, mutable resources in ARM tend to have endpoints that support `CREATE`, `POST`,`PUT`, `GET` (and `DELETE`). Here it is assumed that `POST` is used to create a new resource in a collection and `PUT` is used to update. By comparing the properties for the different methods, it might be possible to assemble this knowledge:
 
 * Use the diff between the `GET` properties and (union of `POST` and `PUT` properies) we can find the readonly properties. I.e. those in `GET` but not in `POST` (create) or `PUT` (update) are readonly
 * Use the diff between `POST` (create) properties and `PUT` (update) properties to find the properties that are settable when creating a resource but readonly after that point
 
 ### Option 2: Swagger annotations/descriptions
 
-Path parameters in the `swagger` are, based on cursory review of a few RPs, a good indicator for `create-only` properties. For example:
+Path parameters in the `swagger` are, based on cursory review of a few RPs, a good indicator for `create-only` properties. For example, for `/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}`:
 
 ```json
-
-/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}
-
 {
   "name": "resourceGroupName",
   "in": "path",
@@ -133,7 +130,7 @@ func main() {
 
 ## Reconciler loop
 
-The reconciler loop will fire when the object specs are change, but also need to fire periodically to ensure that the object status is an accurate representation of the current resource state in ARM. (As an aside, it would be interesting to look at whether Event Grid could be used for push-based notification of status changes rather than polling for changes as a way to reduce overhead with a large number of managed objects).
+The reconciler loop will fire when the object specs are changed, but also need to fire periodically to ensure that the object status is an accurate representation of the current resource state in ARM. (As an aside, it would be interesting to look at whether Event Grid could be used for push-based notification of status changes rather than polling for changes as a way to reduce overhead with a large number of managed objects).
 
 ### Updating Spec
 
@@ -169,7 +166,7 @@ spec:
 
 ### PATCH semantics
 
-The line of thought from the previous section becomes more interesting when we consider changes applied to the CRD as well as updates that occur to the resource in ARM. When trying to work out what the desired behaviour would be for the following scenario, we considered an analgous scenario with a `Deployment` instead of `virtualMachineScaleSet` (and swapped `replicas` for `capacity`).
+The line of thought from the previous section becomes more interesting when we consider changes applied to the CRD as well as updates that occur to the resource in ARM. When trying to work out what the desired behaviour would be for the following scenario, we considered an analogous scenario with a `Deployment` instead of `virtualMachineScaleSet` (and swapped `replicas` for `capacity`).
 
 Again, start with creating the initial VMSS instance:
 
@@ -207,7 +204,7 @@ group: ...
 kind: virtualMachineScaleSet
 metadata:
   name: my-vmss
-  k8s-infra-lawt-write: "{sku:{'name':'Standard_D2_v3',capacity:3},tags:{'tag1':'value'}}"
+  k8s-infra-last-write: "{sku:{'name':'Standard_D2_v3',capacity:3},tags:{'tag1':'value'}}"
 spec:
   sku:
     name: Standard_D2_v3
@@ -220,26 +217,26 @@ For ARM resources that support `PATCH` the reconcile loop can use the annotation
 
 1. Diff the current CRD spec with the latest `last-write` value
 2. Apply the changes in the diff
-  i. issue a `PATCH` request to ARM to apply the diff changes to the resource
-  ii. apply the diff changes to the `last-write` annotation
+   1. issue a `PATCH` request to ARM to apply the diff changes to the resource
+   2. apply the diff changes to the `last-write` annotation
 3. Perform a `GET` against the ARM resource and use this to update the spec
 
 For ARM resources that don't support `PATCH` the approach would be slightly more complicated:
 
 1. Diff the current CRD spec with the latest `last-write` value
 2. Apply the changes in the diff
-  i. perform a `GET` against the ARM resource to get the latest state
-  ii. apply the changes from the diff to the resource state and issue a `PUT` request to ARM to apply the changes to the resource
-  iii. apply the diff changes to the `last-write` annotation
+   1. perform a `GET` against the ARM resource to get the latest state
+   2. apply the changes from the diff to the resource state and issue a `PUT` request to ARM to apply the changes to the resource
+   3. apply the diff changes to the `last-write` annotation
 3. Perform a `GET` against the ARM resource and use this to update the spec
 
 Ideally, the non-`PATCH` case would use etags for the update but as far as we know, that isn't supported.
 
-A consideration here is that the behavior of this process is complex and across many RP's or based on user perference different merge behavior would be required.
+A consideration here is that the behavior of this process is complex and across many RP's or based on user perference different merge behavior would be required:
 
-User A may want to ALWAYS enforce conformance to the `SPEC` of the CRD BUT only for fields they have set, allowing drift in other fields which are not set.
-User B may want to ALWAYS enforce conformance to the `SPEC` of the CRD for ALL fields, overwriting fields set outside the operator or removing additional fields set outside the operator which aren't specified on the CRD.
-User C may want the CRD to REFLECT changes made outside of the operator, such as the example above where an autoscaling rule in the RP is changing capacity.
+* User A may want to ALWAYS enforce conformance to the `SPEC` of the CRD BUT only for fields they have set, allowing drift in other fields which are not set.
+* User B may want to ALWAYS enforce conformance to the `SPEC` of the CRD for ALL fields, overwriting fields set outside the operator or removing additional fields set outside the operator which aren't specified on the CRD.
+* User C may want the CRD to REFLECT changes made outside of the operator, such as the example above where an autoscaling rule in the RP is changing capacity.
 
 Picking a few supported approachs and allowing user choice in this behavior feels like a sensible option. This approach is inspired by [terraforms usage of `ignore_changes`](https://www.terraform.io/docs/configuration/resources.html#ignore_changes).
 
