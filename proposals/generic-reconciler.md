@@ -21,6 +21,33 @@ Based on our current knowledge of the ARM API definitions, these distinctions ar
 * Use the diff between the `GET` properties and (union of `POST` and `PUT` properies) we can find the readonly properties. I.e. those in `GET` but not in `POST` (create) or `PUT` (update) are readonly
 * Use the diff between `POST` (create) properties and `PUT` (update) properties to find the properties that are settable when creating a resource but readonly after that point
 
+## Reconciler loop
+
+The reconciler loop will fire when the object specs are change, but also need to fire periodically to ensure that the object status is an accurate representation of the current resource state in ARM. (As an aside, it would be interesting to look at whether Event Grid could be used for push-based notification of status changes rather than polling for changes as a way to reduce overhead with a large number of managed objects).
+
+### Updating Spec
+
+Consider a `virtualMachineScaleSet` pseudo-object and suppose you created a VMSS using the following
+
+```yaml
+group: ...
+kind: virtualMachineScaleSet
+spec:
+  sku:
+    name: Standard_D2_v3
+    capacity: 3
+  tags:
+    tag1: value
+```
+
+Here `capactiy` indicates the number of VM instances in the scale set, so is conceptually similar to the `replicas` property for a Kubernetes `Deployment`.
+
+TODO - draw parallel with replicas
+
+### PATCH semantics
+
+TODO what happens if making a PATCH after a spec value has changed.
+
 ## TODO
 
 This section has some high-level notes that should be fleshed out into the proposal text
@@ -41,3 +68,4 @@ This section has some high-level notes that should be fleshed out into the propo
     * Add an example here for VMSS (pseudo-CRD with flow of applying updates)
 * Enable `terraform import` scenario. Add a ResourceID property that is populated with the ID of resource created via the operator, but also consider allowing that to be set when an object is created to attach to an existing resource and allow it to be managed via the operator
 * custom metadata in swagger (i.e. accessing `x-ms-*` properties for richer metadata) - is this possible via the standard swagger libraries?
+* joining data acrross multiple calls (e.g. VMSS status info from /instanceView)
