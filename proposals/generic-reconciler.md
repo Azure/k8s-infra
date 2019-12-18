@@ -2,7 +2,7 @@
 
 This doc aims to capture some thoughts around creating a generic reconciler that can be applied to multiple, generated CRD structs to help reduce the overhead in adding new services to the operator.
 
-The high-level idea is to write a generic reconciler that can work with structs generated from swagger that represent resources in Azure. Along with the reconciler there would be a validating admission webhook that would validate incoming changes to give immediate feedback for a better user experience (a simple example being rejecting changes to read-only property).
+The high-level idea is to write a [generic reconciler](https://github.com/Azure/k8s-infra/issues/7) that can work with structs generated from swagger that represent resources in Azure. Along with the reconciler there would be a validating admission webhook that would validate incoming changes to give immediate feedback for a better user experience (a simple example being rejecting changes to read-only property).
 
 The goal would be to make the generic handling as widely applicable as possible, but to accommodate variation across APIs it is anticipated that there would be a need to enable custom behaviours. One way to allow this would be to expose hooks at various points during the processing cycle where hooks can be registered.
 
@@ -236,16 +236,50 @@ For ARM resources that don't support `PATCH` the approach would be slightly more
 
 Ideally, the non-`PATCH` case would use etags for the update but as far as we know, that isn't supported.
 
+A consideration here is that the behavior of this process is complex and across many RP's or based on user perference different merge behavior would be required.
+
+User A may want to ALWAYS enforce conformance to the `SPEC` of the CRD BUT only for fields they have set, allowing drift in other fields which are not set.
+User B may want to ALWAYS enforce conformance to the `SPEC` of the CRD for ALL fields, overwriting fields set outside the operator or removing additional fields set outside the operator which aren't specified on the CRD.
+User C may want the CRD to REFLECT changes made outside of the operator, such as the example above where an autoscaling rule in the RP is changing capacity.
+
+Picking a few supported approachs and allowing user choice in this behavior feels like a sensible option. This approach is inspired by [terraforms usage of `ignore_changes`](https://www.terraform.io/docs/configuration/resources.html#ignore_changes).
+
+## Managing objects that were initially created outside of k8s-infra
+
+The thoughts so far in this proposal are centred around resources that are created via the operator. To enable adoption of this on non-greenfield projects it might be helpful to allow existing resources to become managed by the operator (similar to `terraform import`). One thought around this was to include a `resourceID` property on the CRDs.
+
+If the resource is created via the operator then this would be populated with the resource ID from ARM by the operator in the reconcile loop:
+
+```yaml
+group: ...
+kind: virtualMachineScaleSet
+metadata:
+  name: my-vmss
+spec:
+  resourceID: /subscriptions/00000000-0000-0000-0000-00000000/mygroup/providers/Microsoft.Compute/virtualMachineScaleSets/my-vmss
+  sku:
+    name: Standard_D2_v3
+    capacity: 3
+  tags:
+    tag1: value
+```
+
+To 'import' a resource that already exists so that the operator can manage it, only the `resourceID` would be specified as shown below. Once the reconcile loop has run the spec would be updated to resemble the definition above.
+
+```yaml
+group: ...
+kind: virtualMachineScaleSet
+metadata:
+  name: my-vmss
+spec:
+  resourceID: /subscriptions/00000000-0000-0000-0000-00000000/mygroup/providers/Microsoft.Compute/virtualMachineScaleSets/my-vmss
+```
+
+NOTE: this likely complicates the validation logic (e.g. clashing with fields that are required when creating a resource)
+
 ## TODO
 
-This section has some high-level notes that should be fleshed out into the proposal text
+This section has some high-level notes that haven't yet been fleshed out into the proposal text
 
-* Generic validator driven off generated structs
-  * enforces create-only and immutable fields not being changed
-  * allow pluggable validation hooks for custom logic if needed
-* Generic reconciler driven off generated structs
-  * generic loop for CRD reconciliation
-  * allow pluggable mappers/mutators as needed
-* Enable `terraform import` scenario. Add a ResourceID property that is populated with the ID of resource created via the operator, but also consider allowing that to be set when an object is created to attach to an existing resource and allow it to be managed via the operator
 * custom metadata in swagger (i.e. accessing `x-ms-*` properties for richer metadata) - is this possible via the standard swagger libraries?
 * joining data acrross multiple calls (e.g. VMSS status info from /instanceView)
