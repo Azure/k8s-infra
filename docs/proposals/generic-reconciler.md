@@ -50,7 +50,7 @@ Path parameters in the `swagger` are, based on cursory review of a few RPs, a go
 This can also be combined with `readOnly: true` annotations in the `body` definitions of the swagger to judge which properties should all into the `status` section of the `CRD`. For example `resourceGroup` has the following [(sections remove for easy reading)](https://github.com/Azure/azure-rest-api-specs/blob/8170b1d/specification/resources/resource-manager/Microsoft.Resources/stable/2019-05-01/resources.json#L3329):
 
 ```json
-{ 
+{
     ....
     {
     "id": {
@@ -88,9 +88,9 @@ Worth noting is the inconsistency in the spec here between `name` being `readOnl
 
 While not perfect the `description` field could also be reviewed to inform based on matching for certain strings, however, how viable that is accross different RPs is currently unknown.
 
-### How to expose this information on generated CRD structs?
+### Exposing this information on generated CRD structs
 
-The `autogen` code would read the `swagger` spec and generate the CRD struct based off the information extracted adding `tags` and kubebuilder annotations to store the additional information on the struct which can then be used by the generic reconciler and validator. 
+The `autogen` code would read the `swagger` spec and generate the CRD struct based off the information extracted adding `tags` and kubebuilder annotations to store the additional information on the struct which can then be used by the generic reconciler and validator.
 
 Here is a rough example for `ResourceGroup` -> [Run here on goplayground](https://play.golang.org/p/v9wufOCfWJu)
 
@@ -98,39 +98,38 @@ Here is a rough example for `ResourceGroup` -> [Run here on goplayground](https:
 package main
 
 import (
-	"fmt"
-	"reflect"
+ "fmt"
+ "reflect"
 )
 
 func main() {
-	type ResourceGroup struct {
-    // kubebuilder validation annotations and description comment come from the swagger
+  type ResourceGroup struct {
+     // kubebuilder validation annotations and description comment come from the swagger
 
-    //+kubebuilder:validation:Required
-    //+kubebuilder:validation:MinLength=1
-    //+kubebuilder:validation:MaxLength=90
-    //+kubebuilder:validation:Pattern=^[-\\w\\._\\(\\)]+$
-    // The name of the resource group.
-		Name  string `validation-type:"create-only"`
-		Location string `validation-type:"create-only"`
-		ID string `validation-type:"read-only"`
-	}
+     //+kubebuilder:validation:Required
+     //+kubebuilder:validation:MinLength=1
+     //+kubebuilder:validation:MaxLength=90
+     //+kubebuilder:validation:Pattern=^[-\\w\\._\\(\\)]+$
+     // The name of the resource group.
+     Name  string `validation-type:"create-only"`
+     Location string `validation-type:"create-only"`
+     ID string `validation-type:"read-only"`
+  }
 
-	u := ResourceGroup{"RG1", "WestEurope", "/some/resource/id"}
-	t := reflect.TypeOf(u)
+  u := ResourceGroup{"RG1", "WestEurope", "/some/resource/id"}
+  t := reflect.TypeOf(u)
 
-	for _, fieldName := range []string{"Name", "Location", "ID"} {
-		field, found := t.FieldByName(fieldName)
-		if !found {
-			continue
-		}
-		fmt.Printf("\nField: User.%s\n", fieldName)
-		fmt.Printf("\tWhole tag value : %q\n", field.Tag)
-		fmt.Printf("\tValue of 'validation-type': %q\n", field.Tag.Get("validation-type"))
-	}
+  for _, fieldName := range []string{"Name", "Location", "ID"} {
+    field, found := t.FieldByName(fieldName)
+    if !found {
+      continue
+    }
+    fmt.Printf("\nField: User.%s\n", fieldName)
+    fmt.Printf("\tWhole tag value : %q\n", field.Tag)
+    fmt.Printf("\tValue of 'validation-type': %q\n", field.Tag.Get("validation-type"))
+  }
 }
 ```
-
 
 ## Reconciler loop
 
