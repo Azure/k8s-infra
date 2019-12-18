@@ -4,7 +4,7 @@ This doc aims to capture some thoughts around creating a generic reconciler that
 
 The high-level idea is to write a [generic reconciler](https://github.com/Azure/k8s-infra/issues/7) that can work with structs generated from swagger that represent resources in Azure. Along with the reconciler there would be a validating admission webhook that would validate incoming changes to give immediate feedback for a better user experience (a simple example being rejecting changes to read-only property).
 
-The goal would be to make the generic handling as widely applicable as possible, but to accommodate variation across APIs it is anticipated that there would be a need to enable custom behaviours. One way to allow this would be to expose hooks at various points during the processing cycle where hooks can be registered.
+The goal would be to make the generic handling as widely applicable as possible, but to accommodate variation across APIs it is anticipated that there would be a need to enable custom behaviours. One way to allow this would be to expose hooks at various points during the processing cycle where custom logic can be registered for a type.
 
 ## Generating the structs
 
@@ -14,7 +14,7 @@ In `azbrowse` we don't currently have a requirement to process the swagger body 
 
 ### Spec vs status
 
-In Kubernetes, objects have `spec` and `status` properties which is generally a useful split for managing objects. Additionally, looking at Terraform, properties can fall into a number of categories: writeable (can be freely updated), readonly (computed values that can't be read but are useful to be able to retrieve), and create-only (can be specified when the resource is created but are immutable thereafter).
+In Kubernetes, objects have `spec` and `status` properties which is generally a useful split for managing objects. Additionally, looking at Terraform, properties can fall into a number of categories: writeable (can be freely updated), readonly (computed values that can't be written but are useful to be able to retrieve), and create-only (can be specified when the resource is created but are immutable thereafter).
 
 There a likely a number of heuristic that can be pulled out from the RP's swagger specs to inform the autogen code and allow is to make distinctions between `spec` and `status`.
 
@@ -44,7 +44,7 @@ Path parameters in the `swagger` are, based on cursory review of a few RPs, a go
 
 > Note: In this case a `regex` is provided which can also be used by the validation webhook. The Azure Golang SDK uses these extensively for pre-submission validation.
 
-This can also be combined with `readOnly: true` annotations in the `body` definitions of the swagger to judge which properties should all into the `status` section of the `CRD`. For example `resourceGroup` has the following [(sections remove for easy reading)](https://github.com/Azure/azure-rest-api-specs/blob/8170b1d/specification/resources/resource-manager/Microsoft.Resources/stable/2019-05-01/resources.json#L3329):
+This can also be combined with `readOnly: true` annotations in the `body` definitions of the swagger to judge which properties should go into the `status` section of the `CRD`. For example `resourceGroup` has the following [(sections remove for easy reading)](https://github.com/Azure/azure-rest-api-specs/blob/8170b1d/specification/resources/resource-manager/Microsoft.Resources/stable/2019-05-01/resources.json#L3329):
 
 ```json
 {
@@ -83,7 +83,7 @@ This can also be combined with `readOnly: true` annotations in the `body` defini
 
 Worth noting is the inconsistency in the spec here between `name` being `readOnly` and `location` not being `readOnly` but instead having a description stating `It cannot be changed after the resource group has been created`.
 
-While not perfect the `description` field could also be reviewed to inform based on matching for certain strings, however, how viable that is accross different RPs is currently unknown.
+While not perfect the `description` field could also be reviewed to inform based on matching for certain strings, however, how viable that is across different RPs is currently unknown.
 
 ### Exposing this information on generated CRD structs
 
@@ -232,13 +232,13 @@ For ARM resources that don't support `PATCH` the approach would be slightly more
 
 Ideally, the non-`PATCH` case would use etags for the update but as far as we know, that isn't supported.
 
-A consideration here is that the behavior of this process is complex and across many RP's or based on user perference different merge behavior would be required:
+A consideration here is that the behavior of this process is complex and across many RP's or based on user preference different merge behavior would be required:
 
 * User A may want to ALWAYS enforce conformance to the `SPEC` of the CRD BUT only for fields they have set, allowing drift in other fields which are not set.
 * User B may want to ALWAYS enforce conformance to the `SPEC` of the CRD for ALL fields, overwriting fields set outside the operator or removing additional fields set outside the operator which aren't specified on the CRD.
 * User C may want the CRD to REFLECT changes made outside of the operator, such as the example above where an autoscaling rule in the RP is changing capacity.
 
-Picking a few supported approachs and allowing user choice in this behavior feels like a sensible option. This approach is inspired by [terraforms usage of `ignore_changes`](https://www.terraform.io/docs/configuration/resources.html#ignore_changes).
+Picking a few supported approaches and allowing user choice in this behavior feels like a sensible option. This approach is inspired by [terraforms usage of `ignore_changes`](https://www.terraform.io/docs/configuration/resources.html#ignore_changes).
 
 ## Managing objects that were initially created outside of k8s-infra
 
