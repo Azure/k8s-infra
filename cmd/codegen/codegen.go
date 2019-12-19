@@ -114,6 +114,7 @@ func loadDoc(path string) *loads.Document {
 
 	return document
 }
+
 func writeOutput(paths []*swagger.Path, config *swagger.Config, filename string, structName string) {
 	_ = os.MkdirAll(filepath.Dir(filename), os.FileMode(0777))
 	writer, err := os.Create(filename)
@@ -129,6 +130,7 @@ func writeOutput(paths []*swagger.Path, config *swagger.Config, filename string,
 
 	writeTemplate(writer, paths, config, structName)
 }
+
 func writeTemplate(w io.Writer, paths []*swagger.Path, config *swagger.Config, structName string) {
 
 	funcMap := template.FuncMap{
