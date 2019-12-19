@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lawrencegripper/azbrowse/pkg/armclient"
-	"github.com/lawrencegripper/azbrowse/pkg/swagger"
+	"github.com/Azure/k8s-infra/armclient"
+	"github.com/Azure/k8s-infra/swagger"
 )
 
 var _ SwaggerAPISet = SwaggerAPISetARMResources{}
@@ -15,11 +15,17 @@ var _ SwaggerAPISet = SwaggerAPISetARMResources{}
 // SwaggerAPISetARMResources holds the config for working with ARM resources as per the published Swagger specs
 type SwaggerAPISetARMResources struct {
 	resourceTypes []swagger.ResourceType
-	client        *armclient.Client
+	client        armclient.Client
+}
+
+func (c SwaggerAPISetARMResources) loadResourceTypes() []swagger.ResourceType {
+	//dummy. this is to be replaced by the generated file.
+	//TODO provide a way to inject the generated list of resource instead of adding a method to the existing type.
+	return []swagger.ResourceType{}
 }
 
 // NewSwaggerAPISetARMResources creates a new SwaggerAPISetARMResources
-func NewSwaggerAPISetARMResources(client *armclient.Client) SwaggerAPISetARMResources {
+func NewSwaggerAPISetARMResources(client armclient.Client) SwaggerAPISetARMResources {
 	c := SwaggerAPISetARMResources{}
 	c.resourceTypes = c.loadResourceTypes()
 	c.client = client
