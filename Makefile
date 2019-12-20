@@ -35,12 +35,15 @@ help:  ## Display this help
 ## Testing
 ## --------------------------------------
 
-test: export TEST_ASSET_KUBECTL = $(ROOT_DIR)/$(KUBECTL)
-test: export TEST_ASSET_KUBE_APISERVER = $(ROOT_DIR)/$(KUBE_APISERVER)
-test: export TEST_ASSET_ETCD = $(ROOT_DIR)/$(ETCD)
+test test-int: export TEST_ASSET_KUBECTL = $(ROOT_DIR)/$(KUBECTL)
+test test-int: export TEST_ASSET_KUBE_APISERVER = $(ROOT_DIR)/$(KUBE_APISERVER)
+test test-int: export TEST_ASSET_ETCD = $(ROOT_DIR)/$(ETCD)
 
 test: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) generate lint manifests ## Run tests
 	go test -v ./...
+
+test-int: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) generate lint manifests ## Run integration tests
+	go test -v ./... -tags integration
 
 test-cover: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) generate lint manifests ## Run tests w/ code coverage (./cover.out)
 	go test ./... -coverprofile cover.out
