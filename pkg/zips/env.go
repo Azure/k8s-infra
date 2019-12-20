@@ -1,3 +1,8 @@
+/*
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT license.
+*/
+
 package zips
 
 import (
@@ -13,6 +18,6 @@ type (
 )
 
 // Getenv will return os.Getenv for a given key
-func (_ *stdEnv) Getenv(key string) string {
+func (*stdEnv) Getenv(key string) string {
 	return os.Getenv(key)
 }

@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-.DEFAULT_GOAL:=help
+.DEFAULT_GOAL:=build
 
 timestamp := $(shell /bin/date "+%Y%m%d-%H%M%S")
 # Image URL to use all building/pushing image targets
@@ -35,18 +35,22 @@ help:  ## Display this help
 ## Testing
 ## --------------------------------------
 
-test test-int: export TEST_ASSET_KUBECTL = $(ROOT_DIR)/$(KUBECTL)
-test test-int: export TEST_ASSET_KUBE_APISERVER = $(ROOT_DIR)/$(KUBE_APISERVER)
-test test-int: export TEST_ASSET_ETCD = $(ROOT_DIR)/$(ETCD)
+test test-int test-cover: export TEST_ASSET_KUBECTL = $(ROOT_DIR)/$(KUBECTL)
+test test-int test-cover: export TEST_ASSET_KUBE_APISERVER = $(ROOT_DIR)/$(KUBE_APISERVER)
+test test-int test-cover: export TEST_ASSET_ETCD = $(ROOT_DIR)/$(ETCD)
 
-test: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) generate lint manifests ## Run tests
+test: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) fmt generate lint manifests ## Run tests
 	go test -v ./...
 
-test-int: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) generate lint manifests ## Run integration tests
+test-int: .env $(KUBECTL) $(KUBE_APISERVER) $(ETCD) fmt generate lint manifests ## Run integration tests
+	. .env
 	go test -v ./... -tags integration
 
-test-cover: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) generate lint manifests ## Run tests w/ code coverage (./cover.out)
-	go test ./... -coverprofile cover.out
+.env: ## create a service principal and save the identity to .env for use in integration tests (requries jq and az)
+	./scripts/create_testing_creds.sh
+
+test-cover: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) generate lint-full manifests ## Run tests w/ code coverage (./cover.out)
+	go test ./... -tags integration -coverprofile cover.out
 
 $(KUBECTL) $(KUBE_APISERVER) $(ETCD): ## Install test asset kubectl, kube-apiserver, etcd
 	. ./scripts/fetch_ext_bins.sh && fetch_tools
@@ -68,7 +72,7 @@ lint: $(GOLANGCI_LINT) ## Lint codebase
 lint-full: $(GOLANGCI_LINT) ## Run slower linters to detect possible issues
 	$(GOLANGCI_LINT) run -v --fast=false
 
-manager: generate fmt ## Build manager binary
+build: generate fmt ## Build manager binary
 	go build -o bin/manager main.go
 
 run: export KUBECONFIG = $(shell kind get kubeconfig-path --name="k8s-infra")

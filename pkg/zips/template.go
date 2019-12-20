@@ -16,6 +16,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/google/uuid"
 )
 
 type (
@@ -131,12 +132,12 @@ func NewAzureTemplateClient(opts ...AzureTemplateClientOption) (*AzureTemplateCl
 }
 
 func (atc *AzureTemplateClient) Deploy(ctx context.Context, res Resource) (Resource, error) {
-	deploymentName, err := res.DeploymentName()
+	deploymentUUID, err := uuid.NewUUID()
 	if err != nil {
 		return Resource{}, err
 	}
 
-	deploymentName = fmt.Sprintf("%s_%d", deploymentName, time.Now().Unix())
+	deploymentName := fmt.Sprintf("%s_%d_%s", "k8s", time.Now().Unix(), deploymentUUID.String())
 
 	var template *Template
 	if res.ResourceGroup == "" {
@@ -201,6 +202,7 @@ func (atc *AzureTemplateClient) Deploy(ctx context.Context, res Resource) (Resou
 	tOutValue := templateOutput.Value
 
 	return Resource{
+		DeploymentID:   *de.ID,
 		SubscriptionID: tOutValue.SubscriptionID,
 		ID:             tOutValue.ID,
 		Name:           res.Name,
