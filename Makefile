@@ -49,7 +49,7 @@ test-int: .env $(KUBECTL) $(KUBE_APISERVER) $(ETCD) fmt generate lint manifests 
 .env: ## create a service principal and save the identity to .env for use in integration tests (requries jq and az)
 	./scripts/create_testing_creds.sh
 
-test-cover: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) generate lint-full manifests ## Run tests w/ code coverage (./cover.out)
+test-cover: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) generate lint manifests ## Run tests w/ code coverage (./cover.out)
 	go test ./... -tags integration -coverprofile cover.out
 
 $(KUBECTL) $(KUBE_APISERVER) $(ETCD): ## Install test asset kubectl, kube-apiserver, etcd
