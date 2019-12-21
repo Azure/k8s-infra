@@ -14,6 +14,8 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Checkout code
         uses: actions/checkout@v1
+      - name: Setup KinD
+        uses: engineerd/setup-kind@v0.2.0
       - name: Make test
         env:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
