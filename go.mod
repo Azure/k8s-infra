@@ -4,6 +4,8 @@ go 1.13
 
 require (
 	github.com/go-logr/logr v0.1.0
+	github.com/go-openapi/loads v0.19.2
+	github.com/go-openapi/spec v0.19.2
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/stretchr/testify v1.3.0
