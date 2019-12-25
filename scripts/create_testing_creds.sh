@@ -24,4 +24,4 @@ client_secret=$(echo "$json" | jq -r '.password')
 tenant_id=$(echo "$json" | jq -r '.tenant')
 subscription_id=$(az account show -o json | jq -r ".id")
 
-echo -e "AZURE_TENANT_ID=$tenant_id\nAZURE_CLIENT_ID=$client_id\nAZURE_CLIENT_SECRET=$client_secret\nAZURE_SUBSCRIPTION_ID=$subscription_id" > "$REPO_ROOT"/.env
+echo -e "export AZURE_TENANT_ID=$tenant_id\nexport AZURE_CLIENT_ID=$client_id\nexport AZURE_CLIENT_SECRET=$client_secret\nexport AZURE_SUBSCRIPTION_ID=$subscription_id" > "$REPO_ROOT"/.env
