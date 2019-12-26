@@ -61,13 +61,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	registerer, err := controllers.NewRegisterer(mgr, applier)
-	if err != nil {
-		setupLog.Error(err, "unable to build/register controllers")
-		os.Exit(1)
-	}
-
-	if err := registerer.RegisterAll(); err != nil {
+	if err := controllers.RegisterAll(mgr, applier, controllers.Controlled); err != nil {
 		setupLog.Error(err, "failed to register controllers for all known types")
 		os.Exit(1)
 	}

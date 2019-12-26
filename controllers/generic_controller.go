@@ -34,7 +34,7 @@ const (
 // a single For object, but may indirectly watch and reconcile many Owned objects.
 // The For type is necessary to generically produce a reconcile function aware of
 // concrete types, as a closure.
-var controlled = []RegisterOptions{
+var Controlled = []RegisterOptions{
 	{
 		For:  &protov1alpha1.ResourceGroup{},
 		Owns: nil,
@@ -51,21 +51,9 @@ type RegisterOptions struct {
 	Owns []runtime.Object
 }
 
-type Registerer struct {
-	Manager ctrl.Manager
-	Applier zips.Applier
-}
-
-func NewRegisterer(mgr ctrl.Manager, applier zips.Applier) (*Registerer, error) {
-	return &Registerer{
-		mgr,
-		applier,
-	}, nil
-}
-
-func (r *Registerer) RegisterAll() error {
-	for _, kind := range controlled {
-		if err := r.register(r.Manager, kind); err != nil {
+func RegisterAll(mgr ctrl.Manager, applier zips.Applier, opts []RegisterOptions) error {
+	for _, kind := range opts {
+		if err := register(mgr, applier, kind); err != nil {
 			return err
 		}
 	}
@@ -76,27 +64,24 @@ func (r *Registerer) RegisterAll() error {
 // Only one type (using For) may be directly watched by each controller, but zero, one or many Owned types are acceptable.
 // This setup allows reconcileFn to have access to the concrete type defined as part of a closure, while allowing for independent
 // controllers per GVK (== better parallelism, vs 1 controller managing many, many List/Watches)
-func (r *Registerer) register(mgr ctrl.Manager, opts RegisterOptions) error {
+func register(mgr ctrl.Manager, applier zips.Applier, opts RegisterOptions) error {
 	controller := ctrl.NewControllerManagedBy(mgr).For(opts.For)
 	for _, ownedType := range opts.Owns {
 		controller.Owns(ownedType)
 	}
 	gvk := opts.For.GetObjectKind().GroupVersionKind()
-	reconciler := r.reconcilerForGVK(gvk)
+	reconciler := getReconciler(gvk, mgr.GetScheme(), mgr.GetClient(), applier)
 	return controller.Complete(reconciler)
 }
 
-func (r *Registerer) reconcilerForGVK(gvk schema.GroupVersionKind) reconcile.Func {
-	return reconcilerFactory(gvk, r.Manager.GetScheme(), r.Manager.GetClient(), r.Applier)
-}
-
-func reconcilerFactory(gvk schema.GroupVersionKind, scheme *runtime.Scheme, kubeclient client.Client, applier zips.Applier) reconcile.Func {
+// getReconciler is a simple helper to directly produce a reconcile Function. Useful to test against.
+func getReconciler(gvk schema.GroupVersionKind, scheme *runtime.Scheme, kubeclient client.Client, applier zips.Applier) reconcile.Func {
 	return func(req ctrl.Request) (ctrl.Result, error) {
 		return reconcileFn(req, gvk, scheme, kubeclient, applier)
 	}
 }
 
-// reconcileFn is the "real" reconciler function, created as a closure above at manager startup to have access to the concrete gvk.
+// reconcileFn is the "real" reconciler function, created as a closure above at manager startup to have access to the gvk.
 func reconcileFn(req ctrl.Request, gvk schema.GroupVersionKind, scheme *runtime.Scheme, kubeclient client.Client, applier zips.Applier) (ctrl.Result, error) {
 	ctx := context.Background()
 
@@ -106,7 +91,7 @@ func reconcileFn(req ctrl.Request, gvk schema.GroupVersionKind, scheme *runtime.
 		return ctrl.Result{}, err
 	}
 
-	// Fetch the concrete object by key + type.
+	// Fetch the object by key + type.
 	key := types.NamespacedName{
 		Name:      req.Name,
 		Namespace: req.Namespace,
@@ -116,7 +101,7 @@ func reconcileFn(req ctrl.Request, gvk schema.GroupVersionKind, scheme *runtime.
 		return ctrl.Result{}, err
 	}
 
-	// The concrete Go type for the Kubernetes object must understand how to
+	// The Go type for the Kubernetes object must understand how to
 	// convert itself to/from the corresponding Azure types.
 	resourcer, ok := runObj.(zips.Resourcer)
 	if !ok {

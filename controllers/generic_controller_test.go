@@ -44,11 +44,6 @@ var _ = Describe("GenericReconciler", func() {
 
 			ctx := context.Background()
 			applier := new(ApplierMock)
-			scheme := mgr.GetScheme()
-
-			registerer, err := NewRegisterer(mgr, applier)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(registerer.RegisterAll()).To(Succeed())
 
 			instance := &protov1.ResourceGroup{
 				TypeMeta: metav1.TypeMeta{
@@ -67,7 +62,7 @@ var _ = Describe("GenericReconciler", func() {
 				},
 			}
 
-			reconciler := reconcilerFactory(instance.GetObjectKind().GroupVersionKind(), scheme, k8sClient, applier)
+			reconciler := getReconciler(instance.GetObjectKind().GroupVersionKind(), mgr.GetScheme(), k8sClient, applier)
 
 			Expect(k8sClient.Create(ctx, instance)).To(Succeed())
 
