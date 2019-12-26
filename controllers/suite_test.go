@@ -54,7 +54,7 @@ var _ = BeforeSuite(func(done Done) {
 	var err error
 	cfg, err = testEnv.Start()
 	Expect(err).ToNot(HaveOccurred())
-	Expect(err).NotTo(HaveOccurred())
+	Expect(cfg).ToNot(BeNil())
 
 	err = protov1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())

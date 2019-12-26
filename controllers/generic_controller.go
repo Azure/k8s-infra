@@ -13,7 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -92,12 +91,7 @@ func reconcileFn(req ctrl.Request, gvk schema.GroupVersionKind, scheme *runtime.
 	}
 
 	// Fetch the object by key + type.
-	key := types.NamespacedName{
-		Name:      req.Name,
-		Namespace: req.Namespace,
-	}
-
-	if err := kubeclient.Get(ctx, key, runObj); err != nil {
+	if err := kubeclient.Get(ctx, req.NamespacedName, runObj); err != nil {
 		return ctrl.Result{}, err
 	}
 
