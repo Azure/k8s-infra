@@ -44,13 +44,14 @@ type owner interface {
 	Owns() []runtime.Object
 }
 
-func RegisterAll(mgr ctrl.Manager, applier zips.Applier, objs []runtime.Object) error {
+func RegisterAll(mgr ctrl.Manager, applier zips.Applier, objs []runtime.Object) []error {
+	var errs []error
 	for _, obj := range objs {
 		if err := register(mgr, applier, obj); err != nil {
-			return err
+			errs = append(errs, err)
 		}
 	}
-	return nil
+	return errs
 }
 
 // register takes a manager and a struct describing how to instantiate
