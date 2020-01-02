@@ -33,16 +33,13 @@ type templateInput struct {
 func main() {
 
 	// Todo: build from azure-rest-specs repo - see azbrowse
-
 	doc := loadDoc("/workspace/specs/azure-rest-api-specs/specification/resources/resource-manager/Microsoft.Resources/stable/2019-05-01/resources.json")
 
 	// Todo: determine root object of interest - see azbrowse
-
-	pathItem := doc.Spec().Paths.Paths["/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}"]
-
 	idTemplate := "/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}"
-	backtick := "`"
+	pathItem := doc.Spec().Paths.Paths[idTemplate]
 
+	// Walk the patch body params
 	patchParams := pathItem.Patch.Parameters
 	for _, param := range patchParams {
 		if param.In == "body" {
@@ -52,6 +49,7 @@ func main() {
 		}
 	}
 
+	// Walk the put params (body and url)
 	putParams := pathItem.Put.Parameters
 	for _, param := range putParams {
 		if param.In == InURLPathParam {
@@ -60,6 +58,7 @@ func main() {
 		}
 
 		if param.In == "body" {
+			// Attempt to infer details on type of field from spec
 			mapPropertiesToType(param.Schema.Properties, param)
 		}
 	}
@@ -71,8 +70,9 @@ func main() {
 
 	kubebuilderCommentSpec := func(name string) string {
 		builder := strings.Builder{}
-		// Todo: hack
 
+		// Todo: hack only looking at inPath as haven't seen
+		// any body props with validation logic on them ... sadly
 		prop, existsInAsPathParam := inPathParams[name]
 		if !existsInAsPathParam {
 			return ""
@@ -114,56 +114,80 @@ func main() {
 		return "string"
 	}
 
-	funcMap := template.FuncMap{
-		"specField":   kubebuilderCommentSpec,
-		"statusField": kubebuilderCommentSpec,
-		"type":        typeFunc,
+	jsonTagFunc := func(name string) string {
+		return fmt.Sprintf(`json:"%s"`, name)
 	}
-	// Create a template, add the function map, and parse the text.
+
+	funcMap := template.FuncMap{
+		"specField": kubebuilderCommentSpec,
+		"type":      typeFunc,
+		"jsonTag":   jsonTagFunc,
+		"title":     strings.Title,
+	}
+
+	// Parse the template
 	tmpl, err := template.New("crd").Funcs(funcMap).Parse(tmpl)
 	if err != nil {
 		log.Fatalf("parsing: %s", err)
 	}
 
+	stringBuilder := strings.Builder{}
+
+	// Remove ID field from props as it's hard coded in the template
+	delete(readonlyProps, "Id")
+
 	// Run the template to verify the output.
-	err = tmpl.Execute(os.Stdout, templateInput{
+	err = tmpl.Execute(&stringBuilder, templateInput{
 		WriteOnceProps: writeOnceProps,
 		ReadonlyProps:  readonlyProps,
 		NormalProps:    normalProps,
 		IdTemplate:     idTemplate,
-		Backtick:       backtick,
+		Backtick:       "`",
 	})
 	if err != nil {
 		log.Fatalf("execution: %s", err)
 	}
+
+	fmt.Print(stringBuilder.String())
+
+	os.Remove("./model.go")
+	f, err := os.Create("./model.go")
+	defer f.Close()
+	f.WriteString(stringBuilder.String())
+
 }
 
 func mapPropertiesToType(properties map[string]spec.Schema, param spec.Parameter) {
 	for bodyPropName, bodyPropSchema := range properties {
 		fmt.Println(param.Name, bodyPropName, bodyPropSchema)
 
-		// Relevant as means it can be set ... but only at create time.
-		pathSchema, existsInAsPathParam := inPathParams[bodyPropName]
+		// What readonly properties do we have?
 		if bodyPropSchema.ReadOnly {
+
+			// If it's readonly in the body but exists in path it's create-only be definition
+			// changing the url means different resource
+			pathSchema, existsInAsPathParam := inPathParams[bodyPropName]
 			if existsInAsPathParam {
-				// If it's readonly in the body but exists in path
-				// then it's a create only property (can be read in body but only set at create)
 				writeOnceProps[bodyPropName] = *pathSchema.Schema
 				continue
-			} else {
-				// readonly property
-				readonlyProps[bodyPropName] = bodyPropSchema
-				continue
 			}
+
+			// normal readonly property
+			readonlyProps[bodyPropName] = bodyPropSchema
+			continue
 		}
 
+		// Do we need to recurse into the property? (For example provisioningState is under properties.provisioningState)
+		// Todo: How does serialisation handle flatting and unflattening these types need `json:properties.provisioningState` but don't think
+		// that exists
 		if len(bodyPropSchema.Properties) > 0 {
 			mapPropertiesToType(bodyPropSchema.Properties, param)
 			continue
 		}
 
-		_, existsInPatchBody := patchProps[bodyPropName]
+		// Hack - need to try more types and validate this in more detail
 		// If the body param doesn't exist in the patch body it's create only
+		_, existsInPatchBody := patchProps[bodyPropName]
 		if !existsInPatchBody {
 			writeOnceProps[bodyPropName] = bodyPropSchema
 			continue
