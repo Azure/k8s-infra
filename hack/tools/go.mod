@@ -4,5 +4,6 @@ go 1.13
 
 require (
 	github.com/golangci/golangci-lint v1.21.0 // indirect
+	github.com/mitchellh/gox v1.0.1 // indirect
 	sigs.k8s.io/controller-tools v0.2.4 // indirect
 )
