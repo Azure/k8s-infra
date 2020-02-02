@@ -188,14 +188,13 @@ func (atc *AzureTemplateClient) Apply(ctx context.Context, res Resource) (Resour
 	}
 
 	// clean up after the deployment
-	if res.ResourceGroup == "" {
-		_, err = atc.DeploymentsClient.DeleteAtSubscriptionScope(ctx, deploymentName)
+	var deploymentID string
+	if !res.ObjectMeta.PreserveDeployment {
+		if err := atc.deleteDeployment(ctx, res, deploymentName); err != nil {
+			return Resource{}, fmt.Errorf("deployment cleanup failed: %w", err)
+		}
 	} else {
-		_, err = atc.DeploymentsClient.Delete(ctx, res.ResourceGroup, deploymentName)
-	}
-
-	if err != nil {
-		return Resource{}, fmt.Errorf("deployment cleanup failed: %w", err)
+		deploymentID = *de.ID
 	}
 
 	if de.Properties == nil || de.Properties.Outputs == nil {
@@ -220,6 +219,7 @@ func (atc *AzureTemplateClient) Apply(ctx context.Context, res Resource) (Resour
 	tOutValue := templateOutput.Value
 
 	return Resource{
+		DeploymentID:   deploymentID,
 		SubscriptionID: tOutValue.SubscriptionID,
 		ID:             tOutValue.ID,
 		Name:           res.Name,
@@ -252,6 +252,16 @@ func (atc *AzureTemplateClient) Delete(ctx context.Context, res Resource) error 
 		return fmt.Errorf("delete failed with status code %d and message %q", arRes.StatusCode, arRes.Status)
 	}
 	return nil
+}
+
+func (atc *AzureTemplateClient) deleteDeployment(ctx context.Context, res Resource, deploymentName string) error {
+	if res.ResourceGroup == "" {
+		_, err := atc.DeploymentsClient.DeleteAtSubscriptionScope(ctx, deploymentName)
+		return err
+	} else {
+		_, err := atc.DeploymentsClient.Delete(ctx, res.ResourceGroup, deploymentName)
+		return err
+	}
 }
 
 func (atc *AzureTemplateClient) delete(ctx context.Context, res Resource) (*autorest.Response, error) {
