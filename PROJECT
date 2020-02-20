@@ -17,4 +17,22 @@ resources:
 - group: microsoft.network
   kind: VirtualNetwork
   version: v1
+- group: microsoft.network
+  kind: RouteTable
+  version: v20191101
+- group: microsoft.network
+  kind: RouteTable
+  version: v1
+- group: microsoft.network
+  kind: NetworkSecurityGroup
+  version: v1
+- group: microsoft.network
+  kind: NetworkSecurityGroup
+  version: v20191101
+- group: microsoft.network
+  kind: LoadBalancer
+  version: v20191101
+- group: microsoft.network
+  kind: LoadBalancer
+  version: v1
 version: "2"

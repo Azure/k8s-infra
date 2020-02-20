@@ -145,7 +145,7 @@ func (vnet *VirtualNetwork) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
-	to.Spec.Properties = props
+	to.Spec.Properties = &props
 	return nil
 }
 

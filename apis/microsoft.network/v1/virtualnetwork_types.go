@@ -7,7 +7,6 @@ package v1
 
 import (
 	"encoding/json"
-	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -90,7 +89,7 @@ type (
 		Tags          map[string]string       `json:"tags,omitempty"`
 
 		// Properties of the Virtual Network
-		Properties VirtualNetworkSpecProperties `json:"properties,omitempty"`
+		Properties *VirtualNetworkSpecProperties `json:"properties,omitempty"`
 	}
 
 	// VirtualNetworkStatus defines the observed state of VirtualNetwork
@@ -123,9 +122,7 @@ type (
 	}
 )
 
-func (*VirtualNetwork) Hub() {
-	fmt.Println("Hub was called!")
-}
+func (*VirtualNetwork) Hub() {}
 
 func (vnet *VirtualNetwork) GetResourceGroupObjectRef() *corev1.ObjectReference {
 	return vnet.Spec.ResourceGroup
@@ -168,7 +165,7 @@ func (vnet *VirtualNetwork) FromResource(res zips.Resource) error {
 	if err := json.Unmarshal(res.Properties, &props); err != nil {
 		return err
 	}
-	vnet.Spec.Properties = props
+	vnet.Spec.Properties = &props
 	return nil
 }
 

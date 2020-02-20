@@ -146,8 +146,6 @@ spec:
                 type: string
               provisioningState:
                 type: string
-              type:
-                type: string
             type: object
         type: object
     served: true

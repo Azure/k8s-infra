@@ -4,11 +4,17 @@
 resources:
 - bases/microsoft.resources.infra.azure.com_resourcegroups.yaml
 - bases/microsoft.network.infra.azure.com_virtualnetworks.yaml
+- bases/microsoft.network.infra.azure.com_routetables.yaml
+- bases/microsoft.network.infra.azure.com_networksecuritygroups.yaml
+- bases/microsoft.network.infra.azure.com_loadbalancers.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
 - patches/webhook_in_resourcegroups.yaml
 - patches/webhook_in_virtualnetworks.yaml
+#- patches/webhook_in_routetables.yaml
+#- patches/webhook_in_networksecuritygroups.yaml
+#- patches/webhook_in_loadbalancers.yaml
 # +kubebuilder:scaffold:crdkustomizewebhookpatch
 
 - patches/cainjection_in_resourcegroups.yaml

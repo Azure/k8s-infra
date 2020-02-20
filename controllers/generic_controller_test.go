@@ -234,7 +234,7 @@ var _ = Describe("GenericReconciler", func() {
 						Kind:       "ResourceGroup",
 						APIVersion: "microsoft.resources.infra.azure.com/v1",
 					},
-					Properties: vnetSpecProps,
+					Properties: &vnetSpecProps,
 				},
 			}
 

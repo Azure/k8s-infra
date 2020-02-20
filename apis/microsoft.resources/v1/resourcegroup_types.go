@@ -6,8 +6,6 @@ Licensed under the MIT license.
 package v1
 
 import (
-	"fmt"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/Azure/k8s-infra/pkg/zips"
@@ -50,9 +48,7 @@ type ResourceGroupList struct {
 	Items           []ResourceGroup `json:"items"`
 }
 
-func (*ResourceGroup) Hub() {
-	fmt.Println("Hub was called!")
-}
+func (*ResourceGroup) Hub() {}
 
 func (rg *ResourceGroup) ToResource() (zips.Resource, error) {
 	res := zips.Resource{

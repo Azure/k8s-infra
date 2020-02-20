@@ -13,7 +13,7 @@ func TestVirtualNetwork_Marshalling(t *testing.T) {
 			APIVersion: "api",
 			Location:   "westus2",
 			Tags:       nil,
-			Properties: VirtualNetworkSpecProperties{
+			Properties: &VirtualNetworkSpecProperties{
 				AddressSpace: AddressSpaceSpec{
 					AddressPrefixes: []string{
 						"10.0.0.0/16",

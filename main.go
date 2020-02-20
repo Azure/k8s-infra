@@ -18,6 +18,7 @@ import (
 
 	microsoftnetworkv1 "github.com/Azure/k8s-infra/apis/microsoft.network/v1"
 	microsoftnetworkv20190901 "github.com/Azure/k8s-infra/apis/microsoft.network/v20190901"
+	microsoftnetworkv20191101 "github.com/Azure/k8s-infra/apis/microsoft.network/v20191101"
 	microsoftresourcesv1 "github.com/Azure/k8s-infra/apis/microsoft.resources/v1"
 	microsoftresourcesv20150101 "github.com/Azure/k8s-infra/apis/microsoft.resources/v20150101"
 	microsoftresourcesv20191001 "github.com/Azure/k8s-infra/apis/microsoft.resources/v20191001"
@@ -38,6 +39,7 @@ func init() {
 	_ = microsoftresourcesv1.AddToScheme(scheme)
 	_ = microsoftnetworkv20190901.AddToScheme(scheme)
 	_ = microsoftnetworkv1.AddToScheme(scheme)
+	_ = microsoftnetworkv20191101.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 

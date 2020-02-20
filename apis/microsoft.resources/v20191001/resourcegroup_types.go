@@ -12,14 +12,8 @@ import (
 	v1 "github.com/Azure/k8s-infra/apis/microsoft.resources/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // ResourceGroupSpec defines the desired state of ResourceGroup
 type ResourceGroupSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	// Location is the Azure location for the group (eg westus2, southcentralus, etc...)
 	Location string `json:"location,omitempty"`
 
@@ -34,12 +28,8 @@ type ResourceGroupSpec struct {
 
 // ResourceGroupStatus defines the observed state of ResourceGroup
 type ResourceGroupStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	ID                string `json:"id,omitempty"`
 	ProvisioningState string `json:"provisioningState,omitempty"`
-	Type              string `json:"type,omitempty"`
 }
 
 // +kubebuilder:object:root=true
