@@ -6,51 +6,21 @@ Licensed under the MIT license.
 package v20191101
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	azcorev1 "github.com/Azure/k8s-infra/apis/core/v1"
 )
 
-// NetworkSecurityGroupSpec defines the desired state of NetworkSecurityGroup
 type (
-	SecurityRuleSpecProperties struct {
-		// +kubebuilder:validation:Enum=Allow;Deny
-		Access string `json:"access,omitempty"`
-
-		// +kubebuiler:validation:MaxLength=140
-		Description string `json:"description,omitempty"`
-
-		DestinationAddressPrefix string   `json:"destinationAddressPrefix,omitempty"`
-		DestinationPortRange     string   `json:"destinationPortRange,omitempty"`
-		DestinationPortRanges    []string `json:"destinationPortRanges,omitempty"`
-
-		// +kubebuilder:validation:Enum=Inbound;Outbound
-		Direction string `json:"direction,omitempty"`
-		Priority  int    `json:"priority,omitempty"`
-
-		// +kubebuilder:validation:Enum=*;Ah;Esp;Icmp;Tcp;Udp
-		Protocol string `json:"protocol,omitempty"`
-
-		ProvisioningState     string   `json:"provisioningState,omitempty"`
-		SourceAddressPrefix   string   `json:"sourceAddressPrefix,omitempty"`
-		SourceAddressPrefixes string   `json:"sourceAddressPrefixes,omitempty"`
-		SourcePortRange       string   `json:"sourcePortRange,omitempty"`
-		SourcePortRanges      []string `json:"sourcePortRanges,omitempty"`
-	}
-
-	SecurityRuleSpec struct {
-		ID         string                      `json:"id,omitempty"`
-		Name       string                      `json:"name,omitempty"`
-		Properties *SecurityRuleSpecProperties `json:"properties,omitempty"`
-	}
-
 	NetworkSecurityGroupSpecProperties struct {
-		SecurityRules []SecurityRuleSpec `json:"securityRules,omitempty"`
+		SecurityRuleRefs []azcorev1.KnownTypeReference `json:"securityRules,omitempty" group:"microsoft.network.infra.azure.com" kind:"SecurityRule"`
 	}
 
+	// NetworkSecurityGroupSpec defines the desired state of NetworkSecurityGroup
 	NetworkSecurityGroupSpec struct {
-		// ResourceGroup is the Azure Resource Group the VirtualNetwork resides within
+		// ResourceGroupRef is the Azure Resource Group the VirtualNetwork resides within
 		// +kubebuilder:validation:Required
-		ResourceGroup *corev1.ObjectReference `json:"group"`
+		ResourceGroupRef *azcorev1.KnownTypeReference `json:"groupRef" group:"microsoft.resources.infra.azure.com" kind:"ResourceGroup"`
 
 		// Location of the VNET in Azure
 		// +kubebuilder:validation:Required

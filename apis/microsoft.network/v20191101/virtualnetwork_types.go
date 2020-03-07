@@ -3,15 +3,15 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT license.
 */
 
-package v20190901
+package v20191101
 
 import (
 	"encoding/json"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
+	azcorev1 "github.com/Azure/k8s-infra/apis/core/v1"
 	v1 "github.com/Azure/k8s-infra/apis/microsoft.network/v1"
 )
 
@@ -84,9 +84,9 @@ type (
 
 	// VirtualNetworkSpec defines the desired state of VirtualNetwork
 	VirtualNetworkSpec struct {
-
-		// ResourceGroup is the Azure Resource Group the VirtualNetwork resides within
-		ResourceGroup *corev1.ObjectReference `json:"group"`
+		// ResourceGroupRef is the Azure Resource Group the VirtualNetwork resides within
+		// +kubebuilder:validation:Required
+		ResourceGroupRef *azcorev1.KnownTypeReference `json:"groupRef" group:"microsoft.resources.infra.azure.com" kind:"ResourceGroup"`
 
 		// Location of the VNET in Azure
 		Location string `json:"location"`
@@ -96,7 +96,7 @@ type (
 		Tags map[string]string `json:"tags,omitempty"`
 
 		// Properties of the Virtual Network
-		Properties VirtualNetworkSpecProperties `json:"properties,omitempty"`
+		Properties *VirtualNetworkSpecProperties `json:"properties,omitempty"`
 	}
 
 	// VirtualNetworkStatus defines the observed state of VirtualNetwork
@@ -129,8 +129,8 @@ type (
 func (vnet *VirtualNetwork) ConvertTo(dstRaw conversion.Hub) error {
 	to := dstRaw.(*v1.VirtualNetwork)
 	to.ObjectMeta = vnet.ObjectMeta
-	to.Spec.ResourceGroup = vnet.Spec.ResourceGroup
-	to.Spec.APIVersion = "2019-09-01"
+	to.Spec.ResourceGroupRef = vnet.Spec.ResourceGroupRef
+	to.Spec.APIVersion = "2019-11-01"
 	to.Spec.Location = vnet.Spec.Location
 	to.Spec.Tags = vnet.Spec.Tags
 	to.Status.ID = vnet.Status.ID
@@ -152,7 +152,7 @@ func (vnet *VirtualNetwork) ConvertTo(dstRaw conversion.Hub) error {
 func (vnet *VirtualNetwork) ConvertFrom(src conversion.Hub) error {
 	from := src.(*v1.VirtualNetwork)
 	vnet.ObjectMeta = from.ObjectMeta
-	vnet.Spec.ResourceGroup = from.Spec.ResourceGroup
+	vnet.Spec.ResourceGroupRef = from.Spec.ResourceGroupRef
 	vnet.Spec.Location = from.Spec.Location
 	vnet.Spec.Tags = from.Spec.Tags
 	vnet.Status.ID = from.Status.ID
@@ -167,7 +167,7 @@ func (vnet *VirtualNetwork) ConvertFrom(src conversion.Hub) error {
 	if err := json.Unmarshal(bits, &props); err != nil {
 		return err
 	}
-	vnet.Spec.Properties = props
+	vnet.Spec.Properties = &props
 	return nil
 }
 

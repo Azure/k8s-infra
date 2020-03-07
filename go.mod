@@ -1,13 +1,12 @@
 module github.com/Azure/k8s-infra
 
-go 1.13
+go 1.14
 
 require (
 	github.com/Azure/go-autorest/autorest v0.9.3
 	github.com/Azure/go-autorest/autorest/azure/auth v0.4.2
 	github.com/Azure/go-autorest/autorest/date v0.2.0
 	github.com/devigned/tab v0.1.1
-	github.com/elazarl/goproxy v0.0.0-20180725130230-947c36da3153 // indirect
 	github.com/go-logr/logr v0.1.0
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
@@ -31,10 +30,8 @@ require (
 	k8s.io/api v0.17.3
 	k8s.io/apimachinery v0.17.3
 	k8s.io/client-go v0.17.2
-	k8s.io/code-generator v0.17.3 // indirect
 	k8s.io/kube-openapi v0.0.0-20200121204235-bf4fb3bd569c // indirect
 	k8s.io/utils v0.0.0-20200117235808-5f6fbceb4c31 // indirect
 	sigs.k8s.io/controller-runtime v0.5.0
-	sigs.k8s.io/structured-merge-diff/v3 v3.0.0-20200207200219-5e70324e7c1c // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )

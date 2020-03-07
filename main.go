@@ -17,7 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	microsoftnetworkv1 "github.com/Azure/k8s-infra/apis/microsoft.network/v1"
-	microsoftnetworkv20190901 "github.com/Azure/k8s-infra/apis/microsoft.network/v20190901"
 	microsoftnetworkv20191101 "github.com/Azure/k8s-infra/apis/microsoft.network/v20191101"
 	microsoftresourcesv1 "github.com/Azure/k8s-infra/apis/microsoft.resources/v1"
 	microsoftresourcesv20150101 "github.com/Azure/k8s-infra/apis/microsoft.resources/v20150101"
@@ -37,9 +36,8 @@ func init() {
 	_ = microsoftresourcesv20191001.AddToScheme(scheme)
 	_ = microsoftresourcesv20150101.AddToScheme(scheme)
 	_ = microsoftresourcesv1.AddToScheme(scheme)
-	_ = microsoftnetworkv20190901.AddToScheme(scheme)
-	_ = microsoftnetworkv1.AddToScheme(scheme)
 	_ = microsoftnetworkv20191101.AddToScheme(scheme)
+	_ = microsoftnetworkv1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -82,11 +80,6 @@ func main() {
 	if os.Getenv("ENVIRONMENT") != "development" {
 		if err = (&microsoftresourcesv1.ResourceGroup{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "ResourceGroup")
-			os.Exit(1)
-		}
-
-		if err = (&microsoftnetworkv1.VirtualNetwork{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "VirtualNetwork")
 			os.Exit(1)
 		}
 	}

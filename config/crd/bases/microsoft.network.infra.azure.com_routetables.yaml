@@ -1,6 +1,6 @@
 
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
@@ -14,9 +14,7 @@ spec:
     listKind: RouteTableList
     plural: routetables
     singular: routetable
-  preserveUnknownFields: false
   scope: Namespaced
-  version: v1
   versions:
   - name: v1
     schema:
@@ -206,12 +204,8 @@ spec:
                     type: boolean
                   routes:
                     items:
-                      description: 'RouteSpec is a route resource TODO: (dj) I think
-                        this should probably be a slice of corev1.ObjectReference'
+                      description: RouteSpec defines the desired state of Route
                       properties:
-                        id:
-                          description: ID of the subnet resource
-                          type: string
                         name:
                           description: Name of the subnet
                           type: string

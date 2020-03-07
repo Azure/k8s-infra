@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/Azure/k8s-infra/apis"
+	azcorev1 "github.com/Azure/k8s-infra/apis/core/v1"
 	microsoftnetworkv1 "github.com/Azure/k8s-infra/apis/microsoft.network/v1"
 	microsoftresourcesv1 "github.com/Azure/k8s-infra/apis/microsoft.resources/v1"
 	"github.com/Azure/k8s-infra/pkg/util/patch"
@@ -180,7 +181,7 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return result, err
 	}
 
-	if grouped, ok := obj.(apis.Grouped); ok {
+	if grouped, ok := obj.(azcorev1.Grouped); ok {
 		ready, err := gr.isResourceGroupReady(ctx, grouped, log)
 		if err != nil {
 			log.Error(err, "failed checking if resource group was ready")
@@ -256,7 +257,7 @@ func (gr *GenericReconciler) reconcileApply(ctx context.Context, resourcer zips.
 	}
 }
 
-func (gr *GenericReconciler) isResourceGroupReady(ctx context.Context, grouped apis.Grouped, log logr.Logger) (bool, error) {
+func (gr *GenericReconciler) isResourceGroupReady(ctx context.Context, grouped azcorev1.Grouped, log logr.Logger) (bool, error) {
 	// has a resource group, so check if the resource group is already provisioned
 	groupRef := grouped.GetResourceGroupObjectRef()
 	if groupRef == nil {

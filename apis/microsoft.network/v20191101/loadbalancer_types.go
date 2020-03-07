@@ -6,36 +6,24 @@ Licensed under the MIT license.
 package v20191101
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	azcorev1 "github.com/Azure/k8s-infra/apis/core/v1"
 )
 
 type (
-
-	NetworkInterfaceIPConfigurationSpec struct {
-
-	}
-
-	BackendAddressPoolSpecProperties struct {
-		BackendIPConfigurations []NetworkInterfaceIPConfigurationSpec `json:"backendIPConfigurations,omitempty"`
-	}
-
-	BackendAddressPoolSpecs struct {
-		ID                string                            `json:"id,omitempty"`
-		Name              string                            `json:"name,omitempty"`
-		ProvisioningState string                            `json:"provisioningState,omitempty"`
-		Properties        *BackendAddressPoolSpecProperties `json:"properties,omitempty"`
-	}
-
 	LoadBalancerSpecProperties struct {
-		BackendAddressPools []BackendAddressPoolSpecs
+		BackendAddressPoolRefs      []azcorev1.KnownTypeReference `json:"backendAddressPools,omitempty" group:"microsoft.network.infra.azure.com" kind:"BackendAddressPool"`
+		FrontendIPConfigurationRefs []azcorev1.KnownTypeReference `json:"frontendIPConfigurationRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"FrontendIPConfiguration"`
+		InboundNatRuleRefs          []azcorev1.KnownTypeReference `json:"inboundNatPoolRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"InboundNatRule"`
+		LoadBalancingRuleRefs       []azcorev1.KnownTypeReference `json:"loadBalancingRuleRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"LoadBalancingRule"`
 	}
 
 	// LoadBalancerSpec defines the desired state of LoadBalancer
 	LoadBalancerSpec struct {
-		// ResourceGroup is the Azure Resource Group the VirtualNetwork resides within
+		// ResourceGroupRef is the Azure Resource Group the VirtualNetwork resides within
 		// +kubebuilder:validation:Required
-		ResourceGroup *corev1.ObjectReference `json:"group"`
+		ResourceGroupRef *azcorev1.KnownTypeReference `json:"groupRef" group:"microsoft.resources.infra.azure.com" kind:"ResourceGroup"`
 
 		// Location of the VNET in Azure
 		// +kubebuilder:validation:Required

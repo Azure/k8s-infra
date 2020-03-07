@@ -8,49 +8,27 @@ package v1
 import (
 	"encoding/json"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	azcorev1 "github.com/Azure/k8s-infra/apis/core/v1"
 	"github.com/Azure/k8s-infra/pkg/zips"
 )
 
 type (
-	// RouteSpecProperties are the resource specific properties
-	RouteSpecProperties struct {
-		AddressPrefix    string `json:"addressPrefix,omitempty"`
-		NextHopIPAddress string `json:"nextHopIpAddress,omitempty"`
-		// +kubebuilder:validation:Enum=Internet;None;VirtualAppliance;VirtualNetworkGateway;VnetLocal
-		NextHopType string `json:"nextHopType,omitempty"`
-	}
-
-	// RouteSpec is a route resource
-	// TODO: (dj) I think this should probably be a slice of corev1.ObjectReference
-	RouteSpec struct {
-		// ID of the subnet resource
-		// +kubebuilder:validation:Required
-		ID string `json:"id,omitempty"`
-
-		// Name of the subnet
-		// +kubebuilder:validation:Required
-		Name string `json:"name,omitempty"`
-
-		// Properties of the subnet
-		Properties *RouteSpecProperties `json:"properties,omitempty"`
-	}
-
 	// RouteTableSpecProperties are the resource specific properties
 	RouteTableSpecProperties struct {
-		DisableBGPRoutePropagation bool        `json:"disableBgpRoutePropagation,omitempty"`
-		Routes                     []RouteSpec `json:"routes,omitempty"`
+		DisableBGPRoutePropagation bool                          `json:"disableBgpRoutePropagation,omitempty"`
+		RouteRefs                  []azcorev1.KnownTypeReference `json:"routeRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"Route"`
 	}
 
 	// RouteTableSpec defines the desired state of RouteTable
 	RouteTableSpec struct {
+		// +k8s:conversion-gen=false
 		APIVersion string `json:"apiVersion,omitempty"`
 
-		// ResourceGroup is the Azure Resource Group the VirtualNetwork resides within
+		// ResourceGroupRef is the Azure Resource Group the VirtualNetwork resides within
 		// +kubebuilder:validation:Required
-		ResourceGroup *corev1.ObjectReference `json:"group"`
+		ResourceGroupRef *azcorev1.KnownTypeReference `json:"groupRef" group:"microsoft.resources.infra.azure.com" kind:"ResourceGroup"`
 
 		// Location of the VNET in Azure
 		// +kubebuilder:validation:Required
@@ -66,7 +44,8 @@ type (
 
 	// RouteTableStatus defines the observed state of RouteTable
 	RouteTableStatus struct {
-		ID                string `json:"id,omitempty"`
+		ID string `json:"id,omitempty"`
+		// +k8s:conversion-gen=false
 		DeploymentID      string `json:"deploymentId,omitempty"`
 		ProvisioningState string `json:"provisioningState,omitempty"`
 	}
@@ -96,10 +75,14 @@ type (
 
 func (*RouteTable) Hub() {}
 
+func (rt *RouteTable) GetResourceGroupObjectRef() *azcorev1.KnownTypeReference {
+	return rt.Spec.ResourceGroupRef
+}
+
 func (rt *RouteTable) ToResource() (zips.Resource, error) {
 	rgName := ""
-	if rt.Spec.ResourceGroup != nil {
-		rgName = rt.Spec.ResourceGroup.Name
+	if rt.Spec.ResourceGroupRef != nil {
+		rgName = rt.Spec.ResourceGroupRef.Name
 	}
 
 	res := zips.Resource{

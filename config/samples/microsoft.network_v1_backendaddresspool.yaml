@@ -1,0 +1,7 @@
+apiVersion: microsoft.network.infra.azure.com/v1
+kind: BackendAddressPool
+metadata:
+  name: backendaddresspool-sample
+spec:
+  # Add fields here
+  foo: bar

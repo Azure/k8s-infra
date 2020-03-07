@@ -4,7 +4,7 @@ SHELL := /bin/bash
 timestamp := $(shell /bin/date "+%Y%m%d-%H%M%S")
 REGISTRY ?= devigned
 IMG ?= k8s-infra-contoller-dev:$(timestamp)
-CRD_OPTIONS ?= "crd:trivialVersions=false,preserveUnknownFields=false"
+CRD_OPTIONS ?= "crd:crdVersions=v1"
 
 KIND_CLUSTER_NAME ?= k8sinfra
 KIND_CLUSTER_TOUCH := .$(KIND_CLUSTER_NAME).cluster
@@ -28,6 +28,7 @@ export PATH := $(TOOLS_BIN_DIR):$(PATH)
 # Binaries.
 GOLANGCI_LINT := $(TOOLS_BIN_DIR)/golangci-lint
 CONTROLLER_GEN := $(TOOLS_BIN_DIR)/controller-gen
+CONVERSION_GEN := $(TOOLS_BIN_DIR)/conversion-gen
 KUBECTL=$(TOOLS_BIN_DIR)/kubectl
 KUBE_APISERVER=$(TOOLS_BIN_DIR)/kube-apiserver
 ETCD=$(TOOLS_BIN_DIR)/etcd
@@ -82,6 +83,9 @@ $(KUSTOMIZE): ## Install kustomize
 
 $(CONTROLLER_GEN): $(TOOLS_DIR)/go.mod ## Build controller-gen from tools folder.
 	cd $(TOOLS_DIR); go build -tags=tools -o bin/controller-gen sigs.k8s.io/controller-tools/cmd/controller-gen
+
+$(CONVERSION_GEN): $(TOOLS_DIR)/go.mod ## Build conversion-gen from tools folder.
+	cd $(TOOLS_DIR); go build -tags=tools -o bin/conversion-gen k8s.io/code-generator/cmd/conversion-gen
 
 $(GOLANGCI_LINT): $(TOOLS_DIR)/go.mod ## Build golangci-lint from tools folder.
 	cd $(TOOLS_DIR); go build -tags=tools -o bin/golangci-lint github.com/golangci/golangci-lint/cmd/golangci-lint
@@ -156,8 +160,14 @@ vet: ## Run go vet against code
 	go vet ./...
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) ## Generate code
+generate: $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code
 	$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
+
+	$(CONVERSION_GEN) \
+    		--input-dirs=./apis/microsoft.network/v20191101,./apis/microsoft.resources/v20191001,./apis/microsoft.resources/v20150101 \
+    		--output-file-base=zz_generated.conversion \
+    		--output-base=$(ROOT_DIR) \
+    		--go-header-file=./hack/boilerplate.go.txt
 
 .PHONY: docker-build
 docker-build: test ## Build the docker image
