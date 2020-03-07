@@ -61,8 +61,6 @@ type (
 	}
 )
 
-func (*Route) Hub() {}
-
 func init() {
 	SchemeBuilder.Register(&Route{}, &RouteList{})
 }

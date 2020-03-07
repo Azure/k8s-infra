@@ -6,13 +6,9 @@ Licensed under the MIT license.
 package v20191101
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	azcorev1 "github.com/Azure/k8s-infra/apis/core/v1"
-	v1 "github.com/Azure/k8s-infra/apis/microsoft.network/v1"
 )
 
 type (
@@ -125,51 +121,6 @@ type (
 		Items           []VirtualNetwork `json:"items"`
 	}
 )
-
-func (vnet *VirtualNetwork) ConvertTo(dstRaw conversion.Hub) error {
-	to := dstRaw.(*v1.VirtualNetwork)
-	to.ObjectMeta = vnet.ObjectMeta
-	to.Spec.ResourceGroupRef = vnet.Spec.ResourceGroupRef
-	to.Spec.APIVersion = "2019-11-01"
-	to.Spec.Location = vnet.Spec.Location
-	to.Spec.Tags = vnet.Spec.Tags
-	to.Status.ID = vnet.Status.ID
-	to.Status.ProvisioningState = vnet.Status.ProvisioningState
-	bits, err := json.Marshal(vnet.Spec.Properties)
-	if err != nil {
-		return err
-	}
-
-	var props v1.VirtualNetworkSpecProperties
-	if err := json.Unmarshal(bits, &props); err != nil {
-		return err
-	}
-
-	to.Spec.Properties = &props
-	return nil
-}
-
-func (vnet *VirtualNetwork) ConvertFrom(src conversion.Hub) error {
-	from := src.(*v1.VirtualNetwork)
-	vnet.ObjectMeta = from.ObjectMeta
-	vnet.Spec.ResourceGroupRef = from.Spec.ResourceGroupRef
-	vnet.Spec.Location = from.Spec.Location
-	vnet.Spec.Tags = from.Spec.Tags
-	vnet.Status.ID = from.Status.ID
-	vnet.Status.ProvisioningState = from.Status.ProvisioningState
-
-	bits, err := json.Marshal(from.Spec.Properties)
-	if err != nil {
-		return err
-	}
-
-	var props VirtualNetworkSpecProperties
-	if err := json.Unmarshal(bits, &props); err != nil {
-		return err
-	}
-	vnet.Spec.Properties = &props
-	return nil
-}
 
 func init() {
 	SchemeBuilder.Register(&VirtualNetwork{}, &VirtualNetworkList{})

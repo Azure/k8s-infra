@@ -75,7 +75,7 @@ function fetch_tools {
     return 0
   fi
 
-  header_text "fetching tools"
+  header_text "==> fetching tools <=="
 
   mkdir -p "${tools_bin}"
   curl -fsL https://go.kubebuilder.io/dl/latest/${goos}/${goarch} | tar -xz -C /tmp/

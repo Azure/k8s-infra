@@ -6,12 +6,7 @@ Licensed under the MIT license.
 package v20191101
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/conversion"
-
-	v1 "github.com/Azure/k8s-infra/apis/microsoft.network/v1"
 )
 
 type (
@@ -71,45 +66,6 @@ type (
 		Items           []SecurityRule `json:"items"`
 	}
 )
-
-func (sr *SecurityRule) ConvertTo(dstRaw conversion.Hub) error {
-	to := dstRaw.(*v1.SecurityRule)
-	to.ObjectMeta = sr.ObjectMeta
-	to.Spec.APIVersion = "2019-11-01"
-	to.Status.ID = sr.Status.ID
-	to.Status.ProvisioningState = sr.Status.ProvisioningState
-	bits, err := json.Marshal(sr.Spec.Properties)
-	if err != nil {
-		return err
-	}
-
-	var props v1.SecurityRuleSpecProperties
-	if err := json.Unmarshal(bits, &props); err != nil {
-		return err
-	}
-
-	to.Spec.Properties = &props
-	return nil
-}
-
-func (sr *SecurityRule) ConvertFrom(src conversion.Hub) error {
-	from := src.(*v1.SecurityRule)
-	sr.ObjectMeta = from.ObjectMeta
-	sr.Status.ID = from.Status.ID
-	sr.Status.ProvisioningState = from.Status.ProvisioningState
-
-	bits, err := json.Marshal(from.Spec.Properties)
-	if err != nil {
-		return err
-	}
-
-	var props SecurityRuleSpecProperties
-	if err := json.Unmarshal(bits, &props); err != nil {
-		return err
-	}
-	sr.Spec.Properties = &props
-	return nil
-}
 
 func init() {
 	SchemeBuilder.Register(&SecurityRule{}, &SecurityRuleList{})

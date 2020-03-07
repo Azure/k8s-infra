@@ -73,8 +73,6 @@ type (
 	}
 )
 
-func (*RouteTable) Hub() {}
-
 func (rt *RouteTable) GetResourceGroupObjectRef() *azcorev1.KnownTypeReference {
 	return rt.Spec.ResourceGroupRef
 }

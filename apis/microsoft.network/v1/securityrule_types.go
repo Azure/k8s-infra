@@ -73,8 +73,6 @@ type (
 	}
 )
 
-func (*SecurityRule) Hub() {}
-
 func init() {
 	SchemeBuilder.Register(&SecurityRule{}, &SecurityRuleList{})
 }

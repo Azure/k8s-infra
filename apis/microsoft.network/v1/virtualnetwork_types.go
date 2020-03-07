@@ -127,8 +127,6 @@ type (
 	}
 )
 
-func (*VirtualNetwork) Hub() {}
-
 func (vnet *VirtualNetwork) GetResourceGroupObjectRef() *azcorev1.KnownTypeReference {
 	return vnet.Spec.ResourceGroupRef
 }

@@ -23,8 +23,6 @@ ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 TOOLS_DIR := hack/tools
 TOOLS_BIN_DIR := $(TOOLS_DIR)/bin
 
-export PATH := $(TOOLS_BIN_DIR):$(PATH)
-
 # Binaries.
 GOLANGCI_LINT := $(TOOLS_BIN_DIR)/golangci-lint
 CONTROLLER_GEN := $(TOOLS_BIN_DIR)/controller-gen
@@ -50,7 +48,7 @@ test test-int test-cover: export TEST_ASSET_KUBECTL = $(ROOT_DIR)/$(KUBECTL)
 test test-int test-cover: export TEST_ASSET_KUBE_APISERVER = $(ROOT_DIR)/$(KUBE_APISERVER)
 test test-int test-cover: export TEST_ASSET_ETCD = $(ROOT_DIR)/$(ETCD)
 
-test: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) fmt generate lint manifests ## Run tests
+test: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) fmt lint header-check generate manifests ## Run tests
 	go test -v ./...
 
 test-int: .env $(KUBECTL) $(KUBE_APISERVER) $(ETCD) fmt generate lint manifests ## Run integration tests
@@ -103,7 +101,7 @@ lint-full: $(GOLANGCI_LINT) ## Run slower linters to detect possible issues
 	$(GOLANGCI_LINT) run -v --fast=false --timeout 5m
 
 .PHONY: build
-build: generate fmt ## Build manager binary
+build: fmt ## Build manager binary
 	go build -o bin/manager main.go
 
 $(TLS_CERT_PATH): $(CFSSL) $(CFSSLJSON) $(MKBUNDLE) ## Generate local certificates so the webhooks will run
@@ -158,6 +156,10 @@ fmt: ## Run go fmt against code
 .PHONY: vet
 vet: ## Run go vet against code
 	go vet ./...
+
+.PHONY: header-check
+header-check:
+	./scripts/verify_boilerplate.sh
 
 .PHONY: generate
 generate: $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code

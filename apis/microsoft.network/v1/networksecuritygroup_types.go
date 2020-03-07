@@ -71,8 +71,6 @@ type (
 	}
 )
 
-func (*NetworkSecurityGroup) Hub() {}
-
 func (nsg *NetworkSecurityGroup) GetResourceGroupObjectRef() *azcorev1.KnownTypeReference {
 	return nsg.Spec.ResourceGroupRef
 }
