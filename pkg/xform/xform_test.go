@@ -2,6 +2,7 @@ package xform
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/onsi/gomega"
@@ -42,6 +43,13 @@ func TestARMConverter_ToResource(t *testing.T) {
 		Namespace: group.Namespace,
 	}
 
+	routeTable.Spec.Properties.RouteRefs = []azcorev1.KnownTypeReference{
+		{
+			Name:      route.Name,
+			Namespace: route.Namespace,
+		},
+	}
+
 	mc := new(MockClient)
 	mc.On("Get", mock.Anything, client.ObjectKey{
 		Namespace: route.Namespace,
@@ -49,6 +57,7 @@ func TestARMConverter_ToResource(t *testing.T) {
 	}, new(microsoftnetworkv1.Route)).Run(func(args mock.Arguments) {
 		dst := args.Get(2).(*microsoftnetworkv1.Route)
 		route.DeepCopyInto(dst)
+		dst.Status.ID = "sub/1234/blah"
 	}).Return(nil)
 
 	scheme := runtime.NewScheme()
@@ -59,6 +68,27 @@ func TestARMConverter_ToResource(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	g.Expect(res).ToNot(gomega.BeNil())
+
+	routeTableWithRouteIDs := struct {
+		Name       string
+		Location   string
+		APIVersion string
+		Type       string
+		Properties struct {
+			Routes []struct {
+				ID string `json:"id"`
+			}
+		}
+	}{}
+
+	bits, _ := json.Marshal(res)
+	g.Expect(json.Unmarshal(bits, &routeTableWithRouteIDs)).ToNot(gomega.HaveOccurred())
+	g.Expect(routeTableWithRouteIDs.Properties.Routes).To(gomega.HaveLen(1))
+	g.Expect(routeTableWithRouteIDs.Properties.Routes[0].ID).To(gomega.Equal("sub/1234/blah"))
+	g.Expect(routeTableWithRouteIDs.Name).To(gomega.Equal(routeTable.Name))
+	g.Expect(routeTableWithRouteIDs.Location).To(gomega.Equal(routeTable.Spec.Location))
+	g.Expect(routeTableWithRouteIDs.Type).To(gomega.Equal(routeTable.ResourceType()))
+	g.Expect(routeTableWithRouteIDs.APIVersion).To(gomega.Equal(routeTable.Spec.APIVersion))
 }
 
 func newRoute(nn *client.ObjectKey) *microsoftnetworkv1.Route {

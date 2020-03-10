@@ -56,6 +56,34 @@ func TestGetTypeReferenceData(t *testing.T) {
 	}))
 }
 
+func TestTypeReferenceLocation_JSONFields(t *testing.T) {
+	trl := &TypeReferenceLocation{
+		JSONFieldName:     "foo",
+		TemplateFieldName: "bar",
+		Path:              []string{"hello", "world"},
+		Group:             "group",
+		Kind:              "kind",
+		IsSlice:           false,
+	}
+	g := gomega.NewGomegaWithT(t)
+	g.Expect(trl.JSONFields()).To(gomega.Equal([]string{"hello", "world", "foo"}))
+	g.Expect(trl.Path).To(gomega.Equal([]string{"hello", "world"}))
+}
+
+func TestTypeReferenceLocation_TemplateFields(t *testing.T) {
+	trl := &TypeReferenceLocation{
+		JSONFieldName:     "foo",
+		TemplateFieldName: "bar",
+		Path:              []string{"hello", "world"},
+		Group:             "group",
+		Kind:              "kind",
+		IsSlice:           false,
+	}
+	g := gomega.NewGomegaWithT(t)
+	g.Expect(trl.TemplateFields()).To(gomega.Equal([]string{"hello", "world", "bar"}))
+	g.Expect(trl.Path).To(gomega.Equal([]string{"hello", "world"}))
+}
+
 func newLocalRouteTable(nn *client.ObjectKey) *RouteTable {
 	return &RouteTable{
 		TypeMeta: metav1.TypeMeta{

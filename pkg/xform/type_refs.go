@@ -112,3 +112,11 @@ func gatherStruct(t reflect.Type) ([]TypeReferenceLocation, error) {
 	}
 	return refs, nil
 }
+
+func (trl *TypeReferenceLocation) JSONFields() []string {
+	return append(trl.Path, trl.JSONFieldName)
+}
+
+func (trl *TypeReferenceLocation) TemplateFields() []string {
+	return append(trl.Path, trl.TemplateFieldName)
+}

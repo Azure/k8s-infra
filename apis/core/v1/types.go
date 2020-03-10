@@ -20,21 +20,21 @@ type (
 	// TypedReference is a reference to an object sans version
 	TypedReference struct {
 		// APIGroup is the group for the resource being referenced.
-		APIGroup string `json:"apiGroup" protobuf:"bytes,1,opt,name=apiGroup"`
+		APIGroup string `json:"apiGroup"`
 		// Kind is the type of resource being referenced
-		Kind string `json:"kind" protobuf:"bytes,2,opt,name=kind"`
+		Kind string `json:"kind"`
 		// Namespace is the namespace of resource being referenced.
-		NameSpace string `json:"name" protobuf:"bytes,3,opt,name=namespace"`
+		NameSpace string `json:"name"`
 		// Name is the name of resource being referenced
-		Name string `json:"name" protobuf:"bytes,4,opt,name=name"`
+		Name string `json:"namespace"`
 	}
 
 	// KnownTypeReference is a reference to an object which the type and version is already known
 	KnownTypeReference struct {
 		// Name is the name of resource being referenced
-		Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+		Name string `json:"name"`
 		// Namespace is the namespace of resource being referenced.
-		Namespace string `json:"name" protobuf:"bytes,2,opt,name=namespace"`
+		Namespace string `json:"namespace"`
 	}
 
 	// Grouped provides the resource group reference for a given resource

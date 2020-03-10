@@ -17,14 +17,18 @@ import (
 type (
 	ARMConverter struct {
 		Client client.Client
-		Schema *runtime.Scheme
+		Scheme *runtime.Scheme
+	}
+
+	idRef struct {
+		ID string `json:"id,omitempty"`
 	}
 )
 
-func NewARMConverter(client client.Client, schema *runtime.Scheme) *ARMConverter {
+func NewARMConverter(client client.Client, scheme *runtime.Scheme) *ARMConverter {
 	return &ARMConverter{
 		Client: client,
-		Schema: schema,
+		Scheme: scheme,
 	}
 }
 
@@ -56,16 +60,7 @@ func (m *ARMConverter) ToResource(ctx context.Context, obj azcorev1.MetaObject) 
 		return res, err
 	}
 
-	spec, ok, err := unstructured.NestedMap(unObj, "spec")
-	if err != nil {
-		return nil, fmt.Errorf("unable to extract next spec map with: %w", err)
-	}
-
-	if !ok {
-		return nil, fmt.Errorf("spec not found in object")
-	}
-
-	if err := setProperties(ctx, spec, obj); err != nil {
+	if err := m.setProperties(ctx, unObj, obj, res); err != nil {
 		return nil, fmt.Errorf("unable to set Properties with: %w", err)
 	}
 
@@ -75,7 +70,7 @@ func (m *ARMConverter) ToResource(ctx context.Context, obj azcorev1.MetaObject) 
 func (m *ARMConverter) checkAllOwnersSucceeded(ctx context.Context, obj azcorev1.MetaObject) (bool, error) {
 	// has owners, so check to see if those owners are ready
 	for _, ref := range obj.GetOwnerReferences() {
-		owner, err := m.Schema.New(schema.GroupVersionKind{
+		owner, err := m.Scheme.New(schema.GroupVersionKind{
 			Group:   obj.GetObjectKind().GroupVersionKind().Group,
 			Version: "v1",
 			Kind:    ref.Kind,
@@ -109,15 +104,196 @@ func (m *ARMConverter) checkAllOwnersSucceeded(ctx context.Context, obj azcorev1
 	return true, nil
 }
 
-func setProperties(ctx context.Context, spec map[string]interface{}, obj azcorev1.MetaObject) error {
-	_, err := GetTypeReferenceData(obj)
+func (m *ARMConverter) setProperties(ctx context.Context, unObj map[string]interface{}, obj azcorev1.MetaObject, res *zips.Resource) error {
+	refs, err := GetTypeReferenceData(obj)
 	if err != nil {
 		return fmt.Errorf("unable to gather type reference tags with: %w", err)
 	}
 
-	// use the refs to gather IDs for references
+	for _, ref := range refs {
+		var err error
+		if ref.IsSlice {
+			err = m.replaceSliceReferenceWithIDs(ctx, unObj, obj, ref)
+			if err != nil {
+				err = fmt.Errorf("failed to replace slice reference with IDs with: %w", err)
+			}
+		} else {
+			err = m.replaceReferenceWithID(ctx, unObj, obj, ref)
+			if err != nil {
+				err = fmt.Errorf("failed to replace reference with ID with: %w", err)
+			}
+		}
 
-	// replace the azcorev1.KnownReferences with the ID references in the unstructured spec for template generation
+		if err != nil {
+			return err
+		}
+	}
+
+	unProps, _, err := unstructured.NestedMap(unObj, "spec", "properties")
+	if err != nil {
+		return fmt.Errorf("unable to fetch unstructured obj.spec.properties with: %w", err)
+	}
+
+	var raw json.RawMessage
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unProps, &raw); err != nil {
+		return fmt.Errorf("unable to marshal unstructured properties to json with: %w", err)
+	}
+
+	res.Properties = raw
+	return nil
+}
+
+func (m *ARMConverter) replaceReferenceWithID(ctx context.Context, unObj map[string]interface{}, obj azcorev1.MetaObject, ref TypeReferenceLocation) error {
+	unRef, found, err := unstructured.NestedMap(unObj, ref.JSONFields()...)
+	if err != nil {
+		return fmt.Errorf("unable to find path %v with: %w", ref.JSONFields(), err)
+	}
+
+	if !found {
+		// ref was not found, no need to replace it
+		return nil
+	}
+
+	// remove the KnownTypeReference
+	unstructured.RemoveNestedField(unObj, ref.JSONFields()...)
+
+	var knownTypeRef azcorev1.KnownTypeReference
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unRef, &knownTypeRef); err != nil {
+		return fmt.Errorf("unable to build KnownTypeReference from unstructured with: %w", err)
+	}
+
+	if knownTypeRef.Name == "" {
+		// name of the reference is not set, so we will ignore it
+		return nil
+	}
+
+	if knownTypeRef.Namespace == "" {
+		// default to the current object's namespace if not specified on the reference
+		knownTypeRef.Namespace = obj.GetNamespace()
+	}
+
+	nn := client.ObjectKey{
+		Name:      knownTypeRef.Name,
+		Namespace: knownTypeRef.Namespace,
+	}
+
+	gvk := schema.GroupVersionKind{
+		Group:   obj.GetObjectKind().GroupVersionKind().Group,
+		Version: "v1",
+		Kind:    ref.Kind,
+	}
+
+	refObj, err := m.Scheme.New(gvk)
+	if err != nil {
+		return fmt.Errorf("unable to find gvk for ref %v with: %w", ref, err)
+	}
+
+	if err := m.Client.Get(ctx, nn, refObj); err != nil {
+		return fmt.Errorf("unable to fetch object %v with: %w", nn, err)
+	}
+
+	unRefObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(refObj)
+	if err != nil {
+		return fmt.Errorf("unable to convert refObj to unstructured with: %w", err)
+	}
+
+	id, found, err := unstructured.NestedString(unRefObj, "status", "id")
+	if err != nil {
+		return fmt.Errorf("unable to find unRefObj.status.id with: %v", err)
+	}
+
+	if found {
+		idMap := map[string]interface{}{
+			"id": id,
+		}
+		if err := unstructured.SetNestedMap(unObj, idMap, ref.TemplateFields()...); err != nil {
+			return fmt.Errorf("unable to set ID map for reference %v with: %w", ref, err)
+		}
+	}
+
+	return nil
+}
+
+func (m *ARMConverter) replaceSliceReferenceWithIDs(ctx context.Context, unObj map[string]interface{}, obj azcorev1.MetaObject, ref TypeReferenceLocation) error {
+	unRef, found, err := unstructured.NestedSlice(unObj, ref.JSONFields()...)
+	if err != nil {
+		return fmt.Errorf("unable to find path %v with: %w", ref.JSONFields(), err)
+	}
+
+	if !found {
+		// ref was not found, no need to replace it
+		return nil
+	}
+
+	// remove the KnownTypeReference
+	unstructured.RemoveNestedField(unObj, ref.JSONFields()...)
+
+	var knownTypeRefsMap map[string][]azcorev1.KnownTypeReference
+	unRefMap := map[string]interface{}{
+		"ktrs": unRef,
+	}
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unRefMap, &knownTypeRefsMap); err != nil {
+		return fmt.Errorf("unable to build KnownTypeReference from unstructured with: %w", err)
+	}
+
+	var ids []interface{}
+	knownTypeRefs := knownTypeRefsMap["ktrs"]
+	for _, ktr := range knownTypeRefs {
+		if ktr.Name == "" {
+			// name of the reference is not set, so we will ignore it
+			continue
+		}
+
+		if ktr.Namespace == "" {
+			// default to the current object's namespace if not specified on the reference
+			ktr.Namespace = obj.GetNamespace()
+		}
+
+		nn := client.ObjectKey{
+			Name:      ktr.Name,
+			Namespace: ktr.Namespace,
+		}
+
+		gvk := schema.GroupVersionKind{
+			Group:   obj.GetObjectKind().GroupVersionKind().Group,
+			Version: "v1",
+			Kind:    ref.Kind,
+		}
+
+		refObj, err := m.Scheme.New(gvk)
+		if err != nil {
+			return fmt.Errorf("unable to find gvk for ref %v with: %w", ref, err)
+		}
+
+		if err := m.Client.Get(ctx, nn, refObj); err != nil {
+			return fmt.Errorf("unable to fetch object %v with: %w", nn, err)
+		}
+
+		unRefObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(refObj)
+		if err != nil {
+			return fmt.Errorf("unable to convert refObj to unstructured with: %w", err)
+		}
+
+		id, found, err := unstructured.NestedString(unRefObj, "status", "id")
+		if err != nil {
+			return fmt.Errorf("unable to find unRefObj.status.id with: %v", err)
+		}
+
+		if found {
+			unId, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&idRef{
+				ID:id,
+			})
+
+			if err != nil {
+				return fmt.Errorf("unable to convert idRef to unstructured with: %w", err)
+			}
+			ids = append(ids, unId)
+		}
+	}
+
+	if err := unstructured.SetNestedSlice(unObj, ids, ref.TemplateFields()...); err != nil {
+		return fmt.Errorf("unable to set nested slice of IDs with: %w", err)
+	}
 
 	return nil
 }
