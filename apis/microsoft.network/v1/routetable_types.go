@@ -6,12 +6,9 @@ Licensed under the MIT license.
 package v1
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	azcorev1 "github.com/Azure/k8s-infra/apis/core/v1"
-	"github.com/Azure/k8s-infra/pkg/zips"
 )
 
 type (
@@ -73,49 +70,12 @@ type (
 	}
 )
 
+func (rt *RouteTable) ResourceType() string {
+	return "Microsoft.Network/routeTables"
+}
+
 func (rt *RouteTable) GetResourceGroupObjectRef() *azcorev1.KnownTypeReference {
 	return rt.Spec.ResourceGroupRef
-}
-
-func (rt *RouteTable) ToResource() (zips.Resource, error) {
-	rgName := ""
-	if rt.Spec.ResourceGroupRef != nil {
-		rgName = rt.Spec.ResourceGroupRef.Name
-	}
-
-	res := zips.Resource{
-		ID:                rt.Status.ID,
-		DeploymentID:      rt.Status.DeploymentID,
-		Type:              "Microsoft.Network/routeTables",
-		ResourceGroup:     rgName,
-		Name:              rt.Name,
-		APIVersion:        rt.Spec.APIVersion,
-		Location:          rt.Spec.Location,
-		Tags:              rt.Spec.Tags,
-		ProvisioningState: zips.ProvisioningState(rt.Status.ProvisioningState),
-	}
-
-	bits, err := json.Marshal(rt.Spec.Properties)
-	if err != nil {
-		return res, err
-	}
-	res.Properties = bits
-
-	return *res.SetAnnotations(rt.Annotations), nil
-}
-
-func (rt *RouteTable) FromResource(res zips.Resource) error {
-	rt.Status.ID = res.ID
-	rt.Status.DeploymentID = res.DeploymentID
-	rt.Status.ProvisioningState = string(res.ProvisioningState)
-	rt.Spec.Tags = res.Tags
-
-	var props RouteTableSpecProperties
-	if err := json.Unmarshal(res.Properties, &props); err != nil {
-		return err
-	}
-	rt.Spec.Properties = &props
-	return nil
 }
 
 func init() {

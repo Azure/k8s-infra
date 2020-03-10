@@ -5,7 +5,18 @@ Licensed under the MIT license.
 
 package v1
 
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+)
+
 type (
+	MetaObject interface {
+		runtime.Object
+		metav1.Object
+		ResourceType() string
+	}
+
 	// TypedReference is a reference to an object sans version
 	TypedReference struct {
 		// APIGroup is the group for the resource being referenced.
