@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestToPackages(t *testing.T) {
+func TestToNodes(t *testing.T) {
 	type args struct {
 		resourcesSchema *gojsonschema.SubSchema
 		opts            []BuilderOption
@@ -44,11 +44,11 @@ func TestToPackages(t *testing.T) {
 			arg := tt.argsFactory(t)
 			got, err := ToNodes(context.TODO(), arg.resourcesSchema.ItemsChildren[0], arg.opts...)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ToPackages() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ToNodes() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ToPackages() got = %+v, want %v", got, tt.want)
+				t.Errorf("ToNodes() got = %+v, want %v", got, tt.want)
 			}
 		})
 	}

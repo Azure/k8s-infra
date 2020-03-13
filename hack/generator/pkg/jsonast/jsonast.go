@@ -69,7 +69,7 @@ func WithTypeHandler(schemaType SchemaType, handler TypeHandler) BuilderOption {
 	}
 }
 
-/* ToPackages takes in the resources section of the Azure deployment template schema and returns golang AST Packages
+/* ToNodes takes in the resources section of the Azure deployment template schema and returns golang AST Packages
    containing the types described in the schema which match the {resource_type}/{version} filters provided.
 
 		The schema we are working with is something like the following (in yaml for brevity):
@@ -95,7 +95,7 @@ func WithTypeHandler(schemaType SchemaType, handler TypeHandler) BuilderOption {
 		allOf acts like composition which composites each schema from the child oneOf with the base reference from allOf.
 */
 func ToNodes(ctx context.Context, schema *gojsonschema.SubSchema, opts ...BuilderOption) ([]ast.Node, error) {
-	ctx, span := tab.StartSpan(ctx, "ToPackages")
+	ctx, span := tab.StartSpan(ctx, "ToNodes")
 	defer span.End()
 
 	cfg := &BuilderConfig{

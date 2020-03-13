@@ -36,7 +36,7 @@ func NewGenCommand() (*cobra.Command, error) {
 				}
 			}
 
-			_, err = jsonast.ToPackages(ctx, resourcesSchema, jsonast.WithFilters(viper.GetStringSlice("resources")))
+			_, err = jsonast.ToNodes(ctx, resourcesSchema, jsonast.WithFilters(viper.GetStringSlice("resources")))
 
 			if err != nil {
 				fmt.Println(err)
