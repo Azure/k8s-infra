@@ -48,6 +48,10 @@ type ResourceGroupList struct {
 	Items           []ResourceGroup `json:"items"`
 }
 
+func (rt *ResourceGroup) ResourceType() string {
+	return "Microsoft.Resources/resourceGroups"
+}
+
 func init() {
 	SchemeBuilder.Register(&ResourceGroup{}, &ResourceGroupList{})
 }

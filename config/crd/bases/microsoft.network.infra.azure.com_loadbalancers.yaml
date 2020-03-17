@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.2.4
+    controller-gen.kubebuilder.io/version: v0.2.6-0.20200226180227-d6efdcdd90e2
   creationTimestamp: null
   name: loadbalancers.microsoft.network.infra.azure.com
 spec:
@@ -35,6 +35,111 @@ spec:
             type: object
           spec:
             description: LoadBalancerSpec defines the desired state of LoadBalancer
+            properties:
+              apiVersion:
+                type: string
+              groupRef:
+                description: ResourceGroupRef is the Azure Resource Group the VirtualNetwork
+                  resides within
+                properties:
+                  name:
+                    description: Name is the name of resource being referenced
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of resource being referenced.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              location:
+                description: Location of the VNET in Azure
+                type: string
+              properties:
+                description: Properties of the Virtual Network
+                properties:
+                  backendAddressPools:
+                    items:
+                      description: KnownTypeReference is a reference to an object
+                        which the type and version is already known
+                      properties:
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced.
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
+                    type: array
+                  frontendIPConfigurationRefs:
+                    items:
+                      description: KnownTypeReference is a reference to an object
+                        which the type and version is already known
+                      properties:
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced.
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
+                    type: array
+                  inboundNatPoolRefs:
+                    items:
+                      description: KnownTypeReference is a reference to an object
+                        which the type and version is already known
+                      properties:
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced.
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
+                    type: array
+                  loadBalancingRuleRefs:
+                    items:
+                      description: KnownTypeReference is a reference to an object
+                        which the type and version is already known
+                      properties:
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced.
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
+                    type: array
+                type: object
+              sku:
+                enum:
+                - Basic
+                - Standard
+                type: string
+              tags:
+                additionalProperties:
+                  type: string
+                description: Tags are user defined key value pairs
+                type: object
+            required:
+            - groupRef
+            - location
             type: object
           status:
             description: LoadBalancerStatus defines the observed state of LoadBalancer
@@ -71,42 +176,19 @@ spec:
           spec:
             description: LoadBalancerSpec defines the desired state of LoadBalancer
             properties:
-              group:
-                description: ResourceGroup is the Azure Resource Group the VirtualNetwork
+              groupRef:
+                description: ResourceGroupRef is the Azure Resource Group the VirtualNetwork
                   resides within
                 properties:
-                  apiVersion:
-                    description: API version of the referent.
-                    type: string
-                  fieldPath:
-                    description: 'If referring to a piece of an object instead of
-                      an entire object, this string should contain a valid JSON/Go
-                      field access statement, such as desiredState.manifest.containers[2].
-                      For example, if the object reference is to a container within
-                      a pod, this would take on a value like: "spec.containers{name}"
-                      (where "name" refers to the name of the container that triggered
-                      the event) or if no container name is specified "spec.containers[2]"
-                      (container with index 2 in this pod). This syntax is chosen
-                      only to have some well-defined way of referencing a part of
-                      an object. TODO: this design is not final and this field is
-                      subject to change in the future.'
-                    type: string
-                  kind:
-                    description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                    type: string
                   name:
-                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                    description: Name is the name of resource being referenced
                     type: string
                   namespace:
-                    description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                    description: Namespace is the namespace of resource being referenced.
                     type: string
-                  resourceVersion:
-                    description: 'Specific resourceVersion to which this reference
-                      is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                    type: string
-                  uid:
-                    description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                    type: string
+                required:
+                - name
+                - namespace
                 type: object
               location:
                 description: Location of the VNET in Azure
@@ -116,40 +198,70 @@ spec:
                 properties:
                   backendAddressPools:
                     items:
+                      description: KnownTypeReference is a reference to an object
+                        which the type and version is already known
                       properties:
-                        id:
-                          type: string
                         name:
+                          description: Name is the name of resource being referenced
                           type: string
-                        properties:
-                          properties:
-                            backendIPConfigurations:
-                              items:
-                                properties:
-                                  name:
-                                    type: string
-                                  properties:
-                                    properties:
-                                      primary:
-                                        type: boolean
-                                      privateIPAddress:
-                                        type: string
-                                      privateIPAddressVersion:
-                                        enum:
-                                        - IPv4
-                                        - IPv6
-                                        type: string
-                                      privateIPAllocationMethod:
-                                        enum:
-                                        - Dynamic
-                                        - Static
-                                        type: string
-                                    type: object
-                                type: object
-                              type: array
-                          type: object
-                        provisioningState:
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced.
                           type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
+                    type: array
+                  frontendIPConfigurationRefs:
+                    items:
+                      description: KnownTypeReference is a reference to an object
+                        which the type and version is already known
+                      properties:
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced.
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
+                    type: array
+                  inboundNatPoolRefs:
+                    items:
+                      description: KnownTypeReference is a reference to an object
+                        which the type and version is already known
+                      properties:
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced.
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
+                    type: array
+                  loadBalancingRuleRefs:
+                    items:
+                      description: KnownTypeReference is a reference to an object
+                        which the type and version is already known
+                      properties:
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced.
+                          type: string
+                      required:
+                      - name
+                      - namespace
                       type: object
                     type: array
                 type: object
@@ -164,7 +276,7 @@ spec:
                 description: Tags are user defined key value pairs
                 type: object
             required:
-            - group
+            - groupRef
             - location
             type: object
           status:

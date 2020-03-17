@@ -6,20 +6,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.6-0.20200226180227-d6efdcdd90e2
   creationTimestamp: null
-  name: networksecuritygroups.microsoft.network.infra.azure.com
+  name: backendaddresspools.microsoft.network.infra.azure.com
 spec:
   group: microsoft.network.infra.azure.com
   names:
-    kind: NetworkSecurityGroup
-    listKind: NetworkSecurityGroupList
-    plural: networksecuritygroups
-    singular: networksecuritygroup
+    kind: BackendAddressPool
+    listKind: BackendAddressPoolList
+    plural: backendaddresspools
+    singular: backendaddresspool
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: NetworkSecurityGroup is the Schema for the networksecuritygroups
+        description: BackendAddressPool is the Schema for the backendaddresspools
           API
         properties:
           apiVersion:
@@ -38,27 +38,43 @@ spec:
             properties:
               apiVersion:
                 type: string
-              groupRef:
-                description: ResourceGroupRef is the Azure Resource Group the VirtualNetwork
-                  resides within
-                properties:
-                  name:
-                    description: Name is the name of resource being referenced
-                    type: string
-                  namespace:
-                    description: Namespace is the namespace of resource being referenced.
-                    type: string
-                required:
-                - name
-                - namespace
-                type: object
-              location:
-                description: Location of the VNET in Azure
-                type: string
               properties:
-                description: Properties of the Virtual Network
                 properties:
-                  securityRules:
+                  backendIPConfigurations:
+                    items:
+                      description: KnownTypeReference is a reference to an object
+                        which the type and version is already known
+                      properties:
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced.
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
+                    type: array
+                  loadBalancingRuleRefs:
+                    items:
+                      description: KnownTypeReference is a reference to an object
+                        which the type and version is already known
+                      properties:
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced.
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
+                    type: array
+                  outboundRuleRefs:
                     items:
                       description: KnownTypeReference is a reference to an object
                         which the type and version is already known
@@ -76,18 +92,9 @@ spec:
                       type: object
                     type: array
                 type: object
-              tags:
-                additionalProperties:
-                  type: string
-                description: Tags are user defined key value pairs
-                type: object
-            required:
-            - groupRef
-            - location
             type: object
           status:
-            description: NetworkSecurityGroupStatus defines the observed state of
-              NetworkSecurityGroup
+            description: BackendAddressPoolStatus defines the observed state of BackendAddressPool
             properties:
               deploymentId:
                 type: string
@@ -104,7 +111,7 @@ spec:
   - name: v20191101
     schema:
       openAPIV3Schema:
-        description: NetworkSecurityGroup is the Schema for the networksecuritygroups
+        description: BackendAddressPool is the Schema for the backendaddresspools
           API
         properties:
           apiVersion:
@@ -120,29 +127,44 @@ spec:
           metadata:
             type: object
           spec:
-            description: NetworkSecurityGroupSpec defines the desired state of NetworkSecurityGroup
             properties:
-              groupRef:
-                description: ResourceGroupRef is the Azure Resource Group the VirtualNetwork
-                  resides within
-                properties:
-                  name:
-                    description: Name is the name of resource being referenced
-                    type: string
-                  namespace:
-                    description: Namespace is the namespace of resource being referenced.
-                    type: string
-                required:
-                - name
-                - namespace
-                type: object
-              location:
-                description: Location of the VNET in Azure
-                type: string
               properties:
-                description: Properties of the Virtual Network
                 properties:
-                  securityRules:
+                  backendIPConfigurations:
+                    items:
+                      description: KnownTypeReference is a reference to an object
+                        which the type and version is already known
+                      properties:
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced.
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
+                    type: array
+                  loadBalancingRuleRefs:
+                    items:
+                      description: KnownTypeReference is a reference to an object
+                        which the type and version is already known
+                      properties:
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of resource being
+                            referenced.
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
+                    type: array
+                  outboundRuleRefs:
                     items:
                       description: KnownTypeReference is a reference to an object
                         which the type and version is already known
@@ -160,18 +182,9 @@ spec:
                       type: object
                     type: array
                 type: object
-              tags:
-                additionalProperties:
-                  type: string
-                description: Tags are user defined key value pairs
-                type: object
-            required:
-            - groupRef
-            - location
             type: object
           status:
-            description: NetworkSecurityGroupStatus defines the observed state of
-              NetworkSecurityGroup
+            description: BackendAddressPoolStatus defines the observed state of BackendAddressPool
             properties:
               id:
                 type: string

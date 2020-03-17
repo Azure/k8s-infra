@@ -84,7 +84,7 @@ const (
 	AcceptedProvisioningState  ProvisioningState = "Accepted"
 )
 
-func NewResourceGroupDeployment(subscriptionID, groupName, deploymentName string, resources ...Resource) (*Deployment, error) {
+func NewResourceGroupDeployment(subscriptionID, groupName, deploymentName string, resources ...*Resource) (*Deployment, error) {
 	return &Deployment{
 		Scope: ResourceGroupScope,
 		Properties: &DeploymentProperties{
@@ -108,7 +108,7 @@ func NewResourceGroupDeployment(subscriptionID, groupName, deploymentName string
 	}, nil
 }
 
-func NewSubscriptionDeployment(subscriptionID, location, deploymentName string, resources ...Resource) (*Deployment, error) {
+func NewSubscriptionDeployment(subscriptionID, location, deploymentName string, resources ...*Resource) (*Deployment, error) {
 	return &Deployment{
 		Scope: SubscriptionScope,
 		Properties: &DeploymentProperties{

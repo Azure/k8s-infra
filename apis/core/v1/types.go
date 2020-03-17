@@ -6,7 +6,14 @@ Licensed under the MIT license.
 package v1
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -57,6 +64,31 @@ type (
 		SetAPIGroup(string)
 	}
 )
+
+func SpecSignature(metaObject MetaObject) (string, error) {
+	// Convert the resource to unstructured for easier comparison later.
+	unObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(metaObject)
+	if err != nil {
+		return "", err
+	}
+
+	spec, ok, err := unstructured.NestedMap(unObj, "spec")
+	if err != nil {
+		return "", err
+	}
+
+	if !ok {
+		return "", errors.New("unable to find spec within unstructured MetaObject")
+	}
+
+	bits, err := json.Marshal(spec)
+	if err != nil {
+		return "", fmt.Errorf("unable to marshal spec of unstructured MetaObject with: %w", err)
+	}
+
+	hash := sha256.Sum256(bits)
+	return hex.EncodeToString(hash[:]), nil
+}
 
 func (tr TypedReference) GetNamespace() string {
 	return tr.NameSpace

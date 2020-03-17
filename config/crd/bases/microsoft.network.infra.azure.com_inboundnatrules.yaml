@@ -6,20 +6,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.6-0.20200226180227-d6efdcdd90e2
   creationTimestamp: null
-  name: routes.microsoft.network.infra.azure.com
+  name: inboundnatrules.microsoft.network.infra.azure.com
 spec:
   group: microsoft.network.infra.azure.com
   names:
-    kind: Route
-    listKind: RouteList
-    plural: routes
-    singular: route
+    kind: InboundNatRule
+    listKind: InboundNatRuleList
+    plural: inboundnatrules
+    singular: inboundnatrule
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Route is the Schema for the routes API
+        description: InboundNatRule is the Schema for the inboundnatrules API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -34,29 +34,33 @@ spec:
           metadata:
             type: object
           spec:
-            description: RouteSpec defines the desired state of Route
+            description: InboundNatRuleSpec defines the desired state of InboundNatRule
             properties:
               apiVersion:
                 type: string
               properties:
-                description: Properties of the subnet
+                description: Properties of the Virtual Network
                 properties:
-                  addressPrefix:
-                    type: string
-                  nextHopIpAddress:
-                    type: string
-                  nextHopType:
+                  backendPort:
+                    type: integer
+                  enableFloatingIP:
+                    type: boolean
+                  enableTcpReset:
+                    type: boolean
+                  frontendPort:
+                    type: integer
+                  idleTimeoutInMinutes:
+                    type: integer
+                  protocol:
                     enum:
-                    - Internet
-                    - None
-                    - VirtualAppliance
-                    - VirtualNetworkGateway
-                    - VnetLocal
+                    - All
+                    - Tcp
+                    - Udp
                     type: string
                 type: object
             type: object
           status:
-            description: RouteStatus defines the observed state of Route
+            description: InboundNatRuleStatus defines the observed state of InboundNatRule
             properties:
               deploymentId:
                 type: string
@@ -73,7 +77,7 @@ spec:
   - name: v20191101
     schema:
       openAPIV3Schema:
-        description: Route is the Schema for the routes API
+        description: InboundNatRule is the Schema for the inboundnatrules API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -88,27 +92,31 @@ spec:
           metadata:
             type: object
           spec:
-            description: RouteSpec defines the desired state of Route
+            description: InboundNatRuleSpec defines the desired state of InboundNatRule
             properties:
               properties:
-                description: Properties of the subnet
+                description: Properties of the Virtual Network
                 properties:
-                  addressPrefix:
-                    type: string
-                  nextHopIpAddress:
-                    type: string
-                  nextHopType:
+                  backendPort:
+                    type: integer
+                  enableFloatingIP:
+                    type: boolean
+                  enableTcpReset:
+                    type: boolean
+                  frontendPort:
+                    type: integer
+                  idleTimeoutInMinutes:
+                    type: integer
+                  protocol:
                     enum:
-                    - Internet
-                    - None
-                    - VirtualAppliance
-                    - VirtualNetworkGateway
-                    - VnetLocal
+                    - All
+                    - Tcp
+                    - Udp
                     type: string
                 type: object
             type: object
           status:
-            description: RouteStatus defines the observed state of Route
+            description: InboundNatRuleStatus defines the observed state of InboundNatRule
             properties:
               id:
                 type: string

@@ -1,3 +1,8 @@
+/*
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT license.
+*/
+
 package xform
 
 import (
@@ -60,11 +65,69 @@ func (m *ARMConverter) ToResource(ctx context.Context, obj azcorev1.MetaObject) 
 		return res, err
 	}
 
-	if err := m.setProperties(ctx, unObj, obj, res); err != nil {
+	if err := m.setResourceProperties(ctx, unObj, obj, res); err != nil {
 		return nil, fmt.Errorf("unable to set Properties with: %w", err)
 	}
 
 	return res, nil
+}
+
+func (m *ARMConverter) FromResource(res *zips.Resource, obj azcorev1.MetaObject) error {
+	unObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	if err != nil {
+		return fmt.Errorf("unable to convert to unstructured during ARM conversion: %w", err)
+	}
+
+	if err := m.setObjectStatus(res, unObj); err != nil {
+		return fmt.Errorf("unable to set object status fields with: %w", err)
+	}
+
+	//if err := m.setObjectSpec(res, obj); err != nil {
+	//	return fmt.Errorf("unable to set object spec fields with: %w", err)
+	//}
+
+	return runtime.DefaultUnstructuredConverter.FromUnstructured(unObj, obj)
+}
+
+//func (m *ARMConverter) setObjectSpec(res *zips.Resource, obj azcorev1.MetaObject) error {
+//	t := reflect.TypeOf(obj)
+//
+//	specField, found := t.FieldByName("Spec")
+//	if !found {
+//		return fmt.Errorf("unable to find Spec field on MetaObject %v", obj)
+//	}
+//
+//	valueField := reflect.ValueOf(specField)
+//	if valueField.Kind() != reflect.Struct {
+//		return fmt.Errorf("expected Spec field value to be a struct %v", valueField)
+//	}
+//
+//	bits, err := json.Marshal(res.Properties)
+//	if err != nil {
+//		return fmt.Errorf("unable to json.Marshal res.Properties with: %w", err)
+//	}
+//
+//	if err := json.Unmarshal(bits, valueField.Pointer()); err != nil {
+//		return fmt.Errorf("uanble to json.Unmarshal res.Properites into Spec field with: %w", err)
+//	}
+//
+//	return nil
+//}
+
+func (m *ARMConverter) setObjectStatus(res *zips.Resource, unObj map[string]interface{}) error {
+	if err := unstructured.SetNestedField(unObj, res.ID, "status", "id"); err != nil {
+		return fmt.Errorf("unable to set status.id with: %w", err)
+	}
+
+	if err := unstructured.SetNestedField(unObj, res.DeploymentID, "status", "deploymentId"); err != nil {
+		return fmt.Errorf("unable to set status.deploymentId with: %w", err)
+	}
+
+	if err := unstructured.SetNestedField(unObj, string(res.ProvisioningState), "status", "provisioningState"); err != nil {
+		return fmt.Errorf("unable to set status.provisioningState with: %w", err)
+	}
+
+	return nil
 }
 
 func (m *ARMConverter) checkAllOwnersSucceeded(ctx context.Context, obj azcorev1.MetaObject) (bool, error) {
@@ -89,6 +152,10 @@ func (m *ARMConverter) checkAllOwnersSucceeded(ctx context.Context, obj azcorev1
 		}
 
 		unOwn, err := runtime.DefaultUnstructuredConverter.ToUnstructured(owner)
+		if err != nil {
+			return false, fmt.Errorf("unable to convert to unstructured with: %w", err)
+		}
+
 		state, ok, err := unstructured.NestedString(unOwn, "status", "provisioningState")
 		if err != nil {
 			return false, fmt.Errorf("error fetching unstructured provisioningState with: %w", err)
@@ -104,7 +171,7 @@ func (m *ARMConverter) checkAllOwnersSucceeded(ctx context.Context, obj azcorev1
 	return true, nil
 }
 
-func (m *ARMConverter) setProperties(ctx context.Context, unObj map[string]interface{}, obj azcorev1.MetaObject, res *zips.Resource) error {
+func (m *ARMConverter) setResourceProperties(ctx context.Context, unObj map[string]interface{}, obj azcorev1.MetaObject, res *zips.Resource) error {
 	refs, err := GetTypeReferenceData(obj)
 	if err != nil {
 		return fmt.Errorf("unable to gather type reference tags with: %w", err)
@@ -129,9 +196,13 @@ func (m *ARMConverter) setProperties(ctx context.Context, unObj map[string]inter
 		}
 	}
 
-	unProps, _, err := unstructured.NestedMap(unObj, "spec", "properties")
+	unProps, found, err := unstructured.NestedMap(unObj, "spec", "properties")
 	if err != nil {
 		return fmt.Errorf("unable to fetch unstructured obj.spec.properties with: %w", err)
+	}
+
+	if !found {
+		return nil
 	}
 
 	var raw json.RawMessage
@@ -281,7 +352,7 @@ func (m *ARMConverter) replaceSliceReferenceWithIDs(ctx context.Context, unObj m
 
 		if found {
 			unId, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&idRef{
-				ID:id,
+				ID: id,
 			})
 
 			if err != nil {
@@ -342,6 +413,15 @@ func setTopLevelResourceFields(unObj map[string]interface{}, res *zips.Resource)
 
 	if !ok {
 		return fmt.Errorf("status not found in object")
+	}
+
+	state, ok, err := unstructured.NestedString(status, "provisioningState")
+	if err != nil {
+		return fmt.Errorf("unable to extract provisioningState from status with: %w", err)
+	}
+
+	if ok {
+		res.ProvisioningState = zips.ProvisioningState(state)
 	}
 
 	bits, err := json.Marshal(status)

@@ -1,3 +1,8 @@
+/*
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT license.
+*/
+
 package xform
 
 import (
@@ -33,7 +38,7 @@ func GetTypeReferenceData(obj azcorev1.MetaObject) ([]TypeReferenceLocation, err
 
 	propField, found := specField.Type.FieldByName("Properties")
 	if !found {
-		return nil, fmt.Errorf("GetTypeReferenceData could not find obj.Spec.Properties field")
+		return []TypeReferenceLocation{}, nil
 	}
 
 	refs, err := getResourceReferences(propField.Type)

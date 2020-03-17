@@ -34,6 +34,8 @@ type (
 	}
 
 	// +kubebuilder:object:root=true
+	// +kubebuilder:subresource:status
+	// +kubebuilder:storageversion
 
 	// BackendAddressPool is the Schema for the backendaddresspools API
 	BackendAddressPool struct {

@@ -70,14 +70,6 @@ type (
 	}
 )
 
-func (rt *RouteTable) ResourceType() string {
-	return "Microsoft.Network/routeTables"
-}
-
-func (rt *RouteTable) GetResourceGroupObjectRef() *azcorev1.KnownTypeReference {
-	return rt.Spec.ResourceGroupRef
-}
-
 func init() {
 	SchemeBuilder.Register(&RouteTable{}, &RouteTableList{})
 }

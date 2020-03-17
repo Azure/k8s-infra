@@ -6,20 +6,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.6-0.20200226180227-d6efdcdd90e2
   creationTimestamp: null
-  name: routes.microsoft.network.infra.azure.com
+  name: securityrules.microsoft.network.infra.azure.com
 spec:
   group: microsoft.network.infra.azure.com
   names:
-    kind: Route
-    listKind: RouteList
-    plural: routes
-    singular: route
+    kind: SecurityRule
+    listKind: SecurityRuleList
+    plural: securityrules
+    singular: securityrule
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Route is the Schema for the routes API
+        description: SecurityRule is the Schema for the securityrules API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -34,29 +34,59 @@ spec:
           metadata:
             type: object
           spec:
-            description: RouteSpec defines the desired state of Route
+            description: SecurityRuleSpec defines the desired state of SecurityRule
             properties:
               apiVersion:
                 type: string
               properties:
-                description: Properties of the subnet
                 properties:
-                  addressPrefix:
-                    type: string
-                  nextHopIpAddress:
-                    type: string
-                  nextHopType:
+                  access:
                     enum:
-                    - Internet
-                    - None
-                    - VirtualAppliance
-                    - VirtualNetworkGateway
-                    - VnetLocal
+                    - Allow
+                    - Deny
                     type: string
+                  description:
+                    type: string
+                  destinationAddressPrefix:
+                    type: string
+                  destinationPortRange:
+                    type: string
+                  destinationPortRanges:
+                    items:
+                      type: string
+                    type: array
+                  direction:
+                    enum:
+                    - Inbound
+                    - Outbound
+                    type: string
+                  priority:
+                    type: integer
+                  protocol:
+                    enum:
+                    - '*'
+                    - Ah
+                    - Esp
+                    - Icmp
+                    - Tcp
+                    - Udp
+                    type: string
+                  provisioningState:
+                    type: string
+                  sourceAddressPrefix:
+                    type: string
+                  sourceAddressPrefixes:
+                    type: string
+                  sourcePortRange:
+                    type: string
+                  sourcePortRanges:
+                    items:
+                      type: string
+                    type: array
                 type: object
             type: object
           status:
-            description: RouteStatus defines the observed state of Route
+            description: SecurityRuleStatus defines the observed state of SecurityRule
             properties:
               deploymentId:
                 type: string
@@ -73,7 +103,7 @@ spec:
   - name: v20191101
     schema:
       openAPIV3Schema:
-        description: Route is the Schema for the routes API
+        description: SecurityRule is the Schema for the securityrules API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -88,27 +118,57 @@ spec:
           metadata:
             type: object
           spec:
-            description: RouteSpec defines the desired state of Route
+            description: SecurityRuleSpec defines the desired state of SecurityRule
             properties:
               properties:
-                description: Properties of the subnet
                 properties:
-                  addressPrefix:
-                    type: string
-                  nextHopIpAddress:
-                    type: string
-                  nextHopType:
+                  access:
                     enum:
-                    - Internet
-                    - None
-                    - VirtualAppliance
-                    - VirtualNetworkGateway
-                    - VnetLocal
+                    - Allow
+                    - Deny
                     type: string
+                  description:
+                    type: string
+                  destinationAddressPrefix:
+                    type: string
+                  destinationPortRange:
+                    type: string
+                  destinationPortRanges:
+                    items:
+                      type: string
+                    type: array
+                  direction:
+                    enum:
+                    - Inbound
+                    - Outbound
+                    type: string
+                  priority:
+                    type: integer
+                  protocol:
+                    enum:
+                    - '*'
+                    - Ah
+                    - Esp
+                    - Icmp
+                    - Tcp
+                    - Udp
+                    type: string
+                  provisioningState:
+                    type: string
+                  sourceAddressPrefix:
+                    type: string
+                  sourceAddressPrefixes:
+                    type: string
+                  sourcePortRange:
+                    type: string
+                  sourcePortRanges:
+                    items:
+                      type: string
+                    type: array
                 type: object
             type: object
           status:
-            description: RouteStatus defines the observed state of Route
+            description: SecurityRuleStatus defines the observed state of SecurityRule
             properties:
               id:
                 type: string

@@ -6,20 +6,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.6-0.20200226180227-d6efdcdd90e2
   creationTimestamp: null
-  name: routes.microsoft.network.infra.azure.com
+  name: outboundrules.microsoft.network.infra.azure.com
 spec:
   group: microsoft.network.infra.azure.com
   names:
-    kind: Route
-    listKind: RouteList
-    plural: routes
-    singular: route
+    kind: OutboundRule
+    listKind: OutboundRuleList
+    plural: outboundrules
+    singular: outboundrule
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Route is the Schema for the routes API
+        description: OutboundRule is the Schema for the outboundrules API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -34,29 +34,28 @@ spec:
           metadata:
             type: object
           spec:
-            description: RouteSpec defines the desired state of Route
+            description: OutboundRuleSpec defines the desired state of OutboundRule
             properties:
               apiVersion:
                 type: string
               properties:
-                description: Properties of the subnet
                 properties:
-                  addressPrefix:
-                    type: string
-                  nextHopIpAddress:
-                    type: string
-                  nextHopType:
+                  allocatedOutboundPorts:
+                    type: integer
+                  enableTcpReset:
+                    type: boolean
+                  idleTimeoutInMinutes:
+                    type: integer
+                  protocol:
                     enum:
-                    - Internet
-                    - None
-                    - VirtualAppliance
-                    - VirtualNetworkGateway
-                    - VnetLocal
+                    - All
+                    - Tcp
+                    - Udp
                     type: string
                 type: object
             type: object
           status:
-            description: RouteStatus defines the observed state of Route
+            description: OutboundRuleStatus defines the observed state of OutboundRule
             properties:
               deploymentId:
                 type: string
@@ -73,7 +72,7 @@ spec:
   - name: v20191101
     schema:
       openAPIV3Schema:
-        description: Route is the Schema for the routes API
+        description: OutboundRule is the Schema for the outboundrules API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -88,27 +87,26 @@ spec:
           metadata:
             type: object
           spec:
-            description: RouteSpec defines the desired state of Route
+            description: OutboundRuleSpec defines the desired state of OutboundRule
             properties:
               properties:
-                description: Properties of the subnet
                 properties:
-                  addressPrefix:
-                    type: string
-                  nextHopIpAddress:
-                    type: string
-                  nextHopType:
+                  allocatedOutboundPorts:
+                    type: integer
+                  enableTcpReset:
+                    type: boolean
+                  idleTimeoutInMinutes:
+                    type: integer
+                  protocol:
                     enum:
-                    - Internet
-                    - None
-                    - VirtualAppliance
-                    - VirtualNetworkGateway
-                    - VnetLocal
+                    - All
+                    - Tcp
+                    - Udp
                     type: string
                 type: object
             type: object
           status:
-            description: RouteStatus defines the observed state of Route
+            description: OutboundRuleStatus defines the observed state of OutboundRule
             properties:
               id:
                 type: string

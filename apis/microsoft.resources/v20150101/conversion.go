@@ -6,8 +6,6 @@ Licensed under the MIT license.
 package v20150101
 
 import (
-	"unsafe"
-
 	cvt "k8s.io/apimachinery/pkg/conversion"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
@@ -38,8 +36,6 @@ func (dst *ResourceGroup) ConvertFrom(srcRaw conversion.Hub) error {
 // Convert_v1_ResourceGroupSpec_To_v20150101_ResourceGroupSpec is required because we are unable to project MangedBy
 // into this version
 // noinspection GoSnakeCaseUsage
-func Convert_v1_ResourceGroupSpec_To_v20150101_ResourceGroupSpec(in *v1.ResourceGroupSpec, out *ResourceGroupSpec, _ cvt.Scope) error {
-	out.Location = in.Location
-	out.Tags = *(*map[string]string)(unsafe.Pointer(&in.Tags))
-	return nil
+func Convert_v1_ResourceGroupSpec_To_v20150101_ResourceGroupSpec(in *v1.ResourceGroupSpec, out *ResourceGroupSpec, s cvt.Scope) error {
+	return autoConvert_v1_ResourceGroupSpec_To_v20150101_ResourceGroupSpec(in, out, s)
 }

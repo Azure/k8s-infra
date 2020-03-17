@@ -48,7 +48,7 @@ test test-int test-cover: export TEST_ASSET_KUBECTL = $(ROOT_DIR)/$(KUBECTL)
 test test-int test-cover: export TEST_ASSET_KUBE_APISERVER = $(ROOT_DIR)/$(KUBE_APISERVER)
 test test-int test-cover: export TEST_ASSET_ETCD = $(ROOT_DIR)/$(ETCD)
 
-test: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) fmt lint header-check generate manifests ## Run tests
+test: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) fmt lint header-check manifests ## Run tests
 	go test -v ./...
 
 test-int: .env $(KUBECTL) $(KUBE_APISERVER) $(ETCD) fmt generate lint manifests ## Run integration tests
@@ -136,7 +136,7 @@ uninstall: manifests $(KUBECTL) $(KUSTOMIZE) ## Uninstall CRDs from a cluster
 	$(KUSTOMIZE) build config/crd | $(KUBECTL) delete -f -
 
 .PHONY: deploy
-deploy: generate manifests $(KUBECTL) $(KUSTOMIZE) docker-build docker-push ## Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+deploy: manifests $(KUBECTL) $(KUSTOMIZE) docker-build docker-push ## Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 	cd config/manager && $(ROOT_DIR)/$(TOOLS_BIN_DIR)/kustomize edit set image controller=$(REGISTRY)/${IMG}
 	$(KUSTOMIZE) build config/default | $(KUBECTL) apply -f -
 

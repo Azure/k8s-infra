@@ -6,12 +6,9 @@ Licensed under the MIT license.
 package v1
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	azcorev1 "github.com/Azure/k8s-infra/apis/core/v1"
-	"github.com/Azure/k8s-infra/pkg/zips"
 )
 
 // NetworkSecurityGroupSpec defines the desired state of NetworkSecurityGroup
@@ -70,51 +67,6 @@ type (
 		Items           []NetworkSecurityGroup `json:"items"`
 	}
 )
-
-func (nsg *NetworkSecurityGroup) GetResourceGroupObjectRef() *azcorev1.KnownTypeReference {
-	return nsg.Spec.ResourceGroupRef
-}
-
-func (nsg *NetworkSecurityGroup) ToResource() (zips.Resource, error) {
-	rgName := ""
-	if nsg.Spec.ResourceGroupRef != nil {
-		rgName = nsg.Spec.ResourceGroupRef.Name
-	}
-
-	res := zips.Resource{
-		ID:                nsg.Status.ID,
-		DeploymentID:      nsg.Status.DeploymentID,
-		Type:              "Microsoft.Network/networkSecurityGroups",
-		ResourceGroup:     rgName,
-		Name:              nsg.Name,
-		APIVersion:        nsg.Spec.APIVersion,
-		Location:          nsg.Spec.Location,
-		Tags:              nsg.Spec.Tags,
-		ProvisioningState: zips.ProvisioningState(nsg.Status.ProvisioningState),
-	}
-
-	bits, err := json.Marshal(nsg.Spec.Properties)
-	if err != nil {
-		return res, err
-	}
-	res.Properties = bits
-
-	return *res.SetAnnotations(nsg.Annotations), nil
-}
-
-func (nsg *NetworkSecurityGroup) FromResource(res zips.Resource) error {
-	nsg.Status.ID = res.ID
-	nsg.Status.DeploymentID = res.DeploymentID
-	nsg.Status.ProvisioningState = string(res.ProvisioningState)
-	nsg.Spec.Tags = res.Tags
-
-	var props NetworkSecurityGroupSpecProperties
-	if err := json.Unmarshal(res.Properties, &props); err != nil {
-		return err
-	}
-	nsg.Spec.Properties = &props
-	return nil
-}
 
 func init() {
 	SchemeBuilder.Register(&NetworkSecurityGroup{}, &NetworkSecurityGroupList{})

@@ -41,6 +41,8 @@ type (
 	}
 
 	// +kubebuilder:object:root=true
+	// +kubebuilder:subresource:status
+	// +kubebuilder:storageversion
 
 	// FrontendIPConfiguration is the Schema for the frontendipconfigurations API
 	FrontendIPConfiguration struct {

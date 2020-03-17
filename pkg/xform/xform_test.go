@@ -1,3 +1,8 @@
+/*
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT license.
+*/
+
 package xform
 
 import (
@@ -16,6 +21,7 @@ import (
 	microsoftnetworkv1 "github.com/Azure/k8s-infra/apis/microsoft.network/v1"
 	microsoftresourcesv1 "github.com/Azure/k8s-infra/apis/microsoft.resources/v1"
 	"github.com/Azure/k8s-infra/internal/test"
+	"github.com/Azure/k8s-infra/pkg/zips"
 )
 
 type (
@@ -23,8 +29,13 @@ type (
 		mock.Mock
 	}
 
-	MockStatusWriter struct {
-		mock.Mock
+	FakeRouteTableProperties struct {
+		DisableBGPRoutePropagation bool                  `json:"disableBGPRoutePropagation,omitempty"`
+		Routes                     []FakeRouteProperties `json:"routes,omitempty"`
+	}
+
+	FakeRouteProperties struct {
+		ID string `json:"id"`
 	}
 )
 
@@ -89,6 +100,68 @@ func TestARMConverter_ToResource(t *testing.T) {
 	g.Expect(routeTableWithRouteIDs.Location).To(gomega.Equal(routeTable.Spec.Location))
 	g.Expect(routeTableWithRouteIDs.Type).To(gomega.Equal(routeTable.ResourceType()))
 	g.Expect(routeTableWithRouteIDs.APIVersion).To(gomega.Equal(routeTable.Spec.APIVersion))
+}
+
+func TestARMConverter_FromResource(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = microsoftnetworkv1.AddToScheme(scheme)
+	mc := new(MockClient)
+	converter := NewARMConverter(mc, scheme)
+
+	randomName := test.RandomName("foo", 10)
+	nn := &client.ObjectKey{
+		Namespace: "default",
+		Name:      randomName,
+	}
+
+	group := newResourceGroup(nn)
+	route := newRoute(nn)
+	routeTable := newRouteTable(nn)
+	routeTable.Spec.ResourceGroupRef = &azcorev1.KnownTypeReference{
+		Name:      group.Name,
+		Namespace: group.Namespace,
+	}
+
+	routeTable.Spec.Properties.RouteRefs = []azcorev1.KnownTypeReference{
+		{
+			Name:      route.Name,
+			Namespace: route.Namespace,
+		},
+	}
+
+	props := &FakeRouteTableProperties{
+		DisableBGPRoutePropagation: routeTable.Spec.Properties.DisableBGPRoutePropagation,
+		Routes: []FakeRouteProperties{
+			{
+				ID: "fakeRouteID",
+			},
+		},
+	}
+
+	bits, err := json.Marshal(props)
+	g.Expect(err).ToNot(gomega.HaveOccurred())
+	resource := &zips.Resource{
+		ID:                "someID",
+		ProvisioningState: "Accepted",
+		ResourceGroup:     group.Name,
+		DeploymentID:      "someDeploymentID",
+		Name:              routeTable.Name,
+		Location:          routeTable.Spec.Location,
+		Type:              routeTable.ResourceType(),
+		APIVersion:        routeTable.Spec.APIVersion,
+		Properties:        bits,
+	}
+
+	err = converter.FromResource(resource, routeTable)
+	g.Expect(err).ToNot(gomega.HaveOccurred())
+	g.Expect(routeTable.Spec.Properties.DisableBGPRoutePropagation).To(gomega.Equal(routeTable.Spec.Properties.DisableBGPRoutePropagation))
+	g.Expect(routeTable.Spec.Properties.RouteRefs).To(gomega.HaveLen(1))
+	g.Expect(routeTable.Spec.Properties.RouteRefs[0]).To(gomega.Equal(azcorev1.KnownTypeReference{
+		Name:      route.Name,
+		Namespace: route.Namespace,
+	}))
 }
 
 func newRoute(nn *client.ObjectKey) *microsoftnetworkv1.Route {
@@ -190,15 +263,5 @@ func (mc *MockClient) Patch(ctx context.Context, obj runtime.Object, patch clien
 
 func (mc *MockClient) DeleteAllOf(ctx context.Context, obj runtime.Object, opts ...client.DeleteAllOfOption) error {
 	args := mc.Called(ctx, obj, opts)
-	return args.Error(0)
-}
-
-func (msw *MockStatusWriter) Update(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
-	args := msw.Called(ctx, obj, opts)
-	return args.Error(0)
-}
-
-func (msw *MockStatusWriter) Patch(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
-	args := msw.Called(ctx, obj, patch, opts)
 	return args.Error(0)
 }

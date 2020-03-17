@@ -6,12 +6,9 @@ Licensed under the MIT license.
 package v1
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	azcorev1 "github.com/Azure/k8s-infra/apis/core/v1"
-	"github.com/Azure/k8s-infra/pkg/zips"
 )
 
 type (
@@ -126,51 +123,6 @@ type (
 		Items           []VirtualNetwork `json:"items"`
 	}
 )
-
-func (vnet *VirtualNetwork) GetResourceGroupObjectRef() *azcorev1.KnownTypeReference {
-	return vnet.Spec.ResourceGroupRef
-}
-
-func (vnet *VirtualNetwork) ToResource() (zips.Resource, error) {
-	rgName := ""
-	if vnet.Spec.ResourceGroupRef != nil {
-		rgName = vnet.Spec.ResourceGroupRef.Name
-	}
-
-	res := zips.Resource{
-		ID:                vnet.Status.ID,
-		DeploymentID:      vnet.Status.DeploymentID,
-		Type:              "Microsoft.Network/virtualNetworks",
-		ResourceGroup:     rgName,
-		Name:              vnet.Name,
-		APIVersion:        vnet.Spec.APIVersion,
-		Location:          vnet.Spec.Location,
-		Tags:              vnet.Spec.Tags,
-		ProvisioningState: zips.ProvisioningState(vnet.Status.ProvisioningState),
-	}
-
-	bits, err := json.Marshal(vnet.Spec.Properties)
-	if err != nil {
-		return res, err
-	}
-	res.Properties = bits
-
-	return *res.SetAnnotations(vnet.Annotations), nil
-}
-
-func (vnet *VirtualNetwork) FromResource(res zips.Resource) error {
-	vnet.Status.ID = res.ID
-	vnet.Status.DeploymentID = res.DeploymentID
-	vnet.Status.ProvisioningState = string(res.ProvisioningState)
-	vnet.Spec.Tags = res.Tags
-
-	var props VirtualNetworkSpecProperties
-	if err := json.Unmarshal(res.Properties, &props); err != nil {
-		return err
-	}
-	vnet.Spec.Properties = &props
-	return nil
-}
 
 func init() {
 	SchemeBuilder.Register(&VirtualNetwork{}, &VirtualNetworkList{})
