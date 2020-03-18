@@ -35,29 +35,40 @@ func TestGetTypeReferenceData(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	g.Expect(refsData).ToNot(gomega.BeEmpty())
-	g.Expect(refsData[0]).To(gomega.Equal(TypeReferenceLocation{
-		Path:              []string{"spec", "properties"},
-		TemplateFieldName: "routes",
-		JSONFieldName:     "routeRefs",
-		Group:             "microsoft.network.infra.azure.com",
-		Kind:              "Route",
-		IsSlice:           true,
-	}))
-	g.Expect(refsData[1]).To(gomega.Equal(TypeReferenceLocation{
-		JSONFieldName:     "blahRefs",
-		TemplateFieldName: "blahs",
-		Path:              []string{"spec", "properties", "foo"},
-		Group:             "microsoft.network.infra.azure.com",
-		Kind:              "Blah",
-		IsSlice:           true,
-	}))
-	g.Expect(refsData[2]).To(gomega.Equal(TypeReferenceLocation{
-		JSONFieldName:     "bazzRef",
-		TemplateFieldName: "bazz",
-		Path:              []string{"spec", "properties", "foo"},
-		Group:             "microsoft.network.infra.azure.com",
-		Kind:              "Bazz",
-		IsSlice:           false,
+	g.Expect(refsData).To(gomega.HaveLen(4))
+	g.Expect(refsData).To(gomega.Equal([]TypeReferenceLocation{
+		{
+			JSONFieldName:     "embeddedBazzRef",
+			TemplateFieldName: "embeddedBazz",
+			Path:              []string{"spec", "properties"},
+			Group:             "microsoft.network.infra.azure.com",
+			Kind:              "Bazz",
+			IsSlice:           false,
+		},
+		{
+			Path:              []string{"spec", "properties"},
+			TemplateFieldName: "routes",
+			JSONFieldName:     "routeRefs",
+			Group:             "microsoft.network.infra.azure.com",
+			Kind:              "Route",
+			IsSlice:           true,
+		},
+		{
+			JSONFieldName:     "blahRefs",
+			TemplateFieldName: "blahs",
+			Path:              []string{"spec", "properties", "foo"},
+			Group:             "microsoft.network.infra.azure.com",
+			Kind:              "Blah",
+			IsSlice:           true,
+		},
+		{
+			JSONFieldName:     "bazzRef",
+			TemplateFieldName: "bazz",
+			Path:              []string{"spec", "properties", "foo"},
+			Group:             "microsoft.network.infra.azure.com",
+			Kind:              "Bazz",
+			IsSlice:           false,
+		},
 	}))
 }
 
@@ -89,6 +100,10 @@ func TestTypeReferenceLocation_TemplateFields(t *testing.T) {
 	g.Expect(trl.Path).To(gomega.Equal([]string{"hello", "world"}))
 }
 
+func TestTypeReferenceLocation_EmbeddedStructs(t *testing.T) {
+	t.Fail()
+}
+
 func newLocalRouteTable(nn *client.ObjectKey) *RouteTable {
 	return &RouteTable{
 		TypeMeta: metav1.TypeMeta{
@@ -116,8 +131,13 @@ type (
 		BazzRef  *azcorev1.KnownTypeReference  `json:"bazzRef,omitempty" group:"microsoft.network.infra.azure.com" kind:"Bazz"`
 	}
 
+	Embedded struct {
+		EmbeddedBazzRef *azcorev1.KnownTypeReference `json:"embeddedBazzRef,omitempty" group:"microsoft.network.infra.azure.com" kind:"Bazz"`
+	}
+
 	// RouteTableSpecProperties are the resource specific properties
 	RouteTableSpecProperties struct {
+		*Embedded
 		DisableBGPRoutePropagation bool                          `json:"disableBgpRoutePropagation,omitempty"`
 		RouteRefs                  []azcorev1.KnownTypeReference `json:"routeRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"Route"`
 		Foo                        *Foo                          `json:"foo,omitempty"`

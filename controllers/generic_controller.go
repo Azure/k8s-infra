@@ -220,6 +220,20 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 	}
 
+	ownersReady, err := gr.Converter.AreOwnersReady(ctx, metaObj)
+	if err != nil {
+		log.Error(err, "failed checking owner references are ready")
+		gr.Recorder.Event(metaObj, v1.EventTypeWarning, "OwnerReferenceCheckError", err.Error())
+		return ctrl.Result{}, err
+	}
+
+	if !ownersReady {
+		gr.Recorder.Event(metaObj, v1.EventTypeNormal, "OwnerReferencesNotReady", "owner reference are not ready; retrying in 30s")
+		return ctrl.Result{
+			RequeueAfter: 30 * time.Second,
+		}, nil
+	}
+
 	log.Info("reconcile apply start")
 	result, err := gr.reconcileApply(ctx, metaObj)
 	if err != nil {

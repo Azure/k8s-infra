@@ -6,6 +6,8 @@ Licensed under the MIT license.
 package controllers
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -14,6 +16,7 @@ import (
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,6 +26,8 @@ import (
 	microsoftnetworkv1 "github.com/Azure/k8s-infra/apis/microsoft.network/v1"
 	microsoftresourcesv1 "github.com/Azure/k8s-infra/apis/microsoft.resources/v1"
 	"github.com/Azure/k8s-infra/internal/test"
+	"github.com/Azure/k8s-infra/pkg/util/ownerutil"
+	"github.com/Azure/k8s-infra/pkg/xform"
 	"github.com/Azure/k8s-infra/pkg/zips"
 )
 
@@ -211,8 +216,8 @@ var _ = Describe("GenericReconciler", func() {
 			group := createResourceGroupByName(ctx, "test-group1")
 			obj := &microsoftnetworkv1.VirtualNetwork{
 				TypeMeta: metav1.TypeMeta{
-					Kind:       "ResourceGroup",
-					APIVersion: microsoftresourcesv1.GroupVersion.String(),
+					Kind:       "VirtualNetwork",
+					APIVersion: microsoftnetworkv1.GroupVersion.String(),
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      nn.Name,
@@ -220,7 +225,7 @@ var _ = Describe("GenericReconciler", func() {
 				},
 				Spec: microsoftnetworkv1.VirtualNetworkSpec{
 					Location:   "westus2",
-					APIVersion: "2019-09-01",
+					APIVersion: "2019-10-01",
 					ResourceGroupRef: &azcorev1.KnownTypeReference{
 						Namespace: group.Namespace,
 						Name:      group.Name,
@@ -238,6 +243,128 @@ var _ = Describe("GenericReconciler", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(result.RequeueAfter).To(Equal(30 * time.Second))
+		})
+
+		It("should create resource group, routeTable and route out of order", func() {
+			ctx := context.Background()
+			group := createResourceGroupByNameAndStatus(ctx, "test-group2", microsoftresourcesv1.ResourceGroupStatus{
+				ID:                "rg-id",
+				ProvisioningState: string(zips.SucceededProvisioningState),
+			})
+
+			applier := new(ApplierMock)
+			randomName := test.RandomName("foo", 10)
+			nn := client.ObjectKey{
+				Namespace: "default",
+				Name:      randomName,
+			}
+
+			route := &microsoftnetworkv1.Route{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Route",
+					APIVersion: microsoftnetworkv1.GroupVersion.String(),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      nn.Name + "-route1",
+					Namespace: nn.Namespace,
+				},
+				Spec: microsoftnetworkv1.RouteSpec{
+					APIVersion: "2019-10-01",
+					Properties: &microsoftnetworkv1.RouteSpecProperties{
+						AddressPrefix:    "10.0.0.0/24",
+						NextHopIPAddress: "10.0.0.1",
+						NextHopType:      "VnetLocal",
+					},
+				},
+			}
+
+			rt := &microsoftnetworkv1.RouteTable{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "RouteTable",
+					APIVersion: microsoftnetworkv1.GroupVersion.String(),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      nn.Name + "-routetable",
+					Namespace: nn.Namespace,
+				},
+				Spec: microsoftnetworkv1.RouteTableSpec{
+					Location:   "westus2",
+					APIVersion: "2019-10-01",
+					ResourceGroupRef: &azcorev1.KnownTypeReference{
+						Namespace: group.Namespace,
+						Name:      group.Name,
+					},
+					Properties: &microsoftnetworkv1.RouteTableSpecProperties{
+						DisableBGPRoutePropagation: false,
+						RouteRefs: []azcorev1.KnownTypeReference{
+							{
+								Name:      route.Name,
+								Namespace: route.Namespace,
+							},
+						},
+					},
+				},
+			}
+
+			// reconcile the route first, because it depends on the routeTable resource
+			Expect(k8sClient.Create(ctx, route)).To(Succeed())
+			gvk, err := apiutil.GVKForObject(route, mgr.GetScheme())
+			Expect(err).ToNot(HaveOccurred())
+			gr := buildGenericReconciler(gvk, applier)
+			result, err := gr.Reconcile(ctrl.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: route.Namespace,
+					Name:      route.Name,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(result.RequeueAfter).To(Equal(30 * time.Second)) // requeue after 30 seconds b/c owner count is greater than or equal to 1, required for the sub resource to apply
+
+			// create routetable, but not in succeeded state
+			Expect(k8sClient.Create(ctx, rt)).To(Succeed())
+
+			// update with a routeTable owner reference
+			route.OwnerReferences = ownerutil.EnsureOwnerRef(route.OwnerReferences, metav1.OwnerReference{
+				APIVersion: microsoftnetworkv1.GroupVersion.String(),
+				Kind:       "RouteTable",
+				Name:       rt.Name,
+				UID:        rt.UID,
+			})
+			Expect(k8sClient.Update(ctx, route)).To(Succeed())
+			result, err = gr.Reconcile(ctrl.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: route.Namespace,
+					Name:      route.Name,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(route.OwnerReferences).To(HaveLen(1))
+			Expect(result.RequeueAfter).To(Equal(30 * time.Second)) // requeue after 30 seconds b/c owner(s) is not in succeeded state
+
+			// update the routeTable to succeeded, should apply the route
+			rt.Status.ProvisioningState = string(zips.SucceededProvisioningState)
+			Expect(k8sClient.Status().Update(ctx, rt)).To(Succeed())
+
+			// now that the owner is in succeeded state, we expect apply will be called with the sub resource route
+			bits, err := json.Marshal(route.Spec.Properties)
+			Expect(err).ToNot(HaveOccurred())
+			beforeRouteResource := &zips.Resource{
+				Name:       fmt.Sprintf("%s/%s", rt.Name, route.Name),
+				Type:       "Microsoft.Network/routeTables/routes",
+				APIVersion: "2019-10-01",
+				Properties: bits,
+			}
+			afterRouteResource := *beforeRouteResource
+			afterRouteResource.ProvisioningState = zips.SucceededProvisioningState
+			applier.On("Apply", mock.Anything, beforeRouteResource).Return(&afterRouteResource, nil)
+			result, err = gr.Reconcile(ctrl.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: route.Namespace,
+					Name:      route.Name,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(result.RequeueAfter).To(Equal(0 * time.Second)) // should proceed with apply
 		})
 	})
 })
@@ -345,12 +472,13 @@ func deleteResourceGroup(ctx context.Context, obj *microsoftresourcesv1.Resource
 
 func buildGenericReconciler(gvk schema.GroupVersionKind, applier *ApplierMock) *GenericReconciler {
 	return &GenericReconciler{
-		GVK:      gvk,
-		Client:   k8sClient,
-		Applier:  applier,
-		Scheme:   mgr.GetScheme(),
-		Log:      ctrl.Log.WithName("test-controller"),
-		Name:     "test-controller",
-		Recorder: record.NewFakeRecorder(10),
+		GVK:       gvk,
+		Client:    k8sClient,
+		Applier:   applier,
+		Scheme:    mgr.GetScheme(),
+		Log:       ctrl.Log.WithName("test-controller"),
+		Name:      "test-controller",
+		Recorder:  record.NewFakeRecorder(10),
+		Converter: xform.NewARMConverter(mgr.GetClient(), mgr.GetScheme()),
 	}
 }

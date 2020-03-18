@@ -8,6 +8,7 @@ package xform
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/onsi/gomega"
@@ -21,6 +22,7 @@ import (
 	microsoftnetworkv1 "github.com/Azure/k8s-infra/apis/microsoft.network/v1"
 	microsoftresourcesv1 "github.com/Azure/k8s-infra/apis/microsoft.resources/v1"
 	"github.com/Azure/k8s-infra/internal/test"
+	"github.com/Azure/k8s-infra/pkg/util/ownerutil"
 	"github.com/Azure/k8s-infra/pkg/zips"
 )
 
@@ -162,6 +164,72 @@ func TestARMConverter_FromResource(t *testing.T) {
 		Name:      route.Name,
 		Namespace: route.Namespace,
 	}))
+}
+
+func Test_resourceName(t *testing.T) {
+	g := gomega.NewGomegaWithT(t)
+	randomName := test.RandomName("foo", 10)
+	nn := &client.ObjectKey{
+		Namespace: "default",
+		Name:      randomName,
+	}
+
+	routeTable := newRouteTable(nn)
+	route := newRoute(nn)
+	route.OwnerReferences = ownerutil.EnsureOwnerRef(route.OwnerReferences, metav1.OwnerReference{
+		APIVersion: routeTable.APIVersion,
+		Kind:       routeTable.Kind,
+		Name:       routeTable.Name,
+		UID:        routeTable.UID,
+	})
+
+	name, err := resourceName(route, ownerReferenceStates{
+		{
+			Obj:   routeTable,
+			State: string(zips.SucceededProvisioningState),
+		},
+	})
+	g.Expect(err).ToNot(gomega.HaveOccurred())
+	g.Expect(name).To(gomega.Equal(fmt.Sprintf("%s/%s", routeTable.Name, route.Name)))
+}
+
+func Test_resourceTypeToParentTypesInOrder(t *testing.T) {
+	cases := []struct {
+		Name         string
+		ResourceType string
+		Parents      []string
+	}{
+		{
+			Name:         "OnlyOneParent",
+			ResourceType: "Microsoft.Networks/loadBalancers/routeTables",
+			Parents: []string{
+				"Microsoft.Networks/loadBalancers",
+			},
+		},
+		{
+			Name:         "NoParents",
+			ResourceType: "Microsoft.Networks/loadBalancers",
+			Parents:      []string{},
+		},
+		{
+			Name:         "TwoParents",
+			ResourceType: "Microsoft.Networks/loadBalancers/routeTables/bazzFoos",
+			Parents: []string{
+				"Microsoft.Networks/loadBalancers",
+				"Microsoft.Networks/loadBalancers/routeTables",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.Name, func(t *testing.T) {
+			t.Parallel()
+			p := resourceTypeToParentTypesInOrder(c.ResourceType)
+			g := gomega.NewGomegaWithT(t)
+			g.Expect(p).To(gomega.Equal(c.Parents))
+		})
+	}
 }
 
 func newRoute(nn *client.ObjectKey) *microsoftnetworkv1.Route {

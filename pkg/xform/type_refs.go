@@ -76,6 +76,17 @@ func gatherStruct(t reflect.Type) ([]TypeReferenceLocation, error) {
 
 	for i := 0; i < t.NumField(); i++ {
 		structField := t.Field(i)
+
+		if structField.Anonymous {
+			embeddedRefs, err := getResourceReferences(structField.Type)
+			if err != nil {
+				return refs, err
+			}
+
+			refs = append(refs, embeddedRefs...)
+			continue
+		}
+
 		jsonTag, ok := structField.Tag.Lookup("json")
 		if !ok {
 			continue

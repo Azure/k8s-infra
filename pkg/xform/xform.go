@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,6 +29,13 @@ type (
 	idRef struct {
 		ID string `json:"id,omitempty"`
 	}
+
+	ownerReferenceState struct {
+		Obj   azcorev1.MetaObject
+		State string
+	}
+
+	ownerReferenceStates []ownerReferenceState
 )
 
 func NewARMConverter(client client.Client, scheme *runtime.Scheme) *ARMConverter {
@@ -35,6 +43,25 @@ func NewARMConverter(client client.Client, scheme *runtime.Scheme) *ARMConverter
 		Client: client,
 		Scheme: scheme,
 	}
+}
+
+func (m *ARMConverter) AreOwnersReady(ctx context.Context, obj azcorev1.MetaObject) (bool, error) {
+	// resourceType: "microsoft.network/loadbalancers" => provider: "Microsoft.Network", resource: "loadbalancers" => 0 owners needed
+	// resourceType: "Microsoft.Network/loadBalancers/inboundNatRules" => provider: "Microsoft.Network", resource: "loadbalancers", subresource1: "inboundNatRules" => 1 owner needed
+	typeSegements := strings.Split(obj.ResourceType(), "/")
+	numOwnersRequired := len(typeSegements) - 2
+
+	if len(obj.GetOwnerReferences()) < numOwnersRequired {
+		// owners are not set and not ready
+		return false, nil
+	}
+
+	ors, err := m.getAllOwnerReferenceStates(ctx, obj)
+	if err != nil {
+		return false, err
+	}
+
+	return ors.AllSucceeded(), nil
 }
 
 func (m *ARMConverter) ToResource(ctx context.Context, obj azcorev1.MetaObject) (*zips.Resource, error) {
@@ -45,21 +72,27 @@ func (m *ARMConverter) ToResource(ctx context.Context, obj azcorev1.MetaObject) 
 
 	res := new(zips.Resource)
 	res.SetAnnotations(obj.GetAnnotations())
-	res.Name = obj.GetName()
 	res.Type = obj.ResourceType()
 	if grouped, ok := obj.(azcorev1.Grouped); ok {
 		groupRef := grouped.GetResourceGroupObjectRef()
 		res.ResourceGroup = groupRef.Name
 	}
 
-	ok, err := m.checkAllOwnersSucceeded(ctx, obj)
+	ownerRefStates, err := m.getAllOwnerReferenceStates(ctx, obj)
 	if err != nil {
 		return res, err
 	}
 
-	if !ok {
+	if !ownerRefStates.AllSucceeded() {
 		return res, fmt.Errorf("an owner reference is not in a Succeeded provisioning state")
 	}
+
+	name, err := resourceName(obj, ownerRefStates)
+	if err != nil {
+		return res, fmt.Errorf("unable to name the resource with: %w", err)
+	}
+
+	res.Name = name
 
 	if err := setTopLevelResourceFields(unObj, res); err != nil {
 		return res, err
@@ -87,6 +120,43 @@ func (m *ARMConverter) FromResource(res *zips.Resource, obj azcorev1.MetaObject)
 	//}
 
 	return runtime.DefaultUnstructuredConverter.FromUnstructured(unObj, obj)
+}
+
+func resourceName(obj azcorev1.MetaObject, owners ownerReferenceStates) (string, error) {
+	resourceType := obj.ResourceType()
+	parents := resourceTypeToParentTypesInOrder(resourceType)
+
+	names := make([]string, len(parents))
+	for i, parent := range parents {
+		for _, owner := range owners {
+			if owner.Obj.ResourceType() == parent {
+				names[i] = owner.Obj.GetName()
+				break
+			}
+		}
+
+		if names[i] == "" {
+			return "", fmt.Errorf("unable to find a matching owner for resource type %s", parent)
+		}
+	}
+
+	return strings.Join(append(names, obj.GetName()), "/"), nil
+}
+
+func resourceTypeToParentTypesInOrder(resourceType string) []string {
+	parts := strings.Split(resourceType, "/")
+
+	// "Microsoft.Network/loadBalancers" :: len(parts) == 2
+	if len(parts) <= 2 {
+		return []string{}
+	}
+
+	parents := make([]string, len(parts)-2)
+	for i := 0; i < len(parts)-2; i++ {
+		parents[i] = strings.Join(parts[0:i+2], "/")
+	}
+
+	return parents
 }
 
 //func (m *ARMConverter) setObjectSpec(res *zips.Resource, obj azcorev1.MetaObject) error {
@@ -130,16 +200,13 @@ func (m *ARMConverter) setObjectStatus(res *zips.Resource, unObj map[string]inte
 	return nil
 }
 
-func (m *ARMConverter) checkAllOwnersSucceeded(ctx context.Context, obj azcorev1.MetaObject) (bool, error) {
+func (m *ARMConverter) getAllOwnerReferenceStates(ctx context.Context, obj azcorev1.MetaObject) (ownerReferenceStates, error) {
 	// has owners, so check to see if those owners are ready
+	var ors ownerReferenceStates
 	for _, ref := range obj.GetOwnerReferences() {
-		owner, err := m.Scheme.New(schema.GroupVersionKind{
-			Group:   obj.GetObjectKind().GroupVersionKind().Group,
-			Version: "v1",
-			Kind:    ref.Kind,
-		})
+		owner, err := m.Scheme.New(schema.FromAPIVersionAndKind(ref.APIVersion, ref.Kind))
 		if err != nil {
-			return false, fmt.Errorf("unable to find gvk for ref %v with: %w", ref, err)
+			return ors, fmt.Errorf("unable to find gvk for ref %v with: %w", ref, err)
 		}
 
 		refKey := client.ObjectKey{
@@ -148,27 +215,31 @@ func (m *ARMConverter) checkAllOwnersSucceeded(ctx context.Context, obj azcorev1
 		}
 
 		if err := m.Client.Get(ctx, refKey, owner); err != nil {
-			return false, fmt.Errorf("unable to fetch owner %v with: %w", ref, err)
+			return ors, fmt.Errorf("unable to fetch owner %v with: %w", ref, err)
+		}
+
+		azObj, ok := owner.(azcorev1.MetaObject)
+		if !ok {
+			continue
 		}
 
 		unOwn, err := runtime.DefaultUnstructuredConverter.ToUnstructured(owner)
 		if err != nil {
-			return false, fmt.Errorf("unable to convert to unstructured with: %w", err)
+			return ors, fmt.Errorf("unable to convert to unstructured with: %w", err)
 		}
 
-		state, ok, err := unstructured.NestedString(unOwn, "status", "provisioningState")
+		state, _, err := unstructured.NestedString(unOwn, "status", "provisioningState")
 		if err != nil {
-			return false, fmt.Errorf("error fetching unstructured provisioningState with: %w", err)
+			return ors, fmt.Errorf("error fetching unstructured provisioningState with: %w", err)
 		}
 
-		if ok {
-			if zips.SucceededProvisioningState != zips.ProvisioningState(state) {
-				return false, nil
-			}
-		}
+		ors = append(ors, ownerReferenceState{
+			Obj:   azObj,
+			State: state,
+		})
 	}
 
-	return true, nil
+	return ors, nil
 }
 
 func (m *ARMConverter) setResourceProperties(ctx context.Context, unObj map[string]interface{}, obj azcorev1.MetaObject, res *zips.Resource) error {
@@ -367,6 +438,15 @@ func (m *ARMConverter) replaceSliceReferenceWithIDs(ctx context.Context, unObj m
 	}
 
 	return nil
+}
+
+func (owners ownerReferenceStates) AllSucceeded() bool {
+	for _, owner := range owners {
+		if owner.State != string(zips.SucceededProvisioningState) {
+			return false
+		}
+	}
+	return true
 }
 
 func setTopLevelResourceFields(unObj map[string]interface{}, res *zips.Resource) error {
