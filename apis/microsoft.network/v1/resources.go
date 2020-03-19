@@ -45,6 +45,10 @@ func (*InboundNatRule) ResourceType() string {
 	return "Microsoft.Network/loadBalancers/inboundNatRules"
 }
 
+func (*OutboundRule) ResourceType() string {
+	return "Microsoft.Network/loadBalancers/outboundRules"
+}
+
 func (*LoadBalancingRule) ResourceType() string {
 	return "Microsoft.Network/loadBalancers/loadBalancingRules"
 }

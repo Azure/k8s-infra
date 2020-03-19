@@ -13,10 +13,10 @@ import (
 
 type (
 	LoadBalancerSpecProperties struct {
-		BackendAddressPoolRefs      []azcorev1.KnownTypeReference `json:"backendAddressPools,omitempty" group:"microsoft.network.infra.azure.com" kind:"BackendAddressPool"`
-		FrontendIPConfigurationRefs []azcorev1.KnownTypeReference `json:"frontendIPConfigurationRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"FrontendIPConfiguration"`
-		InboundNatRuleRefs          []azcorev1.KnownTypeReference `json:"inboundNatPoolRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"InboundNatRule"`
-		LoadBalancingRuleRefs       []azcorev1.KnownTypeReference `json:"loadBalancingRuleRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"LoadBalancingRule"`
+		BackendAddressPoolRefs      []azcorev1.KnownTypeReference `json:"backendAddressPools,omitempty" group:"microsoft.network.infra.azure.com" kind:"BackendAddressPool" owned:"true"`
+		FrontendIPConfigurationRefs []azcorev1.KnownTypeReference `json:"frontendIPConfigurationRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"FrontendIPConfiguration" owned:"true"`
+		InboundNatRuleRefs          []azcorev1.KnownTypeReference `json:"inboundNatPoolRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"InboundNatRule" owned:"true"`
+		LoadBalancingRuleRefs       []azcorev1.KnownTypeReference `json:"loadBalancingRuleRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"LoadBalancingRule" owned:"true"`
 	}
 
 	// LoadBalancerSpec defines the desired state of LoadBalancer

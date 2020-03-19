@@ -13,17 +13,17 @@ import (
 
 type (
 	LoadBalancerSpecProperties struct {
-		BackendAddressPoolRefs      []azcorev1.KnownTypeReference `json:"backendAddressPools,omitempty" group:"microsoft.network.infra.azure.com" kind:"BackendAddressPool"`
-		FrontendIPConfigurationRefs []azcorev1.KnownTypeReference `json:"frontendIPConfigurationRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"FrontendIPConfiguration"`
-		InboundNatRuleRefs          []azcorev1.KnownTypeReference `json:"inboundNatPoolRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"InboundNatRule"`
-		LoadBalancingRuleRefs       []azcorev1.KnownTypeReference `json:"loadBalancingRuleRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"LoadBalancingRule"`
+		BackendAddressPoolRefs      []azcorev1.KnownTypeReference `json:"backendAddressPools,omitempty"`
+		FrontendIPConfigurationRefs []azcorev1.KnownTypeReference `json:"frontendIPConfigurationRefs,omitempty"`
+		InboundNatRuleRefs          []azcorev1.KnownTypeReference `json:"inboundNatPoolRefs,omitempty"`
+		LoadBalancingRuleRefs       []azcorev1.KnownTypeReference `json:"loadBalancingRuleRefs,omitempty"`
 	}
 
 	// LoadBalancerSpec defines the desired state of LoadBalancer
 	LoadBalancerSpec struct {
 		// ResourceGroupRef is the Azure Resource Group the VirtualNetwork resides within
 		// +kubebuilder:validation:Required
-		ResourceGroupRef *azcorev1.KnownTypeReference `json:"groupRef" group:"microsoft.resources.infra.azure.com" kind:"ResourceGroup"`
+		ResourceGroupRef *azcorev1.KnownTypeReference `json:"groupRef"`
 
 		// Location of the VNET in Azure
 		// +kubebuilder:validation:Required

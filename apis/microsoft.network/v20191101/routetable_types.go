@@ -16,14 +16,14 @@ type (
 	// RouteTableSpecProperties are the resource specific properties
 	RouteTableSpecProperties struct {
 		DisableBGPRoutePropagation bool                          `json:"disableBgpRoutePropagation,omitempty"`
-		RouteRefs                  []azcorev1.KnownTypeReference `json:"routeRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"Route"`
+		RouteRefs                  []azcorev1.KnownTypeReference `json:"routeRefs,omitempty"`
 	}
 
 	// RouteTableSpec defines the desired state of RouteTable
 	RouteTableSpec struct {
 		// ResourceGroupRef is the Azure Resource Group the VirtualNetwork resides within
 		// +kubebuilder:validation:Required
-		ResourceGroupRef *azcorev1.KnownTypeReference `json:"groupRef" group:"microsoft.resources.infra.azure.com" kind:"ResourceGroup"`
+		ResourceGroupRef *azcorev1.KnownTypeReference `json:"groupRef"`
 
 		// Location of the VNET in Azure
 		// +kubebuilder:validation:Required

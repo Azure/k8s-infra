@@ -11,12 +11,14 @@ import (
 	"fmt"
 	"strings"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	azcorev1 "github.com/Azure/k8s-infra/apis/core/v1"
+	"github.com/Azure/k8s-infra/pkg/util/ownerutil"
 	"github.com/Azure/k8s-infra/pkg/zips"
 )
 
@@ -62,6 +64,116 @@ func (m *ARMConverter) AreOwnersReady(ctx context.Context, obj azcorev1.MetaObje
 	}
 
 	return ors.AllSucceeded(), nil
+}
+
+func (m *ARMConverter) ApplyOwnership(ctx context.Context, obj azcorev1.MetaObject) (bool, error) {
+	typeRefLocations, err := GetTypeReferenceData(obj)
+	if err != nil {
+		return false, err
+	}
+
+	unObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	if err != nil {
+		return false, fmt.Errorf("unable to convert obj to unstructured with: %w", err)
+	}
+
+	for _, ref := range typeRefLocations {
+		if !ref.IsOwned {
+			// if the reference is not owned, don't add this to the owner references
+			continue
+		}
+
+		var knownTypeReferences []azcorev1.KnownTypeReference
+		if !ref.IsSlice {
+			unRefs, found, err := unstructured.NestedSlice(unObj, ref.JSONFields()...)
+			if err != nil {
+				return false, fmt.Errorf("unable to find path %v with: %w", ref.JSONFields(), err)
+			}
+
+			if !found {
+				return false, fmt.Errorf("unable to find type reference %v", ref)
+			}
+
+			var knownTypeRefsMap map[string][]azcorev1.KnownTypeReference
+			unRefMap := map[string]interface{}{
+				"ktrs": unRefs,
+			}
+
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unRefMap, &knownTypeRefsMap); err != nil {
+				return false, fmt.Errorf("unable to build KnownTypeReference from unstructured with: %w", err)
+			}
+
+			knownTypeReferences = append(knownTypeReferences, knownTypeRefsMap["ktrs"]...)
+		} else {
+			unRef, found, err := unstructured.NestedMap(unObj, ref.JSONFields()...)
+			if err != nil {
+				return false, fmt.Errorf("unable to find path %v with: %w", ref.JSONFields(), err)
+			}
+
+			if !found {
+				return false, fmt.Errorf("unable to find type reference %v", ref)
+			}
+
+			var ktr azcorev1.KnownTypeReference
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unRef, &ktr); err != nil {
+				return false, fmt.Errorf("unable to build KnownTypeReference from unstructured with: %w", err)
+			}
+
+			knownTypeReferences = append(knownTypeReferences, ktr)
+		}
+
+		for _, ktr := range knownTypeReferences {
+			if ktr.Name == "" {
+				// name of the reference is not set, so we will ignore it
+				continue
+			}
+
+			if ktr.Namespace == "" {
+				// default to the current object's namespace if not specified on the reference
+				ktr.Namespace = obj.GetNamespace()
+			}
+
+			nn := client.ObjectKey{
+				Name:      ktr.Name,
+				Namespace: ktr.Namespace,
+			}
+
+			gvk := schema.GroupVersionKind{
+				Group:   obj.GetObjectKind().GroupVersionKind().Group,
+				Version: "v1",
+				Kind:    ref.Kind,
+			}
+
+			ownedObj, err := m.Scheme.New(gvk)
+			if err != nil {
+				return false, fmt.Errorf("unable to find gvk for ref %v with: %w", ref, err)
+			}
+
+			if err := m.Client.Get(ctx, nn, ownedObj); err != nil {
+				return false, fmt.Errorf("unable to fetch object %v with: %w", nn, err)
+			}
+
+			ownedMetaObject, ok := ownedObj.(metav1.Object)
+			if !ok {
+				return false, fmt.Errorf("unable to case refObj to metav1.Object %v", ownedObj)
+			}
+
+			objGVK := obj.GetObjectKind().GroupVersionKind()
+			ownedMetaObject.SetOwnerReferences(ownerutil.EnsureOwnerRef(ownedMetaObject.GetOwnerReferences(), metav1.OwnerReference{
+				APIVersion: strings.Join([]string{objGVK.Group, objGVK.Version}, "/"),
+				Kind:       objGVK.Kind,
+				Name:       obj.GetName(),
+				UID:        obj.GetUID(),
+			}))
+
+			err = m.Client.Update(ctx, ownedObj)
+			if err != nil {
+				return false, err
+			}
+		}
+	}
+
+	return true, nil
 }
 
 func (m *ARMConverter) ToResource(ctx context.Context, obj azcorev1.MetaObject) (*zips.Resource, error) {

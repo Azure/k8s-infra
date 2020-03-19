@@ -1,7 +1,8 @@
 apiVersion: microsoft.network.infra.azure.com/v20191101
 kind: Route
 metadata:
-  name: route-sample
+  name: route-2019-1
 spec:
-  # Add fields here
-  foo: bar
+  addressPrefix: 10.0.3.0/24
+  nextHopType: Internet
+

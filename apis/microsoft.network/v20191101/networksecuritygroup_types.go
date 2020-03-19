@@ -13,14 +13,14 @@ import (
 
 type (
 	NetworkSecurityGroupSpecProperties struct {
-		SecurityRuleRefs []azcorev1.KnownTypeReference `json:"securityRules,omitempty" group:"microsoft.network.infra.azure.com" kind:"SecurityRule"`
+		SecurityRuleRefs []azcorev1.KnownTypeReference `json:"securityRules,omitempty"`
 	}
 
 	// NetworkSecurityGroupSpec defines the desired state of NetworkSecurityGroup
 	NetworkSecurityGroupSpec struct {
 		// ResourceGroupRef is the Azure Resource Group the VirtualNetwork resides within
 		// +kubebuilder:validation:Required
-		ResourceGroupRef *azcorev1.KnownTypeReference `json:"groupRef" group:"microsoft.resources.infra.azure.com" kind:"ResourceGroup"`
+		ResourceGroupRef *azcorev1.KnownTypeReference `json:"groupRef"`
 
 		// Location of the VNET in Azure
 		// +kubebuilder:validation:Required

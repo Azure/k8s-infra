@@ -4,4 +4,12 @@ metadata:
   name: routetable-sample
 spec:
   # Add fields here
-  foo: bar
+  location: westus2
+  resourceGroupRef:
+    name: foo-2019
+    namespace: default
+  properties:
+    disableBGPPropigation: false
+    routeRefs:
+      - name: route-2019-1
+        namespace: default

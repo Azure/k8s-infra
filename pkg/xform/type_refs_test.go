@@ -100,10 +100,6 @@ func TestTypeReferenceLocation_TemplateFields(t *testing.T) {
 	g.Expect(trl.Path).To(gomega.Equal([]string{"hello", "world"}))
 }
 
-func TestTypeReferenceLocation_EmbeddedStructs(t *testing.T) {
-	t.Fail()
-}
-
 func newLocalRouteTable(nn *client.ObjectKey) *RouteTable {
 	return &RouteTable{
 		TypeMeta: metav1.TypeMeta{

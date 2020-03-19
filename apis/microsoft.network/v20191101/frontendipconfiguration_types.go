@@ -18,8 +18,8 @@ type (
 		PrivateIPAddressVersion string `json:"privateIPAddressVersion,omitempty"`
 		// +kubebuilder:validation:Enum=Dynamic;Static
 		PrivateIPAllocationMethod string                       `json:"privateIPAllocationMethod,omitempty"`
-		PublicIPAddressRef        *azcorev1.KnownTypeReference `json:"publicIPAddressRef,omitempty" group:"microsoft.network.infra.azure.com" kind:"PublicIPAddress"`
-		SubnetRef                 *azcorev1.KnownTypeReference `json:"subnetRef,omitempty" group:"microsoft.network.infra.azure.com" kind:"Subnet"`
+		PublicIPAddressRef        *azcorev1.KnownTypeReference `json:"publicIPAddressRef,omitempty"`
+		SubnetRef                 *azcorev1.KnownTypeReference `json:"subnetRef,omitempty"`
 		Zones                     []string                     `json:"zones,omitempty"`
 	}
 

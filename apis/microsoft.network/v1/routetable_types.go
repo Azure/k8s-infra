@@ -15,7 +15,7 @@ type (
 	// RouteTableSpecProperties are the resource specific properties
 	RouteTableSpecProperties struct {
 		DisableBGPRoutePropagation bool                          `json:"disableBgpRoutePropagation,omitempty"`
-		RouteRefs                  []azcorev1.KnownTypeReference `json:"routeRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"Route"`
+		RouteRefs                  []azcorev1.KnownTypeReference `json:"routeRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"Route" owned:"true"`
 	}
 
 	// RouteTableSpec defines the desired state of RouteTable

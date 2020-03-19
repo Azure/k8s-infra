@@ -18,7 +18,7 @@ type (
 		EnableFloatingIP           bool                         `json:"enableFloatingIP,omitempty"`
 		EnableTCPReset             bool                         `json:"enableTCPReset,omitempty"`
 		FrontendPort               int                          `json:"frontendPort,omitempty"`
-		FrontendIPConfigurationRef *azcorev1.KnownTypeReference `json:"frontendIPConfigurationRef,omitempty" group:"microsoft.network.infra.azure.com" kind:"NetworkInterfaceIPConfiguration"`
+		FrontendIPConfigurationRef *azcorev1.KnownTypeReference `json:"frontendIPConfigurationRef,omitempty"`
 		IdleTimeoutInMinutes       int                          `json:"idleTimeoutInMinutes,omitempty"`
 		// +kubebuilder:validation:Enum=Default;SourceIP;SourceIPProtocol
 		LoadDistribution string `json:"loadDistribution,omitempty"`

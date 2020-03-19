@@ -14,7 +14,7 @@ import (
 // NetworkSecurityGroupSpec defines the desired state of NetworkSecurityGroup
 type (
 	NetworkSecurityGroupSpecProperties struct {
-		SecurityRuleRefs []azcorev1.KnownTypeReference `json:"securityRules,omitempty" group:"microsoft.network.infra.azure.com" kind:"SecurityRule"`
+		SecurityRuleRefs []azcorev1.KnownTypeReference `json:"securityRules,omitempty" group:"microsoft.network.infra.azure.com" kind:"SecurityRule" owned:"true"`
 	}
 
 	NetworkSecurityGroupSpec struct {

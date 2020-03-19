@@ -13,9 +13,9 @@ import (
 
 type (
 	BackendAddressPoolSpecProperties struct {
-		BackendIPConfigurationRefs []azcorev1.KnownTypeReference `json:"backendIPConfigurations,omitempty" group:"microsoft.network.infra.azure.com" kind:"NetworkInterfaceIPConfiguration"`
-		LoadBalancingRuleRefs      []azcorev1.KnownTypeReference `json:"loadBalancingRuleRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"LoadBalancingRule"`
-		OutboundRuleRefs           []azcorev1.KnownTypeReference `json:"outboundRuleRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"OutboundRule"`
+		BackendIPConfigurationRefs []azcorev1.KnownTypeReference `json:"backendIPConfigurations,omitempty"`
+		LoadBalancingRuleRefs      []azcorev1.KnownTypeReference `json:"loadBalancingRuleRefs,omitempty"`
+		OutboundRuleRefs           []azcorev1.KnownTypeReference `json:"outboundRuleRefs,omitempty"`
 	}
 
 	BackendAddressPoolSpec struct {

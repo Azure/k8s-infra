@@ -20,6 +20,7 @@ type (
 		Path              []string
 		Group             string
 		Kind              string
+		IsOwned           bool
 		IsSlice           bool
 	}
 )
@@ -95,6 +96,10 @@ func gatherStruct(t reflect.Type) ([]TypeReferenceLocation, error) {
 		groupTag, groupOk := structField.Tag.Lookup("group")
 		kindTag, kindOk := structField.Tag.Lookup("kind")
 		isSlice := structField.Type.Kind() == reflect.Slice
+		isOwned := false
+		if ownedTag, ownedOk := structField.Tag.Lookup("owned"); ownedOk {
+			isOwned = ownedTag == "true"
+		}
 
 		jsonFieldName := strings.Split(jsonTag, ",")[0]
 		var templateFieldName string
@@ -112,6 +117,7 @@ func gatherStruct(t reflect.Type) ([]TypeReferenceLocation, error) {
 				Group:             groupTag,
 				Kind:              kindTag,
 				IsSlice:           structField.Type.Kind() == reflect.Slice,
+				IsOwned:           isOwned,
 			})
 		default:
 			references, err := getResourceReferences(structField.Type)

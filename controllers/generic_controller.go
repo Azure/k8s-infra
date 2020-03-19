@@ -242,6 +242,18 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return result, err
 	}
 
+	allApplied, err := gr.Converter.ApplyOwnership(ctx, metaObj)
+	if err != nil {
+		log.Error(err, "failed applying ownership to owned references")
+		gr.Recorder.Event(metaObj, v1.EventTypeWarning, "OwnerReferencesFailedApply", "owner reference are not ready; retrying in 30s")
+		return ctrl.Result{}, fmt.Errorf("failed applying ownership to owned references with: %w", err)
+	}
+
+	if !allApplied {
+		log.Info("not all owned objects were applied; will requeue for 30 seconds")
+		result.RequeueAfter = 30 * time.Second
+	}
+
 	log.Info("reconcile apply complete")
 	return result, err
 }
