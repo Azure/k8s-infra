@@ -50,6 +50,17 @@ var (
 	// produce a reconcile function aware of concrete types, as a closure.
 	KnownTypes = []runtime.Object{
 		new(microsoftresourcesv1.ResourceGroup),
+		new(microsoftnetworkv1.BackendAddressPool),
+		new(microsoftnetworkv1.FrontendIPConfiguration),
+		new(microsoftnetworkv1.InboundNatRule),
+		new(microsoftnetworkv1.LoadBalancer),
+		new(microsoftnetworkv1.LoadBalancingRule),
+		new(microsoftnetworkv1.NetworkInterfaceIPConfiguration),
+		new(microsoftnetworkv1.NetworkSecurityGroup),
+		new(microsoftnetworkv1.OutboundRule),
+		new(microsoftnetworkv1.Route),
+		new(microsoftnetworkv1.RouteTable),
+		new(microsoftnetworkv1.SecurityRule),
 		new(microsoftnetworkv1.VirtualNetwork),
 	}
 )
@@ -62,8 +73,8 @@ type (
 	// +kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;patch
 	// +kubebuilder:rbac:groups=microsoft.resources.infra.azure.com,resources=resourcegroups,verbs=get;list;watch;create;update;patch;delete
 	// +kubebuilder:rbac:groups=microsoft.resources.infra.azure.com,resources=resourcegroups/status,verbs=get;update;patch
-	// +kubebuilder:rbac:groups=microsoft.network.infra.azure.com,resources=virtualnetworks,verbs=get;list;watch;create;update;patch;delete
-	// +kubebuilder:rbac:groups=microsoft.network.infra.azure.com,resources=virtualnetworks/status,verbs=get;update;patch
+	// +kubebuilder:rbac:groups=microsoft.network.infra.azure.com,resources=backendaddresspools;frontendipconfigurations;inboundnatrules;loadbalancers;loadbalancingrules;networkinterfaceipconfigurations;networksecuritygroups;outboundrule;route;routetables;securityrules;virtualnetworks,verbs=get;list;watch;create;update;patch;delete
+	// +kubebuilder:rbac:groups=microsoft.network.infra.azure.com,resources=backendaddresspools/status;frontendipconfigurations/status;inboundnatrules/status;loadbalancers/status;loadbalancingrules/status;networkinterfaceipconfigurations/status;networksecuritygroups/status;outboundrules/status;routes/status;routetables/status;securityrules/status;virtualnetworks/status,verbs=get;update;patch
 
 	// GenericReconciler reconciles a Resourcer object
 	GenericReconciler struct {
