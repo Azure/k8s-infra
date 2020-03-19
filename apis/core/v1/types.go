@@ -45,6 +45,7 @@ type (
 	}
 
 	// Grouped provides the resource group reference for a given resource
+	// TODO: think about naming this something a little more informative
 	Grouped interface {
 		GetResourceGroupObjectRef() *KnownTypeReference
 	}

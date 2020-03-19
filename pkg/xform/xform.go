@@ -238,6 +238,11 @@ func resourceName(obj azcorev1.MetaObject, owners ownerReferenceStates) (string,
 	resourceType := obj.ResourceType()
 	parents := resourceTypeToParentTypesInOrder(resourceType)
 
+	if len(parents) == 0 {
+		// no parents means just use the name of the object
+		return obj.GetName(), nil
+	}
+
 	names := make([]string, len(parents))
 	for i, parent := range parents {
 		for _, owner := range owners {

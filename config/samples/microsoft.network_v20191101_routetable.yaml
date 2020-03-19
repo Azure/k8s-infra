@@ -3,7 +3,6 @@ kind: RouteTable
 metadata:
   name: routetable-sample
 spec:
-  # Add fields here
   location: westus2
   resourceGroupRef:
     name: foo-2019
