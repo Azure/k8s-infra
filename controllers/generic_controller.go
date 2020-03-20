@@ -73,7 +73,7 @@ type (
 	// +kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;patch
 	// +kubebuilder:rbac:groups=microsoft.resources.infra.azure.com,resources=resourcegroups,verbs=get;list;watch;create;update;patch;delete
 	// +kubebuilder:rbac:groups=microsoft.resources.infra.azure.com,resources=resourcegroups/status,verbs=get;update;patch
-	// +kubebuilder:rbac:groups=microsoft.network.infra.azure.com,resources=backendaddresspools;frontendipconfigurations;inboundnatrules;loadbalancers;loadbalancingrules;networkinterfaceipconfigurations;networksecuritygroups;outboundrule;route;routetables;securityrules;virtualnetworks,verbs=get;list;watch;create;update;patch;delete
+	// +kubebuilder:rbac:groups=microsoft.network.infra.azure.com,resources=backendaddresspools;frontendipconfigurations;inboundnatrules;loadbalancers;loadbalancingrules;networkinterfaceipconfigurations;networksecuritygroups;outboundrules;routes;routetables;securityrules;virtualnetworks,verbs=get;list;watch;create;update;patch;delete
 	// +kubebuilder:rbac:groups=microsoft.network.infra.azure.com,resources=backendaddresspools/status;frontendipconfigurations/status;inboundnatrules/status;loadbalancers/status;loadbalancingrules/status;networkinterfaceipconfigurations/status;networksecuritygroups/status;outboundrules/status;routes/status;routetables/status;securityrules/status;virtualnetworks/status,verbs=get;update;patch
 
 	// GenericReconciler reconciles a Resourcer object
@@ -171,7 +171,10 @@ func register(mgr ctrl.Manager, applier zips.Applier, obj runtime.Object, log lo
 	}
 
 	reconciler.Controller = c
-	return nil
+
+	return ctrl.NewWebhookManagedBy(mgr).
+		For(obj).
+		Complete()
 }
 
 // Reconcile will take state in K8s and apply it to Azure
@@ -246,7 +249,7 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	log.Info("reconcile apply start")
-	result, err := gr.reconcileApply(ctx, metaObj)
+	result, err := gr.reconcileApply(ctx, metaObj, log)
 	if err != nil {
 		log.Error(err, "reconcile apply error")
 		gr.Recorder.Event(metaObj, v1.EventTypeWarning, "ReconcileError", err.Error())
@@ -276,7 +279,7 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 // *  New resource (hasChanged = true) --> Start deploying the resource and move provisioning state from "" to "{Accepted || Succeeded || Failed}"
 // *  Existing Resource (hasChanged = true) --> Start deploying the resource and move state from "{terminal state} to "{Accepted || Succeeded || Failed}"
 // *  Existing Resource (hasChanged = false) --> Probably a status change. Don't do anything as of now.
-func (gr *GenericReconciler) reconcileApply(ctx context.Context, metaObj azcorev1.MetaObject) (ctrl.Result, error) {
+func (gr *GenericReconciler) reconcileApply(ctx context.Context, metaObj azcorev1.MetaObject, log logr.Logger) (ctrl.Result, error) {
 	// check if the hash on the resource has changed
 	hasChanged, err := hasResourceHashAnnotationChanged(metaObj)
 	if err != nil {
@@ -307,7 +310,7 @@ func (gr *GenericReconciler) reconcileApply(ctx context.Context, metaObj azcorev
 	case !zips.IsTerminalProvisioningState(resource.ProvisioningState):
 		msg := fmt.Sprintf("resource in state %q, asking Azure for updated state", resource.ProvisioningState)
 		gr.Recorder.Event(metaObj, v1.EventTypeNormal, "ResourceStateNonTerminal", msg)
-		return gr.updateFromNonTerminalApplyState(ctx, metaObj)
+		return gr.updateFromNonTerminalApplyState(ctx, metaObj, log)
 	default:
 		msg := fmt.Sprintf("resource in state %q and spec has not changed", resource.ProvisioningState)
 		gr.Recorder.Event(metaObj, v1.EventTypeNormal, "ResourceNoopReconcile", msg)
@@ -378,17 +381,22 @@ func (gr *GenericReconciler) startDeleteOfResource(ctx context.Context, metaObj 
 	}
 
 	if err := patcher(ctx, gr.Client, metaObj, func(mutMetaObject azcorev1.MetaObject) error {
-		if resource, err = gr.Applier.BeginDelete(ctx, resource); err != nil {
-			return fmt.Errorf("failed trying to delete with %w", err)
+		if resource.ID != "" {
+			if resource, err = gr.Applier.BeginDelete(ctx, resource); err != nil {
+				return fmt.Errorf("failed trying to delete with %w", err)
+			}
+
+			resource.ProvisioningState = zips.DeletingProvisioningState
+		} else {
+			controllerutil.RemoveFinalizer(mutMetaObject, apis.AzureInfraFinalizer)
 		}
 
-		resource.ProvisioningState = zips.DeletingProvisioningState
 		if err := gr.Converter.FromResource(resource, mutMetaObject); err != nil {
 			return fmt.Errorf("error gr.Converter.FromResource with: %w", err)
 		}
 
 		return nil
-	}); err != nil {
+	}); err != nil && !apierrors.IsNotFound(err) {
 		return ctrl.Result{}, fmt.Errorf("failed to patch after starting delete with: %w", err)
 	}
 
@@ -430,7 +438,8 @@ func (gr *GenericReconciler) updateFromNonTerminalDeleteState(ctx context.Contex
 
 // updatedFromNonTerminalApplyState will ask Azure for the updated status of the deployment. If the object is in a
 // non terminal state, it will requeue, else, status will be updated.
-func (gr *GenericReconciler) updateFromNonTerminalApplyState(ctx context.Context, metaObj azcorev1.MetaObject) (ctrl.Result, error) {
+func (gr *GenericReconciler) updateFromNonTerminalApplyState(ctx context.Context, metaObj azcorev1.MetaObject, log logr.Logger) (ctrl.Result, error) {
+	log.Info("before ToResource", "metaObj", metaObj)
 	resource, err := gr.Converter.ToResource(ctx, metaObj)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("unable to transform to resource with: %w", err)
@@ -438,14 +447,19 @@ func (gr *GenericReconciler) updateFromNonTerminalApplyState(ctx context.Context
 
 	if err := patcher(ctx, gr.Client, metaObj, func(mutMetaObj azcorev1.MetaObject) error {
 		// update with latest information about the apply
+		log.Info("about to apply", "res.ID", resource.ID, "res.State", resource.ProvisioningState, "res.deploymentID", resource.DeploymentID, "mutMetaObj", mutMetaObj)
 		resource, err = gr.Applier.Apply(ctx, resource)
 		if err != nil {
 			return fmt.Errorf("failed to apply state to Azure with %w", err)
 		}
 
+		log.Info("applied", "res.ID", resource.ID, "res.State", resource.ProvisioningState, "res.deploymentID", resource.DeploymentID, "mutMetaObj", mutMetaObj)
+
 		if err := gr.Converter.FromResource(resource, mutMetaObj); err != nil {
 			return fmt.Errorf("failed FromResource with: %w", err)
 		}
+
+		log.Info("fromResource", "res.ID", resource.ID, "res.State", resource.ProvisioningState, "res.deploymentID", resource.DeploymentID, "mutMetaObj", mutMetaObj)
 
 		if err := addResourceHashAnnotation(mutMetaObj); err != nil {
 			return fmt.Errorf("failed to addResourceHashAnnotation with: %w", err)
@@ -458,8 +472,9 @@ func (gr *GenericReconciler) updateFromNonTerminalApplyState(ctx context.Context
 
 	result := ctrl.Result{}
 	if !zips.IsTerminalProvisioningState(resource.ProvisioningState) {
+		log.Info("requeuing in 5 seconds", "res.ID", resource.ID, "res.State", resource.ProvisioningState, "res.deploymentID", resource.DeploymentID, "metaObj", metaObj)
 		result = ctrl.Result{
-			RequeueAfter: 5 * time.Second,
+			RequeueAfter: 20 * time.Second,
 		}
 	}
 	return result, err

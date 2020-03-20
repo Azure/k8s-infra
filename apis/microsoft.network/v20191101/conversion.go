@@ -22,7 +22,7 @@ func (src *BackendAddressPool) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
-	dst.APIVersion = apiVersion
+	dst.Spec.APIVersion = apiVersion
 	return nil
 }
 
@@ -43,7 +43,7 @@ func (src *FrontendIPConfiguration) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
-	dst.APIVersion = apiVersion
+	dst.Spec.APIVersion = apiVersion
 	return nil
 }
 
@@ -64,7 +64,7 @@ func (src *InboundNatRule) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
-	dst.APIVersion = apiVersion
+	dst.Spec.APIVersion = apiVersion
 	return nil
 }
 
@@ -85,7 +85,7 @@ func (src *LoadBalancer) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
-	dst.APIVersion = apiVersion
+	dst.Spec.APIVersion = apiVersion
 	return nil
 }
 
@@ -106,7 +106,7 @@ func (src *LoadBalancingRule) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
-	dst.APIVersion = apiVersion
+	dst.Spec.APIVersion = apiVersion
 	return nil
 }
 
@@ -127,7 +127,7 @@ func (src *NetworkInterfaceIPConfiguration) ConvertTo(dstRaw conversion.Hub) err
 		return err
 	}
 
-	dst.APIVersion = apiVersion
+	dst.Spec.APIVersion = apiVersion
 	return nil
 }
 
@@ -148,7 +148,7 @@ func (src *NetworkSecurityGroup) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
-	dst.APIVersion = apiVersion
+	dst.Spec.APIVersion = apiVersion
 	return nil
 }
 
@@ -169,7 +169,7 @@ func (src *OutboundRule) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
-	dst.APIVersion = apiVersion
+	dst.Spec.APIVersion = apiVersion
 	return nil
 }
 
@@ -190,7 +190,7 @@ func (src *Route) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
-	dst.APIVersion = apiVersion
+	dst.Spec.APIVersion = apiVersion
 	return nil
 }
 
@@ -211,7 +211,7 @@ func (src *RouteTable) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
-	dst.APIVersion = apiVersion
+	dst.Spec.APIVersion = apiVersion
 	return nil
 }
 
@@ -232,7 +232,7 @@ func (src *SecurityRule) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
-	dst.APIVersion = apiVersion
+	dst.Spec.APIVersion = apiVersion
 	return nil
 }
 
@@ -253,7 +253,7 @@ func (src *VirtualNetwork) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
-	dst.APIVersion = apiVersion
+	dst.Spec.APIVersion = apiVersion
 	return nil
 }
 

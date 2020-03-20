@@ -621,6 +621,20 @@ func setTopLevelResourceFields(unObj map[string]interface{}, res *zips.Resource)
 		res.ProvisioningState = zips.ProvisioningState(state)
 	}
 
+	deployID, _, err := unstructured.NestedString(status, "deploymentId")
+	if err != nil {
+		return fmt.Errorf("unable to extract deploymentID from status with: %w", err)
+	}
+
+	res.DeploymentID = deployID
+
+	ID, _, err := unstructured.NestedString(status, "id")
+	if err != nil {
+		return fmt.Errorf("unable to extract id from status with: %w", err)
+	}
+
+	res.ID = ID
+
 	bits, err := json.Marshal(status)
 	if err != nil {
 		return fmt.Errorf("unable to marshal status to json with: %w", err)

@@ -176,8 +176,7 @@ func (atc *AzureTemplateClient) updateFromExistingDeployment(ctx context.Context
 		return res, err
 	}
 
-	res, err = fillResource(de, res)
-	if err != nil {
+	if err := fillResource(de, res); err != nil {
 		return res, err
 	}
 
@@ -217,8 +216,7 @@ func (atc *AzureTemplateClient) startNewDeploy(ctx context.Context, res *Resourc
 		return nil, fmt.Errorf("apply failed with: %w", err)
 	}
 
-	res, err = fillResource(de, res)
-	if err != nil {
+	if err := fillResource(de, res); err != nil {
 		return res, err
 	}
 
@@ -298,7 +296,7 @@ func (atc *AzureTemplateClient) HeadResource(ctx context.Context, res *Resource)
 	}
 }
 
-func fillResource(de *Deployment, res *Resource) (*Resource, error) {
+func fillResource(de *Deployment, res *Resource) error {
 	res.DeploymentID = de.ID
 	if de.Properties != nil {
 		res.ProvisioningState = de.Properties.ProvisioningState
@@ -307,12 +305,12 @@ func fillResource(de *Deployment, res *Resource) (*Resource, error) {
 	if de.Properties != nil && de.Properties.Outputs != nil {
 		var templateOutputs map[string]TemplateOutput
 		if err := json.Unmarshal(de.Properties.Outputs, &templateOutputs); err != nil {
-			return res, err
+			return err
 		}
 
 		templateOutput, ok := templateOutputs["resource"]
 		if !ok {
-			return res, errors.New("could not find the resource output in the outputs map")
+			return errors.New("could not find the resource output in the outputs map")
 		}
 
 		tOutValue := templateOutput.Value
@@ -326,7 +324,7 @@ func fillResource(de *Deployment, res *Resource) (*Resource, error) {
 			res.ID = tOutValue.ID
 		}
 	}
-	return res, nil
+	return nil
 }
 
 // GetSettingsFromEnvironment returns the available authentication settings from the environment.

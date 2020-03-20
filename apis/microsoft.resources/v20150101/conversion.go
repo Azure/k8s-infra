@@ -19,7 +19,7 @@ func (src *ResourceGroup) ConvertTo(dstRaw conversion.Hub) error {
 		return err
 	}
 
-	dst.APIVersion = "2015-01-01"
+	dst.Spec.APIVersion = "2015-01-01"
 	return nil
 }
 

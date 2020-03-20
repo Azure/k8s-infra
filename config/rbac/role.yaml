@@ -26,8 +26,8 @@ rules:
   - loadbalancingrules
   - networkinterfaceipconfigurations
   - networksecuritygroups
-  - outboundrule
-  - route
+  - outboundrules
+  - routes
   - routetables
   - securityrules
   - virtualnetworks
