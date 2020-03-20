@@ -236,16 +236,16 @@ func newField(ctx context.Context, fieldName string, fieldType ast.Expr, descrip
 		desc = *description
 	}
 
-	doc := &ast.CommentGroup{
+	documentationComment := &ast.CommentGroup{
 		List: []*ast.Comment{
 			{
-				Text: fmt.Sprintf("%s is %s", fieldName, desc),
+				Text: fmt.Sprintf("/* %s */", desc),
 			},
 		},
 	}
 
 	field := &ast.Field{
-		Doc: doc,
+		Doc: documentationComment,
 		Names: []*ast.Ident{
 			{
 				Name: fieldName,
