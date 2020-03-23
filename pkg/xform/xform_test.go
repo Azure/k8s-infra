@@ -183,14 +183,16 @@ func Test_resourceName(t *testing.T) {
 		UID:        routeTable.UID,
 	})
 
-	name, err := resourceName(route, ownerReferenceStates{
+	res := new(zips.Resource)
+	err := setOwnerInfluencedFields(res, route, ownerReferenceStates{
 		{
 			Obj:   routeTable,
 			State: string(zips.SucceededProvisioningState),
 		},
 	})
 	g.Expect(err).ToNot(gomega.HaveOccurred())
-	g.Expect(name).To(gomega.Equal(fmt.Sprintf("%s/%s", routeTable.Name, route.Name)))
+	g.Expect(res.Name).To(gomega.Equal(fmt.Sprintf("%s/%s", routeTable.Name, route.Name)))
+	g.Expect(res.ResourceGroup).To(gomega.Equal(routeTable.GetResourceGroupObjectRef().Name))
 }
 
 func Test_resourceTypeToParentTypesInOrder(t *testing.T) {
@@ -230,6 +232,14 @@ func Test_resourceTypeToParentTypesInOrder(t *testing.T) {
 			g.Expect(p).To(gomega.Equal(c.Parents))
 		})
 	}
+}
+
+func TestIsOwnerNotFound(t *testing.T) {
+	err := fmt.Errorf("oops with: %w", &OwnerNotFoundError{
+		Owner: "foo",
+	})
+	g := gomega.NewGomegaWithT(t)
+	g.Expect(IsOwnerNotFound(err)).To(gomega.BeTrue())
 }
 
 func newRoute(nn *client.ObjectKey) *microsoftnetworkv1.Route {

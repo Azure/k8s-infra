@@ -11,10 +11,10 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-microsoft-networks-infra-azure-com-v1-backendaddresspool
+      path: /mutate-microsoft-network-infra-azure-com-v1-backendaddresspool
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: mbackendaddresspool.kb.io
+  name: default.backendaddresspool.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -30,10 +30,10 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-microsoft-networks-infra-azure-com-v1-frontendipconfiguration
+      path: /mutate-microsoft-network-infra-azure-com-v1-frontendipconfiguration
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: mfrontendipconfiguration.kb.io
+  name: default.frontendipconfiguration.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -49,10 +49,10 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-microsoft-networks-infra-azure-com-v1-inboundnatrule
+      path: /mutate-microsoft-network-infra-azure-com-v1-inboundnatrule
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: minboundnatrule.kb.io
+  name: default.inboundnatrule.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -68,10 +68,10 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-microsoft-networks-infra-azure-com-v1-loadbalancer
+      path: /mutate-microsoft-network-infra-azure-com-v1-loadbalancer
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: mloadbalancer.kb.io
+  name: default.loadbalancer.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -87,10 +87,10 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-microsoft-networks-infra-azure-com-v1-loadbalancingrule
+      path: /mutate-microsoft-network-infra-azure-com-v1-loadbalancingrule
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: mloadbalancingrule.kb.io
+  name: default.loadbalancingrule.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -106,10 +106,10 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-microsoft-networks-infra-azure-com-v1-networkinterfaceipconfiguration
+      path: /mutate-microsoft-network-infra-azure-com-v1-networkinterfaceipconfiguration
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: mnetworkinterfaceipconfiguration.kb.io
+  name: default.networkinterfaceipconfiguration.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -125,10 +125,10 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-microsoft-networks-infra-azure-com-v1-networksecuritygroup
+      path: /mutate-microsoft-network-infra-azure-com-v1-networksecuritygroup
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: mnetworksecuritygroup.kb.io
+  name: default.networksecuritygroup.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -144,10 +144,10 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-microsoft-networks-infra-azure-com-v1-outboundrule
+      path: /mutate-microsoft-network-infra-azure-com-v1-outboundrule
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: moutboundrule.kb.io
+  name: default.outboundrule.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -163,10 +163,10 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-microsoft-networks-infra-azure-com-v1-route
+      path: /mutate-microsoft-network-infra-azure-com-v1-route
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: mroute.kb.io
+  name: default.route.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -182,10 +182,10 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-microsoft-networks-infra-azure-com-v1-routetable
+      path: /mutate-microsoft-network-infra-azure-com-v1-routetable
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: mroutetable.kb.io
+  name: default.routetable.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -201,10 +201,10 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-microsoft-networks-infra-azure-com-v1-securityrule
+      path: /mutate-microsoft-network-infra-azure-com-v1-securityrule
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: msecurityrule.kb.io
+  name: default.securityrule.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -220,10 +220,10 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-microsoft-networks-infra-azure-com-v1-virtualnetwork
+      path: /mutate-microsoft-network-infra-azure-com-v1-virtualnetwork
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: mvirtualnetwork.kb.io
+  name: default.virtualnetwork.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -242,7 +242,7 @@ webhooks:
       path: /mutate-microsoft-resources-infra-azure-com-v1-resourcegroup
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: mresourcegroup.kb.io
+  name: default.resourcegroup.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.resources.infra.azure.com
@@ -266,10 +266,10 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-microsoft-networks-infra-azure-com-v1-backendaddresspool
+      path: /validate-microsoft-network-infra-azure-com-v1-backendaddresspool
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: vbackendaddresspool.kb.io
+  name: validation.backendaddresspool.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -279,16 +279,16 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - backendaddresspool
+    - backendaddresspools
 - clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
       namespace: system
-      path: /validate-microsoft-networks-infra-azure-com-v1-frontendipconfiguration
+      path: /validate-microsoft-network-infra-azure-com-v1-frontendipconfiguration
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: vfrontendipconfiguration.kb.io
+  name: validation.frontendipconfiguration.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -298,16 +298,16 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - frontendipconfiguration
+    - frontendipconfigurations
 - clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
       namespace: system
-      path: /validate-microsoft-networks-infra-azure-com-v1-inboundnatrule
+      path: /validate-microsoft-network-infra-azure-com-v1-inboundnatrule
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: vinboundnatrule.kb.io
+  name: validation.inboundnatrule.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -317,16 +317,16 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - inboundnatrule
+    - inboundnatrules
 - clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
       namespace: system
-      path: /validate-microsoft-networks-infra-azure-com-v1-loadbalancer
+      path: /validate-microsoft-network-infra-azure-com-v1-loadbalancer
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: vloadbalancer.kb.io
+  name: validation.loadbalancer.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -336,16 +336,16 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - loadbalancer
+    - loadbalancers
 - clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
       namespace: system
-      path: /validate-microsoft-networks-infra-azure-com-v1-loadbalancingrule
+      path: /validate-microsoft-network-infra-azure-com-v1-loadbalancingrule
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: vloadbalancingrule.kb.io
+  name: validation.loadbalancingrule.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -355,16 +355,16 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - loadbalancingrule
+    - loadbalancingrules
 - clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
       namespace: system
-      path: /validate-microsoft-networks-infra-azure-com-v1-networkinterfaceipconfiguration
+      path: /validate-microsoft-network-infra-azure-com-v1-networkinterfaceipconfiguration
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: vnetworkinterfaceipconfiguration.kb.io
+  name: validation.networkinterfaceipconfiguration.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -374,16 +374,16 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - networkinterfaceipconfiguration
+    - networkinterfaceipconfigurations
 - clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
       namespace: system
-      path: /validate-microsoft-networks-infra-azure-com-v1-networksecuritygroup
+      path: /validate-microsoft-network-infra-azure-com-v1-networksecuritygroup
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: vnetworksecuritygroup.kb.io
+  name: validation.networksecuritygroup.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -393,16 +393,16 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - networksecuritygroup
+    - networksecuritygroups
 - clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
       namespace: system
-      path: /validate-microsoft-networks-infra-azure-com-v1-outboundrule
+      path: /validate-microsoft-network-infra-azure-com-v1-outboundrule
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: voutboundrule.kb.io
+  name: validation.outboundrule.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -412,16 +412,16 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - outboundrule
+    - outboundrules
 - clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
       namespace: system
-      path: /validate-microsoft-networks-infra-azure-com-v1-route
+      path: /validate-microsoft-network-infra-azure-com-v1-route
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: vroute.kb.io
+  name: validation.route.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -431,16 +431,16 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - route
+    - routes
 - clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
       namespace: system
-      path: /validate-microsoft-networks-infra-azure-com-v1-routetable
+      path: /validate-microsoft-network-infra-azure-com-v1-routetable
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: vroutetable.kb.io
+  name: validation.routetable.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -450,16 +450,16 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - routetable
+    - routetables
 - clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
       namespace: system
-      path: /validate-microsoft-networks-infra-azure-com-v1-securityrule
+      path: /validate-microsoft-network-infra-azure-com-v1-securityrule
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: vsecurityrule.kb.io
+  name: validation.securityrule.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -469,16 +469,16 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - securityrule
+    - securityrules
 - clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
       namespace: system
-      path: /validate-microsoft-networks-infra-azure-com-v1-virtualnetwork
+      path: /validate-microsoft-network-infra-azure-com-v1-virtualnetwork
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: vvirtualnetwork.kb.io
+  name: validation.virtualnetwork.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.network.infra.azure.com
@@ -488,7 +488,7 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - virtualnetwork
+    - virtualnetworks
 - clientConfig:
     caBundle: Cg==
     service:
@@ -497,7 +497,7 @@ webhooks:
       path: /validate-microsoft-resources-infra-azure-com-v1-resourcegroup
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: vresourcegroup.kb.io
+  name: validation.resourcegroup.infra.azure.com
   rules:
   - apiGroups:
     - microsoft.resources.infra.azure.com
@@ -507,4 +507,4 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - resourcegroup
+    - resourcegroups

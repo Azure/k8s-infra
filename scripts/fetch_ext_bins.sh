@@ -78,6 +78,6 @@ function fetch_tools {
   header_text "==> fetching tools <=="
 
   mkdir -p "${tools_bin}"
-  curl -fsL https://go.kubebuilder.io/dl/latest/${goos}/${goarch} | tar -xz -C /tmp/
-  mv /tmp/kubebuilder_master_${goos}_${goarch}/bin/* "${tools_bin}"
+  curl -fsL https://go.kubebuilder.io/dl/2.3.0/${goos}/${goarch} | tar -xz -C /tmp/
+  mv /tmp/kubebuilder_2.3.0_${goos}_${goarch}/bin/* "${tools_bin}"
 }

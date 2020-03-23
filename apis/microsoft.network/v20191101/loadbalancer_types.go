@@ -23,7 +23,7 @@ type (
 	LoadBalancerSpec struct {
 		// ResourceGroupRef is the Azure Resource Group the VirtualNetwork resides within
 		// +kubebuilder:validation:Required
-		ResourceGroupRef *azcorev1.KnownTypeReference `json:"groupRef"`
+		ResourceGroupRef *azcorev1.KnownTypeReference `json:"resourceGroupRef"`
 
 		// Location of the VNET in Azure
 		// +kubebuilder:validation:Required

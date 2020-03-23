@@ -8,7 +8,7 @@ spec:
     name: foo-2019
     namespace: default
   properties:
-    disableBGPPropigation: false
+    disableBgpRoutePropagation: false
     routeRefs:
       - name: route-2019-1
         namespace: default

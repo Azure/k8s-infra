@@ -179,8 +179,11 @@ docker-build: test ## Build the docker image
 docker-push: ## Push the docker image
 	docker push $(REGISTRY)/${IMG}
 
-.PHONY: release
-release: docker-build docker-push $(KUSTOMIZE) ## Build, push, generate dist for release
+.PHONY: dist
+dist:
 	mkdir -p dist
 	cd config/manager && $(ROOT_DIR)/$(TOOLS_BIN_DIR)/kustomize edit set image controller=$(REGISTRY)/${IMG}
 	$(KUSTOMIZE) build config/default > dist/release.yaml
+
+.PHONY: release
+release: dist docker-build docker-push $(KUSTOMIZE) ## Build, push, generate dist for release

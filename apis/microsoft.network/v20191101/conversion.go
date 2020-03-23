@@ -6,6 +6,8 @@ Licensed under the MIT license.
 package v20191101
 
 import (
+	"fmt"
+
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	v1 "github.com/Azure/k8s-infra/apis/microsoft.network/v1"
@@ -250,6 +252,7 @@ func (src *VirtualNetwork) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*v1.VirtualNetwork)
 
 	if err := Convert_v20191101_VirtualNetwork_To_v1_VirtualNetwork(src, dst, nil); err != nil {
+		fmt.Println(err)
 		return err
 	}
 
@@ -261,6 +264,7 @@ func (dst *VirtualNetwork) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*v1.VirtualNetwork)
 
 	if err := Convert_v1_VirtualNetwork_To_v20191101_VirtualNetwork(src, dst, nil); err != nil {
+		fmt.Println(err)
 		return err
 	}
 

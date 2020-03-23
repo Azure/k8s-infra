@@ -349,10 +349,11 @@ var _ = Describe("GenericReconciler", func() {
 			bits, err := json.Marshal(route.Spec.Properties)
 			Expect(err).ToNot(HaveOccurred())
 			beforeRouteResource := &zips.Resource{
-				Name:       fmt.Sprintf("%s/%s", rt.Name, route.Name),
-				Type:       "Microsoft.Network/routeTables/routes",
-				APIVersion: "2019-10-01",
-				Properties: bits,
+				Name:          fmt.Sprintf("%s/%s", rt.Name, route.Name),
+				Type:          "Microsoft.Network/routeTables/routes",
+				APIVersion:    "2019-10-01",
+				ResourceGroup: rt.GetResourceGroupObjectRef().Name,
+				Properties:    bits,
 			}
 			afterRouteResource := *beforeRouteResource
 			afterRouteResource.ProvisioningState = zips.SucceededProvisioningState

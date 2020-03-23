@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,6 +21,7 @@ import (
 
 	azcorev1 "github.com/Azure/k8s-infra/apis/core/v1"
 	"github.com/Azure/k8s-infra/pkg/util/ownerutil"
+	"github.com/Azure/k8s-infra/pkg/util/patch"
 	"github.com/Azure/k8s-infra/pkg/zips"
 )
 
@@ -38,6 +41,10 @@ type (
 	}
 
 	ownerReferenceStates []ownerReferenceState
+
+	OwnerNotFoundError struct {
+		Owner string
+	}
 )
 
 func NewARMConverter(client client.Client, scheme *runtime.Scheme) *ARMConverter {
@@ -77,6 +84,7 @@ func (m *ARMConverter) ApplyOwnership(ctx context.Context, obj azcorev1.MetaObje
 		return false, fmt.Errorf("unable to convert obj to unstructured with: %w", err)
 	}
 
+	allApplied := true
 	for _, ref := range typeRefLocations {
 		if !ref.IsOwned {
 			// if the reference is not owned, don't add this to the owner references
@@ -84,7 +92,7 @@ func (m *ARMConverter) ApplyOwnership(ctx context.Context, obj azcorev1.MetaObje
 		}
 
 		var knownTypeReferences []azcorev1.KnownTypeReference
-		if !ref.IsSlice {
+		if ref.IsSlice {
 			unRefs, found, err := unstructured.NestedSlice(unObj, ref.JSONFields()...)
 			if err != nil {
 				return false, fmt.Errorf("unable to find path %v with: %w", ref.JSONFields(), err)
@@ -150,12 +158,22 @@ func (m *ARMConverter) ApplyOwnership(ctx context.Context, obj azcorev1.MetaObje
 			}
 
 			if err := m.Client.Get(ctx, nn, ownedObj); err != nil {
+				if apierrors.IsNotFound(err) {
+					// object is not found, so can't apply all, but should still try to apply ownership to rest
+					allApplied = false
+					continue
+				}
 				return false, fmt.Errorf("unable to fetch object %v with: %w", nn, err)
 			}
 
 			ownedMetaObject, ok := ownedObj.(metav1.Object)
 			if !ok {
 				return false, fmt.Errorf("unable to case refObj to metav1.Object %v", ownedObj)
+			}
+
+			patchHelper, err := patch.NewHelper(ownedObj, m.Client)
+			if err != nil {
+				return false, fmt.Errorf("unable to create patch helper with: %w", err)
 			}
 
 			objGVK := obj.GetObjectKind().GroupVersionKind()
@@ -166,14 +184,14 @@ func (m *ARMConverter) ApplyOwnership(ctx context.Context, obj azcorev1.MetaObje
 				UID:        obj.GetUID(),
 			}))
 
-			err = m.Client.Update(ctx, ownedObj)
+			err = patchHelper.Patch(ctx, ownedObj)
 			if err != nil {
-				return false, err
+				return false, fmt.Errorf("failed attempting to patch %v with %w", ownedObj, err)
 			}
 		}
 	}
 
-	return true, nil
+	return allApplied, nil
 }
 
 func (m *ARMConverter) ToResource(ctx context.Context, obj azcorev1.MetaObject) (*zips.Resource, error) {
@@ -185,10 +203,6 @@ func (m *ARMConverter) ToResource(ctx context.Context, obj azcorev1.MetaObject) 
 	res := new(zips.Resource)
 	res.SetAnnotations(obj.GetAnnotations())
 	res.Type = obj.ResourceType()
-	if grouped, ok := obj.(azcorev1.Grouped); ok {
-		groupRef := grouped.GetResourceGroupObjectRef()
-		res.ResourceGroup = groupRef.Name
-	}
 
 	ownerRefStates, err := m.getAllOwnerReferenceStates(ctx, obj)
 	if err != nil {
@@ -199,19 +213,16 @@ func (m *ARMConverter) ToResource(ctx context.Context, obj azcorev1.MetaObject) 
 		return res, fmt.Errorf("an owner reference is not in a Succeeded provisioning state")
 	}
 
-	name, err := resourceName(obj, ownerRefStates)
-	if err != nil {
-		return res, fmt.Errorf("unable to name the resource with: %w", err)
-	}
-
-	res.Name = name
-
 	if err := setTopLevelResourceFields(unObj, res); err != nil {
 		return res, err
 	}
 
 	if err := m.setResourceProperties(ctx, unObj, obj, res); err != nil {
 		return nil, fmt.Errorf("unable to set Properties with: %w", err)
+	}
+
+	if err := setOwnerInfluencedFields(res, obj, ownerRefStates); err != nil {
+		return res, fmt.Errorf("unable to set owner influenced fields on resource: %w", err)
 	}
 
 	return res, nil
@@ -234,30 +245,50 @@ func (m *ARMConverter) FromResource(res *zips.Resource, obj azcorev1.MetaObject)
 	return runtime.DefaultUnstructuredConverter.FromUnstructured(unObj, obj)
 }
 
-func resourceName(obj azcorev1.MetaObject, owners ownerReferenceStates) (string, error) {
+func setOwnerInfluencedFields(resource *zips.Resource, obj azcorev1.MetaObject, owners ownerReferenceStates) error {
 	resourceType := obj.ResourceType()
 	parents := resourceTypeToParentTypesInOrder(resourceType)
 
 	if len(parents) == 0 {
-		// no parents means just use the name of the object
-		return obj.GetName(), nil
+		// no parents means just use object information
+		resource.Name = obj.GetName()
+		grouped, ok := obj.(azcorev1.Grouped)
+		if ok {
+			setResourceGroupFromGroupedRuntimeObject(resource, grouped)
+		}
 	}
 
+	var firstPartentObj runtime.Object
 	names := make([]string, len(parents))
 	for i, parent := range parents {
 		for _, owner := range owners {
 			if owner.Obj.ResourceType() == parent {
+				if i == 0 {
+					firstPartentObj = owner.Obj
+				}
 				names[i] = owner.Obj.GetName()
 				break
 			}
 		}
 
 		if names[i] == "" {
-			return "", fmt.Errorf("unable to find a matching owner for resource type %s", parent)
+			return &OwnerNotFoundError{
+				Owner: parent,
+			}
 		}
 	}
 
-	return strings.Join(append(names, obj.GetName()), "/"), nil
+	resource.Name = strings.Join(append(names, obj.GetName()), "/")
+	grouped, ok := firstPartentObj.(azcorev1.Grouped)
+	if ok {
+		setResourceGroupFromGroupedRuntimeObject(resource, grouped)
+	}
+	return nil
+}
+
+func setResourceGroupFromGroupedRuntimeObject(resource *zips.Resource, grouped azcorev1.Grouped) {
+	groupRef := grouped.GetResourceGroupObjectRef()
+	resource.ResourceGroup = groupRef.Name
 }
 
 func resourceTypeToParentTypesInOrder(resourceType string) []string {
@@ -332,6 +363,10 @@ func (m *ARMConverter) getAllOwnerReferenceStates(ctx context.Context, obj azcor
 		}
 
 		if err := m.Client.Get(ctx, refKey, owner); err != nil {
+			if apierrors.IsNotFound(err) {
+				// owner is not found, so just carry on
+				continue
+			}
 			return ors, fmt.Errorf("unable to fetch owner %v with: %w", ref, err)
 		}
 
@@ -448,6 +483,10 @@ func (m *ARMConverter) replaceReferenceWithID(ctx context.Context, unObj map[str
 	}
 
 	if err := m.Client.Get(ctx, nn, refObj); err != nil {
+		if apierrors.IsNotFound(err) {
+			// object is not there, so just move on
+			return nil
+		}
 		return fmt.Errorf("unable to fetch object %v with: %w", nn, err)
 	}
 
@@ -525,6 +564,10 @@ func (m *ARMConverter) replaceSliceReferenceWithIDs(ctx context.Context, unObj m
 		}
 
 		if err := m.Client.Get(ctx, nn, refObj); err != nil {
+			if apierrors.IsNotFound(err) {
+				// object is not there, so just move on
+				continue
+			}
 			return fmt.Errorf("unable to fetch object %v with: %w", nn, err)
 		}
 
@@ -672,4 +715,17 @@ func getStringValue(unObj map[string]interface{}, fieldName string) (string, err
 	}
 
 	return str, nil
+}
+
+func (nmoe *OwnerNotFoundError) Error() string {
+	return fmt.Sprintf("unable to find a matching owner for resource type %s", nmoe.Owner)
+}
+
+func (nmoe *OwnerNotFoundError) Is(target error) bool {
+	_, ok := target.(*OwnerNotFoundError)
+	return ok
+}
+
+func IsOwnerNotFound(err error) bool {
+	return errors.Is(err, &OwnerNotFoundError{})
 }

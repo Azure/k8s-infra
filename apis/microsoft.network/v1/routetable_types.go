@@ -25,7 +25,7 @@ type (
 
 		// ResourceGroupRef is the Azure Resource Group the VirtualNetwork resides within
 		// +kubebuilder:validation:Required
-		ResourceGroupRef *azcorev1.KnownTypeReference `json:"groupRef" group:"microsoft.resources.infra.azure.com" kind:"ResourceGroup"`
+		ResourceGroupRef *azcorev1.KnownTypeReference `json:"resourceGroupRef" group:"microsoft.resources.infra.azure.com" kind:"ResourceGroup"`
 
 		// Location of the VNET in Azure
 		// +kubebuilder:validation:Required

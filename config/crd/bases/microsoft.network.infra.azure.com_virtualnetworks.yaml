@@ -38,20 +38,6 @@ spec:
             properties:
               apiVersion:
                 type: string
-              groupRef:
-                description: ResourceGroupRef is the Azure Resource Group the VirtualNetwork
-                  resides within
-                properties:
-                  name:
-                    description: Name is the name of resource being referenced
-                    type: string
-                  namespace:
-                    description: Namespace is the namespace of resource being referenced.
-                    type: string
-                required:
-                - name
-                - namespace
-                type: object
               location:
                 type: string
               properties:
@@ -123,12 +109,26 @@ spec:
                       type: object
                     type: array
                 type: object
+              resourceGroupRef:
+                description: ResourceGroupRef is the Azure Resource Group the VirtualNetwork
+                  resides within
+                properties:
+                  name:
+                    description: Name is the name of resource being referenced
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of resource being referenced.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
               tags:
                 additionalProperties:
                   type: string
                 type: object
             required:
-            - groupRef
+            - resourceGroupRef
             type: object
           status:
             description: VirtualNetworkStatus defines the observed state of VirtualNetwork
@@ -165,20 +165,6 @@ spec:
           spec:
             description: VirtualNetworkSpec defines the desired state of VirtualNetwork
             properties:
-              groupRef:
-                description: ResourceGroupRef is the Azure Resource Group the VirtualNetwork
-                  resides within
-                properties:
-                  name:
-                    description: Name is the name of resource being referenced
-                    type: string
-                  namespace:
-                    description: Namespace is the namespace of resource being referenced.
-                    type: string
-                required:
-                - name
-                - namespace
-                type: object
               location:
                 description: Location of the VNET in Azure
                 type: string
@@ -251,14 +237,28 @@ spec:
                       type: object
                     type: array
                 type: object
+              resourceGroupRef:
+                description: ResourceGroupRef is the Azure Resource Group the VirtualNetwork
+                  resides within
+                properties:
+                  name:
+                    description: Name is the name of resource being referenced
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of resource being referenced.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
               tags:
                 additionalProperties:
                   type: string
                 description: Tags are user defined key value pairs
                 type: object
             required:
-            - groupRef
             - location
+            - resourceGroupRef
             type: object
           status:
             description: VirtualNetworkStatus defines the observed state of VirtualNetwork

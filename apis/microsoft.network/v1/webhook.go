@@ -15,15 +15,7 @@ import (
 // log is for logging in this package.
 var backendaddresspoollog = logf.Log.WithName("backendaddresspool-resource")
 
-func (r *BackendAddressPool) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-// +kubebuilder:webhook:path=/mutate-microsoft-networks-infra-azure-com-v1-backendaddresspool,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=backendaddresspools,verbs=create;update,versions=v1,name=mbackendaddresspool.kb.io
+// +kubebuilder:webhook:path=/mutate-microsoft-network-infra-azure-com-v1-backendaddresspool,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=backendaddresspools,verbs=create;update,versions=v1,name=default.backendaddresspool.infra.azure.com
 
 var _ webhook.Defaulter = &BackendAddressPool{}
 
@@ -35,7 +27,7 @@ func (r *BackendAddressPool) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-networks-infra-azure-com-v1-backendaddresspool,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=backendaddresspool,versions=v1,name=vbackendaddresspool.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-network-infra-azure-com-v1-backendaddresspool,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=backendaddresspools,versions=v1,name=validation.backendaddresspool.infra.azure.com
 
 var _ webhook.Validator = &BackendAddressPool{}
 
@@ -66,15 +58,7 @@ func (r *BackendAddressPool) ValidateDelete() error {
 // log is for logging in this package.
 var frontendipconfigurationlog = logf.Log.WithName("frontendipconfiguration-resource")
 
-func (r *FrontendIPConfiguration) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-// +kubebuilder:webhook:path=/mutate-microsoft-networks-infra-azure-com-v1-frontendipconfiguration,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=frontendipconfigurations,verbs=create;update,versions=v1,name=mfrontendipconfiguration.kb.io
+// +kubebuilder:webhook:path=/mutate-microsoft-network-infra-azure-com-v1-frontendipconfiguration,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=frontendipconfigurations,verbs=create;update,versions=v1,name=default.frontendipconfiguration.infra.azure.com
 
 var _ webhook.Defaulter = &FrontendIPConfiguration{}
 
@@ -86,7 +70,7 @@ func (r *FrontendIPConfiguration) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-networks-infra-azure-com-v1-frontendipconfiguration,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=frontendipconfiguration,versions=v1,name=vfrontendipconfiguration.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-network-infra-azure-com-v1-frontendipconfiguration,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=frontendipconfigurations,versions=v1,name=validation.frontendipconfiguration.infra.azure.com
 
 var _ webhook.Validator = &FrontendIPConfiguration{}
 
@@ -117,15 +101,7 @@ func (r *FrontendIPConfiguration) ValidateDelete() error {
 // log is for logging in this package.
 var inboundnatrulelog = logf.Log.WithName("inboundnatrule-resource")
 
-func (r *InboundNatRule) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-// +kubebuilder:webhook:path=/mutate-microsoft-networks-infra-azure-com-v1-inboundnatrule,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=inboundnatrules,verbs=create;update,versions=v1,name=minboundnatrule.kb.io
+// +kubebuilder:webhook:path=/mutate-microsoft-network-infra-azure-com-v1-inboundnatrule,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=inboundnatrules,verbs=create;update,versions=v1,name=default.inboundnatrule.infra.azure.com
 
 var _ webhook.Defaulter = &InboundNatRule{}
 
@@ -137,7 +113,7 @@ func (r *InboundNatRule) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-networks-infra-azure-com-v1-inboundnatrule,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=inboundnatrule,versions=v1,name=vinboundnatrule.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-network-infra-azure-com-v1-inboundnatrule,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=inboundnatrules,versions=v1,name=validation.inboundnatrule.infra.azure.com
 
 var _ webhook.Validator = &InboundNatRule{}
 
@@ -168,15 +144,7 @@ func (r *InboundNatRule) ValidateDelete() error {
 // log is for logging in this package.
 var loadbalancerlog = logf.Log.WithName("loadbalancer-resource")
 
-func (r *LoadBalancer) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-// +kubebuilder:webhook:path=/mutate-microsoft-networks-infra-azure-com-v1-loadbalancer,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=loadbalancers,verbs=create;update,versions=v1,name=mloadbalancer.kb.io
+// +kubebuilder:webhook:path=/mutate-microsoft-network-infra-azure-com-v1-loadbalancer,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=loadbalancers,verbs=create;update,versions=v1,name=default.loadbalancer.infra.azure.com
 
 var _ webhook.Defaulter = &LoadBalancer{}
 
@@ -188,7 +156,7 @@ func (r *LoadBalancer) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-networks-infra-azure-com-v1-loadbalancer,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=loadbalancer,versions=v1,name=vloadbalancer.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-network-infra-azure-com-v1-loadbalancer,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=loadbalancers,versions=v1,name=validation.loadbalancer.infra.azure.com
 
 var _ webhook.Validator = &LoadBalancer{}
 
@@ -219,15 +187,7 @@ func (r *LoadBalancer) ValidateDelete() error {
 // log is for logging in this package.
 var loadbalancingrulelog = logf.Log.WithName("loadbalancingrule-resource")
 
-func (r *LoadBalancingRule) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-// +kubebuilder:webhook:path=/mutate-microsoft-networks-infra-azure-com-v1-loadbalancingrule,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=loadbalancingrules,verbs=create;update,versions=v1,name=mloadbalancingrule.kb.io
+// +kubebuilder:webhook:path=/mutate-microsoft-network-infra-azure-com-v1-loadbalancingrule,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=loadbalancingrules,verbs=create;update,versions=v1,name=default.loadbalancingrule.infra.azure.com
 
 var _ webhook.Defaulter = &LoadBalancingRule{}
 
@@ -239,7 +199,7 @@ func (r *LoadBalancingRule) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-networks-infra-azure-com-v1-loadbalancingrule,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=loadbalancingrule,versions=v1,name=vloadbalancingrule.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-network-infra-azure-com-v1-loadbalancingrule,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=loadbalancingrules,versions=v1,name=validation.loadbalancingrule.infra.azure.com
 
 var _ webhook.Validator = &LoadBalancingRule{}
 
@@ -278,7 +238,7 @@ func (r *NetworkInterfaceIPConfiguration) SetupWebhookWithManager(mgr ctrl.Manag
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-microsoft-networks-infra-azure-com-v1-networkinterfaceipconfiguration,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=networkinterfaceipconfigurations,verbs=create;update,versions=v1,name=mnetworkinterfaceipconfiguration.kb.io
+// +kubebuilder:webhook:path=/mutate-microsoft-network-infra-azure-com-v1-networkinterfaceipconfiguration,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=networkinterfaceipconfigurations,verbs=create;update,versions=v1,name=default.networkinterfaceipconfiguration.infra.azure.com
 
 var _ webhook.Defaulter = &NetworkInterfaceIPConfiguration{}
 
@@ -290,7 +250,7 @@ func (r *NetworkInterfaceIPConfiguration) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-networks-infra-azure-com-v1-networkinterfaceipconfiguration,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=networkinterfaceipconfiguration,versions=v1,name=vnetworkinterfaceipconfiguration.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-network-infra-azure-com-v1-networkinterfaceipconfiguration,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=networkinterfaceipconfigurations,versions=v1,name=validation.networkinterfaceipconfiguration.infra.azure.com
 
 var _ webhook.Validator = &NetworkInterfaceIPConfiguration{}
 
@@ -321,15 +281,7 @@ func (r *NetworkInterfaceIPConfiguration) ValidateDelete() error {
 // log is for logging in this package.
 var networksecuritygrouplog = logf.Log.WithName("networksecuritygroup-resource")
 
-func (r *NetworkSecurityGroup) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-// +kubebuilder:webhook:path=/mutate-microsoft-networks-infra-azure-com-v1-networksecuritygroup,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=networksecuritygroups,verbs=create;update,versions=v1,name=mnetworksecuritygroup.kb.io
+// +kubebuilder:webhook:path=/mutate-microsoft-network-infra-azure-com-v1-networksecuritygroup,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=networksecuritygroups,verbs=create;update,versions=v1,name=default.networksecuritygroup.infra.azure.com
 
 var _ webhook.Defaulter = &NetworkSecurityGroup{}
 
@@ -341,7 +293,7 @@ func (r *NetworkSecurityGroup) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-networks-infra-azure-com-v1-networksecuritygroup,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=networksecuritygroup,versions=v1,name=vnetworksecuritygroup.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-network-infra-azure-com-v1-networksecuritygroup,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=networksecuritygroups,versions=v1,name=validation.networksecuritygroup.infra.azure.com
 
 var _ webhook.Validator = &NetworkSecurityGroup{}
 
@@ -372,15 +324,7 @@ func (r *NetworkSecurityGroup) ValidateDelete() error {
 // log is for logging in this package.
 var outboundrulelog = logf.Log.WithName("outboundrule-resource")
 
-func (r *OutboundRule) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-// +kubebuilder:webhook:path=/mutate-microsoft-networks-infra-azure-com-v1-outboundrule,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=outboundrules,verbs=create;update,versions=v1,name=moutboundrule.kb.io
+// +kubebuilder:webhook:path=/mutate-microsoft-network-infra-azure-com-v1-outboundrule,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=outboundrules,verbs=create;update,versions=v1,name=default.outboundrule.infra.azure.com
 
 var _ webhook.Defaulter = &OutboundRule{}
 
@@ -392,7 +336,7 @@ func (r *OutboundRule) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-networks-infra-azure-com-v1-outboundrule,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=outboundrule,versions=v1,name=voutboundrule.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-network-infra-azure-com-v1-outboundrule,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=outboundrules,versions=v1,name=validation.outboundrule.infra.azure.com
 
 var _ webhook.Validator = &OutboundRule{}
 
@@ -431,7 +375,7 @@ func (r *Route) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-microsoft-networks-infra-azure-com-v1-route,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=routes,verbs=create;update,versions=v1,name=mroute.kb.io
+// +kubebuilder:webhook:path=/mutate-microsoft-network-infra-azure-com-v1-route,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=routes,verbs=create;update,versions=v1,name=default.route.infra.azure.com
 
 var _ webhook.Defaulter = &Route{}
 
@@ -443,7 +387,7 @@ func (r *Route) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-networks-infra-azure-com-v1-route,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=route,versions=v1,name=vroute.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-network-infra-azure-com-v1-route,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=routes,versions=v1,name=validation.route.infra.azure.com
 
 var _ webhook.Validator = &Route{}
 
@@ -474,15 +418,7 @@ func (r *Route) ValidateDelete() error {
 // log is for logging in this package.
 var routetablelog = logf.Log.WithName("routetable-resource")
 
-func (r *RouteTable) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-// +kubebuilder:webhook:path=/mutate-microsoft-networks-infra-azure-com-v1-routetable,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=routetables,verbs=create;update,versions=v1,name=mroutetable.kb.io
+// +kubebuilder:webhook:path=/mutate-microsoft-network-infra-azure-com-v1-routetable,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=routetables,verbs=create;update,versions=v1,name=default.routetable.infra.azure.com
 
 var _ webhook.Defaulter = &RouteTable{}
 
@@ -494,7 +430,7 @@ func (r *RouteTable) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-networks-infra-azure-com-v1-routetable,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=routetable,versions=v1,name=vroutetable.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-network-infra-azure-com-v1-routetable,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=routetables,versions=v1,name=validation.routetable.infra.azure.com
 
 var _ webhook.Validator = &RouteTable{}
 
@@ -525,15 +461,7 @@ func (r *RouteTable) ValidateDelete() error {
 // log is for logging in this package.
 var securityrulelog = logf.Log.WithName("securityrule-resource")
 
-func (r *SecurityRule) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-// +kubebuilder:webhook:path=/mutate-microsoft-networks-infra-azure-com-v1-securityrule,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=securityrules,verbs=create;update,versions=v1,name=msecurityrule.kb.io
+// +kubebuilder:webhook:path=/mutate-microsoft-network-infra-azure-com-v1-securityrule,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=securityrules,verbs=create;update,versions=v1,name=default.securityrule.infra.azure.com
 
 var _ webhook.Defaulter = &SecurityRule{}
 
@@ -545,7 +473,7 @@ func (r *SecurityRule) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-networks-infra-azure-com-v1-securityrule,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=securityrule,versions=v1,name=vsecurityrule.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-network-infra-azure-com-v1-securityrule,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=securityrules,versions=v1,name=validation.securityrule.infra.azure.com
 
 var _ webhook.Validator = &SecurityRule{}
 
@@ -576,15 +504,7 @@ func (r *SecurityRule) ValidateDelete() error {
 // log is for logging in this package.
 var virtualnetworklog = logf.Log.WithName("virtualnetwork-resource")
 
-func (r *VirtualNetwork) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-// +kubebuilder:webhook:path=/mutate-microsoft-networks-infra-azure-com-v1-virtualnetwork,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=virtualnetworks,verbs=create;update,versions=v1,name=mvirtualnetwork.kb.io
+// +kubebuilder:webhook:path=/mutate-microsoft-network-infra-azure-com-v1-virtualnetwork,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=virtualnetworks,verbs=create;update,versions=v1,name=default.virtualnetwork.infra.azure.com
 
 var _ webhook.Defaulter = &VirtualNetwork{}
 
@@ -596,7 +516,7 @@ func (r *VirtualNetwork) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-networks-infra-azure-com-v1-virtualnetwork,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=virtualnetwork,versions=v1,name=vvirtualnetwork.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-network-infra-azure-com-v1-virtualnetwork,mutating=false,matchPolicy=Equivalent,failurePolicy=fail,groups=microsoft.network.infra.azure.com,resources=virtualnetworks,versions=v1,name=validation.virtualnetwork.infra.azure.com
 
 var _ webhook.Validator = &VirtualNetwork{}
 

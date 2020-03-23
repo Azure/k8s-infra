@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -202,8 +203,15 @@ func (atc *AzureTemplateClient) startNewDeploy(ctx context.Context, res *Resourc
 		return nil, err
 	}
 
-	objectRef := fmt.Sprintf("reference('%s/%s', '%s', 'Full')", res.Type, res.Name, res.APIVersion)
-	idRef := fmt.Sprintf("json(concat('{ \"id\": \"', resourceId('%s', '%s'), '\"}'))", res.Type, res.Name)
+	names := strings.Split(res.Name, "/")
+	formattedNames := make([]string, len(names))
+	for i, name := range names {
+		formattedNames[i] = fmt.Sprintf("'%s'", name)
+	}
+
+	resourceIDTemplateFunction := fmt.Sprintf("resourceId('%s', %s)", res.Type, strings.Join(formattedNames, ", "))
+	objectRef := fmt.Sprintf("reference(%s, '%s', 'Full')", resourceIDTemplateFunction, res.APIVersion)
+	idRef := fmt.Sprintf("json(concat('{ \"id\": \"', %s, '\"}'))", resourceIDTemplateFunction)
 	deployment.Properties.Template.Outputs = map[string]Output{
 		"resource": {
 			Type:  "object",

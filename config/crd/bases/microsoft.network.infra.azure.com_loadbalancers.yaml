@@ -38,20 +38,6 @@ spec:
             properties:
               apiVersion:
                 type: string
-              groupRef:
-                description: ResourceGroupRef is the Azure Resource Group the VirtualNetwork
-                  resides within
-                properties:
-                  name:
-                    description: Name is the name of resource being referenced
-                    type: string
-                  namespace:
-                    description: Namespace is the namespace of resource being referenced.
-                    type: string
-                required:
-                - name
-                - namespace
-                type: object
               location:
                 description: Location of the VNET in Azure
                 type: string
@@ -127,6 +113,20 @@ spec:
                       type: object
                     type: array
                 type: object
+              resourceGroupRef:
+                description: ResourceGroupRef is the Azure Resource Group the VirtualNetwork
+                  resides within
+                properties:
+                  name:
+                    description: Name is the name of resource being referenced
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of resource being referenced.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
               sku:
                 enum:
                 - Basic
@@ -138,8 +138,8 @@ spec:
                 description: Tags are user defined key value pairs
                 type: object
             required:
-            - groupRef
             - location
+            - resourceGroupRef
             type: object
           status:
             description: LoadBalancerStatus defines the observed state of LoadBalancer
@@ -176,20 +176,6 @@ spec:
           spec:
             description: LoadBalancerSpec defines the desired state of LoadBalancer
             properties:
-              groupRef:
-                description: ResourceGroupRef is the Azure Resource Group the VirtualNetwork
-                  resides within
-                properties:
-                  name:
-                    description: Name is the name of resource being referenced
-                    type: string
-                  namespace:
-                    description: Namespace is the namespace of resource being referenced.
-                    type: string
-                required:
-                - name
-                - namespace
-                type: object
               location:
                 description: Location of the VNET in Azure
                 type: string
@@ -265,6 +251,20 @@ spec:
                       type: object
                     type: array
                 type: object
+              resourceGroupRef:
+                description: ResourceGroupRef is the Azure Resource Group the VirtualNetwork
+                  resides within
+                properties:
+                  name:
+                    description: Name is the name of resource being referenced
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of resource being referenced.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
               sku:
                 enum:
                 - Basic
@@ -276,8 +276,8 @@ spec:
                 description: Tags are user defined key value pairs
                 type: object
             required:
-            - groupRef
             - location
+            - resourceGroupRef
             type: object
           status:
             description: LoadBalancerStatus defines the observed state of LoadBalancer

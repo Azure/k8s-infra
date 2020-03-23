@@ -7,7 +7,6 @@ package v1
 
 import (
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
@@ -15,15 +14,7 @@ import (
 // log is for logging in this package.
 var resourcegrouplog = logf.Log.WithName("resourcegroup-resource")
 
-func (r *ResourceGroup) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-// +kubebuilder:webhook:path=/mutate-microsoft-resources-infra-azure-com-v1-resourcegroup,mutating=true,failurePolicy=fail,matchPolicy=Equivalent,groups=microsoft.resources.infra.azure.com,resources=resourcegroups,verbs=create;update,versions=v1,name=mresourcegroup.kb.io
+// +kubebuilder:webhook:path=/mutate-microsoft-resources-infra-azure-com-v1-resourcegroup,mutating=true,failurePolicy=fail,matchPolicy=Equivalent,groups=microsoft.resources.infra.azure.com,resources=resourcegroups,verbs=create;update,versions=v1,name=default.resourcegroup.infra.azure.com
 
 var _ webhook.Defaulter = &ResourceGroup{}
 
@@ -35,7 +26,7 @@ func (r *ResourceGroup) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-resources-infra-azure-com-v1-resourcegroup,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=microsoft.resources.infra.azure.com,resources=resourcegroup,versions=v1,name=vresourcegroup.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-microsoft-resources-infra-azure-com-v1-resourcegroup,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=microsoft.resources.infra.azure.com,resources=resourcegroups,versions=v1,name=validation.resourcegroup.infra.azure.com
 
 var _ webhook.Validator = &ResourceGroup{}
 

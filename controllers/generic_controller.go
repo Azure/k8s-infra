@@ -66,10 +66,6 @@ var (
 )
 
 type (
-	owner interface {
-		Owns() []runtime.Object
-	}
-
 	// +kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;patch
 	// +kubebuilder:rbac:groups=microsoft.resources.infra.azure.com,resources=resourcegroups,verbs=get;list;watch;create;update;patch;delete
 	// +kubebuilder:rbac:groups=microsoft.resources.infra.azure.com,resources=resourcegroups/status,verbs=get;update;patch
@@ -157,11 +153,27 @@ func register(mgr ctrl.Manager, applier zips.Applier, obj runtime.Object, log lo
 		For(obj).
 		WithOptions(options)
 
-	ownerType, ok := obj.(owner)
-	if ok {
-		reconciler.Owns = ownerType.Owns()
-		for _, own := range ownerType.Owns() {
-			ctrlBuilder.Owns(own)
+	if metaObj, ok := obj.(azcorev1.MetaObject); ok {
+		trls, err := xform.GetTypeReferenceData(metaObj)
+		if err != nil {
+			return fmt.Errorf("unable get type reference data for obj %v with: %w", metaObj, err)
+		}
+
+		for _, trl := range trls {
+			if trl.IsOwned {
+				gvk := schema.GroupVersionKind{
+					Group:   trl.Group,
+					Version: "v1",
+					Kind:    trl.Kind,
+				}
+				ownedObj, err := mgr.GetScheme().New(gvk)
+				if err != nil {
+					return fmt.Errorf("unable to create GVK %v with: %w", gvk, err)
+				}
+
+				reconciler.Owns = append(reconciler.Owns, ownedObj)
+				ctrlBuilder.Owns(ownedObj)
+			}
 		}
 	}
 
@@ -355,34 +367,31 @@ func (gr *GenericReconciler) isResourceGroupReady(ctx context.Context, grouped a
 // *  obj.ProvisioningState == \*\ --> Start deleting in Azure and mark state as "Deleting"
 // *  obj.ProvisioningState == "Deleting" --> http HEAD to see if resource still exists in Azure. If so, requeue, else, remove finalizer.
 func (gr *GenericReconciler) reconcileDelete(ctx context.Context, metaObj azcorev1.MetaObject) (ctrl.Result, error) {
-	azObj, err := gr.Converter.ToResource(ctx, metaObj)
-	if err != nil {
+	resource, err := gr.Converter.ToResource(ctx, metaObj)
+	// if error IsOwnerNotFound, then carry on. Perhaps, the owner has already been deleted.
+	if err != nil && !xform.IsOwnerNotFound(err) {
+
 		return ctrl.Result{}, fmt.Errorf("unable to transform to resource with: %w", err)
 	}
 
-	switch azObj.ProvisioningState {
+	switch resource.ProvisioningState {
 	case zips.DeletingProvisioningState:
 		msg := fmt.Sprintf("deleting... checking for updated state")
 		gr.Recorder.Event(metaObj, v1.EventTypeNormal, "ResourceDeleteInProgress", msg)
-		return gr.updateFromNonTerminalDeleteState(ctx, metaObj)
+		return gr.updateFromNonTerminalDeleteState(ctx, resource, metaObj)
 	default:
-		msg := fmt.Sprintf("start deleting resource in state %q", azObj.ProvisioningState)
+		msg := fmt.Sprintf("start deleting resource in state %q", resource.ProvisioningState)
 		gr.Recorder.Event(metaObj, v1.EventTypeNormal, "ResourceDeleteStart", msg)
-		return gr.startDeleteOfResource(ctx, metaObj)
+		return gr.startDeleteOfResource(ctx, resource, metaObj)
 	}
 }
 
 // startDeleteOfResource will begin the delete of a resource by telling Azure to start deleting it. The resource will be
 // marked with the provisioning state of "Deleting".
-func (gr *GenericReconciler) startDeleteOfResource(ctx context.Context, metaObj azcorev1.MetaObject) (ctrl.Result, error) {
-	resource, err := gr.Converter.ToResource(ctx, metaObj)
-	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("unable to transform to resource with: %w", err)
-	}
-
+func (gr *GenericReconciler) startDeleteOfResource(ctx context.Context, resource *zips.Resource, metaObj azcorev1.MetaObject) (ctrl.Result, error) {
 	if err := patcher(ctx, gr.Client, metaObj, func(mutMetaObject azcorev1.MetaObject) error {
 		if resource.ID != "" {
-			if resource, err = gr.Applier.BeginDelete(ctx, resource); err != nil {
+			if _, err := gr.Applier.BeginDelete(ctx, resource); err != nil {
 				return fmt.Errorf("failed trying to delete with %w", err)
 			}
 
@@ -408,12 +417,7 @@ func (gr *GenericReconciler) startDeleteOfResource(ctx context.Context, metaObj 
 
 // updateFromNonTerminalDeleteState will call Azure to check if the resource still exists. If so, it will requeue, else,
 // the finalizer will be removed.
-func (gr *GenericReconciler) updateFromNonTerminalDeleteState(ctx context.Context, metaObj azcorev1.MetaObject) (ctrl.Result, error) {
-	resource, err := gr.Converter.ToResource(ctx, metaObj)
-	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("unable to transform to resource with: %w", err)
-	}
-
+func (gr *GenericReconciler) updateFromNonTerminalDeleteState(ctx context.Context, resource *zips.Resource, metaObj azcorev1.MetaObject) (ctrl.Result, error) {
 	// already deleting, just check to see if it still exists and if it's gone, remove finalizer
 	found, err := gr.Applier.HeadResource(ctx, resource)
 	if err != nil {
