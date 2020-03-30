@@ -68,11 +68,11 @@ func initConfig(cfgFilePtr *string) {
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; set sane defaults and carry on.
-			fmt.Println("not found")
+			fmt.Println("Configuration file not found.")
 		} else {
 			// Config file was found but another error was produced
-			panic(fmt.Errorf("fatal error config file: %s", err))
+			panic(fmt.Errorf("Fatal error reading config file: %s", err))
 		}
 	}
-	fmt.Println("found")
+	fmt.Println("Found configuration file.")
 }
