@@ -7,24 +7,52 @@ import (
 )
 
 func Test_NewFieldDefinition_GivenValues_InitializesFields(t *testing.T) {
-	const name = "fullName"
-	const fieldtype = "string"
-	const description = "Full legal name of a person"
+	name := "fullName"
+	fieldtype := "string"
 
-	field := NewFieldDefinition(name, fieldtype, description)
+	field := NewFieldDefinition(name, fieldtype)
 
 	assert.Equal(t, name, field.name)
 	assert.Equal(t, fieldtype, field.fieldType)
+	assert.Equal(t, "", field.description)
+}
+
+func Test_FieldDefinitionWithDescription_GivenDescription_SetsField(t *testing.T) {
+	name := "fullName"
+	fieldtype := "string"
+	description := "description"
+
+	field := NewFieldDefinition(name, fieldtype).WithDescription(description)
+
 	assert.Equal(t, description, field.description)
 }
 
+func Test_FieldDefinitionWithDescription_GivenDescription_DoesNotModifyOriginal(t *testing.T) {
+	name := "fullName"
+	fieldtype := "string"
+	description := "description"
+
+	original := NewFieldDefinition(name, fieldtype)
+	field := original.WithDescription(description)
+
+	assert.NotEqual(t, original.description, field.description)
+}
+
 func Test_FieldDefinition_Implements_AstGeneratorInterface(t *testing.T) {
-	field := NewFieldDefinition("name", "fieldtype", "description")
+	name := "fullName"
+	fieldtype := "string"
+
+	field := NewFieldDefinition(name, fieldtype)
+
 	assert.Implements(t, (*AstGenerator)(nil), field)
 }
 
 func Test_FieldDefinitionAsAst_GivenValidField_ReturnsNonNilResult(t *testing.T) {
-	field := NewFieldDefinition("name", "fieldtype", "description")
+	name := "fullName"
+	fieldtype := "string"
+
+	field := NewFieldDefinition(name, fieldtype)
+
 	node, _ := field.AsAst()
 	assert.NotNil(t, node)
 }

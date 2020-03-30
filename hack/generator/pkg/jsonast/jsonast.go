@@ -172,11 +172,12 @@ func (scanner *SchemaScanner) noneHandler(ctx context.Context, cfg *BuilderConfi
 		return nil, err
 	}
 
-	return []ast.Node{
-		&ast.FieldList{
-			List: fields,
-		},
-	}, nil
+	fieldList, err := astmodel.ToFieldList(fields)
+	if err != nil {
+		return nil, err
+	}
+
+	return []ast.Node{fieldList}, nil
 }
 
 func (scanner *SchemaScanner) boolHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
@@ -259,7 +260,12 @@ func newField(ctx context.Context, fieldName string, fieldType string, descripti
 	ctx, span := tab.StartSpan(ctx, "newField")
 	defer span.End()
 
-	return astmodel.NewFieldDefinition(fieldName, fieldType, *description), nil
+	result := *astmodel.NewFieldDefinition(fieldName, fieldType)
+	if description != nil {
+		result = result.WithDescription(*description)
+	}
+
+	return &result, nil
 }
 
 func newPrimitiveField(ctx context.Context, schema *gojsonschema.SubSchema, typeIdent SchemaType) (*astmodel.FieldDefinition, error) {
@@ -271,7 +277,12 @@ func newPrimitiveField(ctx context.Context, schema *gojsonschema.SubSchema, type
 		return nil, err
 	}
 
-	return astmodel.NewFieldDefinition(schema.Property, ident, *schema.Description), nil
+	result := *astmodel.NewFieldDefinition(schema.Property, ident)
+	if schema.Description != nil {
+		result = result.WithDescription(*schema.Description)
+	}
+
+	return &result, nil
 }
 
 func newStructField(ctx context.Context, schema *gojsonschema.SubSchema, structType *ast.StructType) (*astmodel.FieldDefinition, error) {
@@ -281,7 +292,12 @@ func newStructField(ctx context.Context, schema *gojsonschema.SubSchema, structT
 	// TODO: add the actual struct type name rather than foo
 	ident := "fooStruct"
 
-	return astmodel.NewFieldDefinition(schema.Property, ident, *schema.Description), nil
+	result := *astmodel.NewFieldDefinition(schema.Property, ident)
+	if schema.Description != nil {
+		result = result.WithDescription(*schema.Description)
+	}
+
+	return &result, nil
 }
 
 func newArrayField(ctx context.Context, schema *gojsonschema.SubSchema, arrayType *ast.ArrayType) (*astmodel.FieldDefinition, error) {
@@ -291,34 +307,46 @@ func newArrayField(ctx context.Context, schema *gojsonschema.SubSchema, arrayTyp
 	// TODO: add the actual array type name rather than foo
 	ident := fmt.Sprintf("[]%s", arrayType.Elt)
 
-	return astmodel.NewFieldDefinition(schema.Property, ident, *schema.Description), nil
+	result := *astmodel.NewFieldDefinition(schema.Property, ident)
+	if schema.Description != nil {
+		result = result.WithDescription(*schema.Description)
+	}
+
+	return &result, nil
 }
 
 func (scanner *SchemaScanner) objectHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "objectHandler")
 	defer span.End()
 
-	f, err := getFields(ctx, cfg, schema)
+	fmt.Printf("AST308 STA objectHandler\n")
+
+	fields, err := getFields(ctx, cfg, schema)
 	if err != nil {
 		return nil, err
 	}
 
-	objStruct := &ast.StructType{
-		Fields: &ast.FieldList{
-			List: f,
-		},
+	defer fmt.Printf("AST308 FIN objectHandler (%v fields)\n", len(fields))
+
+	structDefinition := astmodel.NewStructDefinition("fooStruct", fields...)
+
+	node, err := structDefinition.AsDeclaration()
+	if err != nil {
+		return nil, err
 	}
 
 	return []ast.Node{
-		objStruct,
+		&node,
 	}, nil
 }
 
-func getFields(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]*ast.Field, error) {
+func getFields(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]*astmodel.FieldDefinition, error) {
 	ctx, span := tab.StartSpan(ctx, "getFields")
 	defer span.End()
 
-	var fields []ast.Node
+	fmt.Printf("AST324 STA getFields\n")
+
+	var fields []*astmodel.FieldDefinition
 	for _, prop := range schema.PropertiesChildren {
 		schemaType, err := getSubSchemaType(prop)
 		if _, ok := err.(*UnknownSchemaError); ok {

@@ -13,22 +13,30 @@ type FieldDefinition struct {
 }
 
 // NewFieldDefinition is a factory method for creating a new FieldDefinition
-func NewFieldDefinition(name string, fieldType string, description string) *FieldDefinition {
+// name is the name for the new field (mandatory)
+// fieldType is the type for the new field (mandatory)
+func NewFieldDefinition(name string, fieldType string) *FieldDefinition {
 	return &FieldDefinition{
 		name:        name,
 		fieldType:   fieldType,
-		description: description,
+		description: "",
 	}
 }
 
+// WithDescription returns a new FieldDefinition with the specified description
+func (field FieldDefinition) WithDescription(description string) FieldDefinition {
+	field.description = description
+	return field
+}
+
 // AsAst generates an AST node representing this field definition
-func (field *FieldDefinition) AsAst() (ast.Node, error) {
+func (field FieldDefinition) AsAst() (ast.Node, error) {
 	ast, err := field.AsField()
 	return &ast, err
 }
 
 // AsField generates an AST field node representing this field definition
-func (field *FieldDefinition) AsField() (ast.Field, error) {
+func (field FieldDefinition) AsField() (ast.Field, error) {
 
 	typeNode := ast.NewIdent(field.fieldType)
 

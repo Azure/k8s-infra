@@ -9,11 +9,11 @@ import (
 func Test_NewStructDefinition_GivenValues_InitializesField(t *testing.T) {
 	const name = "demo"
 
-	fullNameField := *NewFieldDefinition("fullName", "string", "Full legal name")
-	familyNameField := *NewFieldDefinition("familiyName", "string", "Shared family name")
-	knownAsField := *NewFieldDefinition("knownAs", "string", "Commonly known as")
+	fullNameField := NewFieldDefinition("fullName", "string").WithDescription("Full legal name")
+	familyNameField := NewFieldDefinition("familiyName", "string").WithDescription("Shared family name")
+	knownAsField := NewFieldDefinition("knownAs", "string").WithDescription("Commonly known as")
 
-	definition := NewStructDefinition(name, fullNameField, familyNameField, knownAsField)
+	definition := NewStructDefinition(name, &fullNameField, &familyNameField, &knownAsField)
 
 	assert.Equal(t, name, definition.name)
 	assert.Equal(t, 3, len(definition.fields))

@@ -8,11 +8,11 @@ import (
 // StructDefinition encapsulates the definition of a struct
 type StructDefinition struct {
 	name   string
-	fields []FieldDefinition
+	fields []*FieldDefinition
 }
 
 // NewStructDefinition is a factory method for creating a new StructDefinition
-func NewStructDefinition(name string, fields ...FieldDefinition) *StructDefinition {
+func NewStructDefinition(name string, fields ...*FieldDefinition) *StructDefinition {
 	return &StructDefinition{
 		name:   name,
 		fields: fields,
@@ -55,4 +55,24 @@ func (definition *StructDefinition) AsDeclaration() (ast.GenDecl, error) {
 	}
 
 	return *declaration, nil
+}
+
+//TODO: Perhaps use this method in AsDeclaration(), above
+
+// ToFieldList generates an AST fieldlist for a sequence of field definitions
+func ToFieldList(fields []*FieldDefinition) (*ast.FieldList, error) {
+	astFields := make([]*ast.Field, len(fields))
+	for i, f := range fields {
+		astField, err := f.AsField()
+		if err != nil {
+			return nil, err
+		}
+		astFields[i] = &astField
+	}
+
+	fieldList := &ast.FieldList{
+		List: astFields,
+	}
+
+	return fieldList, nil
 }
