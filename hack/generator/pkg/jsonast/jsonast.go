@@ -149,13 +149,17 @@ func (scanner *SchemaScanner) enumHandler(ctx context.Context, _ *BuilderConfig,
 	ctx, span := tab.StartSpan(ctx, "enumHandler")
 	defer span.End()
 
-	f, err := newPrimitiveField(ctx, schema, String)
+	field, err := newPrimitiveField(ctx, schema, String)
 	if err != nil {
 		return nil, err
 	}
 
+	node, err := field.AsAst()
+	if err != nil {
+		return nil, err
+	}
 	return []ast.Node{
-		f,
+		node,
 	}, nil
 }
 
@@ -184,8 +188,13 @@ func (scanner *SchemaScanner) boolHandler(ctx context.Context, _ *BuilderConfig,
 		return nil, err
 	}
 
+	node, err := field.AsAst()
+	if err != nil {
+		return nil, err
+	}
+
 	return []ast.Node{
-		field,
+		node,
 	}, nil
 }
 
@@ -198,8 +207,13 @@ func (scanner *SchemaScanner) numberHandler(ctx context.Context, _ *BuilderConfi
 		return nil, err
 	}
 
+	node, err := field.AsAst()
+	if err != nil {
+		return nil, err
+	}
+
 	return []ast.Node{
-		field,
+		node,
 	}, nil
 }
 
@@ -212,8 +226,13 @@ func (scanner *SchemaScanner) intHandler(ctx context.Context, _ *BuilderConfig, 
 		return nil, err
 	}
 
+	node, err := field.AsAst()
+	if err != nil {
+		return nil, err
+	}
+
 	return []ast.Node{
-		field,
+		node,
 	}, nil
 }
 
@@ -226,70 +245,53 @@ func (scanner *SchemaScanner) stringHandler(ctx context.Context, _ *BuilderConfi
 		return nil, err
 	}
 
-	return []ast.Node{
-		field,
-	}, nil
-}
-
-func newField(ctx context.Context, fieldName string, fieldType ast.Expr, description *string) (*ast.Field, error) {
-	ctx, span := tab.StartSpan(ctx, "newField")
-	defer span.End()
-
-	var desc string
-	if description != nil {
-		desc = *description
-	}
-
-	documentationComment := &ast.CommentGroup{
-		List: []*ast.Comment{
-			{
-				Text: fmt.Sprintf("/* %s */", desc),
-			},
-		},
-	}
-
-	field := &ast.Field{
-		Doc: documentationComment,
-		Names: []*ast.Ident{
-			{
-				Name: fieldName,
-			},
-		},
-		Type:    fieldType,
-		Tag:     nil, // TODO: add field tags for api hints / json binding
-		Comment: nil,
-	}
-
-	return field, nil
-}
-
-func newPrimitiveField(ctx context.Context, schema *gojsonschema.SubSchema, typeIdent SchemaType) (*ast.Field, error) {
-	ctx, span := tab.StartSpan(ctx, "newPrimitiveField")
-	defer span.End()
-
-	ident, err := getIdentForPrimitiveType(typeIdent)
+	node, err := field.AsAst()
 	if err != nil {
 		return nil, err
 	}
 
-	return newField(ctx, schema.Property, ident, schema.Description)
-
+	return []ast.Node{
+		node,
+	}, nil
 }
 
-func newStructField(ctx context.Context, schema *gojsonschema.SubSchema, structType *ast.StructType) (*ast.Field, error) {
+func newField(ctx context.Context, fieldName string, fieldType string, description *string) (*astmodel.FieldDefinition, error) {
+	ctx, span := tab.StartSpan(ctx, "newField")
+	defer span.End()
+
+	return astmodel.NewFieldDefinition(fieldName, fieldType, *description), nil
+}
+
+func newPrimitiveField(ctx context.Context, schema *gojsonschema.SubSchema, typeIdent SchemaType) (*astmodel.FieldDefinition, error) {
 	ctx, span := tab.StartSpan(ctx, "newPrimitiveField")
+	defer span.End()
+
+	ident, err := getPrimitiveType(typeIdent)
+	if err != nil {
+		return nil, err
+	}
+
+	return astmodel.NewFieldDefinition(schema.Property, ident, *schema.Description), nil
+}
+
+func newStructField(ctx context.Context, schema *gojsonschema.SubSchema, structType *ast.StructType) (*astmodel.FieldDefinition, error) {
+	ctx, span := tab.StartSpan(ctx, "newStructField")
 	defer span.End()
 
 	// TODO: add the actual struct type name rather than foo
-	return newField(ctx, schema.Property, ast.NewIdent("foo"), schema.Description)
+	ident := "fooStruct"
+
+	return astmodel.NewFieldDefinition(schema.Property, ident, *schema.Description), nil
 }
 
-func newArrayField(ctx context.Context, schema *gojsonschema.SubSchema, arrayType *ast.ArrayType) (*ast.Field, error) {
-	ctx, span := tab.StartSpan(ctx, "newPrimitiveField")
+func newArrayField(ctx context.Context, schema *gojsonschema.SubSchema, arrayType *ast.ArrayType) (*astmodel.FieldDefinition, error) {
+	ctx, span := tab.StartSpan(ctx, "newArrayField")
 	defer span.End()
 
 	// TODO: add the actual array type name rather than foo
-	return newField(ctx, schema.Property, ast.NewIdent(fmt.Sprintf("[]%s", arrayType.Elt)), schema.Description)
+	ident := fmt.Sprintf("[]%s", arrayType.Elt)
+
+	return astmodel.NewFieldDefinition(schema.Property, ident, *schema.Description), nil
 }
 
 func (scanner *SchemaScanner) objectHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
@@ -321,11 +323,15 @@ func getFields(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.Sub
 		schemaType, err := getSubSchemaType(prop)
 		if _, ok := err.(*UnknownSchemaError); ok {
 			// if we don't know the type, we still need to provide the property, we will just provide open interface
-			f, err := newField(ctx, prop.Property, ast.NewIdent("interface{}"), schema.Description)
+			field, err := newField(ctx, prop.Property, "interface{}", schema.Description)
 			if err != nil {
 				return nil, err
 			}
-			fields = append(fields, f)
+			node, err := field.AsAst()
+			if err != nil {
+				return nil, err
+			}
+			fields = append(fields, node)
 			continue
 		}
 
@@ -336,11 +342,15 @@ func getFields(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.Sub
 		propDecls, err := cfg.TypeHandlers[schemaType](ctx, cfg, prop)
 		if _, ok := err.(*UnknownSchemaError); ok {
 			// if we don't know the type, we still need to provide the property, we will just provide open interface
-			f, err := newField(ctx, prop.Property, ast.NewIdent("interface{}"), schema.Description)
+			field, err := newField(ctx, prop.Property, "interface{}", schema.Description)
 			if err != nil {
 				return nil, err
 			}
-			fields = append(fields, f)
+			node, err := field.AsAst()
+			if err != nil {
+				return nil, err
+			}
+			fields = append(fields, node)
 			continue
 		}
 
@@ -356,11 +366,15 @@ func getFields(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.Sub
 		// allOf or oneOf is left and we expect to have only 1 structure for the field
 		if (schemaType == AllOf || schemaType == OneOf || schemaType == AnyOf) && len(propDecls) > 1 {
 			// we are not sure what it could be since it's many schemas... interface{}
-			f, err := newField(ctx, prop.Property, ast.NewIdent("interface{}"), schema.Description)
+			field, err := newField(ctx, prop.Property, "interface{}", schema.Description)
 			if err != nil {
 				return nil, err
 			}
-			fields = append(fields, f)
+			node, err := field.AsAst()
+			if err != nil {
+				return nil, err
+			}
+			fields = append(fields, node)
 			continue
 		}
 
@@ -374,13 +388,21 @@ func getFields(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.Sub
 			if err != nil {
 				return nil, err
 			}
-			fields = append(fields, field)
+			fieldAst, err := field.AsAst()
+			if err != nil {
+				return nil, err
+			}
+			fields = append(fields, fieldAst)
 		case *ast.ArrayType:
 			field, err := newArrayField(ctx, schema, nt)
 			if err != nil {
 				return nil, err
 			}
-			fields = append(fields, field)
+			fieldAst, err := field.AsAst()
+			if err != nil {
+				return nil, err
+			}
+			fields = append(fields, fieldAst)
 		case *ast.FieldList:
 			// we have a raw set of fields returned, we need to wrap them into a struct type
 			structType := &ast.StructType{
@@ -390,7 +412,11 @@ func getFields(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.Sub
 			if err != nil {
 				return nil, err
 			}
-			fields = append(fields, field)
+			fieldAst, err := field.AsAst()
+			if err != nil {
+				return nil, err
+			}
+			fields = append(fields, fieldAst)
 		default:
 			return nil, fmt.Errorf("unexpected field type: %+v", nt)
 		}
@@ -636,6 +662,21 @@ func getIdentForPrimitiveType(name SchemaType) (*ast.Ident, error) {
 		return ast.NewIdent("bool"), nil
 	default:
 		return nil, fmt.Errorf("%s is not a simple type and no ast.NewIdent can be created", name)
+	}
+}
+
+func getPrimitiveType(name SchemaType) (string, error) {
+	switch name {
+	case String:
+		return "string", nil
+	case Int:
+		return "int", nil
+	case Number:
+		return "float", nil
+	case Bool:
+		return "bool", nil
+	default:
+		return "", fmt.Errorf("%s is not a simple type and no ast.NewIdent can be created", name)
 	}
 }
 
