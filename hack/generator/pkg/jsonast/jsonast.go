@@ -25,6 +25,10 @@ type (
 	UnknownSchemaError struct {
 		Schema *gojsonschema.SubSchema
 	}
+
+	// A SchemaScanner is used to scan a JSON Schema extracting and collecting type definitions
+	SchemaScanner struct {
+	}
 )
 
 const (
@@ -94,12 +98,12 @@ func WithTypeHandler(schemaType SchemaType, handler TypeHandler) BuilderOption {
 
 		allOf acts like composition which composites each schema from the child oneOf with the base reference from allOf.
 */
-func ToNodes(ctx context.Context, schema *gojsonschema.SubSchema, opts ...BuilderOption) ([]ast.Node, error) {
+func (scanner *SchemaScanner) ToNodes(ctx context.Context, schema *gojsonschema.SubSchema, opts ...BuilderOption) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "ToNodes")
 	defer span.End()
 
 	cfg := &BuilderConfig{
-		TypeHandlers: DefaultTypeHandlers(),
+		TypeHandlers: scanner.DefaultTypeHandlers(),
 		Filters:      []string{},
 	}
 
@@ -124,24 +128,24 @@ func ToNodes(ctx context.Context, schema *gojsonschema.SubSchema, opts ...Builde
 }
 
 // DefaultTypeHandlers will create a default map of JSONType to AST transformers
-func DefaultTypeHandlers() map[SchemaType]TypeHandler {
+func (scanner *SchemaScanner) DefaultTypeHandlers() map[SchemaType]TypeHandler {
 	return map[SchemaType]TypeHandler{
-		Array:  arrayHandler,
-		OneOf:  oneOfHandler,
-		AnyOf:  anyOfHandler,
-		AllOf:  allOfHandler,
-		Ref:    refHandler,
-		Object: objectHandler,
-		String: stringHandler,
-		Int:    intHandler,
-		Number: numberHandler,
-		Bool:   boolHandler,
-		Enum:   enumHandler,
-		None:   noneHandler,
+		Array:  scanner.arrayHandler,
+		OneOf:  scanner.oneOfHandler,
+		AnyOf:  scanner.anyOfHandler,
+		AllOf:  scanner.allOfHandler,
+		Ref:    scanner.refHandler,
+		Object: scanner.objectHandler,
+		String: scanner.stringHandler,
+		Int:    scanner.intHandler,
+		Number: scanner.numberHandler,
+		Bool:   scanner.boolHandler,
+		Enum:   scanner.enumHandler,
+		None:   scanner.noneHandler,
 	}
 }
 
-func enumHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) enumHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "enumHandler")
 	defer span.End()
 
@@ -155,7 +159,7 @@ func enumHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.Sub
 	}, nil
 }
 
-func noneHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) noneHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "noneHandler")
 	defer span.End()
 
@@ -171,7 +175,7 @@ func noneHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.S
 	}, nil
 }
 
-func boolHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) boolHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "boolHandler")
 	defer span.End()
 
@@ -185,7 +189,7 @@ func boolHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.Sub
 	}, nil
 }
 
-func numberHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) numberHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "numberHandler")
 	defer span.End()
 
@@ -199,7 +203,7 @@ func numberHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.S
 	}, nil
 }
 
-func intHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) intHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "intHandler")
 	defer span.End()
 
@@ -213,7 +217,7 @@ func intHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubS
 	}, nil
 }
 
-func stringHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) stringHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "stringHandler")
 	defer span.End()
 
@@ -288,7 +292,7 @@ func newArrayField(ctx context.Context, schema *gojsonschema.SubSchema, arrayTyp
 	return newField(ctx, schema.Property, ast.NewIdent(fmt.Sprintf("[]%s", arrayType.Elt)), schema.Description)
 }
 
-func objectHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) objectHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "objectHandler")
 	defer span.End()
 
@@ -403,7 +407,7 @@ func getFields(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.Sub
 	return f, nil
 }
 
-func refHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) refHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "refHandler")
 	defer span.End()
 
@@ -420,7 +424,7 @@ func refHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.Su
 	return result, err
 }
 
-func allOfHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) allOfHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "allOfHandler")
 	defer span.End()
 
@@ -460,7 +464,7 @@ func allOfHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.
 	}, nil
 }
 
-func oneOfHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) oneOfHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "oneOfHandler")
 	defer span.End()
 
@@ -482,7 +486,7 @@ func oneOfHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.
 	return decls, nil
 }
 
-func anyOfHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) anyOfHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "anyOfHandler")
 	defer span.End()
 
@@ -510,7 +514,7 @@ func anyOfHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.
 	return nodes, nil
 }
 
-func arrayHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) arrayHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "arrayHandler")
 	defer span.End()
 
