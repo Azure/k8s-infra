@@ -21,8 +21,9 @@ func NewGenCommand() (*cobra.Command, error) {
 		Use:   "gen",
 		Short: "generate K8s infrastructure resources from Azure deployment template schema",
 		Run: xcobra.RunWithCtx(func(ctx context.Context, cmd *cobra.Command, args []string) error {
-			sl := gojsonschema.NewSchemaLoader()
-			schema, err := sl.Compile(gojsonschema.NewReferenceLoader(rgTemplateSchemaURI))
+
+			//schema, err := loadSchema(rgTemplateSchemaFile2)
+			schema, err := loadSchema(rgTemplateSchemaURI)
 			if err != nil {
 				return err
 			}
@@ -52,4 +53,14 @@ func NewGenCommand() (*cobra.Command, error) {
 	}
 
 	return cmd, nil
+}
+
+func loadSchema(source string) (*gojsonschema.Schema, error) {
+	sl := gojsonschema.NewSchemaLoader()
+	schema, err := sl.Compile(gojsonschema.NewReferenceLoader(source))
+	if err != nil {
+		return nil, err
+	}
+
+	return schema, nil
 }
