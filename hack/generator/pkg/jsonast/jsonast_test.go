@@ -39,10 +39,11 @@ func TestToNodes(t *testing.T) {
 			wantErr: false,
 		},
 	}
+	scanner := &SchemaScanner{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			arg := tt.argsFactory(t)
-			got, err := ToNodes(context.TODO(), arg.resourcesSchema.ItemsChildren[0], arg.opts...)
+			got, err := scanner.ToNodes(context.TODO(), arg.resourcesSchema.ItemsChildren[0], arg.opts...)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ToNodes() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -71,12 +72,13 @@ func TestObjectWithNoType(t *testing.T) {
   }
 }
 `
+	scanner := &SchemaScanner{}
 	g := NewGomegaWithT(t)
 	sl := gojsonschema.NewSchemaLoader()
 	loader := gojsonschema.NewBytesLoader([]byte(schema))
 	sb, err := sl.Compile(loader)
 	g.Expect(err).To(BeNil())
-	nodes, err := ToNodes(context.TODO(), sb.Root())
+	nodes, err := scanner.ToNodes(context.TODO(), sb.Root())
 	g.Expect(err).To(BeNil())
 	g.Expect(nodes).To(HaveLen(1))
 	structType, ok := nodes[0].(*ast.StructType)
@@ -129,13 +131,13 @@ func TestAnyOfWithMultipleComplexObjects(t *testing.T) {
   "description": "Microsoft.Compute/virtualMachines/extensions"
 }
 `
-
+	scanner := &SchemaScanner{}
 	g := NewGomegaWithT(t)
 	sl := gojsonschema.NewSchemaLoader()
 	loader := gojsonschema.NewBytesLoader([]byte(schema))
 	sb, err := sl.Compile(loader)
 	g.Expect(err).To(BeNil())
-	nodes, err := ToNodes(context.TODO(), sb.Root())
+	nodes, err := scanner.ToNodes(context.TODO(), sb.Root())
 	g.Expect(err).To(BeNil())
 	g.Expect(nodes).To(HaveLen(1))
 	structType, ok := nodes[0].(*ast.StructType)
@@ -200,12 +202,13 @@ func TestOneOfWithPropertySibling(t *testing.T) {
   "description": "Defines ManagedRuleSets - array of managedRuleSet"
 }
 `
+	scanner := &SchemaScanner{}
 	g := NewGomegaWithT(t)
 	sl := gojsonschema.NewSchemaLoader()
 	loader := gojsonschema.NewBytesLoader([]byte(schema))
 	sb, err := sl.Compile(loader)
 	g.Expect(err).To(BeNil())
-	nodes, err := ToNodes(context.TODO(), sb.Root())
+	nodes, err := scanner.ToNodes(context.TODO(), sb.Root())
 	g.Expect(err).To(BeNil())
 	g.Expect(nodes).To(HaveLen(1))
 	structType, ok := nodes[0].(*ast.StructType)
@@ -235,12 +238,13 @@ func TestAllOfUnion(t *testing.T) {
     }
   ]
 }`
+	scanner := &SchemaScanner{}
 	g := NewGomegaWithT(t)
 	sl := gojsonschema.NewSchemaLoader()
 	loader := gojsonschema.NewBytesLoader([]byte(schema))
 	sb, err := sl.Compile(loader)
 	g.Expect(err).To(BeNil())
-	nodes, err := ToNodes(context.TODO(), sb.Root())
+	nodes, err := scanner.ToNodes(context.TODO(), sb.Root())
 	g.Expect(err).To(BeNil())
 	g.Expect(nodes).To(HaveLen(1))
 	structType, ok := nodes[0].(*ast.StructType)
@@ -264,13 +268,13 @@ func TestAnyOfLocation(t *testing.T) {
 	}
   ]
 }`
-
+	scanner := &SchemaScanner{}
 	g := NewGomegaWithT(t)
 	sl := gojsonschema.NewSchemaLoader()
 	loader := gojsonschema.NewBytesLoader([]byte(schema))
 	sb, err := sl.Compile(loader)
 	g.Expect(err).To(BeNil())
-	nodes, err := ToNodes(context.TODO(), sb.Root())
+	nodes, err := scanner.ToNodes(context.TODO(), sb.Root())
 	g.Expect(err).To(BeNil())
 	g.Expect(nodes).To(HaveLen(1))
 	field, ok := nodes[0].(*ast.Field)
