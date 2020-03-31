@@ -400,7 +400,7 @@ func (scanner *SchemaScanner) getFields(ctx context.Context, cfg *BuilderConfig,
 		}
 
 		// HACK: This check avoids a panic caused by not handling propDecls; remove when fixed
-		if propDecls == nil {
+		if propDecls == nil || len(propDecls) == 0 {
 			continue
 		}
 
