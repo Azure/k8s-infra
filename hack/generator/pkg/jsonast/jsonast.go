@@ -399,6 +399,11 @@ func (scanner *SchemaScanner) getFields(ctx context.Context, cfg *BuilderConfig,
 			continue
 		}
 
+		// HACK: This check avoids a panic caused by not handling propDecls; remove when fixed
+		if propDecls == nil {
+			continue
+		}
+
 		node := propDecls[0]
 		switch nt := node.(type) {
 		case *ast.Field:

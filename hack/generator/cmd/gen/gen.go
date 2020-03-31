@@ -3,6 +3,9 @@ package gen
 import (
 	"context"
 	"fmt"
+	"os"
+
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -37,16 +40,38 @@ func NewGenCommand() (*cobra.Command, error) {
 				}
 			}
 
-			scanner := &jsonast.SchemaScanner{}
-			nodes, err := scanner.ToNodes(ctx, resourcesSchema, jsonast.WithFilters(viper.GetStringSlice("resources")))
+			scanner := jsonast.NewSchemaScanner()
+			_, err = scanner.ToNodes(ctx, resourcesSchema, jsonast.WithFilters(viper.GetStringSlice("resources")))
 			if err != nil {
+				fmt.Printf("GEN0048 - Error %s\n", err)
 				return err
 			}
 
+			err = os.RemoveAll("resources")
 			if err != nil {
-				fmt.Println(err)
+				fmt.Printf("GEN0054 - Error %s\n", err)
 				return err
 			}
+
+			err = os.Mkdir("resources", 0700)
+			if err != nil {
+				fmt.Printf("GEN0060 - Error %s\n", err)
+				return err
+			}
+
+			fmt.Printf("GEN0064 INF Checkpoint\n")
+
+			for i, st := range scanner.Structs {
+				fileName := fmt.Sprintf("resources/%v.go", i)
+
+				fmt.Printf("GEN070 - Writing %s\n", fileName)
+
+				genFile := astmodel.NewFileDefinition("generated", st)
+				genFile.SaveTo(fileName)
+			}
+
+			fmt.Printf("GEN061 - Completed creating resources\n")
+
 			return nil
 		}),
 	}
