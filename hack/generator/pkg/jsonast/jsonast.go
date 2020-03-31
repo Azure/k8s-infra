@@ -355,11 +355,7 @@ func getFields(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.Sub
 			if err != nil {
 				return nil, err
 			}
-			node, err := field.AsAst()
-			if err != nil {
-				return nil, err
-			}
-			fields = append(fields, node)
+			fields = append(fields, field)
 			continue
 		}
 
@@ -374,11 +370,7 @@ func getFields(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.Sub
 			if err != nil {
 				return nil, err
 			}
-			node, err := field.AsAst()
-			if err != nil {
-				return nil, err
-			}
-			fields = append(fields, node)
+			fields = append(fields, field)
 			continue
 		}
 
@@ -387,7 +379,8 @@ func getFields(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.Sub
 		}
 
 		if isPrimitiveType(schemaType) {
-			fields = append(fields, propDecls...)
+			fmt.Printf("AST0377 WRN propDecls not handled\n")
+			//fields = append(fields, propDecls...)
 			continue
 		}
 
@@ -398,39 +391,28 @@ func getFields(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.Sub
 			if err != nil {
 				return nil, err
 			}
-			node, err := field.AsAst()
-			if err != nil {
-				return nil, err
-			}
-			fields = append(fields, node)
+			fields = append(fields, field)
 			continue
 		}
 
 		node := propDecls[0]
 		switch nt := node.(type) {
 		case *ast.Field:
-			fields = append(fields, nt)
+			fmt.Printf("AST0396 WRN *ast.Field not handled\n")
+			//fields = append(fields, nt)
 		case *ast.StructType:
 			// we have a struct, make a new field
 			field, err := newStructField(ctx, schema, nt)
 			if err != nil {
 				return nil, err
 			}
-			fieldAst, err := field.AsAst()
-			if err != nil {
-				return nil, err
-			}
-			fields = append(fields, fieldAst)
+			fields = append(fields, field)
 		case *ast.ArrayType:
 			field, err := newArrayField(ctx, schema, nt)
 			if err != nil {
 				return nil, err
 			}
-			fieldAst, err := field.AsAst()
-			if err != nil {
-				return nil, err
-			}
-			fields = append(fields, fieldAst)
+			fields = append(fields, field)
 		case *ast.FieldList:
 			// we have a raw set of fields returned, we need to wrap them into a struct type
 			structType := &ast.StructType{
@@ -440,25 +422,13 @@ func getFields(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.Sub
 			if err != nil {
 				return nil, err
 			}
-			fieldAst, err := field.AsAst()
-			if err != nil {
-				return nil, err
-			}
-			fields = append(fields, fieldAst)
+			fields = append(fields, field)
 		default:
 			return nil, fmt.Errorf("unexpected field type: %+v", nt)
 		}
 	}
 
-	f := make([]*ast.Field, len(fields))
-	for i := 0; i < len(fields); i++ {
-		field, ok := fields[i].(*ast.Field)
-		if !ok {
-			return nil, errors.New("unable to cast ast.Node to field when building struct")
-		}
-		f[i] = field
-	}
-	return f, nil
+	return fields, nil
 }
 
 func (scanner *SchemaScanner) refHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
