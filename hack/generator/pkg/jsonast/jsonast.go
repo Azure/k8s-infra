@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"go/ast"
+	"net/url"
+	"strings"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/devigned/tab"
@@ -13,7 +15,7 @@ import (
 type (
 	SchemaType string
 
-	TypeHandler func(ctx context.Context, schema *gojsonschema.SubSchema) ([]ast.Node, error)
+	TypeHandler func(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]ast.Node, error)
 
 	UnknownSchemaError struct {
 		Schema  *gojsonschema.SubSchema
@@ -102,12 +104,8 @@ func (scanner *SchemaScanner) ToNodes(ctx context.Context, schema *gojsonschema.
 	ctx, span := tab.StartSpan(ctx, "ToNodes")
 	defer span.End()
 
-	cfg := &BuilderConfig{
-		Filters: []string{},
-	}
-
 	for _, opt := range opts {
-		if err := opt(cfg); err != nil {
+		if err := opt(scanner); err != nil {
 			return nil, err
 		}
 	}
@@ -117,8 +115,11 @@ func (scanner *SchemaScanner) ToNodes(ctx context.Context, schema *gojsonschema.
 		return nil, err
 	}
 
+	//TODO: Is empty string the right default here?
+	topic := NewObjectScannerTopic(schema.Property, "")
+
 	rootHandler := scanner.TypeHandlers[schemaType]
-	nodes, err := rootHandler(ctx, schema)
+	nodes, err := rootHandler(ctx, topic, schema)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +145,7 @@ func (scanner *SchemaScanner) DefaultTypeHandlers() map[SchemaType]TypeHandler {
 	}
 }
 
-func (scanner *SchemaScanner) enumHandler(ctx context.Context, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) enumHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "enumHandler")
 	defer span.End()
 
@@ -157,19 +158,20 @@ func (scanner *SchemaScanner) enumHandler(ctx context.Context, schema *gojsonsch
 	if err != nil {
 		return nil, err
 	}
+
 	return []ast.Node{
 		node,
 	}, nil
 }
 
-func (scanner *SchemaScanner) noneHandler(ctx context.Context, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) noneHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "noneHandler")
 	defer span.End()
 
 	fmt.Printf("AST162 STA noneHandler")
 	defer fmt.Printf("AST163 FIN noneHandler\n")
 
-	fields, err := scanner.getFields(ctx, schema)
+	fields, err := scanner.getFields(ctx, topic, schema)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +184,7 @@ func (scanner *SchemaScanner) noneHandler(ctx context.Context, schema *gojsonsch
 	return []ast.Node{fieldList}, nil
 }
 
-func (scanner *SchemaScanner) boolHandler(ctx context.Context, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) boolHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "boolHandler")
 	defer span.End()
 
@@ -201,7 +203,7 @@ func (scanner *SchemaScanner) boolHandler(ctx context.Context, schema *gojsonsch
 	}, nil
 }
 
-func (scanner *SchemaScanner) numberHandler(ctx context.Context, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) numberHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "numberHandler")
 	defer span.End()
 
@@ -220,7 +222,7 @@ func (scanner *SchemaScanner) numberHandler(ctx context.Context, schema *gojsons
 	}, nil
 }
 
-func (scanner *SchemaScanner) intHandler(ctx context.Context, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) intHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "intHandler")
 	defer span.End()
 
@@ -239,7 +241,7 @@ func (scanner *SchemaScanner) intHandler(ctx context.Context, schema *gojsonsche
 	}, nil
 }
 
-func (scanner *SchemaScanner) stringHandler(ctx context.Context, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) stringHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "stringHandler")
 	defer span.End()
 
@@ -317,18 +319,23 @@ func newArrayField(ctx context.Context, schema *gojsonschema.SubSchema, arrayTyp
 	return &result, nil
 }
 
-func (scanner *SchemaScanner) objectHandler(ctx context.Context, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) objectHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "objectHandler")
 	defer span.End()
 
-	fmt.Printf("AST308 STA objectHandler\n")
+	objectName := topic.objectName // Default placeholder
+	if isObjectName(schema.Property) {
+		objectName = schema.Property
+	}
 
-	fields, err := scanner.getFields(ctx, cfg, schema)
+	objectTopic := NewObjectScannerTopic(objectName, topic.objectVersion)
+
+	fields, err := scanner.getFields(ctx, objectTopic, schema)
 	if err != nil {
 		return nil, err
 	}
 
-	structDefinition := astmodel.NewStructDefinition(title, fields...)
+	structDefinition := astmodel.NewStructDefinition(objectName, topic.objectVersion, fields...)
 
 	scanner.Structs = append(scanner.Structs, structDefinition)
 
@@ -342,7 +349,7 @@ func (scanner *SchemaScanner) objectHandler(ctx context.Context, schema *gojsons
 	}, nil
 }
 
-func (scanner *SchemaScanner) getFields(ctx context.Context, schema *gojsonschema.SubSchema) ([]*astmodel.FieldDefinition, error) {
+func (scanner *SchemaScanner) getFields(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]*astmodel.FieldDefinition, error) {
 	ctx, span := tab.StartSpan(ctx, "getFields")
 	defer span.End()
 
@@ -365,7 +372,8 @@ func (scanner *SchemaScanner) getFields(ctx context.Context, schema *gojsonschem
 			return nil, err
 		}
 
-		propDecls, err := scanner.TypeHandlers[schemaType](ctx, prop)
+		handler := scanner.TypeHandlers[schemaType]
+		propDecls, err := handler(ctx, topic, prop)
 		if _, ok := err.(*UnknownSchemaError); ok {
 			// if we don't know the type, we still need to provide the property, we will just provide open interface
 			field, err := newField(ctx, prop.Property, "interface{}", schema.Description)
@@ -431,31 +439,39 @@ func (scanner *SchemaScanner) getFields(ctx context.Context, schema *gojsonschem
 			}
 			fields = append(fields, field)
 		default:
-			return nil, fmt.Errorf("unexpected field type: %+v", nt)
+			fmt.Printf("AST0431 WRN unexpected field type: %+v\n", nt)
+			// do nothing
 		}
 	}
 
 	return fields, nil
 }
 
-func (scanner *SchemaScanner) refHandler(ctx context.Context, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) refHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "refHandler")
 	defer span.End()
 
-	if schema.Ref.GetUrl().Fragment == expressionFragment {
+	url := schema.Ref.GetUrl()
+	if url.Fragment == expressionFragment {
 		return []ast.Node{}, nil
 	}
+
+	n, v := extractObjectAndVersion(url)
+	objectTopic := NewObjectScannerTopic(n, v)
+
+	fmt.Printf("AST0455 INF $ref to %s\n", url)
 
 	schemaType, err := getSubSchemaType(schema.RefSchema)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := scanner.TypeHandlers[schemaType](ctx, cfg, schema.RefSchema)
+	handler := scanner.TypeHandlers[schemaType]
+	result, err := handler(ctx, objectTopic, schema.RefSchema)
 	return result, err
 }
 
-func (scanner *SchemaScanner) allOfHandler(ctx context.Context, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) allOfHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "allOfHandler")
 	defer span.End()
 
@@ -467,7 +483,7 @@ func (scanner *SchemaScanner) allOfHandler(ctx context.Context, schema *gojsonsc
 		}
 
 		handler := scanner.TypeHandlers[schemaType]
-		ds, err := handler(ctx, all)
+		ds, err := handler(ctx, topic, all)
 		if err != nil {
 			return nil, err
 		}
@@ -495,7 +511,7 @@ func (scanner *SchemaScanner) allOfHandler(ctx context.Context, schema *gojsonsc
 	}, nil
 }
 
-func (scanner *SchemaScanner) oneOfHandler(ctx context.Context, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) oneOfHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "oneOfHandler")
 	defer span.End()
 
@@ -507,17 +523,18 @@ func (scanner *SchemaScanner) oneOfHandler(ctx context.Context, schema *gojsonsc
 		}
 
 		handler := scanner.TypeHandlers[schemaType]
-		ds, err := handler(ctx, one)
+		ds, err := handler(ctx, topic, one)
 		if err != nil {
 			return nil, err
 		}
+
 		decls = append(decls, ds...)
 	}
 
 	return decls, nil
 }
 
-func (scanner *SchemaScanner) anyOfHandler(ctx context.Context, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) anyOfHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "anyOfHandler")
 	defer span.End()
 
@@ -528,7 +545,8 @@ func (scanner *SchemaScanner) anyOfHandler(ctx context.Context, schema *gojsonsc
 			return nil, err
 		}
 
-		ns, err := scanner.TypeHandlers[schemaType](ctx, any)
+		handler := scanner.TypeHandlers[schemaType]
+		ns, err := handler(ctx, topic, any)
 		if err != nil {
 			return nil, err
 		}
@@ -545,7 +563,7 @@ func (scanner *SchemaScanner) anyOfHandler(ctx context.Context, schema *gojsonsc
 	return nodes, nil
 }
 
-func (scanner *SchemaScanner) arrayHandler(ctx context.Context, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) arrayHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
 	ctx, span := tab.StartSpan(ctx, "arrayHandler")
 	defer span.End()
 
@@ -571,7 +589,7 @@ func (scanner *SchemaScanner) arrayHandler(ctx context.Context, schema *gojsonsc
 		}
 
 		handler := scanner.TypeHandlers[schemaType]
-		ds, err := handler(ctx, firstChild)
+		ds, err := handler(ctx, topic, firstChild)
 		if err != nil {
 			return nil, err
 		}
@@ -593,7 +611,7 @@ func (scanner *SchemaScanner) arrayHandler(ctx context.Context, schema *gojsonsc
 	}
 
 	handler := scanner.TypeHandlers[schemaType]
-	nodeList, err := handler(ctx, firstChild)
+	nodeList, err := handler(ctx, topic, firstChild)
 	if err != nil {
 		return nil, err
 	}
@@ -692,4 +710,27 @@ func isPrimitiveType(name SchemaType) bool {
 	default:
 		return false
 	}
+}
+
+func asComment(text *string) string {
+	if text == nil {
+		return ""
+	}
+
+	return "// " + *text
+}
+
+func isObjectName(name string) bool {
+	return name != "$ref" && name != "oneOf"
+}
+
+func extractObjectAndVersion(url *url.URL) (string, string) {
+	isPathSeparator := func(c rune) bool {
+		return c == '/'
+	}
+
+	pathParts := strings.FieldsFunc(url.Path, isPathSeparator)
+	fragmentParts := strings.FieldsFunc(url.Fragment, isPathSeparator)
+
+	return fragmentParts[len(fragmentParts)-1], pathParts[1]
 }
