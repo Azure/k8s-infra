@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"unicode"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/xeipuuv/gojsonschema"
 
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/jsonast"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/xcobra"
 )
@@ -41,7 +43,8 @@ func NewGenCommand() (*cobra.Command, error) {
 			}
 
 			scanner := jsonast.NewSchemaScanner()
-			_, err = scanner.ToNodes(ctx, resourcesSchema, jsonast.WithFilters(viper.GetStringSlice("resources")))
+			scanner.AddFilters(viper.GetStringSlice("resources"))
+			_, err = scanner.ToNodes(ctx, resourcesSchema)
 			if err != nil {
 				fmt.Printf("GEN0048 - Error %s\n", err)
 				return err
@@ -61,12 +64,19 @@ func NewGenCommand() (*cobra.Command, error) {
 
 			fmt.Printf("GEN0064 INF Checkpoint\n")
 
-			for i, st := range scanner.Structs {
-				fileName := fmt.Sprintf("resources/%v.go", i)
+			for _, st := range scanner.Structs {
+				ns := createNamespace("api", st.Version())
+				dirName := fmt.Sprintf("resources/%v", ns)
+				fileName := fmt.Sprintf("%v/%v.go", dirName, st.Name())
 
-				fmt.Printf("GEN070 - Writing %s\n", fileName)
+				if _, err := os.Stat(dirName); os.IsNotExist(err) {
+					fmt.Printf("GEN072 - Creating folder %s\n", dirName)
+					os.Mkdir(dirName, 0700)
+				}
 
-				genFile := astmodel.NewFileDefinition("generated", st)
+				fmt.Printf("GEN076 - Writing %s\n", fileName)
+
+				genFile := astmodel.NewFileDefinition(ns, st)
 				genFile.SaveTo(fileName)
 			}
 
@@ -92,4 +102,20 @@ func loadSchema(source string) (*gojsonschema.Schema, error) {
 	}
 
 	return schema, nil
+}
+
+func createNamespace(base string, version string) string {
+	var builder []rune
+
+	for _, r := range base {
+		builder = append(builder, rune(r))
+	}
+
+	for _, r := range version {
+		if unicode.IsLetter(r) || unicode.IsNumber(r) {
+			builder = append(builder, rune(r))
+		}
+	}
+
+	return string(builder)
 }
