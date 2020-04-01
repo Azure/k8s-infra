@@ -7,15 +7,17 @@ import (
 
 // StructDefinition encapsulates the definition of a struct
 type StructDefinition struct {
-	name   string
-	fields []*FieldDefinition
+	name    string
+	version string
+	fields  []*FieldDefinition
 }
 
 // NewStructDefinition is a factory method for creating a new StructDefinition
-func NewStructDefinition(name string, fields ...*FieldDefinition) *StructDefinition {
+func NewStructDefinition(name string, version string, fields ...*FieldDefinition) *StructDefinition {
 	return &StructDefinition{
-		name:   name,
-		fields: fields,
+		name:    name,
+		version: version,
+		fields:  fields,
 	}
 }
 
@@ -55,6 +57,16 @@ func (definition *StructDefinition) AsDeclaration() (ast.GenDecl, error) {
 	}
 
 	return *declaration, nil
+}
+
+// Name returns the name of this struct
+func (definition *StructDefinition) Name() string {
+	return definition.name
+}
+
+// Version returns the version of this struct
+func (definition *StructDefinition) Version() string {
+	return definition.version
 }
 
 //TODO: Perhaps use this method in AsDeclaration(), above
