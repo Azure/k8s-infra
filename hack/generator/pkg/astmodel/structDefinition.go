@@ -21,6 +21,16 @@ func NewStructDefinition(name string, version string, fields ...*FieldDefinition
 	}
 }
 
+// Name returns the name of the struct
+func (definition *StructDefinition) Name() string {
+	return definition.name
+}
+
+// Version returns the version of this struct
+func (definition *StructDefinition) Version() string {
+	return definition.version
+}
+
 // AsAst generates an AST node representing this field definition
 func (definition *StructDefinition) AsAst() (ast.Node, error) {
 	declaration, err := definition.AsDeclaration()
@@ -59,17 +69,8 @@ func (definition *StructDefinition) AsDeclaration() (ast.GenDecl, error) {
 	return *declaration, nil
 }
 
-// Name returns the name of this struct
-func (definition *StructDefinition) Name() string {
-	return definition.name
-}
-
-// Version returns the version of this struct
-func (definition *StructDefinition) Version() string {
-	return definition.version
-}
-
 //TODO: Perhaps use this method in AsDeclaration(), above
+//TODO make this private as it might be unused elsewhere
 
 // ToFieldList generates an AST fieldlist for a sequence of field definitions
 func ToFieldList(fields []*FieldDefinition) (*ast.FieldList, error) {

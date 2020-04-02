@@ -23,6 +23,16 @@ func NewFieldDefinition(name string, fieldType string) *FieldDefinition {
 	}
 }
 
+// Name returns the name of the field
+func (field FieldDefinition) Name() string {
+	return field.name
+}
+
+// FieldType returns the data type of the field
+func (field FieldDefinition) FieldType() string {
+	return field.fieldType
+}
+
 // WithDescription returns a new FieldDefinition with the specified description
 func (field FieldDefinition) WithDescription(description string) FieldDefinition {
 	field.description = description

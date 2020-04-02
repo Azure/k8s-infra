@@ -22,7 +22,7 @@ func NewTestStruct(name string, fields ...string) StructDefinition {
 		fs = append(fs, NewFieldDefinition(n, "string"))
 	}
 
-	definition := NewStructDefinition(name, fs...)
+	definition := NewStructDefinition(name, "2020-01-01", fs...)
 
 	return *definition
 }
