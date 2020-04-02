@@ -19,9 +19,9 @@ func NewObjectScannerTopic(objectName string, objectVersion string) ScannerTopic
 }
 
 // WithProperty creates a new topic for scanning the subtree of a property
-func (topic ScannerTopic) WithProperty(propertyName string) *ScannerTopic {
+func (topic ScannerTopic) WithProperty(propertyName string) ScannerTopic {
 	topic.propertyName = propertyName
-	return &topic
+	return topic
 }
 
 // CreateStructName returns the name to use for a new struct in this topic

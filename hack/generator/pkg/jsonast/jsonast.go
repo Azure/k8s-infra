@@ -116,8 +116,7 @@ func (scanner *SchemaScanner) ToNodes(ctx context.Context, schema *gojsonschema.
 		return nil, err
 	}
 
-	//TODO: Is empty string the right default here?
-	topic := NewObjectScannerTopic(schema.Property, "")
+	topic := NewObjectScannerTopic(schema.Property, "").WithProperty(schema.Property)
 
 	rootHandler := scanner.TypeHandlers[schemaType]
 	nodes, err := rootHandler(ctx, topic, schema)
@@ -150,7 +149,8 @@ func (scanner *SchemaScanner) enumHandler(ctx context.Context, topic ScannerTopi
 	ctx, span := tab.StartSpan(ctx, "enumHandler")
 	defer span.End()
 
-	field, err := newPrimitiveField(ctx, schema, String)
+	//TODO Create an Enum field that captures the permitted options too
+	field, err := newPrimitiveField(ctx, topic, schema, String)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func (scanner *SchemaScanner) boolHandler(ctx context.Context, topic ScannerTopi
 	ctx, span := tab.StartSpan(ctx, "boolHandler")
 	defer span.End()
 
-	field, err := newPrimitiveField(ctx, schema, Bool)
+	field, err := newPrimitiveField(ctx, topic, schema, Bool)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +199,7 @@ func (scanner *SchemaScanner) numberHandler(ctx context.Context, topic ScannerTo
 	ctx, span := tab.StartSpan(ctx, "numberHandler")
 	defer span.End()
 
-	field, err := newPrimitiveField(ctx, schema, Number)
+	field, err := newPrimitiveField(ctx, topic, schema, Number)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +213,7 @@ func (scanner *SchemaScanner) intHandler(ctx context.Context, topic ScannerTopic
 	ctx, span := tab.StartSpan(ctx, "intHandler")
 	defer span.End()
 
-	field, err := newPrimitiveField(ctx, schema, Int)
+	field, err := newPrimitiveField(ctx, topic, schema, Int)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +227,7 @@ func (scanner *SchemaScanner) stringHandler(ctx context.Context, topic ScannerTo
 	ctx, span := tab.StartSpan(ctx, "stringHandler")
 	defer span.End()
 
-	field, err := newPrimitiveField(ctx, schema, String)
+	field, err := newPrimitiveField(ctx, topic, schema, String)
 	if err != nil {
 		return nil, err
 	}
@@ -249,16 +249,21 @@ func newField(ctx context.Context, fieldName string, fieldType string, descripti
 	return &result, nil
 }
 
-func newPrimitiveField(ctx context.Context, schema *gojsonschema.SubSchema, typeIdent SchemaType) (*astmodel.FieldDefinition, error) {
+func newPrimitiveField(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema, typeIdentifier SchemaType) (*astmodel.FieldDefinition, error) {
 	ctx, span := tab.StartSpan(ctx, "newPrimitiveField")
 	defer span.End()
 
-	ident, err := getPrimitiveType(typeIdent)
+	identifier, err := getPrimitiveType(typeIdentifier)
 	if err != nil {
 		return nil, err
 	}
 
-	result := *astmodel.NewFieldDefinition(schema.Property, ident)
+	propertyName := schema.Property
+	if !isObjectName(propertyName) {
+		propertyName = topic.propertyName
+	}
+
+	result := *astmodel.NewFieldDefinition(propertyName, identifier)
 	if schema.Description != nil {
 		result = result.WithDescription(*schema.Description)
 	}
@@ -344,8 +349,10 @@ func (scanner *SchemaScanner) getFields(ctx context.Context, topic ScannerTopic,
 			return nil, err
 		}
 
+		propertyTopic := topic.WithProperty(prop.Property)
+
 		handler := scanner.TypeHandlers[schemaType]
-		propDecls, err := handler(ctx, topic, prop)
+		propDecls, err := handler(ctx, propertyTopic, prop)
 		if _, ok := err.(*UnknownSchemaError); ok {
 			// if we don't know the type, we still need to provide the property, we will just provide open interface
 			field, err := newField(ctx, prop.Property, "interface{}", schema.Description)
