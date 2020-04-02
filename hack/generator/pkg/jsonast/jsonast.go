@@ -413,10 +413,6 @@ func (scanner *SchemaScanner) refHandler(ctx context.Context, topic ScannerTopic
 		return []astmodel.Definition{}, nil
 	}
 
-	n := objectTypeOf(url)
-	v := versionOf(url)
-	objectTopic := NewObjectScannerTopic(n, v)
-
 	fmt.Printf("AST0455 INF $ref to %s\n", url)
 
 	schemaType, err := getSubSchemaType(schema.RefSchema)
@@ -424,8 +420,17 @@ func (scanner *SchemaScanner) refHandler(ctx context.Context, topic ScannerTopic
 		return nil, err
 	}
 
+	// If $ref points to an object type, we want to start processing that object definition
+	// otherwise we keep our existing topic
+	subTopic := topic
+	if schemaType == Object {
+		n := objectTypeOf(url)
+		v := versionOf(url)
+		subTopic = NewObjectScannerTopic(n, v)
+	}
+
 	handler := scanner.TypeHandlers[schemaType]
-	result, err := handler(ctx, objectTopic, schema.RefSchema)
+	result, err := handler(ctx, subTopic, schema.RefSchema)
 	return result, err
 }
 
