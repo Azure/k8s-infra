@@ -45,7 +45,7 @@ func NewGenCommand() (*cobra.Command, error) {
 			scanner.AddFilters(viper.GetStringSlice("resources"))
 			_, err = scanner.ToNodes(ctx, resourcesSchema)
 			if err != nil {
-				log.Println("Error: %v\n", err)
+				log.Printf("Error: %v\n", err)
 				return err
 			}
 
