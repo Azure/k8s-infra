@@ -6,8 +6,6 @@ import (
 	"os"
 	"unicode"
 
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/xeipuuv/gojsonschema"
