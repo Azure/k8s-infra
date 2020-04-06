@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	_ "github.com/devigned/tab/opencensus"
@@ -13,6 +14,8 @@ import (
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	if os.Getenv("TRACING") == "true" {
 		closer, err := initOpenCensus()
 		if err != nil {

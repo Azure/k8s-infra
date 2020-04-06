@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go/ast"
+	"log"
 	"net/url"
 	"regexp"
 	"strings"
@@ -165,8 +166,8 @@ func (scanner *SchemaScanner) noneHandler(ctx context.Context, topic ScannerTopi
 	ctx, span := tab.StartSpan(ctx, "noneHandler")
 	defer span.End()
 
-	fmt.Printf("AST162 STA noneHandler")
-	defer fmt.Printf("AST163 FIN noneHandler\n")
+	log.Printf("STA noneHandler\n")
+	defer log.Printf("FIN noneHandler\n")
 
 	fields, err := scanner.getFields(ctx, topic, schema)
 	if err != nil {
@@ -331,7 +332,7 @@ func (scanner *SchemaScanner) getFields(ctx context.Context, topic ScannerTopic,
 	ctx, span := tab.StartSpan(ctx, "getFields")
 	defer span.End()
 
-	fmt.Printf("AST324 STA getFields\n")
+	log.Printf("STA getFields\n")
 
 	var fields []*astmodel.FieldDefinition
 	for _, prop := range schema.PropertiesChildren {
@@ -369,13 +370,13 @@ func (scanner *SchemaScanner) getFields(ctx context.Context, topic ScannerTopic,
 		}
 
 		if len(propDecls) == 0 {
-			fmt.Printf("AST0367 WRN No properties found for %s.%s.%s", topic.objectVersion, topic.objectName, topic.propertyName)
+			log.Printf("WRN No properties found for %s.%s.%s\n", topic.objectVersion, topic.objectName, topic.propertyName)
 			continue
 		}
 
 		if isPrimitiveType(schemaType) {
 			if len(propDecls) > 1 {
-				fmt.Printf("AST0377 WRN Unexpectedly found multiple primitive fields for %s.%s.%s.\n", topic.objectName, topic.objectName, topic.propertyName)
+				log.Printf("WRN Unexpectedly found multiple primitive fields for %s.%s.%s.\n", topic.objectName, topic.objectName, topic.propertyName)
 			}
 
 			// Expect to always have a single primitive field
@@ -402,9 +403,9 @@ func (scanner *SchemaScanner) getFields(ctx context.Context, topic ScannerTopic,
 			fields = append(fields, decl.(*astmodel.FieldDefinition))
 		case *astmodel.StructDefinition:
 			// TODO Do we need a custom Fielddefinition that includes a struct?
-			fmt.Printf("AST0394 WRN astmodel.StructDefinition not handled\n")
+			log.Printf("WRN astmodel.StructDefinition not handled\n")
 		default:
-			fmt.Printf("AST0431 WRN unexpected field type: %T\n", nt)
+			log.Printf("WRN unexpected field type: %T\n", nt)
 			// do nothing
 		}
 	}
@@ -421,7 +422,7 @@ func (scanner *SchemaScanner) refHandler(ctx context.Context, topic ScannerTopic
 		return []astmodel.Definition{}, nil
 	}
 
-	fmt.Printf("AST0455 INF $ref to %s\n", url)
+	log.Printf("INF $ref to %s\n", url)
 
 	schemaType, err := getSubSchemaType(schema.RefSchema)
 	if err != nil {
@@ -529,7 +530,7 @@ func (scanner *SchemaScanner) arrayHandler(ctx context.Context, topic ScannerTop
 
 	if len(schema.ItemsChildren) == 0 {
 		// there is no type to the elements, so we must assume interface{}
-		fmt.Printf("AST0538 WRN Interface assumption unproven")
+		log.Printf("WRN Interface assumption unproven\n")
 
 		field := astmodel.NewFieldDefinition(topic.propertyName, "interface{}")
 		return []astmodel.Definition{
@@ -572,7 +573,7 @@ func (scanner *SchemaScanner) arrayHandler(ctx context.Context, topic ScannerTop
 	//TODO: Should not throw away the other elements in nodeList
 
 	if len(definitions) > 1 {
-		fmt.Printf("AST0581 WARN discarding extra members of []definitions")
+		log.Printf("WARN discarding extra members of []definitions\n")
 	}
 
 	defn := definitions[0]
@@ -593,7 +594,7 @@ func (scanner *SchemaScanner) arrayHandler(ctx context.Context, topic ScannerTop
 		}, nil
 
 	default:
-		fmt.Printf("AST0640 WRN unexpected definition type (found %T)", defn)
+		log.Printf("WRN unexpected definition type (found %T)\n", defn)
 		return []astmodel.Definition{}, nil
 	}
 }

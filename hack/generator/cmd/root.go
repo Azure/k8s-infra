@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"os"
+	"log"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -14,13 +14,11 @@ import (
 func Execute() {
 	cmd, err := newRootCommand()
 	if err != nil {
-		fmt.Printf("fatal error: commands failed to build! %v", err)
-		os.Exit(1)
+		log.Fatalf("fatal error: commands failed to build! %v\n", err)
 	}
 
 	if err := cmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatalln(err)
 	}
 }
 
