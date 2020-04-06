@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/ast"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
@@ -699,6 +700,16 @@ func versionOf(url *url.URL) string {
 	}
 
 	pathParts := strings.FieldsFunc(url.Path, isPathSeparator)
+	versionRegex, err := regexp.Compile("\\d\\d\\d\\d-\\d\\d-\\d\\d")
+	if err != nil {
+		panic(err)
+	}
 
-	return pathParts[1]
+	for _, p := range pathParts {
+		if versionRegex.MatchString(p) {
+			return p
+		}
+	}
+
+	return ""
 }
