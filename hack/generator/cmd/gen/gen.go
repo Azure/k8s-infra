@@ -78,7 +78,7 @@ func NewGenCommand() (*cobra.Command, error) {
 				genFile.SaveTo(fileName)
 			}
 
-			fmt.Printf("GEN061 - Completed creating resources\n")
+			fmt.Printf("GEN061 - Completed writing %v resources\n", len(scanner.Structs))
 
 			return nil
 		}),
