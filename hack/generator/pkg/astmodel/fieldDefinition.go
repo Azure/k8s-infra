@@ -59,12 +59,8 @@ func (field FieldDefinition) AsField() (ast.Field, error) {
 
 	typeNode := ast.NewIdent(field.fieldType)
 
-	result := &ast.Field{
-		Names: []*ast.Ident{
-			{
-				Name: field.name,
-			},
-		},
+	result := ast.Field{
+		Names:   []*ast.Ident{ast.NewIdent(field.name)},
 		Type:    typeNode,
 		Tag:     nil, // TODO: add field tags for api hints / json binding
 		Comment: nil,
@@ -74,11 +70,11 @@ func (field FieldDefinition) AsField() (ast.Field, error) {
 		result.Doc = &ast.CommentGroup{
 			List: []*ast.Comment{
 				{
-					Text: fmt.Sprintf("/* %s */", field.description),
+					Text: fmt.Sprintf("\n/*\t%s: %s */", field.name, field.description),
 				},
 			},
 		}
 	}
 
-	return *result, nil
+	return result, nil
 }
