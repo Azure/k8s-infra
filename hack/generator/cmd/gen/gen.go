@@ -3,6 +3,7 @@ package gen
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"unicode"
 
@@ -44,23 +45,23 @@ func NewGenCommand() (*cobra.Command, error) {
 			scanner.AddFilters(viper.GetStringSlice("resources"))
 			_, err = scanner.ToNodes(ctx, resourcesSchema)
 			if err != nil {
-				fmt.Printf("GEN0048 - Error %s\n", err)
+				log.Printf("Error: %v\n", err)
 				return err
 			}
 
 			err = os.RemoveAll("resources")
 			if err != nil {
-				fmt.Printf("GEN0054 - Error %s\n", err)
+				log.Printf("Error: %v\n", err)
 				return err
 			}
 
 			err = os.Mkdir("resources", 0700)
 			if err != nil {
-				fmt.Printf("GEN0060 - Error %s\n", err)
+				log.Printf("Error %v\n", err)
 				return err
 			}
 
-			fmt.Printf("GEN0064 INF Checkpoint\n")
+			log.Printf("INF Checkpoint\n")
 
 			for _, st := range scanner.Structs {
 				ns := createNamespace("api", st.Version())
@@ -68,17 +69,17 @@ func NewGenCommand() (*cobra.Command, error) {
 				fileName := fmt.Sprintf("%v/%v.go", dirName, st.Name())
 
 				if _, err := os.Stat(dirName); os.IsNotExist(err) {
-					fmt.Printf("GEN072 - Creating folder %s\n", dirName)
+					log.Printf("Creating folder '%s'\n", dirName)
 					os.Mkdir(dirName, 0700)
 				}
 
-				fmt.Printf("GEN076 - Writing %s\n", fileName)
+				log.Printf("Writing '%s'\n", fileName)
 
 				genFile := astmodel.NewFileDefinition(ns, st)
 				genFile.SaveTo(fileName)
 			}
 
-			fmt.Printf("GEN061 - Completed writing %v resources\n", len(scanner.Structs))
+			log.Printf("Completed writing %v resources\n", len(scanner.Structs))
 
 			return nil
 		}),
