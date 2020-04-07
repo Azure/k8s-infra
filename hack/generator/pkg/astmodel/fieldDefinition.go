@@ -23,6 +23,17 @@ func NewFieldDefinition(name string, fieldType Type) *FieldDefinition {
 	}
 }
 
+// NewInheritStructDefinition is a factory method for defining an inheritance
+// from another struct type.
+func NewInheritStructDefinition(structType Type) *FieldDefinition {
+	// in Go, this is just a field without a name:
+	return &FieldDefinition{
+		name:        "",
+		fieldType:   structType,
+		description: "",
+	}
+}
+
 // Name returns the name of the field
 func (field *FieldDefinition) Name() string {
 	return field.name
