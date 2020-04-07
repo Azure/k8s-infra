@@ -31,6 +31,16 @@ func (definition *StructDefinition) Version() string {
 	return definition.version
 }
 
+// Field provides indexed access to our fields
+func (definition *StructDefinition) Field(index int) FieldDefinition {
+	return *definition.fields[index]
+}
+
+// FieldCount indicates how many fields are contained
+func (definition *StructDefinition) FieldCount() int {
+	return len(definition.fields)
+}
+
 // AsAst generates an AST node representing this field definition
 func (definition *StructDefinition) AsAst() (ast.Node, error) {
 	declaration, err := definition.AsDeclaration()
