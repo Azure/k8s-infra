@@ -8,14 +8,14 @@ import (
 // FieldDefinition encapsulates the definition of a field
 type FieldDefinition struct {
 	name        string
-	fieldType   string
+	fieldType   Type
 	description string
 }
 
 // NewFieldDefinition is a factory method for creating a new FieldDefinition
 // name is the name for the new field (mandatory)
 // fieldType is the type for the new field (mandatory)
-func NewFieldDefinition(name string, fieldType string) *FieldDefinition {
+func NewFieldDefinition(name string, fieldType Type) *FieldDefinition {
 	return &FieldDefinition{
 		name:        name,
 		fieldType:   fieldType,
@@ -24,19 +24,24 @@ func NewFieldDefinition(name string, fieldType string) *FieldDefinition {
 }
 
 // Name returns the name of the field
-func (field FieldDefinition) Name() string {
+func (field *FieldDefinition) Name() string {
 	return field.name
 }
 
 // FieldType returns the data type of the field
-func (field FieldDefinition) FieldType() string {
+func (field *FieldDefinition) FieldType() Type {
 	return field.fieldType
 }
 
 // WithDescription returns a new FieldDefinition with the specified description
-func (field FieldDefinition) WithDescription(description string) FieldDefinition {
-	field.description = description
-	return field
+func (field *FieldDefinition) WithDescription(description *string) *FieldDefinition {
+	if description == nil {
+		return field
+	}
+
+	result := *field
+	result.description = *description
+	return &result
 }
 
 // AsAst generates an AST node representing this field definition
@@ -47,12 +52,10 @@ func (field FieldDefinition) AsAst() ast.Node {
 // AsField generates an AST field node representing this field definition
 func (field FieldDefinition) AsField() *ast.Field {
 
-	typeNode := ast.NewIdent(field.fieldType)
-
 	// TODO: add field tags for api hints / json binding
 	result := &ast.Field{
 		Names: []*ast.Ident{ast.NewIdent(field.name)},
-		Type:  typeNode,
+		Type:  field.FieldType().AsType(),
 	}
 
 	if field.description != "" {

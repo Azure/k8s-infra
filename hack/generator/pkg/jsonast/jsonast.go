@@ -239,16 +239,12 @@ func (scanner *SchemaScanner) stringHandler(ctx context.Context, topic ScannerTo
 	}, nil
 }
 
-func newField(ctx context.Context, fieldName string, fieldType string, description *string) (*astmodel.FieldDefinition, error) {
+func newField(ctx context.Context, fieldName string, fieldType astmodel.Type, description *string) (*astmodel.FieldDefinition, error) {
 	ctx, span := tab.StartSpan(ctx, "newField")
 	defer span.End()
 
-	result := *astmodel.NewFieldDefinition(fieldName, fieldType)
-	if description != nil {
-		result = result.WithDescription(*description)
-	}
-
-	return &result, nil
+	result := astmodel.NewFieldDefinition(fieldName, fieldType).WithDescription(description)
+	return result, nil
 }
 
 func newPrimitiveField(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema, typeIdentifier SchemaType) (*astmodel.FieldDefinition, error) {
@@ -265,42 +261,9 @@ func newPrimitiveField(ctx context.Context, topic ScannerTopic, schema *gojsonsc
 		propertyName = topic.propertyName
 	}
 
-	result := *astmodel.NewFieldDefinition(propertyName, identifier)
-	if schema.Description != nil {
-		result = result.WithDescription(*schema.Description)
-	}
+	result := astmodel.NewFieldDefinition(propertyName, identifier).WithDescription(schema.Description)
 
-	return &result, nil
-}
-
-func newStructField(ctx context.Context, schema *gojsonschema.SubSchema, structType *ast.StructType) (*astmodel.FieldDefinition, error) {
-	ctx, span := tab.StartSpan(ctx, "newStructField")
-	defer span.End()
-
-	// TODO: add the actual struct type name rather than foo
-	ident := "fooStruct"
-
-	result := *astmodel.NewFieldDefinition(schema.Property, ident)
-	if schema.Description != nil {
-		result = result.WithDescription(*schema.Description)
-	}
-
-	return &result, nil
-}
-
-func newArrayField(ctx context.Context, schema *gojsonschema.SubSchema, arrayType *ast.ArrayType) (*astmodel.FieldDefinition, error) {
-	ctx, span := tab.StartSpan(ctx, "newArrayField")
-	defer span.End()
-
-	// TODO: add the actual array type name rather than foo
-	ident := fmt.Sprintf("[]%s", arrayType.Elt)
-
-	result := *astmodel.NewFieldDefinition(schema.Property, ident)
-	if schema.Description != nil {
-		result = result.WithDescription(*schema.Description)
-	}
-
-	return &result, nil
+	return result, nil
 }
 
 func (scanner *SchemaScanner) objectHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]astmodel.Definition, error) {
@@ -339,7 +302,7 @@ func (scanner *SchemaScanner) getFields(ctx context.Context, topic ScannerTopic,
 		schemaType, err := getSubSchemaType(prop)
 		if _, ok := err.(*UnknownSchemaError); ok {
 			// if we don't know the type, we still need to provide the property, we will just provide open interface
-			field, err := newField(ctx, prop.Property, "interface{}", schema.Description)
+			field, err := newField(ctx, prop.Property, astmodel.AnyType, schema.Description)
 			if err != nil {
 				return nil, err
 			}
@@ -357,7 +320,7 @@ func (scanner *SchemaScanner) getFields(ctx context.Context, topic ScannerTopic,
 		propDecls, err := handler(ctx, propertyTopic, prop)
 		if _, ok := err.(*UnknownSchemaError); ok {
 			// if we don't know the type, we still need to provide the property, we will just provide open interface
-			field, err := newField(ctx, prop.Property, "interface{}", schema.Description)
+			field, err := newField(ctx, prop.Property, astmodel.AnyType, schema.Description)
 			if err != nil {
 				return nil, err
 			}
@@ -388,7 +351,7 @@ func (scanner *SchemaScanner) getFields(ctx context.Context, topic ScannerTopic,
 		// allOf or oneOf is left and we expect to have only 1 structure for the field
 		if (schemaType == AllOf || schemaType == OneOf || schemaType == AnyOf) && len(propDecls) > 1 {
 			// we are not sure what it could be since it's many schemas... interface{}
-			field, err := newField(ctx, prop.Property, "interface{}", schema.Description)
+			field, err := newField(ctx, prop.Property, astmodel.AnyType, schema.Description)
 			if err != nil {
 				return nil, err
 			}
@@ -540,7 +503,7 @@ func (scanner *SchemaScanner) arrayHandler(ctx context.Context, topic ScannerTop
 		// there is no type to the elements, so we must assume interface{}
 		log.Printf("WRN Interface assumption unproven\n")
 
-		field := astmodel.NewFieldDefinition(topic.propertyName, "interface{}")
+		field := astmodel.NewFieldDefinition(topic.propertyName, astmodel.AnyType)
 		return []astmodel.Definition{
 			field,
 		}, nil
@@ -588,7 +551,7 @@ func (scanner *SchemaScanner) arrayHandler(ctx context.Context, topic ScannerTop
 	switch defn.(type) {
 	case *astmodel.FieldDefinition:
 		f := defn.(*astmodel.FieldDefinition)
-		field := astmodel.NewFieldDefinition(topic.propertyName, "[]"+f.FieldType())
+		field := astmodel.NewFieldDefinition(topic.propertyName, astmodel.NewArrayType(f.FieldType()))
 		return []astmodel.Definition{
 			field,
 		}, nil
@@ -596,7 +559,7 @@ func (scanner *SchemaScanner) arrayHandler(ctx context.Context, topic ScannerTop
 	case *astmodel.StructDefinition:
 		// TODO may need a smarter field definition that embeds a custom property
 		f := defn.(*astmodel.StructDefinition)
-		field := astmodel.NewFieldDefinition(topic.propertyName, f.Name())
+		field := astmodel.NewFieldDefinition(topic.propertyName, &f.StructReference)
 		return []astmodel.Definition{
 			field,
 		}, nil
@@ -655,18 +618,18 @@ func getIdentForPrimitiveType(name SchemaType) (*ast.Ident, error) {
 	}
 }
 
-func getPrimitiveType(name SchemaType) (string, error) {
+func getPrimitiveType(name SchemaType) (*astmodel.PrimitiveType, error) {
 	switch name {
 	case String:
-		return "string", nil
+		return astmodel.StringType, nil
 	case Int:
-		return "int", nil
+		return astmodel.IntType, nil
 	case Number:
-		return "float", nil
+		return astmodel.FloatType, nil
 	case Bool:
-		return "bool", nil
+		return astmodel.BoolType, nil
 	default:
-		return "", fmt.Errorf("%s is not a simple type and no ast.NewIdent can be created", name)
+		return astmodel.AnyType, fmt.Errorf("%s is not a simple type and no ast.NewIdent can be created", name)
 	}
 }
 
