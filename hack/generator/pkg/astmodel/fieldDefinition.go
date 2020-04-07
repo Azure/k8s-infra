@@ -16,15 +16,6 @@ type FieldDefinition struct {
 // name is the name for the new field (mandatory)
 // fieldType is the type for the new field (mandatory)
 func NewFieldDefinition(name string, fieldType string) *FieldDefinition {
-
-	if name == "" {
-		panic("Fields definitions must have names")
-	}
-
-	if fieldType == "" {
-		panic("Field definitions must have types")
-	}
-
 	return &FieldDefinition{
 		name:        name,
 		fieldType:   fieldType,
