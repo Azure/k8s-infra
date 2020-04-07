@@ -50,11 +50,10 @@ func (field FieldDefinition) AsField() (ast.Field, error) {
 
 	typeNode := ast.NewIdent(field.fieldType)
 
+	// TODO: add field tags for api hints / json binding
 	result := ast.Field{
-		Names:   []*ast.Ident{ast.NewIdent(field.name)},
-		Type:    typeNode,
-		Tag:     nil, // TODO: add field tags for api hints / json binding
-		Comment: nil,
+		Names: []*ast.Ident{ast.NewIdent(field.name)},
+		Type:  typeNode,
 	}
 
 	if field.description != "" {
