@@ -38,13 +38,13 @@ func Test_FieldDefinitionWithDescription_GivenDescription_DoesNotModifyOriginal(
 	assert.NotEqual(t, original.description, field.description)
 }
 
-func Test_FieldDefinition_Implements_AstGeneratorInterface(t *testing.T) {
+func Test_FieldDefinition_Implements_DefinitionInterface(t *testing.T) {
 	name := "fullName"
 	fieldtype := "string"
 
 	field := NewFieldDefinition(name, fieldtype)
 
-	assert.Implements(t, (*AstGenerator)(nil), field)
+	assert.Implements(t, (*Definition)(nil), field)
 }
 
 func Test_FieldDefinitionAsAst_GivenValidField_ReturnsNonNilResult(t *testing.T) {
