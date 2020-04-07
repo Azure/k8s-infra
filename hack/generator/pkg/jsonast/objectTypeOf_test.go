@@ -10,6 +10,7 @@ import (
 func Test_ObjectTypeOf(t *testing.T) {
 	url, err := url.Parse("https://schema.management.azure.com/schemas/2015-01-01/Microsoft.Resources.json#/resourceDefinitions/deployments")
 	assert.Nil(t, err)
-	name := objectTypeOf(url)
+	name, err := objectTypeOf(url)
+	assert.Nil(t, err)
 	assert.Equal(t, "deployments", name)
 }

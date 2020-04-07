@@ -2,7 +2,6 @@ package jsonast
 
 import (
 	"context"
-	"errors"
 	"go/ast"
 	"reflect"
 	"testing"
@@ -302,3 +301,4 @@ func getDefaultSchema() (*gojsonschema.SubSchema, error) {
 	}
 	return nil, errors.New("couldn't find resources in the schema")
 }
+*/

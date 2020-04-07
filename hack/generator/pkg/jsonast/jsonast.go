@@ -433,9 +433,17 @@ func (scanner *SchemaScanner) refHandler(ctx context.Context, topic ScannerTopic
 	// otherwise we keep our existing topic
 	subTopic := topic
 	if schemaType == Object {
-		n := objectTypeOf(url)
-		v := versionOf(url)
-		subTopic = NewObjectScannerTopic(n, v)
+		name, err := objectTypeOf(url)
+		if err != nil {
+			return nil, err
+		}
+
+		version, err := versionOf(url)
+		if err != nil {
+			return nil, err
+		}
+
+		subTopic = NewObjectScannerTopic(name, version)
 	}
 
 	handler := scanner.TypeHandlers[schemaType]
@@ -683,19 +691,19 @@ func isObjectName(name string) bool {
 	return name != "$ref" && name != "oneOf"
 }
 
-//TODO should this return err or panic?
-func objectTypeOf(url *url.URL) string {
+// Extract the name of an object from the supplied schema URL
+func objectTypeOf(url *url.URL) (string, error) {
 	isPathSeparator := func(c rune) bool {
 		return c == '/'
 	}
 
 	fragmentParts := strings.FieldsFunc(url.Fragment, isPathSeparator)
 
-	return fragmentParts[len(fragmentParts)-1]
+	return fragmentParts[len(fragmentParts)-1], nil
 }
 
-//TODO should this return err or panic?
-func versionOf(url *url.URL) string {
+// Extract the name of an object from the supplied schema URL
+func versionOf(url *url.URL) (string, error) {
 	isPathSeparator := func(c rune) bool {
 		return c == '/'
 	}
@@ -703,14 +711,15 @@ func versionOf(url *url.URL) string {
 	pathParts := strings.FieldsFunc(url.Path, isPathSeparator)
 	versionRegex, err := regexp.Compile("\\d\\d\\d\\d-\\d\\d-\\d\\d")
 	if err != nil {
-		panic(err)
+		return "", fmt.Errorf("Invalid Regex format %w", err)
 	}
 
 	for _, p := range pathParts {
 		if versionRegex.MatchString(p) {
-			return p
+			return p, nil
 		}
 	}
 
-	return ""
+	// No version found, that's fine
+	return "", nil
 }
