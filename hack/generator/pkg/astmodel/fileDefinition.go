@@ -25,15 +25,11 @@ func NewFileDefinition(packageName string, structs ...*StructDefinition) *FileDe
 }
 
 // AsAst generates an AST node representing this file
-func (file FileDefinition) AsAst() (ast.Node, error) {
+func (file FileDefinition) AsAst() ast.Node {
 
 	var decls []ast.Decl
 	for _, s := range file.structs {
-		st, err := s.AsDeclaration()
-		if err != nil {
-			return nil, err
-		}
-		decls = append(decls, &st)
+		decls = append(decls, s.AsDeclaration())
 	}
 
 	result := &ast.File{
@@ -41,7 +37,7 @@ func (file FileDefinition) AsAst() (ast.Node, error) {
 		Decls: decls,
 	}
 
-	return result, nil
+	return result
 }
 
 // SaveTo writes this generated file to disk
@@ -55,7 +51,7 @@ func (file FileDefinition) SaveTo(filePath string) error {
 		return err
 	}
 
-	content, err := file.AsAst()
+	content := file.AsAst()
 
 	err = format.Node(f, token.NewFileSet(), content)
 	if err != nil {

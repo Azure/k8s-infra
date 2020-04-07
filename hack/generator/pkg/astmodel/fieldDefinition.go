@@ -40,18 +40,17 @@ func (field FieldDefinition) WithDescription(description string) FieldDefinition
 }
 
 // AsAst generates an AST node representing this field definition
-func (field FieldDefinition) AsAst() (ast.Node, error) {
-	ast, err := field.AsField()
-	return &ast, err
+func (field FieldDefinition) AsAst() ast.Node {
+	return field.AsField()
 }
 
 // AsField generates an AST field node representing this field definition
-func (field FieldDefinition) AsField() (ast.Field, error) {
+func (field FieldDefinition) AsField() *ast.Field {
 
 	typeNode := ast.NewIdent(field.fieldType)
 
 	// TODO: add field tags for api hints / json binding
-	result := ast.Field{
+	result := &ast.Field{
 		Names: []*ast.Ident{ast.NewIdent(field.name)},
 		Type:  typeNode,
 	}
@@ -66,5 +65,5 @@ func (field FieldDefinition) AsField() (ast.Field, error) {
 		}
 	}
 
-	return result, nil
+	return result
 }

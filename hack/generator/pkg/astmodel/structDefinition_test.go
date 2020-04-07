@@ -28,6 +28,6 @@ func Test_StructDefinition_Implements_DefinitionInterface(t *testing.T) {
 
 func Test_StructDefinitionAsAst_GivenValidField_ReturnsNonNilResult(t *testing.T) {
 	field := NewStructDefinition("name", "2020-01-01")
-	node, _ := field.AsAst()
+	node := field.AsAst()
 	assert.NotNil(t, node)
 }

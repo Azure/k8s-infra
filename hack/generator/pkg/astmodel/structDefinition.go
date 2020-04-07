@@ -42,20 +42,18 @@ func (definition *StructDefinition) FieldCount() int {
 }
 
 // AsAst generates an AST node representing this field definition
-func (definition *StructDefinition) AsAst() (ast.Node, error) {
-	declaration, err := definition.AsDeclaration()
-	return &declaration, err
+func (definition *StructDefinition) AsAst() ast.Node {
+	return definition.AsDeclaration()
 }
 
 // AsDeclaration generates an AST node representing this struct definition
-func (definition *StructDefinition) AsDeclaration() (ast.GenDecl, error) {
+func (definition *StructDefinition) AsDeclaration() *ast.GenDecl {
 
 	identifier := ast.NewIdent(definition.name)
 
 	fieldDefinitions := make([]*ast.Field, len(definition.fields))
 	for i, f := range definition.fields {
-		definition, _ := f.AsField()
-		fieldDefinitions[i] = &definition
+		fieldDefinitions[i] = f.AsField()
 	}
 
 	structDefinition := &ast.StructType{
@@ -76,26 +74,22 @@ func (definition *StructDefinition) AsDeclaration() (ast.GenDecl, error) {
 		},
 	}
 
-	return *declaration, nil
+	return declaration
 }
 
 //TODO: Perhaps use this method in AsDeclaration(), above
 //TODO make this private as it might be unused elsewhere
 
 // ToFieldList generates an AST fieldlist for a sequence of field definitions
-func ToFieldList(fields []*FieldDefinition) (*ast.FieldList, error) {
+func ToFieldList(fields []*FieldDefinition) *ast.FieldList {
 	astFields := make([]*ast.Field, len(fields))
 	for i, f := range fields {
-		astField, err := f.AsField()
-		if err != nil {
-			return nil, err
-		}
-		astFields[i] = &astField
+		astFields[i] = f.AsField()
 	}
 
 	fieldList := &ast.FieldList{
 		List: astFields,
 	}
 
-	return fieldList, nil
+	return fieldList
 }
