@@ -8,3 +8,7 @@ type Definition interface {
 	AsAst() ast.Node
 }
 
+// Type represents something that is a Go type
+type Type interface {
+	AsType() ast.Expr
+}
