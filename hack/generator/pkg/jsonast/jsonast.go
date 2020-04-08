@@ -151,6 +151,9 @@ func (scanner *SchemaScanner) ToNodes(ctx context.Context, schema *gojsonschema.
 
 	// TODO: make safer:
 	root := astmodel.NewStructDefinition(topic.CreateStructName(), topic.objectVersion, nodes.(*astmodel.StructType).Fields...)
+	description := "Generated from: " + url.String()
+	root = root.WithDescription(&description)
+
 	scanner.AddStruct(root)
 
 	return root, nil
