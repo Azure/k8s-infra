@@ -9,7 +9,6 @@ import (
 func Test_NewFileDefinition_GivenValues_InitializesFields(t *testing.T) {
 	packageName := "demo"
 	person := NewTestStruct("Person", "fullName", "knownAs", "familyName")
-
 	file := NewFileDefinition(packageName, &person)
 
 	assert.Equal(t, packageName, file.packageName)
@@ -19,7 +18,7 @@ func Test_NewFileDefinition_GivenValues_InitializesFields(t *testing.T) {
 func NewTestStruct(name string, fields ...string) StructDefinition {
 	var fs []*FieldDefinition
 	for _, n := range fields {
-		fs = append(fs, NewFieldDefinition(n, "string"))
+		fs = append(fs, NewFieldDefinition(n, n, StringType))
 	}
 
 	definition := NewStructDefinition(name, "2020-01-01", fs...)

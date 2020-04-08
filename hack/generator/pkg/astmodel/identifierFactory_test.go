@@ -22,12 +22,3 @@ func CheckStructIdentifier(g *WithT, name string, expected string) {
 	identifier := idfactory.CreateIdentifier(name)
 	g.Expect(identifier).To(Equal(expected))
 }
-
-func Test_CreateStructIdentifier_WhenIdentifierInvalid_ReturnsError(t *testing.T) {
-	g := NewGomegaWithT(t)
-	idfactory := NewIdentifierFactory()
-
-	name := idfactory.CreateIdentifier("$bogus!")
-
-	g.Expect(name).To(BeEmpty())
-}

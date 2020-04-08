@@ -7,10 +7,13 @@ import (
 )
 
 func Test_NewFieldDefinition_GivenValues_InitializesFields(t *testing.T) {
-	name := "fullName"
-	fieldtype := "string"
+	g := NewGomegaWithT(t)
 
-	field := NewFieldDefinition(name, fieldtype)
+	fieldName := "FullName"
+	fieldtype := StringType
+	jsonName := "family-name"
+
+	field := NewFieldDefinition(fieldName, jsonName, fieldtype)
 
 	assert.Equal(t, name, field.name)
 	assert.Equal(t, fieldtype, field.fieldType)
@@ -18,41 +21,37 @@ func Test_NewFieldDefinition_GivenValues_InitializesFields(t *testing.T) {
 }
 
 func Test_FieldDefinitionWithDescription_GivenDescription_SetsField(t *testing.T) {
-	name := "fullName"
-	fieldtype := "string"
 	description := "description"
-
-	field := NewFieldDefinition(name, fieldtype).WithDescription(description)
+	field := NewFieldDefinition("FullName", "fullname", StringType).WithDescription(&description)
 
 	assert.Equal(t, description, field.description)
 }
 
 func Test_FieldDefinitionWithDescription_GivenDescription_DoesNotModifyOriginal(t *testing.T) {
-	name := "fullName"
-	fieldtype := "string"
 	description := "description"
+	original := NewFieldDefinition("FullName", "fullName", StringType)
 
-	original := NewFieldDefinition(name, fieldtype)
-	field := original.WithDescription(description)
+	field := original.WithDescription(&description)
 
 	assert.NotEqual(t, original.description, field.description)
 }
 
 func Test_FieldDefinition_Implements_DefinitionInterface(t *testing.T) {
-	name := "fullName"
-	fieldtype := "string"
+	g := NewGomegaWithT(t)
 
-	field := NewFieldDefinition(name, fieldtype)
+	var fieldDefinition interface{} = NewFieldDefinition("FullName", "fullName", StringType)
 
-	assert.Implements(t, (*Definition)(nil), field)
+	definition, ok := fieldDefinition.(Definition)
+
+	g.Expect(ok).To(BeTrue())
+	g.Expect(definition).NotTo(BeNil())
 }
 
 func Test_FieldDefinitionAsAst_GivenValidField_ReturnsNonNilResult(t *testing.T) {
-	name := "fullName"
-	fieldtype := "string"
+	g := NewGomegaWithT(t)
 
-	field := NewFieldDefinition(name, fieldtype)
-
+	field := NewFieldDefinition("FullName", "fullName", StringType)
 	node := field.AsAst()
+
 	assert.NotNil(t, node)
 }
