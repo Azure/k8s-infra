@@ -225,10 +225,7 @@ func (scanner *SchemaScanner) objectHandler(ctx context.Context, topic ScannerTo
 	ctx, span := tab.StartSpan(ctx, "objectHandler")
 	defer span.End()
 
-	objectName := topic.objectName // Default placeholder
-	if isObjectName(schema.Property) {
-		objectName = schema.Property
-	}
+	objectName := schema.Property
 
 	objectTopic := NewObjectScannerTopic(objectName, topic.objectVersion)
 
@@ -304,22 +301,20 @@ func (scanner *SchemaScanner) refHandler(ctx context.Context, topic ScannerTopic
 		return nil, err
 	}
 
-	// If $ref points to an object type, we want to start processing that object definition
-	// otherwise we keep our existing topic
-	subTopic := topic
+	// make a new topic based on the ref URL
+	name, err := objectTypeOf(url)
+	if err != nil {
+		return nil, err
+	}
+
+	version, err := versionOf(url)
+	if err != nil {
+		return nil, err
+	}
+
+	subTopic := NewObjectScannerTopic(name, version)
+
 	if schemaType == Object {
-		name, err := objectTypeOf(url)
-		if err != nil {
-			return nil, err
-		}
-
-		version, err := versionOf(url)
-		if err != nil {
-			return nil, err
-		}
-
-		subTopic = NewObjectScannerTopic(name, version)
-
 		// see if we already generated a struct for this ref
 		// TODO: base this on URL?
 		if definition, ok := scanner.FindStruct(subTopic.CreateStructName(), subTopic.objectVersion); ok {
@@ -560,10 +555,6 @@ func asComment(text *string) string {
 	}
 
 	return "// " + *text
-}
-
-func isObjectName(name string) bool {
-	return name != "$ref" && name != "oneOf"
 }
 
 // Extract the name of an object from the supplied schema URL
