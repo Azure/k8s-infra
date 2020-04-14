@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"os"
+	"log"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -14,13 +14,11 @@ import (
 func Execute() {
 	cmd, err := newRootCommand()
 	if err != nil {
-		fmt.Printf("fatal error: commands failed to build! %v", err)
-		os.Exit(1)
+		log.Fatalf("fatal error: commands failed to build! %v\n", err)
 	}
 
 	if err := cmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatalln(err)
 	}
 }
 
@@ -68,11 +66,11 @@ func initConfig(cfgFilePtr *string) {
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; set sane defaults and carry on.
-			fmt.Println("not found")
+			fmt.Println("Configuration file not found.")
 		} else {
 			// Config file was found but another error was produced
-			panic(fmt.Errorf("fatal error config file: %s", err))
+			panic(fmt.Errorf("Fatal error reading config file: %s", err))
 		}
 	}
-	fmt.Println("found")
+	fmt.Println("Found configuration file.")
 }

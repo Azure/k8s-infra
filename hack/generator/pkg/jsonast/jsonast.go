@@ -2,10 +2,14 @@ package jsonast
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"go/ast"
+	"log"
+	"net/url"
+	"regexp"
+	"strings"
 
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/devigned/tab"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -13,17 +17,21 @@ import (
 type (
 	SchemaType string
 
-	TypeHandler func(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error)
-
-	BuilderConfig struct {
-		TypeHandlers map[SchemaType]TypeHandler
-		Filters      []string
-	}
-
-	BuilderOption func(cfg *BuilderConfig) error
+	// TypeHandler is a standard delegate used for walking the schema tree
+	TypeHandler func(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]astmodel.Definition, error)
 
 	UnknownSchemaError struct {
-		Schema *gojsonschema.SubSchema
+		Schema  *gojsonschema.SubSchema
+		Filters []string
+	}
+
+	BuilderOption func(scanner *SchemaScanner) error
+
+	// A SchemaScanner is used to scan a JSON Schema extracting and collecting type definitions
+	SchemaScanner struct {
+		Structs      []*astmodel.StructDefinition
+		TypeHandlers map[SchemaType]TypeHandler
+		Filters      []string
 	}
 )
 
@@ -52,21 +60,22 @@ func (use *UnknownSchemaError) Error() string {
 	return fmt.Sprintf("unable to determine the schema type for %s", use.Schema.ID.String())
 }
 
-// WithFilters will apply matching filters on resources in the form of {resource_type}/{api_version}
-func WithFilters(filters []string) BuilderOption {
-	return func(cfg *BuilderConfig) error {
-		cfg.Filters = append(cfg.Filters, filters...)
-		return nil
-	}
+// NewSchemaScanner constructs a new scanner, ready for use
+func NewSchemaScanner() *SchemaScanner {
+	scanner := &SchemaScanner{}
+	scanner.TypeHandlers = scanner.DefaultTypeHandlers()
+	return scanner
 }
 
-// WithTypeHandler will override a default type handler for a given SchemaType. This allows for a consumer to customize
+// AddTypeHandler will override a default type handler for a given SchemaType. This allows for a consumer to customize
 // AST generation.
-func WithTypeHandler(schemaType SchemaType, handler TypeHandler) BuilderOption {
-	return func(cfg *BuilderConfig) error {
-		cfg.TypeHandlers[schemaType] = handler
-		return nil
-	}
+func (scanner *SchemaScanner) AddTypeHandler(schemaType SchemaType, handler TypeHandler) {
+	scanner.TypeHandlers[schemaType] = handler
+}
+
+// AddFilters will add a filter (perhaps not currently used?)
+func (scanner *SchemaScanner) AddFilters(filters []string) {
+	scanner.Filters = append(scanner.Filters, filters...)
 }
 
 /* ToNodes takes in the resources section of the Azure deployment template schema and returns golang AST Packages
@@ -94,17 +103,12 @@ func WithTypeHandler(schemaType SchemaType, handler TypeHandler) BuilderOption {
 
 		allOf acts like composition which composites each schema from the child oneOf with the base reference from allOf.
 */
-func ToNodes(ctx context.Context, schema *gojsonschema.SubSchema, opts ...BuilderOption) ([]ast.Node, error) {
+func (scanner *SchemaScanner) ToNodes(ctx context.Context, schema *gojsonschema.SubSchema, opts ...BuilderOption) ([]astmodel.Definition, error) {
 	ctx, span := tab.StartSpan(ctx, "ToNodes")
 	defer span.End()
 
-	cfg := &BuilderConfig{
-		TypeHandlers: DefaultTypeHandlers(),
-		Filters:      []string{},
-	}
-
 	for _, opt := range opts {
-		if err := opt(cfg); err != nil {
+		if err := opt(scanner); err != nil {
 			return nil, err
 		}
 	}
@@ -114,8 +118,10 @@ func ToNodes(ctx context.Context, schema *gojsonschema.SubSchema, opts ...Builde
 		return nil, err
 	}
 
-	rootHandler := cfg.TypeHandlers[schemaType]
-	nodes, err := rootHandler(ctx, cfg, schema)
+	topic := NewObjectScannerTopic(schema.Property, "").WithProperty(schema.Property)
+
+	rootHandler := scanner.TypeHandlers[schemaType]
+	nodes, err := rootHandler(ctx, topic, schema)
 	if err != nil {
 		return nil, err
 	}
@@ -124,204 +130,220 @@ func ToNodes(ctx context.Context, schema *gojsonschema.SubSchema, opts ...Builde
 }
 
 // DefaultTypeHandlers will create a default map of JSONType to AST transformers
-func DefaultTypeHandlers() map[SchemaType]TypeHandler {
+func (scanner *SchemaScanner) DefaultTypeHandlers() map[SchemaType]TypeHandler {
 	return map[SchemaType]TypeHandler{
-		Array:  arrayHandler,
-		OneOf:  oneOfHandler,
-		AnyOf:  anyOfHandler,
-		AllOf:  allOfHandler,
-		Ref:    refHandler,
-		Object: objectHandler,
-		String: stringHandler,
-		Int:    intHandler,
-		Number: numberHandler,
-		Bool:   boolHandler,
-		Enum:   enumHandler,
-		None:   noneHandler,
+		Array:  scanner.arrayHandler,
+		OneOf:  scanner.oneOfHandler,
+		AnyOf:  scanner.anyOfHandler,
+		AllOf:  scanner.allOfHandler,
+		Ref:    scanner.refHandler,
+		Object: scanner.objectHandler,
+		String: scanner.stringHandler,
+		Int:    scanner.intHandler,
+		Number: scanner.numberHandler,
+		Bool:   scanner.boolHandler,
+		Enum:   scanner.enumHandler,
+		None:   scanner.noneHandler,
 	}
 }
 
-func enumHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) enumHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]astmodel.Definition, error) {
 	ctx, span := tab.StartSpan(ctx, "enumHandler")
 	defer span.End()
 
-	f, err := newPrimitiveField(ctx, schema, String)
+	//TODO Create an Enum field that captures the permitted options too
+	field, err := newPrimitiveField(ctx, topic, schema, String)
 	if err != nil {
 		return nil, err
 	}
 
-	return []ast.Node{
-		f,
+	return []astmodel.Definition{
+		field,
 	}, nil
 }
 
-func noneHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) noneHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]astmodel.Definition, error) {
 	ctx, span := tab.StartSpan(ctx, "noneHandler")
 	defer span.End()
 
-	fields, err := getFields(ctx, cfg, schema)
+	log.Printf("STA noneHandler\n")
+	defer log.Printf("FIN noneHandler\n")
+
+	fields, err := scanner.getFields(ctx, topic, schema)
 	if err != nil {
 		return nil, err
 	}
 
-	return []ast.Node{
-		&ast.FieldList{
-			List: fields,
-		},
-	}, nil
+	result := make([]astmodel.Definition, len(fields))
+	for i := range fields {
+		f := *fields[i]
+		result[i] = f
+	}
+
+	return result, nil
 }
 
-func boolHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) boolHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]astmodel.Definition, error) {
 	ctx, span := tab.StartSpan(ctx, "boolHandler")
 	defer span.End()
 
-	field, err := newPrimitiveField(ctx, schema, Bool)
+	field, err := newPrimitiveField(ctx, topic, schema, Bool)
 	if err != nil {
 		return nil, err
 	}
 
-	return []ast.Node{
+	return []astmodel.Definition{
 		field,
 	}, nil
 }
 
-func numberHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) numberHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]astmodel.Definition, error) {
 	ctx, span := tab.StartSpan(ctx, "numberHandler")
 	defer span.End()
 
-	field, err := newPrimitiveField(ctx, schema, Number)
+	field, err := newPrimitiveField(ctx, topic, schema, Number)
 	if err != nil {
 		return nil, err
 	}
 
-	return []ast.Node{
+	return []astmodel.Definition{
 		field,
 	}, nil
 }
 
-func intHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) intHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]astmodel.Definition, error) {
 	ctx, span := tab.StartSpan(ctx, "intHandler")
 	defer span.End()
 
-	field, err := newPrimitiveField(ctx, schema, Int)
+	field, err := newPrimitiveField(ctx, topic, schema, Int)
 	if err != nil {
 		return nil, err
 	}
 
-	return []ast.Node{
+	return []astmodel.Definition{
 		field,
 	}, nil
 }
 
-func stringHandler(ctx context.Context, _ *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) stringHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]astmodel.Definition, error) {
 	ctx, span := tab.StartSpan(ctx, "stringHandler")
 	defer span.End()
 
-	field, err := newPrimitiveField(ctx, schema, String)
+	field, err := newPrimitiveField(ctx, topic, schema, String)
 	if err != nil {
 		return nil, err
 	}
 
-	return []ast.Node{
+	return []astmodel.Definition{
 		field,
 	}, nil
 }
 
-func newField(ctx context.Context, fieldName string, fieldType ast.Expr, description *string) (*ast.Field, error) {
+func newField(ctx context.Context, fieldName string, fieldType string, description *string) (*astmodel.FieldDefinition, error) {
 	ctx, span := tab.StartSpan(ctx, "newField")
 	defer span.End()
 
-	var desc string
+	result := *astmodel.NewFieldDefinition(fieldName, fieldType)
 	if description != nil {
-		desc = *description
+		result = result.WithDescription(*description)
 	}
 
-	doc := &ast.CommentGroup{
-		List: []*ast.Comment{
-			{
-				Text: fmt.Sprintf("%s is %s", fieldName, desc),
-			},
-		},
-	}
-
-	field := &ast.Field{
-		Doc: doc,
-		Names: []*ast.Ident{
-			{
-				Name: fieldName,
-			},
-		},
-		Type:    fieldType,
-		Tag:     nil, // TODO: add field tags for api hints / json binding
-		Comment: nil,
-	}
-
-	return field, nil
+	return &result, nil
 }
 
-func newPrimitiveField(ctx context.Context, schema *gojsonschema.SubSchema, typeIdent SchemaType) (*ast.Field, error) {
+func newPrimitiveField(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema, typeIdentifier SchemaType) (*astmodel.FieldDefinition, error) {
 	ctx, span := tab.StartSpan(ctx, "newPrimitiveField")
 	defer span.End()
 
-	ident, err := getIdentForPrimitiveType(typeIdent)
+	identifier, err := getPrimitiveType(typeIdentifier)
 	if err != nil {
 		return nil, err
 	}
 
-	return newField(ctx, schema.Property, ident, schema.Description)
+	propertyName := schema.Property
+	if !isObjectName(propertyName) {
+		propertyName = topic.propertyName
+	}
 
+	result := *astmodel.NewFieldDefinition(propertyName, identifier)
+	if schema.Description != nil {
+		result = result.WithDescription(*schema.Description)
+	}
+
+	return &result, nil
 }
 
-func newStructField(ctx context.Context, schema *gojsonschema.SubSchema, structType *ast.StructType) (*ast.Field, error) {
-	ctx, span := tab.StartSpan(ctx, "newPrimitiveField")
+func newStructField(ctx context.Context, schema *gojsonschema.SubSchema, structType *ast.StructType) (*astmodel.FieldDefinition, error) {
+	ctx, span := tab.StartSpan(ctx, "newStructField")
 	defer span.End()
 
 	// TODO: add the actual struct type name rather than foo
-	return newField(ctx, schema.Property, ast.NewIdent("foo"), schema.Description)
+	ident := "fooStruct"
+
+	result := *astmodel.NewFieldDefinition(schema.Property, ident)
+	if schema.Description != nil {
+		result = result.WithDescription(*schema.Description)
+	}
+
+	return &result, nil
 }
 
-func newArrayField(ctx context.Context, schema *gojsonschema.SubSchema, arrayType *ast.ArrayType) (*ast.Field, error) {
-	ctx, span := tab.StartSpan(ctx, "newPrimitiveField")
+func newArrayField(ctx context.Context, schema *gojsonschema.SubSchema, arrayType *ast.ArrayType) (*astmodel.FieldDefinition, error) {
+	ctx, span := tab.StartSpan(ctx, "newArrayField")
 	defer span.End()
 
 	// TODO: add the actual array type name rather than foo
-	return newField(ctx, schema.Property, ast.NewIdent(fmt.Sprintf("[]%s", arrayType.Elt)), schema.Description)
+	ident := fmt.Sprintf("[]%s", arrayType.Elt)
+
+	result := *astmodel.NewFieldDefinition(schema.Property, ident)
+	if schema.Description != nil {
+		result = result.WithDescription(*schema.Description)
+	}
+
+	return &result, nil
 }
 
-func objectHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) objectHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]astmodel.Definition, error) {
 	ctx, span := tab.StartSpan(ctx, "objectHandler")
 	defer span.End()
 
-	f, err := getFields(ctx, cfg, schema)
+	objectName := topic.objectName // Default placeholder
+	if isObjectName(schema.Property) {
+		objectName = schema.Property
+	}
+
+	objectTopic := NewObjectScannerTopic(objectName, topic.objectVersion)
+
+	fields, err := scanner.getFields(ctx, objectTopic, schema)
 	if err != nil {
 		return nil, err
 	}
 
-	objStruct := &ast.StructType{
-		Fields: &ast.FieldList{
-			List: f,
-		},
-	}
+	structDefinition := astmodel.NewStructDefinition(objectName, topic.objectVersion, fields...)
 
-	return []ast.Node{
-		objStruct,
+	scanner.Structs = append(scanner.Structs, structDefinition)
+
+	return []astmodel.Definition{
+		structDefinition,
 	}, nil
 }
 
-func getFields(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]*ast.Field, error) {
+func (scanner *SchemaScanner) getFields(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]*astmodel.FieldDefinition, error) {
 	ctx, span := tab.StartSpan(ctx, "getFields")
 	defer span.End()
 
-	var fields []ast.Node
+	log.Printf("STA getFields\n")
+
+	var fields []*astmodel.FieldDefinition
 	for _, prop := range schema.PropertiesChildren {
 		schemaType, err := getSubSchemaType(prop)
 		if _, ok := err.(*UnknownSchemaError); ok {
 			// if we don't know the type, we still need to provide the property, we will just provide open interface
-			f, err := newField(ctx, prop.Property, ast.NewIdent("interface{}"), schema.Description)
+			field, err := newField(ctx, prop.Property, "interface{}", schema.Description)
 			if err != nil {
 				return nil, err
 			}
-			fields = append(fields, f)
+			fields = append(fields, field)
 			continue
 		}
 
@@ -329,171 +351,167 @@ func getFields(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.Sub
 			return nil, err
 		}
 
-		propDecls, err := cfg.TypeHandlers[schemaType](ctx, cfg, prop)
+		propertyTopic := topic.WithProperty(prop.Property)
+
+		handler := scanner.TypeHandlers[schemaType]
+		propDecls, err := handler(ctx, propertyTopic, prop)
 		if _, ok := err.(*UnknownSchemaError); ok {
 			// if we don't know the type, we still need to provide the property, we will just provide open interface
-			f, err := newField(ctx, prop.Property, ast.NewIdent("interface{}"), schema.Description)
+			field, err := newField(ctx, prop.Property, "interface{}", schema.Description)
 			if err != nil {
 				return nil, err
 			}
-			fields = append(fields, f)
+			fields = append(fields, field)
 			continue
 		}
 
 		if err != nil {
 			return nil, err
+		}
+
+		if len(propDecls) == 0 {
+			log.Printf("WRN No properties found for %s.%s.%s\n", topic.objectVersion, topic.objectName, topic.propertyName)
+			continue
 		}
 
 		if isPrimitiveType(schemaType) {
-			fields = append(fields, propDecls...)
+			if len(propDecls) > 1 {
+				log.Printf("WRN Unexpectedly found multiple primitive fields for %s.%s.%s.\n", topic.objectName, topic.objectName, topic.propertyName)
+			}
+
+			// Expect to always have a single primitive field
+			f := propDecls[0].(*astmodel.FieldDefinition)
+			fields = append(fields, f)
 			continue
 		}
 
 		// allOf or oneOf is left and we expect to have only 1 structure for the field
 		if (schemaType == AllOf || schemaType == OneOf || schemaType == AnyOf) && len(propDecls) > 1 {
 			// we are not sure what it could be since it's many schemas... interface{}
-			f, err := newField(ctx, prop.Property, ast.NewIdent("interface{}"), schema.Description)
+			field, err := newField(ctx, prop.Property, "interface{}", schema.Description)
 			if err != nil {
 				return nil, err
 			}
-			fields = append(fields, f)
+			fields = append(fields, field)
 			continue
 		}
 
-		node := propDecls[0]
-		switch nt := node.(type) {
-		case *ast.Field:
-			fields = append(fields, nt)
-		case *ast.StructType:
-			// we have a struct, make a new field
-			field, err := newStructField(ctx, schema, nt)
-			if err != nil {
-				return nil, err
-			}
-			fields = append(fields, field)
-		case *ast.ArrayType:
-			field, err := newArrayField(ctx, schema, nt)
-			if err != nil {
-				return nil, err
-			}
-			fields = append(fields, field)
-		case *ast.FieldList:
-			// we have a raw set of fields returned, we need to wrap them into a struct type
-			structType := &ast.StructType{
-				Fields: nt,
-			}
-			field, err := newStructField(ctx, schema, structType)
-			if err != nil {
-				return nil, err
-			}
-			fields = append(fields, field)
+		// Should only have one declaration left
+		decl := propDecls[0]
+		switch nt := decl.(type) {
+		case *astmodel.FieldDefinition:
+			fields = append(fields, decl.(*astmodel.FieldDefinition))
+		case *astmodel.StructDefinition:
+			// TODO Do we need a custom Fielddefinition that includes a struct?
+			log.Printf("WRN astmodel.StructDefinition not handled\n")
 		default:
-			return nil, fmt.Errorf("unexpected field type: %+v", nt)
+			log.Printf("WRN unexpected field type: %T\n", nt)
+			// do nothing
 		}
 	}
 
-	f := make([]*ast.Field, len(fields))
-	for i := 0; i < len(fields); i++ {
-		field, ok := fields[i].(*ast.Field)
-		if !ok {
-			return nil, errors.New("unable to cast ast.Node to field when building struct")
-		}
-		f[i] = field
-	}
-	return f, nil
+	return fields, nil
 }
 
-func refHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) refHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]astmodel.Definition, error) {
 	ctx, span := tab.StartSpan(ctx, "refHandler")
 	defer span.End()
 
-	if schema.Ref.GetUrl().Fragment == expressionFragment {
-		return []ast.Node{}, nil
+	url := schema.Ref.GetUrl()
+	if url.Fragment == expressionFragment {
+		return []astmodel.Definition{}, nil
 	}
+
+	log.Printf("INF $ref to %s\n", url)
 
 	schemaType, err := getSubSchemaType(schema.RefSchema)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := cfg.TypeHandlers[schemaType](ctx, cfg, schema.RefSchema)
+	// If $ref points to an object type, we want to start processing that object definition
+	// otherwise we keep our existing topic
+	subTopic := topic
+	if schemaType == Object {
+		name, err := objectTypeOf(url)
+		if err != nil {
+			return nil, err
+		}
+
+		version, err := versionOf(url)
+		if err != nil {
+			return nil, err
+		}
+
+		subTopic = NewObjectScannerTopic(name, version)
+	}
+
+	handler := scanner.TypeHandlers[schemaType]
+	result, err := handler(ctx, subTopic, schema.RefSchema)
 	return result, err
 }
 
-func allOfHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) allOfHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]astmodel.Definition, error) {
 	ctx, span := tab.StartSpan(ctx, "allOfHandler")
 	defer span.End()
 
-	var nodes []ast.Node
+	var definitions []astmodel.Definition
 	for _, all := range schema.AllOf {
 		schemaType, err := getSubSchemaType(all)
 		if err != nil {
 			return nil, err
 		}
 
-		handler := cfg.TypeHandlers[schemaType]
-		ds, err := handler(ctx, cfg, all)
+		handler := scanner.TypeHandlers[schemaType]
+		ds, err := handler(ctx, topic, all)
 		if err != nil {
 			return nil, err
 		}
-		nodes = append(nodes, ds...)
+
+		definitions = append(definitions, ds...)
 	}
 
-	var fields []*ast.Field
-	for _, n := range nodes {
-		switch nt := n.(type) {
-		case *ast.StructType:
-			fields = append(fields, nt.Fields.List...)
-		case *ast.FieldList:
-			fields = append(fields, nt.List...)
-		}
-	}
-
-	objStruct := &ast.StructType{
-		Fields: &ast.FieldList{
-			List: fields,
-		},
-	}
-
-	return []ast.Node{
-		objStruct,
-	}, nil
+	return definitions, nil
 }
 
-func oneOfHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) oneOfHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]astmodel.Definition, error) {
 	ctx, span := tab.StartSpan(ctx, "oneOfHandler")
 	defer span.End()
 
-	var decls []ast.Node
+	// TODO: Need to handle selecting one of these
+
+	var definitions []astmodel.Definition
 	for _, one := range schema.OneOf {
 		schemaType, err := getSubSchemaType(one)
 		if err != nil {
 			return nil, err
 		}
 
-		handler := cfg.TypeHandlers[schemaType]
-		ds, err := handler(ctx, cfg, one)
+		handler := scanner.TypeHandlers[schemaType]
+		ds, err := handler(ctx, topic, one)
 		if err != nil {
 			return nil, err
 		}
-		decls = append(decls, ds...)
+
+		definitions = append(definitions, ds...)
 	}
 
-	return decls, nil
+	return definitions, nil
 }
 
-func anyOfHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) anyOfHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]astmodel.Definition, error) {
 	ctx, span := tab.StartSpan(ctx, "anyOfHandler")
 	defer span.End()
 
-	var nodes []ast.Node
+	var definitions []astmodel.Definition
 	for _, any := range schema.AnyOf {
 		schemaType, err := getSubSchemaType(any)
 		if err != nil {
 			return nil, err
 		}
 
-		ns, err := cfg.TypeHandlers[schemaType](ctx, cfg, any)
+		handler := scanner.TypeHandlers[schemaType]
+		ns, err := handler(ctx, topic, any)
 		if err != nil {
 			return nil, err
 		}
@@ -503,14 +521,14 @@ func anyOfHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.
 			return ns, nil
 		}
 
-		nodes = append(nodes, ns...)
+		definitions = append(definitions, ns...)
 	}
 
 	// return all possibilities... probably means an interface{}
-	return nodes, nil
+	return definitions, nil
 }
 
-func arrayHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.SubSchema) ([]ast.Node, error) {
+func (scanner *SchemaScanner) arrayHandler(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) ([]astmodel.Definition, error) {
 	ctx, span := tab.StartSpan(ctx, "arrayHandler")
 	defer span.End()
 
@@ -520,10 +538,11 @@ func arrayHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.
 
 	if len(schema.ItemsChildren) == 0 {
 		// there is no type to the elements, so we must assume interface{}
-		return []ast.Node{
-			&ast.ArrayType{
-				Elt: ast.NewIdent("interface{}"),
-			},
+		log.Printf("WRN Interface assumption unproven\n")
+
+		field := astmodel.NewFieldDefinition(topic.propertyName, "interface{}")
+		return []astmodel.Definition{
+			field,
 		}, nil
 	}
 
@@ -535,19 +554,15 @@ func arrayHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.
 			return nil, err
 		}
 
-		handler := cfg.TypeHandlers[schemaType]
-		ds, err := handler(ctx, cfg, firstChild)
+		handler := scanner.TypeHandlers[schemaType]
+		ds, err := handler(ctx, topic, firstChild)
 		if err != nil {
 			return nil, err
 		}
 
-		structType := ds[0].(*ast.StructType)
+		// TODO Do we need to create a field here?
 
-		return []ast.Node{
-			&ast.ArrayType{
-				Elt: structType,
-			},
-		}, nil
+		return ds, nil
 	}
 
 	// Since the Array Item type is not an object, it should either be a primitive or a anyOf, oneOf or allOf. In that
@@ -557,33 +572,38 @@ func arrayHandler(ctx context.Context, cfg *BuilderConfig, schema *gojsonschema.
 		return nil, err
 	}
 
-	handler := cfg.TypeHandlers[schemaType]
-	nodeList, err := handler(ctx, cfg, firstChild)
+	handler := scanner.TypeHandlers[schemaType]
+	definitions, err := handler(ctx, topic, firstChild)
 	if err != nil {
 		return nil, err
 	}
 
-	switch nt := nodeList[0].(type) {
-	case *ast.StructType:
-		return []ast.Node{
-			&ast.ArrayType{
-				Elt: nt,
-			},
+	//TODO: Should not throw away the other elements in nodeList
+
+	if len(definitions) > 1 {
+		log.Printf("WARN discarding extra members of []definitions\n")
+	}
+
+	defn := definitions[0]
+	switch defn.(type) {
+	case *astmodel.FieldDefinition:
+		f := defn.(*astmodel.FieldDefinition)
+		field := astmodel.NewFieldDefinition(topic.propertyName, "[]"+f.FieldType())
+		return []astmodel.Definition{
+			field,
 		}, nil
-	case *ast.Field:
-		return []ast.Node{
-			&ast.ArrayType{
-				Elt: nt.Type,
-			},
+
+	case *astmodel.StructDefinition:
+		// TODO may need a smarter field definition that embeds a custom property
+		f := defn.(*astmodel.StructDefinition)
+		field := astmodel.NewFieldDefinition(topic.propertyName, f.Name())
+		return []astmodel.Definition{
+			field,
 		}, nil
-	case *ast.FieldList:
-		return []ast.Node{
-			&ast.StructType{
-				Fields: nt,
-			},
-		}, nil
+
 	default:
-		return nil, fmt.Errorf("first node was not an *ast.Field, *ast.StructType, *ast.FieldList: %+v", nodeList[0])
+		log.Printf("WRN unexpected definition type (found %T)\n", defn)
+		return []astmodel.Definition{}, nil
 	}
 }
 
@@ -635,6 +655,21 @@ func getIdentForPrimitiveType(name SchemaType) (*ast.Ident, error) {
 	}
 }
 
+func getPrimitiveType(name SchemaType) (string, error) {
+	switch name {
+	case String:
+		return "string", nil
+	case Int:
+		return "int", nil
+	case Number:
+		return "float", nil
+	case Bool:
+		return "bool", nil
+	default:
+		return "", fmt.Errorf("%s is not a simple type and no ast.NewIdent can be created", name)
+	}
+}
+
 func isPrimitiveType(name SchemaType) bool {
 	switch name {
 	case String, Int, Number, Bool:
@@ -642,4 +677,49 @@ func isPrimitiveType(name SchemaType) bool {
 	default:
 		return false
 	}
+}
+
+func asComment(text *string) string {
+	if text == nil {
+		return ""
+	}
+
+	return "// " + *text
+}
+
+func isObjectName(name string) bool {
+	return name != "$ref" && name != "oneOf"
+}
+
+// Extract the name of an object from the supplied schema URL
+func objectTypeOf(url *url.URL) (string, error) {
+	isPathSeparator := func(c rune) bool {
+		return c == '/'
+	}
+
+	fragmentParts := strings.FieldsFunc(url.Fragment, isPathSeparator)
+
+	return fragmentParts[len(fragmentParts)-1], nil
+}
+
+// Extract the name of an object from the supplied schema URL
+func versionOf(url *url.URL) (string, error) {
+	isPathSeparator := func(c rune) bool {
+		return c == '/'
+	}
+
+	pathParts := strings.FieldsFunc(url.Path, isPathSeparator)
+	versionRegex, err := regexp.Compile("\\d\\d\\d\\d-\\d\\d-\\d\\d")
+	if err != nil {
+		return "", fmt.Errorf("Invalid Regex format %w", err)
+	}
+
+	for _, p := range pathParts {
+		if versionRegex.MatchString(p) {
+			return p, nil
+		}
+	}
+
+	// No version found, that's fine
+	return "", nil
 }
