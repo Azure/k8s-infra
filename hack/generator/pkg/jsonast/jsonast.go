@@ -340,14 +340,13 @@ func (scanner *SchemaScanner) refHandler(ctx context.Context, topic ScannerTopic
 	// (i.e. emit it as a "type X struct {}")
 	// and return that instead
 	if std, ok := result.(*astmodel.StructType); ok {
+
+		description := "Generated from: " + url.String()
+
 		sd := astmodel.NewStructDefinition(
 			subTopic.CreateStructName(),
 			subTopic.objectVersion,
-			std.Fields...,
-		)
-
-		description := "Generated from: " + url.String()
-		sd = sd.WithDescription(&description)
+			std.Fields...).WithDescription(&description)
 
 		// this will overwrite placeholder added above
 		scanner.AddStruct(sd)
