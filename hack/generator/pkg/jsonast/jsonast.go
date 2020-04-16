@@ -73,12 +73,10 @@ func (use *UnknownSchemaError) Error() string {
 
 // NewSchemaScanner constructs a new scanner, ready for use
 func NewSchemaScanner() *SchemaScanner {
-	scanner := &SchemaScanner{
+	return &SchemaScanner{
 		Structs:      make(map[string]*astmodel.StructDefinition),
 		TypeHandlers: DefaultTypeHandlers(),
 	}
-
-	return scanner
 }
 
 // AddTypeHandler will override a default type handler for a given SchemaType. This allows for a consumer to customize
