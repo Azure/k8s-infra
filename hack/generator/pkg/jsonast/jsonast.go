@@ -180,11 +180,11 @@ func DefaultTypeHandlers() map[SchemaType]TypeHandler {
 		AllOf:  allOfHandler,
 		Ref:    refHandler,
 		Object: objectHandler,
-		String: stringHandler,
-		Int:    intHandler,
-		Number: numberHandler,
-		Bool:   boolHandler,
 		Enum:   enumHandler,
+		String: fixedTypeHandler(astmodel.StringType, "string"),
+		Int:    fixedTypeHandler(astmodel.IntType, "int"),
+		Number: fixedTypeHandler(astmodel.FloatType, "number"),
+		Bool:   fixedTypeHandler(astmodel.BoolType, "bool"),
 	}
 }
 
@@ -205,32 +205,13 @@ func enumHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsche
 	//TODO Create an Enum field that captures the permitted options too
 }
 
-func boolHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema.SubSchema) (astmodel.Type, error) {
-	ctx, span := tab.StartSpan(ctx, "boolHandler")
-	defer span.End()
+func fixedTypeHandler(typeToReturn astmodel.Type, handlerName string) TypeHandler {
+	return func(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema.SubSchema) (astmodel.Type, error) {
+		ctx, span := tab.StartSpan(ctx, handlerName+"Handler")
+		defer span.End()
 
-	return astmodel.BoolType, nil
-}
-
-func numberHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema.SubSchema) (astmodel.Type, error) {
-	ctx, span := tab.StartSpan(ctx, "numberHandler")
-	defer span.End()
-
-	return astmodel.FloatType, nil
-}
-
-func intHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema.SubSchema) (astmodel.Type, error) {
-	ctx, span := tab.StartSpan(ctx, "intHandler")
-	defer span.End()
-
-	return astmodel.IntType, nil
-}
-
-func stringHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema.SubSchema) (astmodel.Type, error) {
-	ctx, span := tab.StartSpan(ctx, "stringHandler")
-	defer span.End()
-
-	return astmodel.StringType, nil
+		return typeToReturn, nil
+	}
 }
 
 func objectHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema.SubSchema) (astmodel.Type, error) {
