@@ -164,7 +164,7 @@ func (scanner *SchemaScanner) ToNodes(ctx context.Context, schema *gojsonschema.
 	}
 
 	// TODO: make safer:
-	root := astmodel.NewStructDefinition(rootStructName, rootStructVersion, nodes.(*astmodel.StructType).Fields...)
+	root := astmodel.NewStructDefinition(rootStructName, rootStructVersion, nodes.(*astmodel.StructType).Fields()...)
 	description := "Generated from: " + url.String()
 	root = root.WithDescription(&description)
 
@@ -340,7 +340,7 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 
 		description := "Generated from: " + url.String()
 
-		sd := astmodel.NewStructDefinition(name, version, std.Fields...).WithDescription(&description)
+		sd := astmodel.NewStructDefinition(name, version, std.Fields()...).WithDescription(&description)
 
 		// this will overwrite placeholder added above
 		scanner.AddStruct(sd)
@@ -368,7 +368,7 @@ func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsch
 			case *astmodel.StructType:
 				// if it's a struct type get all its fields:
 				s := d.(*astmodel.StructType)
-				fields = append(fields, s.Fields...)
+				fields = append(fields, s.Fields()...)
 
 			case *astmodel.StructReference:
 				// if it's a reference to a struct type, inherit from it:
