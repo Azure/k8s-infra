@@ -16,7 +16,9 @@ import (
 type (
 	SchemaType string
 
-	// TypeHandler is a standard delegate used for walking the schema tree
+	// TypeHandler is a standard delegate used for walking the schema tree.
+	// Note that it is permissible for a TypeHandler to return `nil, nil`, which indicates that
+	// there is no type to be included in the output.
 	TypeHandler func(ctx context.Context, topic ScannerTopic, schema *gojsonschema.SubSchema) (astmodel.Type, error)
 
 	UnknownSchemaError struct {
@@ -475,7 +477,7 @@ func (scanner *SchemaScanner) arrayHandler(ctx context.Context, topic ScannerTop
 	}
 
 	// get the only child type and wrap it up as an array type:
-	
+
 	onlyChild := schema.ItemsChildren[0]
 
 	schemaType, err := getSubSchemaType(onlyChild)
