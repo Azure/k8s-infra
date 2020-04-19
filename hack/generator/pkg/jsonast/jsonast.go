@@ -341,22 +341,24 @@ func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsch
 			return nil, err
 		}
 
+		if d == nil {
+			continue // ignore skipped types
+		}
+
 		// unpack the contents of what we got from subhandlers:
-		if d != nil {
-			switch d.(type) {
-			case *astmodel.StructType:
-				// if it's a struct type get all its fields:
-				s := d.(*astmodel.StructType)
-				fields = append(fields, s.Fields()...)
+		switch d.(type) {
+		case *astmodel.StructType:
+			// if it's a struct type get all its fields:
+			s := d.(*astmodel.StructType)
+			fields = append(fields, s.Fields()...)
 
-			case *astmodel.StructReference:
-				// if it's a reference to a struct type, embed it inside:
-				s := d.(*astmodel.StructReference)
-				fields = append(fields, astmodel.NewEmbeddedStructDefinition(s))
+		case *astmodel.StructReference:
+			// if it's a reference to a struct type, embed it inside:
+			s := d.(*astmodel.StructReference)
+			fields = append(fields, astmodel.NewEmbeddedStructDefinition(s))
 
-			default:
-				log.Printf("Unhandled type in allOf: %T\n", d)
-			}
+		default:
+			log.Printf("Unhandled type in allOf: %T\n", d)
 		}
 	}
 
