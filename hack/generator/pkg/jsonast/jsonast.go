@@ -350,9 +350,9 @@ func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsch
 				fields = append(fields, s.Fields()...)
 
 			case *astmodel.StructReference:
-				// if it's a reference to a struct type, inherit from it:
+				// if it's a reference to a struct type, embed it inside:
 				s := d.(*astmodel.StructReference)
-				fields = append(fields, astmodel.NewInheritStructDefinition(s))
+				fields = append(fields, astmodel.NewEmbeddedStructDefinition(s))
 
 			default:
 				log.Printf("Unhandled type in allOf: %T\n", d)

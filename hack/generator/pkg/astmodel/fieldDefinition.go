@@ -23,9 +23,9 @@ func NewFieldDefinition(name string, fieldType Type) *FieldDefinition {
 	}
 }
 
-// NewInheritStructDefinition is a factory method for defining an inheritance
-// from another struct type.
-func NewInheritStructDefinition(structType Type) *FieldDefinition {
+// NewEmbeddedStructDefinition is a factory method for defining an embedding
+// of another struct type.
+func NewEmbeddedStructDefinition(structType Type) *FieldDefinition {
 	// in Go, this is just a field without a name:
 	return &FieldDefinition{
 		name:        "",
