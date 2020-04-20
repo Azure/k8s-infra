@@ -33,17 +33,10 @@ func NewGenCommand() (*cobra.Command, error) {
 			}
 
 			root := schema.Root()
-			var resourcesSchema *gojsonschema.SubSchema
-			for _, child := range root.PropertiesChildren {
-				if child.Property == "resources" {
-					resourcesSchema = child
-					break
-				}
-			}
 
 			scanner := jsonast.NewSchemaScanner()
 			scanner.AddFilters(viper.GetStringSlice("resources"))
-			_, err = scanner.ToNodes(ctx, resourcesSchema)
+			_, err = scanner.ToNodes(ctx, root)
 			if err != nil {
 				log.Printf("Error: %v\n", err)
 				return err

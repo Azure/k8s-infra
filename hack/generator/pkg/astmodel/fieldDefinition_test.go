@@ -53,6 +53,6 @@ func Test_FieldDefinitionAsAst_GivenValidField_ReturnsNonNilResult(t *testing.T)
 
 	field := NewFieldDefinition(name, fieldtype)
 
-	node, _ := field.AsAst()
+	node := field.AsAst()
 	assert.NotNil(t, node)
 }

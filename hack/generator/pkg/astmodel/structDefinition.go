@@ -5,20 +5,44 @@ import (
 	"go/token"
 )
 
-// StructDefinition encapsulates the definition of a struct
-type StructDefinition struct {
+// StructReference is the (versioned) name of a struct
+// that can be used as a type
+type StructReference struct {
 	name    string
 	version string
-	fields  []*FieldDefinition
+}
+
+// AsType implements Type for StructReference
+func (sr *StructReference) AsType() ast.Expr {
+	// TODO: namespaces/versions
+	return ast.NewIdent(sr.name)
+}
+
+// StructDefinition encapsulates the definition of a struct
+type StructDefinition struct {
+	StructReference
+	StructType
+
+	description string
 }
 
 // NewStructDefinition is a factory method for creating a new StructDefinition
 func NewStructDefinition(name string, version string, fields ...*FieldDefinition) *StructDefinition {
 	return &StructDefinition{
-		name:    name,
-		version: version,
-		fields:  fields,
+		StructReference: StructReference{name, version},
+		StructType:      StructType{fields},
 	}
+}
+
+// WithDescription adds a description (doc-comment) to the struct
+func (definition *StructDefinition) WithDescription(description *string) *StructDefinition {
+	if description == nil {
+		return definition
+	}
+
+	result := *definition
+	result.description = *description
+	return &result
 }
 
 // Name returns the name of the struct
@@ -42,31 +66,18 @@ func (definition *StructDefinition) FieldCount() int {
 }
 
 // AsAst generates an AST node representing this field definition
-func (definition *StructDefinition) AsAst() (ast.Node, error) {
-	declaration, err := definition.AsDeclaration()
-	return &declaration, err
+func (definition *StructDefinition) AsAst() ast.Node {
+	return definition.AsDeclaration()
 }
 
 // AsDeclaration generates an AST node representing this struct definition
-func (definition *StructDefinition) AsDeclaration() (ast.GenDecl, error) {
+func (definition *StructDefinition) AsDeclaration() *ast.GenDecl {
 
 	identifier := ast.NewIdent(definition.name)
 
-	fieldDefinitions := make([]*ast.Field, len(definition.fields))
-	for i, f := range definition.fields {
-		definition, _ := f.AsField()
-		fieldDefinitions[i] = &definition
-	}
-
-	structDefinition := &ast.StructType{
-		Fields: &ast.FieldList{
-			List: fieldDefinitions,
-		},
-	}
-
 	typeSpecification := &ast.TypeSpec{
 		Name: identifier,
-		Type: structDefinition,
+		Type: definition.StructType.AsType(),
 	}
 
 	declaration := &ast.GenDecl{
@@ -76,26 +87,30 @@ func (definition *StructDefinition) AsDeclaration() (ast.GenDecl, error) {
 		},
 	}
 
-	return *declaration, nil
+	if definition.description != "" {
+		declaration.Doc = &ast.CommentGroup{
+			List: []*ast.Comment{
+				{Text: "\n/* " + definition.description + " */"},
+			},
+		}
+	}
+
+	return declaration
 }
 
 //TODO: Perhaps use this method in AsDeclaration(), above
 //TODO make this private as it might be unused elsewhere
 
 // ToFieldList generates an AST fieldlist for a sequence of field definitions
-func ToFieldList(fields []*FieldDefinition) (*ast.FieldList, error) {
+func ToFieldList(fields []*FieldDefinition) *ast.FieldList {
 	astFields := make([]*ast.Field, len(fields))
 	for i, f := range fields {
-		astField, err := f.AsField()
-		if err != nil {
-			return nil, err
-		}
-		astFields[i] = &astField
+		astFields[i] = f.AsField()
 	}
 
 	fieldList := &ast.FieldList{
 		List: astFields,
 	}
 
-	return fieldList, nil
+	return fieldList
 }
