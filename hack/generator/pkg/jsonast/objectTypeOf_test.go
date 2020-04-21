@@ -4,13 +4,17 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/gomega"
 )
 
 func Test_ObjectTypeOf(t *testing.T) {
+	g := NewGomegaWithT(t)
+
 	url, err := url.Parse("https://schema.management.azure.com/schemas/2015-01-01/Microsoft.Resources.json#/resourceDefinitions/deployments")
-	assert.Nil(t, err)
+	g.Expect(err).To(BeNil())
+
 	name, err := objectTypeOf(url)
-	assert.Nil(t, err)
-	assert.Equal(t, "deployments", name)
+
+	g.Expect(name).To(Equal("deployments"))
+	g.Expect(err).To(BeNil())
 }
