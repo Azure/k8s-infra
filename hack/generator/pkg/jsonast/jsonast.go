@@ -312,11 +312,11 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 		// TODO: base this on URL?
 		if definition, ok := scanner.FindStruct(name, version); ok {
 			return &definition.StructReference, nil
-		} else {
-			// otherwise add a placeholder to avoid recursive calls
-			sd := astmodel.NewStructDefinition(name, version)
-			scanner.AddStruct(sd)
 		}
+
+		// Add a placeholder to avoid recursive calls
+		sd := astmodel.NewStructDefinition(name, version)
+		scanner.AddStruct(sd)
 	}
 
 	result, err := scanner.RunHandler(ctx, schemaType, schema.RefSchema)
