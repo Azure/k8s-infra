@@ -7,18 +7,26 @@ import (
 )
 
 func Test_CreateIdentifier_GivenName_ReturnsExpectedIdentifier(t *testing.T) {
-	g := NewGomegaWithT(t)
+	cases := []struct {
+		name     string
+		expected string
+	}{
+		{"name", "Name"},
+		{"Name", "Name"},
+		{"$schema", "Schema"},
+		{"my_important_name", "MyImportantName"},
+		{"MediaServices_liveEvents_liveOutputs_childResource", "MediaServicesLiveEventsLiveOutputsChildResource"},
+	}
 
-	CheckStructIdentifier(g, "name", "Name")
-	CheckStructIdentifier(g, "Name", "Name")
-	CheckStructIdentifier(g, "$schema", "Schema")
-	CheckStructIdentifier(g, "my_important_name", "MyImportantName")
-	CheckStructIdentifier(g, "MediaServices_liveEvents_liveOutputs_childResource", "MediaServicesLiveEventsLiveOutputsChildResource")
-}
-
-func CheckStructIdentifier(g *WithT, name string, expected string) {
 	idfactory := NewIdentifierFactory()
 
-	identifier := idfactory.CreateIdentifier(name)
-	g.Expect(identifier).To(Equal(expected))
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			g := NewGomegaWithT(t)
+			identifier := idfactory.CreateIdentifier(c.name)
+			g.Expect(identifier).To(Equal(c.expected))
+		})
+	}
 }
