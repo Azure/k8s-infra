@@ -26,6 +26,9 @@ type StructDefinition struct {
 	description string
 }
 
+// StructDefinition must implement Definition
+var _ Definition = &StructDefinition{}
+
 // NewStructDefinition is a factory method for creating a new StructDefinition
 func NewStructDefinition(name string, version string, fields ...*FieldDefinition) *StructDefinition {
 	return &StructDefinition{

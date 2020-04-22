@@ -22,16 +22,6 @@ func Test_NewStructDefinition_GivenValues_InitializesFields(t *testing.T) {
 	g.Expect(definition.fields).To(HaveLen(3))
 }
 
-func Test_StructDefinition_Implements_DefinitionInterface(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	var structDefinition interface{} = NewStructDefinition("name", "2020-01-01")
-	definition, ok := structDefinition.(Definition)
-
-	g.Expect(ok).To(BeTrue())
-	g.Expect(definition).NotTo(BeNil())
-}
-
 func Test_StructDefinitionAsAst_GivenValidStruct_ReturnsNonNilResult(t *testing.T) {
 	g := NewGomegaWithT(t)
 

@@ -13,6 +13,9 @@ type FieldDefinition struct {
 	description string
 }
 
+// FieldDefinition must implement Definition
+var _ Definition = &FieldDefinition{}
+
 // NewFieldDefinition is a factory method for creating a new FieldDefinition
 // name is the name for the new field (mandatory)
 // fieldType is the type for the new field (mandatory)

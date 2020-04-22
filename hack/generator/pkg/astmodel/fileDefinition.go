@@ -16,6 +16,9 @@ type FileDefinition struct {
 	structs []*StructDefinition
 }
 
+// FileDefinition must implement Definition
+var _ Definition = &FileDefinition{}
+
 // NewFileDefinition creates a file definition containing specified structs
 func NewFileDefinition(packageName string, structs ...*StructDefinition) *FileDefinition {
 	return &FileDefinition{

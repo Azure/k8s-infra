@@ -40,17 +40,6 @@ func Test_FieldDefinitionWithDescription_GivenDescription_DoesNotModifyOriginal(
 	g.Expect(field.description).NotTo(Equal(original.description))
 }
 
-func Test_FieldDefinition_Implements_DefinitionInterface(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	var fieldDefinition interface{} = NewFieldDefinition("FullName", "fullName", StringType)
-
-	definition, ok := fieldDefinition.(Definition)
-
-	g.Expect(ok).To(BeTrue())
-	g.Expect(definition).NotTo(BeNil())
-}
-
 func Test_FieldDefinitionAsAst_GivenValidField_ReturnsNonNilResult(t *testing.T) {
 	g := NewGomegaWithT(t)
 
