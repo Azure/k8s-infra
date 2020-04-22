@@ -14,6 +14,7 @@ import (
 )
 
 type (
+	// SchemaType defines the type of JSON schema node we are currently processing
 	SchemaType string
 
 	// TypeHandler is a standard delegate used for walking the schema tree.
@@ -21,11 +22,13 @@ type (
 	// there is no type to be included in the output.
 	TypeHandler func(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema.SubSchema) (astmodel.Type, error)
 
+	// UnknownSchemaError is used when we find a JSON schema node that we don't know how to handle
 	UnknownSchemaError struct {
 		Schema  *gojsonschema.SubSchema
 		Filters []string
 	}
 
+	// A BuilderOption is used to provide custom configuration for our scanner
 	BuilderOption func(scanner *SchemaScanner) error
 
 	// A SchemaScanner is used to scan a JSON Schema extracting and collecting type definitions
@@ -37,17 +40,20 @@ type (
 	}
 )
 
+// FindStruct looks to see if we have seen the specified struct before, returning its definition if we have.
 func (scanner *SchemaScanner) FindStruct(name string, version string) (*astmodel.StructDefinition, bool) {
 	key := name + "/" + version
 	result, ok := scanner.Structs[key]
 	return result, ok
 }
 
+// AddStruct makes a record of the specified struct so that FindStruct() can return it when it is needed again.
 func (scanner *SchemaScanner) AddStruct(structDefinition *astmodel.StructDefinition) {
 	key := structDefinition.Name() + "/" + structDefinition.Version()
 	scanner.Structs[key] = structDefinition
 }
 
+// Definitions for different kinds of JSON schema
 const (
 	AnyOf   SchemaType = "anyOf"
 	AllOf   SchemaType = "allOf"
@@ -87,11 +93,13 @@ func (scanner *SchemaScanner) AddTypeHandler(schemaType SchemaType, handler Type
 	scanner.TypeHandlers[schemaType] = handler
 }
 
+// RunHandler triggers the appropriate handler for the specified schemaType
 func (scanner *SchemaScanner) RunHandler(ctx context.Context, schemaType SchemaType, schema *gojsonschema.SubSchema) (astmodel.Type, error) {
 	handler := scanner.TypeHandlers[schemaType]
 	return handler(ctx, scanner, schema)
 }
 
+// RunHandlerForSchema inspects the passed schema to identify what kind it is, then runs the appropriate handler
 func (scanner *SchemaScanner) RunHandlerForSchema(ctx context.Context, schema *gojsonschema.SubSchema) (astmodel.Type, error) {
 	schemaType, err := getSubSchemaType(schema)
 	if err != nil {
@@ -106,31 +114,30 @@ func (scanner *SchemaScanner) AddFilters(filters []string) {
 	scanner.Filters = append(scanner.Filters, filters...)
 }
 
-/* ToNodes takes in the resources section of the Azure deployment template schema and returns golang AST Packages
-   containing the types described in the schema which match the {resource_type}/{version} filters provided.
-
-		The schema we are working with is something like the following (in yaml for brevity):
-
-		resources:
-			items:
-				oneOf:
-					allOf:
-						$ref: {{ base resource schema for ARM }}
-						oneOf:
-							- ARM resources
-				oneOf:
-					allOf:
-						$ref: {{ base resource for external resources, think SendGrid }}
-						oneOf:
-							- External ARM resources
-				oneOf:
-					allOf:
-						$ref: {{ base resource for ARM specific stuff like locks, deployments, etc }}
-						oneOf:
-							- ARM specific resources. I'm not 100% sure why...
-
-		allOf acts like composition which composites each schema from the child oneOf with the base reference from allOf.
-*/
+// ToNodes takes in the resources section of the Azure deployment template schema and returns golang AST Packages
+//    containing the types described in the schema which match the {resource_type}/{version} filters provided.
+//
+// 		The schema we are working with is something like the following (in yaml for brevity):
+//
+// 		resources:
+// 			items:
+// 				oneOf:
+// 					allOf:
+// 						$ref: {{ base resource schema for ARM }}
+// 						oneOf:
+// 							- ARM resources
+// 				oneOf:
+// 					allOf:
+// 						$ref: {{ base resource for external resources, think SendGrid }}
+// 						oneOf:
+// 							- External ARM resources
+// 				oneOf:
+// 					allOf:
+// 						$ref: {{ base resource for ARM specific stuff like locks, deployments, etc }}
+// 						oneOf:
+// 							- ARM specific resources. I'm not 100% sure why...
+//
+// 		allOf acts like composition which composites each schema from the child oneOf with the base reference from allOf.
 func (scanner *SchemaScanner) ToNodes(ctx context.Context, schema *gojsonschema.SubSchema, opts ...BuilderOption) (astmodel.Definition, error) {
 	ctx, span := tab.StartSpan(ctx, "ToNodes")
 	defer span.End()

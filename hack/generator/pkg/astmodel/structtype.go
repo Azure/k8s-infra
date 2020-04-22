@@ -12,7 +12,7 @@ func NewStructType(fields []*FieldDefinition) *StructType {
 	return &StructType{fields}
 }
 
-//TODO: Don't want to return the original slice, don't want it to be modified
+// Fields returns all our field definitions
 func (structType *StructType) Fields() []*FieldDefinition {
 	return structType.fields
 }
