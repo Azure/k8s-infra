@@ -34,8 +34,8 @@ func NewGenCommand() (*cobra.Command, error) {
 
 			root := schema.Root()
 
-			factory := astmodel.NewIdentifierFactory()
-			scanner := jsonast.NewSchemaScanner(factory)
+			idfactory := astmodel.NewIdentifierFactory()
+			scanner := jsonast.NewSchemaScanner(idfactory)
 			scanner.AddFilters(viper.GetStringSlice("resources"))
 
 			_, err = scanner.ToNodes(ctx, root)
