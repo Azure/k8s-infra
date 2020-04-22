@@ -13,8 +13,9 @@ func NewStructType(fields []*FieldDefinition) *StructType {
 }
 
 // Fields returns all our field definitions
+// A copy of the slice is returned to preserve immutability
 func (structType *StructType) Fields() []*FieldDefinition {
-	return structType.fields
+	return append(structType.fields[:0:0], structType.fields...)
 }
 
 // AsType implements Type for StructType
