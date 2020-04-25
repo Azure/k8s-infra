@@ -7,18 +7,23 @@ import (
 
 // FieldDefinition encapsulates the definition of a field
 type FieldDefinition struct {
-	name        string
+	fieldName   string
 	fieldType   Type
+	jsonName    string
 	description string
 }
+
+// FieldDefinition must implement Definition
+var _ Definition = &FieldDefinition{}
 
 // NewFieldDefinition is a factory method for creating a new FieldDefinition
 // name is the name for the new field (mandatory)
 // fieldType is the type for the new field (mandatory)
-func NewFieldDefinition(name string, fieldType Type) *FieldDefinition {
+func NewFieldDefinition(fieldName string, jsonName string, fieldType Type) *FieldDefinition {
 	return &FieldDefinition{
-		name:        name,
+		fieldName:   fieldName,
 		fieldType:   fieldType,
+		jsonName:    jsonName,
 		description: "",
 	}
 }
@@ -28,15 +33,16 @@ func NewFieldDefinition(name string, fieldType Type) *FieldDefinition {
 func NewEmbeddedStructDefinition(structType Type) *FieldDefinition {
 	// in Go, this is just a field without a name:
 	return &FieldDefinition{
-		name:        "",
+		fieldName:   "",
 		fieldType:   structType,
+		jsonName:    "",
 		description: "",
 	}
 }
 
-// Name returns the name of the field
-func (field *FieldDefinition) Name() string {
-	return field.name
+// FieldName returns the name of the field
+func (field *FieldDefinition) FieldName() string {
+	return field.fieldName
 }
 
 // FieldType returns the data type of the field
@@ -65,7 +71,7 @@ func (field FieldDefinition) AsField() *ast.Field {
 
 	// TODO: add field tags for api hints / json binding
 	result := &ast.Field{
-		Names: []*ast.Ident{ast.NewIdent(field.name)},
+		Names: []*ast.Ident{ast.NewIdent(field.fieldName)},
 		Type:  field.FieldType().AsType(),
 	}
 
@@ -73,7 +79,7 @@ func (field FieldDefinition) AsField() *ast.Field {
 		result.Doc = &ast.CommentGroup{
 			List: []*ast.Comment{
 				{
-					Text: fmt.Sprintf("\n/*\t%s: %s */", field.name, field.description),
+					Text: fmt.Sprintf("\n/*\t%s: %s */", field.fieldName, field.description),
 				},
 			},
 		}

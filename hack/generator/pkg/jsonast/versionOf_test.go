@@ -4,13 +4,16 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/gomega"
 )
 
 func Test_ExtractObjectAndVersion(t *testing.T) {
+	g := NewGomegaWithT(t)
+
 	url, err := url.Parse("https://schema.management.azure.com/schemas/2015-01-01/Microsoft.Resources.json#/resourceDefinitions/deployments")
-	assert.Nil(t, err)
+	g.Expect(err).To(BeNil())
+
 	version, err := versionOf(url)
-	assert.Nil(t, err)
-	assert.Equal(t, "2015-01-01", version)
+	g.Expect(version).To(Equal("2015-01-01"))
+	g.Expect(err).To(BeNil())
 }

@@ -26,6 +26,9 @@ type StructDefinition struct {
 	description string
 }
 
+// StructDefinition must implement Definition
+var _ Definition = &StructDefinition{}
+
 // NewStructDefinition is a factory method for creating a new StructDefinition
 func NewStructDefinition(name string, version string, fields ...*FieldDefinition) *StructDefinition {
 	return &StructDefinition{
@@ -96,21 +99,4 @@ func (definition *StructDefinition) AsDeclaration() *ast.GenDecl {
 	}
 
 	return declaration
-}
-
-//TODO: Perhaps use this method in AsDeclaration(), above
-//TODO make this private as it might be unused elsewhere
-
-// ToFieldList generates an AST fieldlist for a sequence of field definitions
-func ToFieldList(fields []*FieldDefinition) *ast.FieldList {
-	astFields := make([]*ast.Field, len(fields))
-	for i, f := range fields {
-		astFields[i] = f.AsField()
-	}
-
-	fieldList := &ast.FieldList{
-		List: astFields,
-	}
-
-	return fieldList
 }

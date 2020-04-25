@@ -12,15 +12,16 @@ func NewStructType(fields []*FieldDefinition) *StructType {
 	return &StructType{fields}
 }
 
+//TODO: Don't want to return the original slice, don't want it to be modified
 func (structType *StructType) Fields() []*FieldDefinition {
 	return structType.fields
 }
 
 // AsType implements Type for StructType
-func (definition *StructType) AsType() ast.Expr {
+func (structType *StructType) AsType() ast.Expr {
 
-	fieldDefinitions := make([]*ast.Field, len(definition.fields))
-	for i, f := range definition.fields {
+	fieldDefinitions := make([]*ast.Field, len(structType.fields))
+	for i, f := range structType.fields {
 		fieldDefinitions[i] = f.AsField()
 	}
 

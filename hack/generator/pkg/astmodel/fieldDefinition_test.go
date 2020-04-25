@@ -3,56 +3,48 @@ package astmodel
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/gomega"
 )
 
 func Test_NewFieldDefinition_GivenValues_InitializesFields(t *testing.T) {
-	name := "fullName"
-	fieldtype := "string"
+	g := NewGomegaWithT(t)
 
-	field := NewFieldDefinition(name, fieldtype)
+	fieldName := "FullName"
+	fieldtype := StringType
+	jsonName := "family-name"
 
-	assert.Equal(t, name, field.name)
-	assert.Equal(t, fieldtype, field.fieldType)
-	assert.Equal(t, "", field.description)
+	field := NewFieldDefinition(fieldName, jsonName, fieldtype)
+
+	g.Expect(field.fieldName).To(Equal(fieldName))
+	g.Expect(field.fieldType).To(Equal(fieldtype))
+	g.Expect(field.jsonName).To(Equal(jsonName))
+	g.Expect(field.description).To(BeEmpty())
 }
 
 func Test_FieldDefinitionWithDescription_GivenDescription_SetsField(t *testing.T) {
-	name := "fullName"
-	fieldtype := "string"
+	g := NewGomegaWithT(t)
+
 	description := "description"
+	field := NewFieldDefinition("FullName", "fullname", StringType).WithDescription(&description)
 
-	field := NewFieldDefinition(name, fieldtype).WithDescription(description)
-
-	assert.Equal(t, description, field.description)
+	g.Expect(field.description).To(Equal(description))
 }
 
 func Test_FieldDefinitionWithDescription_GivenDescription_DoesNotModifyOriginal(t *testing.T) {
-	name := "fullName"
-	fieldtype := "string"
+	g := NewGomegaWithT(t)
 	description := "description"
+	original := NewFieldDefinition("FullName", "fullName", StringType)
 
-	original := NewFieldDefinition(name, fieldtype)
-	field := original.WithDescription(description)
+	field := original.WithDescription(&description)
 
-	assert.NotEqual(t, original.description, field.description)
-}
-
-func Test_FieldDefinition_Implements_DefinitionInterface(t *testing.T) {
-	name := "fullName"
-	fieldtype := "string"
-
-	field := NewFieldDefinition(name, fieldtype)
-
-	assert.Implements(t, (*Definition)(nil), field)
+	g.Expect(field.description).NotTo(Equal(original.description))
 }
 
 func Test_FieldDefinitionAsAst_GivenValidField_ReturnsNonNilResult(t *testing.T) {
-	name := "fullName"
-	fieldtype := "string"
+	g := NewGomegaWithT(t)
 
-	field := NewFieldDefinition(name, fieldtype)
-
+	field := NewFieldDefinition("FullName", "fullName", StringType)
 	node := field.AsAst()
-	assert.NotNil(t, node)
+
+	g.Expect(node).NotTo(BeNil())
 }

@@ -33,6 +33,7 @@ type (
 		Structs      map[string]*astmodel.StructDefinition
 		TypeHandlers map[SchemaType]TypeHandler
 		Filters      []string
+		idFactory    astmodel.IdentifierFactory
 	}
 )
 
@@ -72,10 +73,11 @@ func (use *UnknownSchemaError) Error() string {
 }
 
 // NewSchemaScanner constructs a new scanner, ready for use
-func NewSchemaScanner() *SchemaScanner {
+func NewSchemaScanner(idFactory astmodel.IdentifierFactory) *SchemaScanner {
 	return &SchemaScanner{
 		Structs:      make(map[string]*astmodel.StructDefinition),
 		TypeHandlers: DefaultTypeHandlers(),
+		idFactory:    idFactory,
 	}
 }
 
@@ -236,7 +238,8 @@ func getFields(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema
 		schemaType, err := getSubSchemaType(prop)
 		if _, ok := err.(*UnknownSchemaError); ok {
 			// if we don't know the type, we still need to provide the property, we will just provide open interface
-			field := astmodel.NewFieldDefinition(prop.Property, astmodel.AnyType).WithDescription(schema.Description)
+			fieldName := scanner.idFactory.CreateIdentifier(prop.Property)
+			field := astmodel.NewFieldDefinition(fieldName, prop.Property, astmodel.AnyType).WithDescription(schema.Description)
 			fields = append(fields, field)
 			continue
 		}
@@ -248,7 +251,8 @@ func getFields(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema
 		propType, err := scanner.RunHandler(ctx, schemaType, prop)
 		if _, ok := err.(*UnknownSchemaError); ok {
 			// if we don't know the type, we still need to provide the property, we will just provide open interface
-			field := astmodel.NewFieldDefinition(prop.Property, astmodel.AnyType).WithDescription(schema.Description)
+			fieldName := scanner.idFactory.CreateIdentifier(prop.Property)
+			field := astmodel.NewFieldDefinition(fieldName, prop.Property, astmodel.AnyType).WithDescription(schema.Description)
 			fields = append(fields, field)
 			continue
 		}
@@ -257,7 +261,8 @@ func getFields(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema
 			return nil, err
 		}
 
-		field := astmodel.NewFieldDefinition(prop.Property, propType).WithDescription(prop.Description)
+		fieldName := scanner.idFactory.CreateIdentifier(prop.Property)
+		field := astmodel.NewFieldDefinition(fieldName, prop.Property, propType).WithDescription(prop.Description)
 		fields = append(fields, field)
 	}
 
