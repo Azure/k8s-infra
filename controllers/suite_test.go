@@ -11,17 +11,19 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
+
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	protov1alpha1 "github.com/Azure/k8s-infra/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
+
+	microsoftnetworkv1 "github.com/Azure/k8s-infra/apis/microsoft.network/v1"
+	microsoftresourcesv1 "github.com/Azure/k8s-infra/apis/microsoft.resources/v1"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -40,7 +42,7 @@ func TestAPIs(t *testing.T) {
 
 	RunSpecsWithDefaultAndCustomReporters(t,
 		"Controller Suite",
-		[]Reporter{envtest.NewlineReporter{}})
+		[]Reporter{printer.NewlineReporter{}})
 }
 
 var _ = BeforeSuite(func(done Done) {
@@ -56,9 +58,8 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
-	err = protov1alpha1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-
+	Expect(microsoftresourcesv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(microsoftnetworkv1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
 	mgr, err = ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 
