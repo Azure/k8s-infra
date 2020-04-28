@@ -1,11 +1,11 @@
-# permissions to do viewer virtualnetworks.
+# permissions for end users to view virtualnetworks.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: virtualnetwork-viewer-role
 rules:
 - apiGroups:
-  - proto.infra.azure.com
+  - microsoft.network.infra.azure.com
   resources:
   - virtualnetworks
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - proto.infra.azure.com
+  - microsoft.network.infra.azure.com
   resources:
   - virtualnetworks/status
   verbs:

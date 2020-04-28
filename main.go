@@ -13,9 +13,14 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	protov1alpha1 "github.com/Azure/k8s-infra/api/v1alpha1"
+	microsoftnetworkv1 "github.com/Azure/k8s-infra/apis/microsoft.network/v1"
+	microsoftnetworkv20191101 "github.com/Azure/k8s-infra/apis/microsoft.network/v20191101"
+	microsoftresourcesv1 "github.com/Azure/k8s-infra/apis/microsoft.resources/v1"
+	microsoftresourcesv20150101 "github.com/Azure/k8s-infra/apis/microsoft.resources/v20150101"
+	microsoftresourcesv20191001 "github.com/Azure/k8s-infra/apis/microsoft.resources/v20191001"
 	"github.com/Azure/k8s-infra/controllers"
 	"github.com/Azure/k8s-infra/pkg/zips"
 	// +kubebuilder:scaffold:imports
@@ -28,7 +33,11 @@ var (
 
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
-	_ = protov1alpha1.AddToScheme(scheme)
+	_ = microsoftresourcesv20191001.AddToScheme(scheme)
+	_ = microsoftresourcesv20150101.AddToScheme(scheme)
+	_ = microsoftresourcesv1.AddToScheme(scheme)
+	_ = microsoftnetworkv20191101.AddToScheme(scheme)
+	_ = microsoftnetworkv1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -48,6 +57,7 @@ func main() {
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
 		LeaderElection:     enableLeaderElection,
+		LeaderElectionID:   "controller-leader-election-azinfra",
 		Port:               9443,
 	})
 	if err != nil {
@@ -61,7 +71,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if errs := controllers.RegisterAll(mgr, applier, controllers.KnownTypes); errs != nil {
+	if errs := controllers.RegisterAll(mgr, applier, controllers.KnownTypes, ctrl.Log.WithName("controllers"), concurrency(1)); errs != nil {
 		for _, err := range errs {
 			setupLog.Error(err, "failed to register gvk: %v")
 		}
@@ -75,4 +85,8 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func concurrency(c int) controller.Options {
+	return controller.Options{MaxConcurrentReconciles: c}
 }

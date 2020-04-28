@@ -9,31 +9,51 @@ package zips
 
 import (
 	"context"
-
-	"k8s.io/apimachinery/pkg/runtime"
+	"encoding/json"
+	"strings"
 )
 
 type (
-	Resourcer interface {
-		ToResource() (Resource, error)
-		FromResource(Resource) (runtime.Object, error)
+	Applier interface {
+		Apply(ctx context.Context, res *Resource) (*Resource, error)
+		DeleteApply(ctx context.Context, deploymentID string) error
+		BeginDelete(ctx context.Context, res *Resource) (*Resource, error)
+		GetResource(ctx context.Context, res *Resource) (*Resource, error)
+		HeadResource(ctx context.Context, res *Resource) (bool, error)
 	}
 
-	Applier interface {
-		Apply(ctx context.Context, res Resource) (Resource, error)
-		Delete(ctx context.Context, resourceID string) error
+	ResourceMeta struct {
+		PreserveDeployment bool
 	}
 
 	Resource struct {
-		ResourceGroup     string      `json:"-"` // resource group should not be serialized as part of the resource. This indicates that this should be within a resource group or at a subscription level deployment.
-		SubscriptionID    string      `json:"-"`
-		ProvisioningState string      `json:"-"`
-		DeploymentID      string      `json:"-"`
-		ID                string      `json:"id,omitempty"`
-		Name              string      `json:"name,omitempty"`
-		Location          string      `json:"location,omitempty"`
-		Type              string      `json:"type,omitempty"`
-		APIVersion        string      `json:"apiVersion,omitempty"`
-		Properties        interface{} `json:"properties,omitempty"`
+		ObjectMeta        ResourceMeta      `json:"-"`
+		ResourceGroup     string            `json:"-"` // resource group should not be serialized as part of the resource. This indicates that this should be within a resource group or at a subscription level deployment.
+		SubscriptionID    string            `json:"-"`
+		ProvisioningState ProvisioningState `json:"-"`
+		DeploymentID      string            `json:"-"`
+		ID                string            `json:"id,omitempty"`
+		Name              string            `json:"name,omitempty"`
+		Location          string            `json:"location,omitempty"`
+		Type              string            `json:"type,omitempty"`
+		Tags              map[string]string `json:"tags,omitempty"`
+		ManagedBy         string            `json:"managedBy,omitempty"`
+		APIVersion        string            `json:"apiVersion,omitempty"`
+		Properties        json.RawMessage   `json:"properties,omitempty"`
 	}
+
+	AnnotationKey string
 )
+
+const (
+	// PreserveDeploymentAnnotation is the key which tells the applier to keep or delete the deployment
+	PreserveDeploymentAnnotation AnnotationKey = "x-preserve-deployment"
+)
+
+// SetAnnotations will set the metadata fields on the resource with the values derived from the annotations
+func (res *Resource) SetAnnotations(annotations map[string]string) *Resource {
+	if val, ok := annotations[string(PreserveDeploymentAnnotation)]; ok {
+		res.ObjectMeta.PreserveDeployment = strings.ToLower(val) == "true"
+	}
+	return res
+}
