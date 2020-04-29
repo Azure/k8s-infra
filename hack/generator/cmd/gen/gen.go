@@ -25,6 +25,7 @@ const (
 	rgTemplateSchemaURI = "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json"
 )
 
+// NewGenCommand creates a new cobra Command when invoked from the command line
 func NewGenCommand() (*cobra.Command, error) {
 	cmd := &cobra.Command{
 		Use:   "gen",
