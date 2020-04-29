@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go/format"
 	"go/token"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,13 +21,13 @@ func runGoldenTest(t *testing.T, path string) {
 	testName := strings.TrimPrefix(t.Name(), "TestGolden/")
 
 	g := goldie.New(t)
-	inputFile, err := filepath.Abs(path)
+	inputFile, err := ioutil.ReadFile(path)
 	if err != nil {
-		t.Fatal(fmt.Errorf("No input file: %w", err))
+		t.Fatal(fmt.Errorf("Cannot read golden test input file: %w", err))
 	}
 
 	loader := gojsonschema.NewSchemaLoader()
-	schema, err := loader.Compile(gojsonschema.NewReferenceLoader("file://" + inputFile))
+	schema, err := loader.Compile(gojsonschema.NewBytesLoader(inputFile))
 
 	scanner := NewSchemaScanner(astmodel.NewIdentifierFactory())
 	nodes, err := scanner.ToNodes(context.TODO(), schema.Root())
