@@ -1,16 +1,80 @@
 package jsonast
 
 import (
+	"bytes"
 	"context"
-	"go/ast"
-	"reflect"
+	"fmt"
+	"go/format"
+	"go/token"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
+	"github.com/sebdah/goldie/v2"
 	"github.com/xeipuuv/gojsonschema"
-
-	. "github.com/onsi/gomega"
 )
 
+func runGoldenTest(t *testing.T, path string) {
+	testName := strings.TrimPrefix(t.Name(), "TestGolden/")
+
+	g := goldie.New(t)
+	inputFile, err := filepath.Abs(path)
+	if err != nil {
+		t.Fatal(fmt.Errorf("No input file: %w", err))
+	}
+
+	loader := gojsonschema.NewSchemaLoader()
+	schema, err := loader.Compile(gojsonschema.NewReferenceLoader("file://" + inputFile))
+
+	scanner := NewSchemaScanner(astmodel.NewIdentifierFactory())
+	nodes, err := scanner.ToNodes(context.TODO(), schema.Root())
+
+	buf := &bytes.Buffer{}
+	format.Node(buf, token.NewFileSet(), nodes.AsAst())
+
+	g.Assert(t, testName, buf.Bytes())
+}
+
+func runGoldenTests(t *testing.T) {
+	type Test struct {
+		name string
+		path string
+	}
+	testGroups := make(map[string][]Test)
+	// find all input .json files
+	err := filepath.Walk("testdata", func(path string, info os.FileInfo, err error) error {
+		if filepath.Ext(path) == ".json" {
+			groupName := filepath.Base(filepath.Dir(path))
+			testName := strings.TrimSuffix(filepath.Base(path), ".json")
+			testGroups[groupName] = append(testGroups[groupName], Test{testName, path})
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		t.Fatal(fmt.Errorf("Error enumerating files: %w", err))
+	}
+
+	// run all tests
+	for groupName, fs := range testGroups {
+		t.Run(groupName, func(t *testing.T) {
+			for _, f := range fs {
+				t.Run(f.name, func(t *testing.T) {
+					runGoldenTest(t, f.path)
+				})
+			}
+		})
+	}
+}
+
+func TestGolden(t *testing.T) {
+	runGoldenTests(t)
+}
+
+/*
 func TestToNodes(t *testing.T) {
 	type args struct {
 		resourcesSchema *gojsonschema.SubSchema
@@ -90,7 +154,6 @@ func TestObjectWithNoType(t *testing.T) {
 	g.Expect(propertiesField.FieldType()).To(Equal("interface{}"))
 }
 
-/*
 func XTestAnyOfWithMultipleComplexObjects(t *testing.T) {
 	schema := `
 {

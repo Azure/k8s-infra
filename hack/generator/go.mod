@@ -9,6 +9,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20191227052852-215e87163ea7 // indirect
 	github.com/onsi/gomega v1.8.1
 	github.com/pelletier/go-toml v1.6.0 // indirect
+	github.com/sebdah/goldie/v2 v2.3.0
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v0.0.5
