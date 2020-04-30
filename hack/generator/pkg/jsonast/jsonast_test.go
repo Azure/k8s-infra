@@ -6,16 +6,10 @@
 package jsonast
 
 import (
-	"context"
-	"go/ast"
-	"reflect"
-	"testing"
-
-	"github.com/xeipuuv/gojsonschema"
-
 	. "github.com/onsi/gomega"
 )
 
+/*
 func TestToNodes(t *testing.T) {
 	type args struct {
 		resourcesSchema *gojsonschema.SubSchema
@@ -58,7 +52,9 @@ func TestToNodes(t *testing.T) {
 		})
 	}
 }
+*/
 
+/*
 func TestObjectWithNoType(t *testing.T) {
 	schema := `
 {
@@ -94,6 +90,7 @@ func TestObjectWithNoType(t *testing.T) {
 	g.Expect(propertiesField.Name()).To(Equal("foo"))
 	g.Expect(propertiesField.FieldType()).To(Equal("interface{}"))
 }
+*/
 
 /*
 func XTestAnyOfWithMultipleComplexObjects(t *testing.T) {

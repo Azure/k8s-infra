@@ -1,9 +1,9 @@
+//+build noexit
+
 /*
  * Copyright (c) Microsoft Corporation.
  * Licensed under the MIT license.
  */
-
-//+build noexit
 
 package xcobra
 
