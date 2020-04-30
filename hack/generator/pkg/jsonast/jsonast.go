@@ -237,6 +237,13 @@ func objectHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsc
 		return nil, err
 	}
 
+	// if we _only_ have an 'additionalProperties' field, then we are making
+	// a dictionary-like type, and we won't generate a struct; instead, we
+	// will just use the 'additionalProperties' type directly
+	if len(fields) == 1 && fields[0].FieldName() == "additionalProperties" {
+		return fields[0].FieldType(), nil
+	}
+
 	structDefinition := astmodel.NewStructType(fields)
 	return structDefinition, nil
 }
@@ -278,8 +285,27 @@ func getFields(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema
 		fields = append(fields, field)
 	}
 
-	// TODO: need to handle additionalProperties
-	// store them in a map?
+	// see: https://json-schema.org/understanding-json-schema/reference/object.html#properties
+	if schema.AdditionalProperties == nil {
+		// if not specified, any additional properties are allowed (TODO: tell all Azure teams this fact and get them to update their API definitions)
+		// for now we aren't following the spec 100% as it pollutes the generated code
+		// only generate this field if there are no other fields:
+		if len(fields) == 0 {
+			// TODO: for JSON serialization this needs to be unpacked into "parent"
+			additionalPropsField := astmodel.NewFieldDefinition("additionalProperties", "additionalProperties", astmodel.NewStringMap(astmodel.AnyType))
+			fields = append(fields, additionalPropsField)
+		}
+	} else if schema.AdditionalProperties != false {
+		// otherwise, if not false then it is a type for all additional fields
+		// TODO: for JSON serialization this needs to be unpacked into "parent"
+		additionalPropsType, err := scanner.RunHandlerForSchema(ctx, schema.AdditionalProperties.(*gojsonschema.SubSchema))
+		if err != nil {
+			return nil, err
+		}
+
+		additionalPropsField := astmodel.NewFieldDefinition("additionalProperties", "additionalProperties", astmodel.NewStringMap(additionalPropsType))
+		fields = append(fields, additionalPropsField)
+	}
 
 	return fields, nil
 }

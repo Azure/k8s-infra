@@ -6,13 +6,76 @@
 package jsonast
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"go/format"
+	"go/token"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
-	. "github.com/onsi/gomega"
+	"github.com/sebdah/goldie/v2"
 	"github.com/xeipuuv/gojsonschema"
 )
+
+func runGoldenTest(t *testing.T, path string) {
+	testName := strings.TrimPrefix(t.Name(), "TestGolden/")
+
+	g := goldie.New(t)
+	inputFile, err := ioutil.ReadFile(path)
+	if err != nil {
+		t.Fatal(fmt.Errorf("Cannot read golden test input file: %w", err))
+	}
+
+	loader := gojsonschema.NewSchemaLoader()
+	schema, err := loader.Compile(gojsonschema.NewBytesLoader(inputFile))
+
+	scanner := NewSchemaScanner(astmodel.NewIdentifierFactory())
+	nodes, err := scanner.ToNodes(context.TODO(), schema.Root())
+
+	buf := &bytes.Buffer{}
+	format.Node(buf, token.NewFileSet(), nodes.AsAst())
+
+	g.Assert(t, testName, buf.Bytes())
+}
+
+func TestGolden(t *testing.T) {
+
+	type Test struct {
+		name string
+		path string
+	}
+	testGroups := make(map[string][]Test)
+	// find all input .json files
+	err := filepath.Walk("testdata", func(path string, info os.FileInfo, err error) error {
+		if filepath.Ext(path) == ".json" {
+			groupName := filepath.Base(filepath.Dir(path))
+			testName := strings.TrimSuffix(filepath.Base(path), ".json")
+			testGroups[groupName] = append(testGroups[groupName], Test{testName, path})
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		t.Fatal(fmt.Errorf("Error enumerating files: %w", err))
+	}
+
+	// run all tests
+	for groupName, fs := range testGroups {
+		t.Run(groupName, func(t *testing.T) {
+			for _, f := range fs {
+				t.Run(f.name, func(t *testing.T) {
+					runGoldenTest(t, f.path)
+				})
+			}
+		})
+	}
+}
 
 /*
 func TestToNodes(t *testing.T) {
@@ -57,7 +120,6 @@ func TestToNodes(t *testing.T) {
 		})
 	}
 }
-*/
 
 func TestObjectWithNoType(t *testing.T) {
 	schema := `
@@ -102,7 +164,6 @@ func TestObjectWithNoType(t *testing.T) {
 	g.Expect(propertyField.FieldType()).To(Equal(astmodel.AnyType))
 }
 
-/*
 func XTestAnyOfWithMultipleComplexObjects(t *testing.T) {
 	schema := `
 {
@@ -313,4 +374,5 @@ func getDefaultSchema() (*gojsonschema.SubSchema, error) {
 	}
 	return nil, errors.New("couldn't find resources in the schema")
 }
+
 */
