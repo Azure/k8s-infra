@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) Microsoft Corporation.
+ * Licensed under the MIT license.
+ */
+
 package astmodel
 
 import "go/ast"
@@ -12,9 +17,10 @@ func NewStructType(fields []*FieldDefinition) *StructType {
 	return &StructType{fields}
 }
 
-//TODO: Don't want to return the original slice, don't want it to be modified
+// Fields returns all our field definitions
+// A copy of the slice is returned to preserve immutability
 func (structType *StructType) Fields() []*FieldDefinition {
-	return structType.fields
+	return append(structType.fields[:0:0], structType.fields...)
 }
 
 // AsType implements Type for StructType

@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) Microsoft Corporation.
+ * Licensed under the MIT license.
+ */
+
 package jsonast
 
 import (
@@ -38,7 +43,8 @@ func runGoldenTest(t *testing.T, path string) {
 	g.Assert(t, testName, buf.Bytes())
 }
 
-func runGoldenTests(t *testing.T) {
+func TestGolden(t *testing.T) {
+
 	type Test struct {
 		name string
 		path string
@@ -69,10 +75,6 @@ func runGoldenTests(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestGolden(t *testing.T) {
-	runGoldenTests(t)
 }
 
 /*
@@ -122,6 +124,7 @@ func TestToNodes(t *testing.T) {
 func TestObjectWithNoType(t *testing.T) {
 	schema := `
 {
+  "title": "bar",
   "definitions": {
     "ApplicationSecurityGroupPropertiesFormat": {
       "description": "Application security group properties."
@@ -136,23 +139,29 @@ func TestObjectWithNoType(t *testing.T) {
   }
 }
 `
-	scanner := NewSchemaScanner()
+	idFactory := astmodel.NewIdentifierFactory()
+	scanner := NewSchemaScanner(idFactory)
 	g := NewGomegaWithT(t)
 	sl := gojsonschema.NewSchemaLoader()
 	loader := gojsonschema.NewBytesLoader([]byte(schema))
 	sb, err := sl.Compile(loader)
 	g.Expect(err).To(BeNil())
 
-	nodes, err := scanner.ToNodes(context.TODO(), sb.Root())
+	definition, err := scanner.ToNodes(context.TODO(), sb.Root())
 
 	g.Expect(err).To(BeNil())
-	g.Expect(nodes).To(HaveLen(1))
+	g.Expect(definition).ToNot(BeNil())
 	g.Expect(scanner.Structs).To(HaveLen(1))
-	structDefinition := scanner.Structs[0]
+
+	// Has no version!!
+	structDefinition := scanner.Structs["bar/"]
+	g.Expect(structDefinition).ToNot(BeNil())
 	g.Expect(structDefinition.FieldCount()).To(Equal(1))
-	propertiesField := structDefinition.Field(0)
-	g.Expect(propertiesField.Name()).To(Equal("foo"))
-	g.Expect(propertiesField.FieldType()).To(Equal("interface{}"))
+
+	propertyField := structDefinition.Field(0)
+	g.Expect(propertyField.FieldName()).To(Equal("Foo"))
+
+	g.Expect(propertyField.FieldType()).To(Equal(astmodel.AnyType))
 }
 
 func XTestAnyOfWithMultipleComplexObjects(t *testing.T) {
@@ -365,4 +374,5 @@ func getDefaultSchema() (*gojsonschema.SubSchema, error) {
 	}
 	return nil, errors.New("couldn't find resources in the schema")
 }
+
 */

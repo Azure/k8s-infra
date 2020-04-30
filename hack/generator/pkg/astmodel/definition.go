@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) Microsoft Corporation.
+ * Licensed under the MIT license.
+ */
+
 package astmodel
 
 import "go/ast"
@@ -10,5 +15,6 @@ type Definition interface {
 
 // Type represents something that is a Go type
 type Type interface {
+	// AsType renders the current instance as a Go abstract syntax tree
 	AsType() ast.Expr
 }
