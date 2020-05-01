@@ -27,6 +27,8 @@ func (structType *StructType) Fields() []*FieldDefinition {
 }
 
 // AsType implements Type for StructType
+var _ Type = (*StructType)(nil)
+
 func (structType *StructType) AsType() ast.Expr {
 
 	// Copy the slice of fields and sort it
@@ -45,4 +47,13 @@ func (structType *StructType) AsType() ast.Expr {
 			List: fieldDefinitions,
 		},
 	}
+}
+
+func (structType *StructType) RequiredImports() []PackageReference {
+	var result []PackageReference
+	for _, field := range structType.fields {
+		result = append(result, field.FieldType().RequiredImports()...)
+	}
+
+	return result
 }

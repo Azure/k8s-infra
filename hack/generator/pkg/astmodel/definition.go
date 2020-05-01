@@ -16,5 +16,6 @@ type Definition interface {
 // Type represents something that is a Go type
 type Type interface {
 	// AsType renders the current instance as a Go abstract syntax tree
+	RequiredImports() []PackageReference
 	AsType() ast.Expr
 }

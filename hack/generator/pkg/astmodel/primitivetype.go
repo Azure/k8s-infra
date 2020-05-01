@@ -33,6 +33,12 @@ var BoolType = &PrimitiveType{"bool"}
 var AnyType = &PrimitiveType{"interface{}"}
 
 // AsType implements Type for PrimitiveType returning an abstract syntax tree
+var _ Type = (*PrimitiveType)(nil)
+
 func (prim *PrimitiveType) AsType() ast.Expr {
 	return ast.NewIdent(prim.name)
+}
+
+func (prim *PrimitiveType) RequiredImports() []PackageReference {
+	return nil
 }

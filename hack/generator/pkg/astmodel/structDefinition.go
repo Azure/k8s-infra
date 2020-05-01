@@ -42,9 +42,15 @@ func NewStructReference(name string, group string, version string) StructReferen
 }
 
 // AsType implements Type for StructReference
+var _ Type = (*StructReference)(nil)
+
 func (sr *StructReference) AsType() ast.Expr {
 	// TODO: namespaces/versions
 	return ast.NewIdent(sr.name)
+}
+
+func (sr *StructReference) RequiredImports() []PackageReference {
+	return []PackageReference{sr.PackageReference}
 }
 
 // StructDefinition encapsulates the definition of a struct
@@ -95,6 +101,20 @@ func (definition *StructDefinition) FieldCount() int {
 // AsAst generates an AST node representing this field definition
 func (definition *StructDefinition) AsAst() ast.Node {
 	return definition.AsDeclaration()
+}
+
+func (definition *StructDefinition) RequiredImports() []PackageReference {
+	var result []PackageReference
+	for _, field := range definition.fields {
+		for _, requiredImport := range field.FieldType().RequiredImports() {
+			// imports of current package are not required
+			if requiredImport != definition.PackageReference {
+				result = append(result, requiredImport)
+			}
+		}
+	}
+
+	return result
 }
 
 // AsDeclaration generates an AST node representing this struct definition

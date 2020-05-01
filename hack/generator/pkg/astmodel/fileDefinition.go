@@ -36,7 +36,26 @@ func NewFileDefinition(structs ...*StructDefinition) *FileDefinition {
 // AsAst generates an AST node representing this file
 func (file *FileDefinition) AsAst() ast.Node {
 
+	// Create import header:
+	var imports []ast.Spec
+	for _, s := range file.structs {
+		for _, requiredImport := range s.RequiredImports() {
+			imports = append(imports, &ast.ImportSpec{
+				Name: nil,
+				Path: &ast.BasicLit{
+					Kind:  token.STRING,
+					Value: "\"github.com/Azure/k8s-infra/hack/generator/apis/" + requiredImport.PackagePath() + "\"",
+				}},
+			)
+		}
+	}
+
 	var decls []ast.Decl
+	if len(imports) > 0 {
+		decls = append(decls, &ast.GenDecl{Tok: token.IMPORT, Specs: imports})
+	}
+
+	// Emit all structs:
 	for _, s := range file.structs {
 		decls = append(decls, s.AsDeclaration())
 	}
