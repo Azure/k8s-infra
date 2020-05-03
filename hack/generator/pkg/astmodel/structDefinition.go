@@ -41,9 +41,10 @@ func NewStructReference(name string, group string, version string) StructReferen
 	return StructReference{name, PackageReference{group, version}}
 }
 
-// AsType implements Type for StructReference
+// assert that we implemented Type correctly
 var _ Type = (*StructReference)(nil)
 
+// AsType implements Type for StructReference
 func (sr *StructReference) AsType() ast.Expr {
 	return ast.NewIdent(sr.name)
 }

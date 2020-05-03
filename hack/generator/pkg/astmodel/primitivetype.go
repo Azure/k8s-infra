@@ -32,9 +32,10 @@ var BoolType = &PrimitiveType{"bool"}
 // AnyType represents the root Go interface type, permitting any object
 var AnyType = &PrimitiveType{"interface{}"}
 
-// AsType implements Type for PrimitiveType returning an abstract syntax tree
+// assert that we implemented Type correctly
 var _ Type = (*PrimitiveType)(nil)
 
+// AsType implements Type for PrimitiveType returning an abstract syntax tree
 func (prim *PrimitiveType) AsType() ast.Expr {
 	return ast.NewIdent(prim.name)
 }

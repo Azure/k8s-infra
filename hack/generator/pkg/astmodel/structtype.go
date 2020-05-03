@@ -26,9 +26,10 @@ func (structType *StructType) Fields() []*FieldDefinition {
 	return append(structType.fields[:0:0], structType.fields...)
 }
 
-// AsType implements Type for StructType
+// assert that we implemented Type correctly
 var _ Type = (*StructType)(nil)
 
+// AsType implements Type for StructType
 func (structType *StructType) AsType() ast.Expr {
 
 	// Copy the slice of fields and sort it

@@ -25,9 +25,10 @@ func NewStringMap(value Type) *MapType {
 	return NewMap(StringType, value)
 }
 
-// AsType implements Type for MapType to create the abstract syntax tree for a map
+// assert that we implemented Type correctly
 var _ Type = (*MapType)(nil)
 
+// AsType implements Type for MapType to create the abstract syntax tree for a map
 func (m *MapType) AsType() ast.Expr {
 	return &ast.MapType{
 		Key:   m.key.AsType(),
