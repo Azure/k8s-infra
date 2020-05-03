@@ -106,10 +106,7 @@ func (definition *StructDefinition) RequiredImports() []PackageReference {
 	var result []PackageReference
 	for _, field := range definition.fields {
 		for _, requiredImport := range field.FieldType().RequiredImports() {
-			// imports of current package are not required
-			if requiredImport != definition.PackageReference {
-				result = append(result, requiredImport)
-			}
+			result = append(result, requiredImport)
 		}
 	}
 

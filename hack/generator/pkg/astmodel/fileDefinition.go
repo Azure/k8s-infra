@@ -37,22 +37,31 @@ func NewFileDefinition(structs ...*StructDefinition) *FileDefinition {
 func (file *FileDefinition) AsAst() ast.Node {
 
 	// Create import header:
-	var imports []ast.Spec
+	var requiredImports = make(map[PackageReference]bool) // fake set type
 	for _, s := range file.structs {
 		for _, requiredImport := range s.RequiredImports() {
-			imports = append(imports, &ast.ImportSpec{
-				Name: nil,
-				Path: &ast.BasicLit{
-					Kind:  token.STRING,
-					Value: "\"github.com/Azure/k8s-infra/hack/generator/apis/" + requiredImport.PackagePath() + "\"",
-				}},
-			)
+			// no need to import the current package
+			if requiredImport != file.PackageReference {
+				requiredImports[requiredImport] = true
+			}
 		}
 	}
 
 	var decls []ast.Decl
-	if len(imports) > 0 {
-		decls = append(decls, &ast.GenDecl{Tok: token.IMPORT, Specs: imports})
+	if len(requiredImports) > 0 {
+		var importSpecs []ast.Spec
+
+		for requiredImport, _ := range requiredImports {
+			importSpecs = append(importSpecs, &ast.ImportSpec{
+				Name: nil,
+				Path: &ast.BasicLit{
+					Kind:  token.STRING,
+					Value: "\"github.com/Azure/k8s-infra/hack/generator/apis/" + requiredImport.PackagePath() + "\"",
+				},
+			})
+		}
+
+		decls = append(decls, &ast.GenDecl{Tok: token.IMPORT, Specs: importSpecs})
 	}
 
 	// Emit all structs:
