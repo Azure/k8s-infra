@@ -19,9 +19,10 @@ func NewArrayType(element Type) *ArrayType {
 	return &ArrayType{element}
 }
 
-// AsType renders the Go abstract syntax tree for an array type
+// assert we implemented this correctly
 var _ Type = (*ArrayType)(nil)
 
+// AsType renders the Go abstract syntax tree for an array type
 func (array *ArrayType) AsType() ast.Expr {
 	return &ast.ArrayType{
 		Elt: array.element.AsType(),
