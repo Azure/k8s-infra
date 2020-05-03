@@ -45,7 +45,6 @@ func NewStructReference(name string, group string, version string) StructReferen
 var _ Type = (*StructReference)(nil)
 
 func (sr *StructReference) AsType() ast.Expr {
-	// TODO: namespaces/versions
 	return ast.NewIdent(sr.name)
 }
 
