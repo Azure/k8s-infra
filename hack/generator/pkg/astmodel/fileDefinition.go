@@ -55,7 +55,8 @@ func (file *FileDefinition) AsAst() ast.Node {
 			importSpecs = append(importSpecs, &ast.ImportSpec{
 				Name: nil,
 				Path: &ast.BasicLit{
-					Kind:  token.STRING,
+					Kind: token.STRING,
+					// TODO: this will need adjusting in future:
 					Value: "\"github.com/Azure/k8s-infra/hack/generator/apis/" + requiredImport.PackagePath() + "\"",
 				},
 			})
