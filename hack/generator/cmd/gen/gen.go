@@ -67,15 +67,15 @@ func NewGenCommand() (*cobra.Command, error) {
 
 			// group definitions by package
 			packages := make(map[astmodel.PackageReference]*astmodel.PackageDefinition)
-			for _, def := range scanner.Structs {
-
-				var pkg astmodel.PackageDefinition
-				if pkg, ok := packages[def.PackageReference]; !ok {
-					pkg = astmodel.NewPackageDefinition(def.PackageReference)
-					packages[def.PackageReference] = pkg
+			for _, def := range scanner.Definitions {
+				pkgRef := def.Reference().PackageReference
+				if pkg, ok := packages[pkgRef]; ok {
+					pkg.AddDefinition(def)
+				} else {
+					pkg = astmodel.NewPackageDefinition(pkgRef)
+					pkg.AddDefinition(def)
+					packages[pkgRef] = pkg
 				}
-
-				pkg.AddDefinition(def)
 			}
 
 			// emit each package
@@ -94,7 +94,7 @@ func NewGenCommand() (*cobra.Command, error) {
 				pkg.EmitDefinitions(outputDir)
 			}
 
-			log.Printf("Completed writing %v resources\n", len(scanner.Structs))
+			log.Printf("Completed writing %v resources\n", len(scanner.Definitions))
 
 			return nil
 		}),

@@ -15,6 +15,9 @@ type StructType struct {
 	fields []*FieldDefinition
 }
 
+// EmptyStruct is a (non-resource) struct without any fields
+var EmptyStruct StructType = *NewStructType([]*FieldDefinition{})
+
 // NewStructType is a factory method for creating a new StructTypeDefinition
 func NewStructType(fields []*FieldDefinition) *StructType {
 	return &StructType{fields}
@@ -32,15 +35,18 @@ var _ Type = (*StructType)(nil)
 // AsType implements Type for StructType
 func (structType *StructType) AsType() ast.Expr {
 
+	// TODO: need to split into Spec and Status types
+
+	var fieldDefinitions []*ast.Field
+
 	// Copy the slice of fields and sort it
-	fields := structType.Fields()
+	fields := structType.fields
 	sort.Slice(fields, func(i int, j int) bool {
 		return fields[i].fieldName < fields[j].fieldName
 	})
 
-	fieldDefinitions := make([]*ast.Field, len(fields))
-	for i, f := range fields {
-		fieldDefinitions[i] = f.AsField()
+	for _, f := range fields {
+		fieldDefinitions = append(fieldDefinitions, f.AsField())
 	}
 
 	return &ast.StructType{
@@ -57,4 +63,18 @@ func (structType *StructType) RequiredImports() []PackageReference {
 	}
 
 	return result
+}
+
+func (structType *StructType) References(t Type) bool {
+	if structType == t {
+		return true
+	}
+
+	for _, field := range structType.fields {
+		if field.FieldType().References(t) {
+			return true
+		}
+	}
+
+	return false
 }

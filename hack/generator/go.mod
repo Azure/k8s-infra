@@ -26,7 +26,8 @@ require (
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	google.golang.org/api v0.15.0 // indirect
 	gopkg.in/ini.v1 v1.51.1 // indirect
-	gopkg.in/yaml.v2 v2.2.7 // indirect
+	k8s.io/apimachinery v0.18.2
+	sigs.k8s.io/controller-runtime v0.6.0
 )
 
 replace github.com/xeipuuv/gojsonschema => github.com/devigned/gojsonschema v1.2.1-0.20191231010529-c593123f1e5d

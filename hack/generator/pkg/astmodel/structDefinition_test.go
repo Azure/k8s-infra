@@ -35,7 +35,7 @@ func Test_StructDefinitionAsAst_GivenValidStruct_ReturnsNonNilResult(t *testing.
 
 	ref := NewStructReference("name", "group", "2020-01-01")
 	field := NewStructDefinition(ref)
-	node := field.AsDeclaration()
+	node := field.AsDeclarations()
 
 	g.Expect(node).NotTo(BeNil())
 }

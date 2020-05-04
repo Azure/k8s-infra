@@ -14,14 +14,18 @@ type HasImports interface {
 
 // Definition represents models that can render into Go code
 type Definition interface {
-	HasImports
-
 	// FileNameHint returns what a file that contains this definition (if any) should be called
 	// this is not always used as we might combine multiple definitions into one file
 	FileNameHint() string
 
-	// AsDecalaration() renders a definition into a Go abstract syntax tree
-	AsDeclaration() ast.Decl
+	// AsDecalarations() generates the Go code representing this definition
+	AsDeclarations() []ast.Decl
+
+	// How do you refer to the type defined by this definition?
+	Reference() *DefinitionName
+
+	// What is the actual type defined by this definition?
+	Type() Type
 }
 
 // Type represents something that is a Go type
@@ -30,4 +34,9 @@ type Type interface {
 
 	// AsType renders the current instance as a Go abstract syntax tree
 	AsType() ast.Expr
+
+	// Does this Type include any direct references to the given Type?
+	// "Direct" means we don't walk into any StructReferences (nor could we with these arguments),
+	// but we do walk into included StructTypes.
+	References(t Type) bool
 }
