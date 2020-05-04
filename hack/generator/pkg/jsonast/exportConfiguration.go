@@ -6,6 +6,8 @@
 package jsonast
 
 import (
+	"errors"
+
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
 
@@ -34,6 +36,15 @@ func NewExportConfiguration(filters ...*TypeFilter) *ExportConfiguration {
 	}
 
 	return &result
+}
+
+// Validate checks our configuration for common issues
+func (config *ExportConfiguration) Validate() error {
+	if config.SchemaURL == "" {
+		return errors.New("SchemaURL missing")
+	}
+
+	return nil
 }
 
 // ShouldExport tests for whether a given struct should be exported

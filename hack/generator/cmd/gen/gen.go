@@ -38,8 +38,16 @@ func NewGenCommand() (*cobra.Command, error) {
 				return err
 			}
 
+			err = configuration.Validate()
+			if err != nil {
+				log.Printf("Configuration invalid: %v\n", err)
+				return err
+			}
+
+			log.Printf("Loading schema %s", configuration.SchemaURL)
 			schema, err := loadSchema(configuration.SchemaURL)
 			if err != nil {
+				log.Printf("Failed to load schema: %v\n", err)
 				return err
 			}
 
@@ -71,18 +79,17 @@ func NewGenCommand() (*cobra.Command, error) {
 
 			for _, st := range scanner.Structs {
 				shouldExport, reason := configuration.ShouldExport(st)
+				var motivation string
+				if reason != "" {
+					motivation = "because " + reason
+				}
 				switch shouldExport {
 				case jsonast.Skip:
-					log.Printf("Skipping struct %s/%s because %s", st.Version(), st.Name(), reason)
+					log.Printf("Skipping struct %s/%s %s", st.Version(), st.Name(), motivation)
 
 				case jsonast.Export:
-					log.Printf("Exporting struct %s/%s because %s", st.Version(), st.Name(), reason)
+					log.Printf("Exporting struct %s/%s %s", st.Version(), st.Name(), motivation)
 					exportType(st)
-
-				case jsonast.Default:
-					log.Printf("Exporting struct %s/%s", st.Version(), st.Name())
-					exportType(st)
-
 				}
 			}
 
