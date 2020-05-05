@@ -6,10 +6,11 @@
 package astmodel
 
 import (
-	"fmt"
+	"bytes"
 	"io/ioutil"
 	"log"
 	"path/filepath"
+	"text/template"
 )
 
 type PackageDefinition struct {
@@ -110,20 +111,16 @@ func (pkgDef *PackageDefinition) EmitDefinitions(outputDir string) {
 	pkgDef.emitGroupVersionFile(outputDir)
 }
 
-func (pkgDef *PackageDefinition) emitGroupVersionFile(outputDir string) {
-	gvFile := filepath.Join(outputDir, "groupversion_info.go")
-
-	// TODO: better way to do this?
-	content := fmt.Sprintf(`
+var groupVersionFileTemplate = template.Must(template.New("groupVersionFile").Parse(`
 /*
 Copyright (c) Microsoft Corporation.
 Licensed under the MIT license.
 */
 
-// Package %[2]s contains API Schema definitions for the %[1]s %[2]s API group
+// Package {{.PackageName}} contains API Schema definitions for the {{.GroupName}} {{.PackageName}} API group
 // +kubebuilder:object:generate=true
-// +groupName=%[1]s.infra.azure.com
-package %[2]s
+// +groupName={{.GroupName}}.infra.azure.com
+package {{.PackageName}}
 
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -132,7 +129,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "%[1]s.infra.azure.com", Version: "%[2]s"}
+	GroupVersion = schema.GroupVersion{Group: "{{.GroupName}}.infra.azure.com", Version: "{{.PackageName}}"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
@@ -141,7 +138,12 @@ var (
 	AddToScheme = SchemeBuilder.AddToScheme
 
 	localSchemeBuilder = SchemeBuilder.SchemeBuilder
-)`, pkgDef.GroupName(), pkgDef.PackageName())
+)`))
 
-	ioutil.WriteFile(gvFile, []byte(content), 0700)
+func (pkgDef *PackageDefinition) emitGroupVersionFile(outputDir string) {
+	buf := &bytes.Buffer{}
+	groupVersionFileTemplate.Execute(buf, pkgDef)
+
+	gvFile := filepath.Join(outputDir, "groupversion_info.go")
+	ioutil.WriteFile(gvFile, buf.Bytes(), 0700)
 }
