@@ -20,6 +20,8 @@ type IdentifierFactory interface {
 	CreateFieldName(fieldName string) FieldName
 	CreatePackageNameFromVersion(version string) string
 	CreateGroupName(name string) string
+	// CreateEnumIdentifier generates the canonical name for an enumeration
+	CreateEnumIdentifier(namehint string) string
 }
 
 // identifierFactory is an implementation of the IdentifierFactory interface
