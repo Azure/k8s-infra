@@ -387,6 +387,12 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 
 		// this will overwrite placeholder added above
 		scanner.AddDefinition(sd)
+
+		// Add any further definitions related to this
+		for _, d := range sd.CreateDefinitions(structReference.PackageReference, structReference.Name(), scanner.idFactory) {
+			scanner.AddDefinition(d)
+		}
+
 		return sd.Reference(), nil
 	}
 
