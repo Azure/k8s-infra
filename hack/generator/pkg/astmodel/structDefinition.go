@@ -34,7 +34,7 @@ type StructDefinition struct {
 	description string
 }
 
-// StructDefinition must implement Definition
+// Ensure StructDefinition implements Definition interface correctly
 var _ Definition = (*StructDefinition)(nil)
 
 // Ensure StructDefinition implements the DefinitionFactory interface correctly
@@ -89,7 +89,7 @@ func (definition *StructDefinition) FileNameHint() string {
 	return definition.Name()
 }
 
-// AsDeclaration generates an AST node representing this struct definition
+// AsDeclarations generates an AST node representing this struct definition
 func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 
 	definition.Tidy()

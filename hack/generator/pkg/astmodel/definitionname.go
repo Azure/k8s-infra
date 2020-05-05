@@ -7,17 +7,23 @@ package astmodel
 
 import "go/ast"
 
+// DefinitionName encapsulates all the information required to uniquely identify a definition
 type DefinitionName struct {
 	PackageReference
 	name string
 }
 
+// DefinitionName must implement the Type interface correctly
+var _ Type = (*DefinitionName)(nil)
+
+// NewDefinitionName is a factory method for creating a DefinitionName
 func NewDefinitionName(pr PackageReference, name string) DefinitionName {
 	return DefinitionName{pr, name}
 }
 
-func (name *DefinitionName) Name() string {
-	return name.name
+// Name returns the unique name for this definition
+func (dn *DefinitionName) Name() string {
+	return dn.name
 }
 
 // A DefinitionName can be used as a Type,
@@ -29,10 +35,12 @@ func (dn *DefinitionName) AsType() ast.Expr {
 	return ast.NewIdent(dn.name)
 }
 
+// References indicates whether this Type includes any direct references to the given Type?
 func (dn *DefinitionName) References(t Type) bool {
 	return dn.Equals(t)
 }
 
+// RequiredImports returns all the imports required for this definition
 func (dn *DefinitionName) RequiredImports() []PackageReference {
 	return []PackageReference{dn.PackageReference}
 }

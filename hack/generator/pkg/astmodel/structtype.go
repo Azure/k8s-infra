@@ -32,9 +32,6 @@ func (structType *StructType) Fields() []*FieldDefinition {
 	return append(structType.fields[:0:0], structType.fields...)
 }
 
-// assert that we implemented Type correctly
-var _ Type = (*StructType)(nil)
-
 // AsType implements Type for StructType
 func (structType *StructType) AsType() ast.Expr {
 
@@ -79,6 +76,13 @@ func (structType *StructType) References(t Type) bool {
 	return false
 }
 
+// Tidy does cleanup to ensure deterministic code generation
+func (structType *StructType) Tidy(structName string) {
+	sort.Slice(structType.fields, func(left int, right int) bool {
+		return structType.fields[left].fieldName < structType.fields[right].fieldName
+	})
+}
+
 // Equals returns true if the passed type is a struct type with the same fields, false otherwise
 // The order of the fields is not relevant
 func (structType *StructType) Equals(t Type) bool {
@@ -121,8 +125,10 @@ func (structType *StructType) Equals(t Type) bool {
 func (structType *StructType) CreateDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
 	var result []Definition
 	for _, f := range structType.fields {
-		if df, ok := f.fieldType.(DefinitionFactory); ok {
-			result = append(result, df.CreateDefinitions(ref, f.fieldName, idFactory)...)
+		if df, ok := f.fieldType.(HasRelatedDefinitions); ok {
+			nh := namehint + "." + string(f.fieldName)
+			defns := df.RelatedDefinitions(ref, nh, idFactory)
+			result = append(result, defns...)
 		}
 	}
 

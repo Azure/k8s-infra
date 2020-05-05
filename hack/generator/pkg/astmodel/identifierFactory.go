@@ -6,12 +6,13 @@
 package astmodel
 
 import (
+	"log"
 	"regexp"
 	"strings"
 	"unicode"
 )
 
-var filterRegex = regexp.MustCompile("[$@._-]")
+var filterRegex = regexp.MustCompile(`[\W_]`)
 
 // IdentifierFactory is a factory for creating Go identifiers from Json schema names
 type IdentifierFactory interface {
@@ -67,6 +68,11 @@ func (factory *identifierFactory) CreatePackageNameFromVersion(version string) s
 
 func (factory *identifierFactory) CreateGroupName(group string) string {
 	return strings.ToLower(group)
+}
+
+func (factory *identifierFactory) CreateEnumIdentifier(namehint string) string {
+	log.Printf("Creating enum identifier from %s", namehint)
+	return factory.CreateIdentifier(namehint)
 }
 
 // sanitizePackageName removes all non-alphanum characters and converts to lower case

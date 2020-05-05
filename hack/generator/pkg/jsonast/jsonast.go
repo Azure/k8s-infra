@@ -329,8 +329,6 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 		return nil, nil
 	}
 
-	log.Printf("INF $ref to %s\n", url)
-
 	schemaType, err := getSubSchemaType(schema.RefSchema)
 	if err != nil {
 		return nil, err
