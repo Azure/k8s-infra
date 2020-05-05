@@ -31,6 +31,11 @@ type Definition interface {
 	Tidy()
 }
 
+// A DefinitionFactory is capable of creating additional definitions
+type DefinitionFactory interface {
+	CreateDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition
+}
+
 // Type represents something that is a Go type
 type Type interface {
 	HasImports
