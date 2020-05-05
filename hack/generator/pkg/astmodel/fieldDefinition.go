@@ -81,7 +81,7 @@ func (field FieldDefinition) AsField() *ast.Field {
 		Type:  field.FieldType().AsType(),
 		Tag: &ast.BasicLit{
 			Kind:  token.STRING,
-			Value: fmt.Sprintf("`json:\"%s\"`", field.jsonName),
+			Value: fmt.Sprintf("`json:%q`", field.jsonName),
 		},
 	}
 
