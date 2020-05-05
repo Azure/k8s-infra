@@ -116,3 +116,15 @@ func (structType *StructType) Equals(t Type) bool {
 
 	return false
 }
+
+// CreateDefinitions implements the DefinitionFactory interface for StructType
+func (structType *StructType) CreateDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
+	var result []Definition
+	for _, f := range structType.fields {
+		if df, ok := f.fieldType.(DefinitionFactory); ok {
+			result = append(result, df.CreateDefinitions(ref, f.fieldName, idFactory)...)
+		}
+	}
+
+	return result
+}
