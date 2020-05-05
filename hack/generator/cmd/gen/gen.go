@@ -90,10 +90,10 @@ func NewGenCommand() (*cobra.Command, error) {
 
 				switch shouldExport {
 				case jsonast.Skip:
-					log.Printf("Skipping struct %s/%s %s", def.PackagePath, def.Name, motivation)
+					log.Printf("Skipping struct %s/%s %s", def.PackagePath(), def.Name(), motivation)
 
 				case jsonast.Export:
-					log.Printf("Exporting struct %s/%s %s", def.PackagePath, def.Name, motivation)
+					log.Printf("Exporting struct %s/%s %s", def.PackagePath(), def.Name(), motivation)
 
 					packages[def.PackageReference] = append(packages[def.PackageReference], def)
 				}
