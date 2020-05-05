@@ -63,7 +63,7 @@ func (factory *identifierFactory) CreateGroupName(group string) string {
 	return strings.ToLower(group)
 }
 
-// sanitizePackageName strings all non-alphanum characters and converts to lower case
+// sanitizePackageName removes all non-alphanum characters and converts to lower case
 func sanitizePackageName(input string) string {
 	var builder []rune
 

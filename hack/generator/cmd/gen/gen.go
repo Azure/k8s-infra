@@ -7,6 +7,7 @@ package gen
 
 import (
 	"context"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -14,14 +15,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/xeipuuv/gojsonschema"
+	"gopkg.in/yaml.v3"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/jsonast"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/xcobra"
-)
-
-const (
-	rgTemplateSchemaURI = "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json"
 )
 
 // NewGenCommand creates a new cobra Command when invoked from the command line
@@ -31,9 +29,24 @@ func NewGenCommand() (*cobra.Command, error) {
 		Short: "generate K8s infrastructure resources from Azure deployment template schema",
 		Run: xcobra.RunWithCtx(func(ctx context.Context, cmd *cobra.Command, args []string) error {
 
-			//schema, err := loadSchema(rgTemplateSchemaFile2)
-			schema, err := loadSchema(rgTemplateSchemaURI)
+			//TODO extract into a new type (maybe 'Generator') so that this file can concentrate on command line processing
+			configuration, err := loadConfiguration("azure-cloud.yaml")
 			if err != nil {
+				log.Printf("Error loading configuration: %v\n", err)
+				writeSampleConfig("public-cloud-sample.yaml")
+				return err
+			}
+
+			err = configuration.Validate()
+			if err != nil {
+				log.Printf("Configuration invalid: %v\n", err)
+				return err
+			}
+
+			log.Printf("Loading schema %s", configuration.SchemaURL)
+			schema, err := loadSchema(configuration.SchemaURL)
+			if err != nil {
+				log.Printf("Failed to load schema: %v\n", err)
 				return err
 			}
 
@@ -68,7 +81,22 @@ func NewGenCommand() (*cobra.Command, error) {
 			// group definitions by package
 			packages := make(map[astmodel.PackageReference][]*astmodel.StructDefinition)
 			for _, def := range scanner.Structs {
-				packages[def.PackageReference] = append(packages[def.PackageReference], def)
+
+				shouldExport, reason := configuration.ShouldExport(def)
+				var motivation string
+				if reason != "" {
+					motivation = "because " + reason
+				}
+
+				switch shouldExport {
+				case jsonast.Skip:
+					log.Printf("Skipping struct %s/%s %s", def.PackagePath(), def.Name(), motivation)
+
+				case jsonast.Export:
+					log.Printf("Exporting struct %s/%s %s", def.PackagePath(), def.Name(), motivation)
+
+					packages[def.PackageReference] = append(packages[def.PackageReference], def)
+				}
 			}
 
 			// emit each package
@@ -115,4 +143,46 @@ func loadSchema(source string) (*gojsonschema.Schema, error) {
 	}
 
 	return schema, nil
+}
+
+func loadConfiguration(configurationFile string) (*jsonast.ExportConfiguration, error) {
+	data, err := ioutil.ReadFile(configurationFile)
+	if err != nil {
+		return nil, err
+	}
+
+	result := jsonast.ExportConfiguration{}
+
+	err = yaml.Unmarshal(data, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+func writeSampleConfig(configFile string) error {
+	sample := jsonast.ExportConfiguration{
+		TypeFilters: []*jsonast.TypeFilter{
+			{
+				Because: "all 2020 API versions are included",
+				Action:  jsonast.IncludeType,
+				Version: "2020-*",
+			},
+			{
+				Because: "preview SDK versions are excluded by default",
+				Action:  jsonast.ExcludeType,
+				Version: "*preview",
+			},
+		},
+	}
+
+	data, err := yaml.Marshal(sample)
+	if err != nil {
+		return err
+	}
+
+	ioutil.WriteFile(configFile, data, os.FileMode(0644))
+
+	return nil
 }

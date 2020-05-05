@@ -33,12 +33,12 @@ func (pr *PackageReference) PackageName() string {
 // StructReference is the (versioned) name of a struct
 // that can be used as a type
 type StructReference struct {
-	name string
 	PackageReference
+	name string
 }
 
 func NewStructReference(name string, group string, version string) StructReference {
-	return StructReference{name, PackageReference{group, version}}
+	return StructReference{PackageReference{group, version}, name}
 }
 
 // assert that we implemented Type correctly

@@ -595,7 +595,7 @@ func groupOf(url *url.URL) (string, error) {
 	return strings.TrimSuffix(file, ".json"), nil
 }
 
-var versionRegex = regexp.MustCompile("\\d\\d\\d\\d-\\d\\d-\\d\\d")
+var versionRegex = regexp.MustCompile("\\d{4}-\\d{2}-\\d{2}")
 
 // Extract the name of an object from the supplied schema URL
 func versionOf(url *url.URL) (string, error) {
