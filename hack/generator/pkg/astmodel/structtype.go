@@ -18,8 +18,8 @@ type StructType struct {
 // Ensure StructType implements the Type interface correctly
 var _ Type = (*StructType)(nil)
 
-// Ensure StructType implements the DefinitionFactory interface correctly
-var _ DefinitionFactory = (*StructType)(nil)
+// Ensure StructType implements the HasRelatedDefinitions interface correctly
+var _ HasRelatedDefinitions = (*StructType)(nil)
 
 // NewStructType is a factory method for creating a new StructTypeDefinition
 func NewStructType(fields ...*FieldDefinition) *StructType {

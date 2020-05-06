@@ -314,6 +314,7 @@ func getFields(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema
 		if err != nil {
 			return nil, err
 		}
+
 		additionalPropsField := astmodel.NewFieldDefinition(astmodel.FieldName("additionalProperties"), "additionalProperties", astmodel.NewStringMap(additionalPropsType))
 		fields = append(fields, additionalPropsField)
 	}
