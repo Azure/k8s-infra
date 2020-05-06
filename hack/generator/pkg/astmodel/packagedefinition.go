@@ -61,12 +61,12 @@ func anyReferences(defs []Definition, t Type) bool {
 	return false
 }
 
-type ResourcesAndNotResources struct {
+type resourcesAndNotResources struct {
 	resources    []*StructDefinition
 	notResources []Definition
 }
 
-func filterOutResources(definitions []Definition) ResourcesAndNotResources {
+func filterOutResources(definitions []Definition) resourcesAndNotResources {
 
 	var resources []*StructDefinition
 	var notResources []Definition
@@ -79,7 +79,7 @@ func filterOutResources(definitions []Definition) ResourcesAndNotResources {
 		}
 	}
 
-	return ResourcesAndNotResources{resources, notResources}
+	return resourcesAndNotResources{resources, notResources}
 }
 
 func allocateTypesToFiles(typesToAllocate []Definition, filesToGenerate map[string][]Definition) {
