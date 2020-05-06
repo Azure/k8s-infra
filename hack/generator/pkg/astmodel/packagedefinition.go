@@ -27,6 +27,30 @@ func (pkgDef *PackageDefinition) AddDefinition(def Definition) {
 	pkgDef.definitions = append(pkgDef.definitions, def)
 }
 
+func (pkgDef *PackageDefinition) EmitDefinitions(outputDir string) {
+
+	defs := filterOutResources(pkgDef.definitions)
+
+	// initialize with 1 resource per file
+	filesToGenerate := make(map[string][]Definition)
+	for _, resource := range defs.resources {
+		filesToGenerate[resource.FileNameHint()] = []Definition{resource}
+	}
+
+	allocateTypesToFiles(defs.notResources, filesToGenerate)
+	emitFiles(filesToGenerate, outputDir)
+	emitGroupVersionFile(outputDir, pkgDef)
+}
+
+func emitFiles(filesToGenerate map[string][]Definition, outputDir string) {
+	for fileName, defs := range filesToGenerate {
+		genFile := NewFileDefinition(defs[0].Reference().PackageReference, defs...)
+		outputFile := filepath.Join(outputDir, fileName+"_types.go")
+		log.Printf("Writing '%s'\n", outputFile)
+		genFile.SaveTo(outputFile)
+	}
+}
+
 func anyReferences(defs []Definition, t Type) bool {
 	for _, def := range defs {
 		if def.Type().References(t) {
@@ -35,6 +59,53 @@ func anyReferences(defs []Definition, t Type) bool {
 	}
 
 	return false
+}
+
+type ResourcesAndNotResources struct {
+	resources    []*StructDefinition
+	notResources []Definition
+}
+
+func filterOutResources(definitions []Definition) ResourcesAndNotResources {
+
+	var resources []*StructDefinition
+	var notResources []Definition
+
+	for _, def := range definitions {
+		if structDef, ok := def.(*StructDefinition); ok && structDef.IsResource() {
+			resources = append(resources, structDef)
+		} else {
+			notResources = append(notResources, def)
+		}
+	}
+
+	return ResourcesAndNotResources{resources, notResources}
+}
+
+func allocateTypesToFiles(typesToAllocate []Definition, filesToGenerate map[string][]Definition) {
+	for len(typesToAllocate) > 0 {
+		// dequeue!
+		typeToAllocate := typesToAllocate[0]
+		typesToAllocate = typesToAllocate[1:]
+
+		allocateToFile := allocateTypeToFile(typeToAllocate, filesToGenerate)
+
+		if allocateToFile == "" {
+			// couldn't find a file to put it in
+			// see if any other types will reference it on a future round
+			if !anyReferences(typesToAllocate, typeToAllocate.Reference()) {
+				// couldn't find any references, put it in its own file
+				allocateToFile = typeToAllocate.FileNameHint()
+			}
+		}
+
+		if allocateToFile != "" {
+			filesToGenerate[allocateToFile] = append(filesToGenerate[allocateToFile], typeToAllocate)
+		} else {
+			// re-queue it for later, it will eventually be allocated
+			typesToAllocate = append(typesToAllocate, typeToAllocate)
+		}
+	}
 }
 
 func allocateTypeToFile(def Definition, filesToGenerate map[string][]Definition) string {
@@ -52,65 +123,6 @@ func allocateTypeToFile(def Definition, filesToGenerate map[string][]Definition)
 	}
 
 	return allocatedToFile
-}
-
-func (pkgDef *PackageDefinition) EmitDefinitions(outputDir string) {
-
-	// pull out all resources
-	var resources []*StructDefinition
-	var otherDefs []Definition
-
-	for _, def := range pkgDef.definitions {
-		if structDef, ok := def.(*StructDefinition); ok && structDef.IsResource() {
-			resources = append(resources, structDef)
-		} else {
-			otherDefs = append(otherDefs, def)
-		}
-	}
-
-	// initialize with 1 resource per file
-	filesToGenerate := make(map[string][]Definition)
-	for _, resource := range resources {
-		filesToGenerate[resource.FileNameHint()] = []Definition{resource}
-	}
-
-	// allocate other types to these files
-	for len(otherDefs) > 0 {
-		// dequeue!
-		otherDef := otherDefs[0]
-		otherDefs = otherDefs[1:]
-
-		allocateToFile := allocateTypeToFile(otherDef, filesToGenerate)
-
-		if allocateToFile == "" {
-			// couldn't find a file to put it in
-			// see if any other types will reference it on a future round
-			if !anyReferences(otherDefs, otherDef.Reference()) {
-				// couldn't find any references, put it in its own file
-				allocateToFile = otherDef.FileNameHint()
-			}
-		}
-
-		if allocateToFile != "" {
-			filesToGenerate[allocateToFile] = append(filesToGenerate[allocateToFile], otherDef)
-		} else {
-			// re-queue it for later, it will eventually be allocated
-			otherDefs = append(otherDefs, otherDef)
-		}
-	}
-
-	emitFiles(filesToGenerate, outputDir)
-
-	pkgDef.emitGroupVersionFile(outputDir)
-}
-
-func emitFiles(filesToGenerate map[string][]Definition, outputDir string) {
-	for fileName, defs := range filesToGenerate {
-		genFile := NewFileDefinition(defs[0].Reference().PackageReference, defs...)
-		outputFile := filepath.Join(outputDir, fileName+"_types.go")
-		log.Printf("Writing '%s'\n", outputFile)
-		genFile.SaveTo(outputFile)
-	}
 }
 
 var groupVersionFileTemplate = template.Must(template.New("groupVersionFile").Parse(`
@@ -142,7 +154,7 @@ var (
 	localSchemeBuilder = SchemeBuilder.SchemeBuilder
 )`))
 
-func (pkgDef *PackageDefinition) emitGroupVersionFile(outputDir string) {
+func emitGroupVersionFile(outputDir string, pkgDef *PackageDefinition) {
 	buf := &bytes.Buffer{}
 	groupVersionFileTemplate.Execute(buf, pkgDef)
 
