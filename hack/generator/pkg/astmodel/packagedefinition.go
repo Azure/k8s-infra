@@ -39,7 +39,7 @@ func (pkgDef *PackageDefinition) EmitDefinitions(outputDir string) {
 
 	allocateTypesToFiles(defs.notResources, filesToGenerate)
 	emitFiles(filesToGenerate, outputDir)
-	emitGroupVersionFile(outputDir, pkgDef)
+	emitGroupVersionFile(pkgDef, outputDir)
 }
 
 func emitFiles(filesToGenerate map[string][]Definition, outputDir string) {
@@ -154,7 +154,7 @@ var (
 	localSchemeBuilder = SchemeBuilder.SchemeBuilder
 )`))
 
-func emitGroupVersionFile(outputDir string, pkgDef *PackageDefinition) {
+func emitGroupVersionFile(pkgDef *PackageDefinition, outputDir string) {
 	buf := &bytes.Buffer{}
 	groupVersionFileTemplate.Execute(buf, pkgDef)
 
