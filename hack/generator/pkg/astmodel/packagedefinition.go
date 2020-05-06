@@ -27,19 +27,26 @@ func (pkgDef *PackageDefinition) AddDefinition(def Definition) {
 	pkgDef.definitions = append(pkgDef.definitions, def)
 }
 
+func anyReferences(defs []Definition, t Type) bool {
+	for _, def := range defs {
+		if def.Type().References(t) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func allocateTypeToFile(def Definition, filesToGenerate map[string][]Definition) string {
 
 	var allocatedToFile string
 	for fileName, fileDefs := range filesToGenerate {
-		for _, fileDef := range fileDefs {
-			if fileDef.Type().References(def.Reference()) {
-				if allocatedToFile == "" {
-					allocatedToFile = fileName
-					break // only need to find at least one owner per file
-				} else if allocatedToFile != fileName {
-					// more than one owner... put it in its own file
-					return def.FileNameHint()
-				}
+		if anyReferences(fileDefs, def.Reference()) {
+			if allocatedToFile == "" {
+				allocatedToFile = fileName
+			} else if allocatedToFile != fileName {
+				// more than one owner... put it in its own file
+				return def.FileNameHint()
 			}
 		}
 	}
@@ -78,15 +85,7 @@ func (pkgDef *PackageDefinition) EmitDefinitions(outputDir string) {
 		if allocateToFile == "" {
 			// couldn't find a file to put it in
 			// see if any other types will reference it on a future round
-			foundReference := false
-			for _, def := range otherDefs {
-				if def.Type().References(otherDef.Reference()) {
-					foundReference = true
-					break
-				}
-			}
-
-			if !foundReference {
+			if !anyReferences(otherDefs, otherDef.Reference()) {
 				// couldn't find any references, put it in its own file
 				allocateToFile = otherDef.FileNameHint()
 			}
@@ -100,15 +99,18 @@ func (pkgDef *PackageDefinition) EmitDefinitions(outputDir string) {
 		}
 	}
 
-	// emit each definition
+	emitFiles(filesToGenerate, outputDir)
+
+	pkgDef.emitGroupVersionFile(outputDir)
+}
+
+func emitFiles(filesToGenerate map[string][]Definition, outputDir string) {
 	for fileName, defs := range filesToGenerate {
 		genFile := NewFileDefinition(defs[0].Reference().PackageReference, defs...)
 		outputFile := filepath.Join(outputDir, fileName+"_types.go")
 		log.Printf("Writing '%s'\n", outputFile)
 		genFile.SaveTo(outputFile)
 	}
-
-	pkgDef.emitGroupVersionFile(outputDir)
 }
 
 var groupVersionFileTemplate = template.Must(template.New("groupVersionFile").Parse(`
