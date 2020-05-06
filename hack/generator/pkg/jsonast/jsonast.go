@@ -216,6 +216,8 @@ func enumHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsche
 	ctx, span := tab.StartSpan(ctx, "enumHandler")
 	defer span.End()
 
+	log.Printf("Enum: %s", schema.Ref)
+
 	// if there is an underlying primitive type, return that
 	for _, t := range []SchemaType{Bool, Int, Number, String} {
 		if schema.Types.Contains(string(t)) {
