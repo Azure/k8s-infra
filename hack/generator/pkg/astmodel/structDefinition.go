@@ -129,35 +129,17 @@ func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 			start off with:
 				metav1.TypeMeta   `json:",inline"`
 				metav1.ObjectMeta `json:"metadata,omitempty"`
+
+			then the Spec field
 		*/
 		resourceTypeSpec := &ast.TypeSpec{
 			Name: resourceIdentifier,
 			Type: &ast.StructType{
 				Fields: &ast.FieldList{
 					List: []*ast.Field{
-						// TODO: metav1 import should be added via RequiredImports?
-						&ast.Field{
-							Type: ast.NewIdent("metav1.TypeMeta"),
-							Tag: &ast.BasicLit{
-								Kind:  token.STRING,
-								Value: "`json:\",inline\"`",
-							},
-						},
-						&ast.Field{
-							Type: ast.NewIdent("metav1.ObjectMeta"),
-							Tag: &ast.BasicLit{
-								Kind:  token.STRING,
-								Value: "`json:\"metadata,omitempty\"`",
-							},
-						},
-						&ast.Field{
-							Type:  identifier,
-							Names: []*ast.Ident{ast.NewIdent("Spec")},
-							Tag: &ast.BasicLit{
-								Kind:  token.STRING,
-								Value: "`json:\"spec,omitempty\"`",
-							},
-						},
+						typeMetaField,
+						objectMetaField,
+						defineField("Spec", identifier.Name, "`json:\"spec,omitempty\"`"),
 					},
 				},
 			},
@@ -168,7 +150,7 @@ func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 			Specs: []ast.Spec{resourceTypeSpec},
 			Doc: &ast.CommentGroup{
 				List: []*ast.Comment{
-					&ast.Comment{
+					{
 						Text: "// +kubebuilder:object:root=true\n",
 					},
 				},
@@ -180,3 +162,21 @@ func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 
 	return declarations
 }
+
+func defineField(fieldName string, typeName string, tag string) *ast.Field {
+
+	result := &ast.Field{
+		Type: ast.NewIdent(typeName),
+		Tag:  &ast.BasicLit{Kind: token.STRING, Value: tag},
+	}
+
+	if fieldName != "" {
+		result.Names = []*ast.Ident{ast.NewIdent(fieldName)}
+	}
+
+	return result
+}
+
+// TODO: metav1 import should be added via RequiredImports?
+var typeMetaField = defineField("", "metav1.TypeMeta", "`json:\",inline\"`")
+var objectMetaField = defineField("", "metav1.ObjectMeta", "`json:\"metadata,omitempty\"`")
