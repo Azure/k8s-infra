@@ -216,19 +216,28 @@ func enumHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsche
 	ctx, span := tab.StartSpan(ctx, "enumHandler")
 	defer span.End()
 
-	log.Printf("Enum: %s", schema.Ref)
-
-	// if there is an underlying primitive type, return that
+	// Default to a string base type
+	baseType := astmodel.StringType
 	for _, t := range []SchemaType{Bool, Int, Number, String} {
 		if schema.Types.Contains(string(t)) {
-			return getPrimitiveType(t)
+			bt, err := getPrimitiveType(t)
+			if err != nil {
+				return nil, err
+			}
+
+			baseType = bt
 		}
 	}
 
-	// assume string
-	return astmodel.StringType, nil
+	var values []astmodel.EnumValue
+	for _, v := range schema.Enum {
+		id := scanner.idFactory.CreateIdentifier(v)
+		values = append(values, astmodel.EnumValue{Identifier: id, Value: v})
+	}
 
-	//TODO Create an Enum field that captures the permitted options too
+	enumType := astmodel.NewEnumType(baseType, values)
+
+	return enumType, nil
 }
 
 func fixedTypeHandler(typeToReturn astmodel.Type, handlerName string) TypeHandler {
@@ -392,7 +401,8 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 		scanner.AddDefinition(sd)
 
 		// Add any further definitions related to this
-		for _, d := range sd.CreateDefinitions(structReference.PackageReference, structReference.Name(), scanner.idFactory) {
+		relatedDefinitions := sd.RelatedDefinitions(structReference.PackageReference, structReference.Name(), scanner.idFactory)
+		for _, d := range relatedDefinitions {
 			scanner.AddDefinition(d)
 		}
 
