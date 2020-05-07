@@ -121,8 +121,8 @@ func (structType *StructType) Equals(t Type) bool {
 	return false
 }
 
-// CreateDefinitions implements the DefinitionFactory interface for StructType
-func (structType *StructType) CreateDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
+// RelatedDefinitions implements the HasRelatedDefinitions interface for StructType
+func (structType *StructType) RelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
 	var result []Definition
 	for _, f := range structType.fields {
 		if df, ok := f.fieldType.(HasRelatedDefinitions); ok {
