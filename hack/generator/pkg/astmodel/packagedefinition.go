@@ -8,7 +8,6 @@ package astmodel
 import (
 	"bytes"
 	"io/ioutil"
-	"log"
 	"path/filepath"
 	"text/template"
 )
@@ -46,7 +45,6 @@ func emitFiles(filesToGenerate map[string][]Definition, outputDir string) {
 	for fileName, defs := range filesToGenerate {
 		genFile := NewFileDefinition(defs[0].Reference().PackageReference, defs...)
 		outputFile := filepath.Join(outputDir, fileName+"_types.go")
-		log.Printf("Writing '%s'\n", outputFile)
 		genFile.Tidy()
 		genFile.SaveTo(outputFile)
 	}
