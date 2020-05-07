@@ -11,6 +11,7 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
+	"log"
 	"os"
 	"sort"
 )
@@ -135,9 +136,11 @@ func (file FileDefinition) SaveTo(filePath string) error {
 	}
 
 	// Parse it out of the buffer again so we can "go fmt" it
-	toFormat, err := parser.ParseFile(fset, filePath, &buffer, parser.ParseComments)
+	var toFormat ast.Node
+	toFormat, err = parser.ParseFile(fset, filePath, &buffer, parser.ParseComments)
 	if err != nil {
-		return err
+		log.Printf("Failed to reformat code (%s); keeping code as is.", err)
+		toFormat = original
 	}
 
 	// Write it to a file
