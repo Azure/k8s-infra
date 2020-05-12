@@ -30,9 +30,18 @@ func (dn *DefinitionName) AsType() ast.Expr {
 }
 
 func (dn *DefinitionName) References(t Type) bool {
-	return dn == t
+	return dn.Equals(t)
 }
 
 func (dn *DefinitionName) RequiredImports() []PackageReference {
 	return []PackageReference{dn.PackageReference}
+}
+
+// Equals returns true if the passed type is references the same definition, false otherwise
+func (dn *DefinitionName) Equals(t Type) bool {
+	if d, ok := t.(*DefinitionName); ok {
+		return dn.name == d.name && dn.PackageReference.Equals(&d.PackageReference)
+	}
+
+	return false
 }
