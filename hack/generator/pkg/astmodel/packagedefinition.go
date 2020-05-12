@@ -47,6 +47,7 @@ func emitFiles(filesToGenerate map[string][]Definition, outputDir string) {
 		genFile := NewFileDefinition(defs[0].Reference().PackageReference, defs...)
 		outputFile := filepath.Join(outputDir, fileName+"_types.go")
 		log.Printf("Writing '%s'\n", outputFile)
+		genFile.Tidy()
 		genFile.SaveTo(outputFile)
 	}
 }

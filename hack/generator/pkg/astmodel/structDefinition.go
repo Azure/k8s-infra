@@ -88,6 +88,8 @@ func (definition *StructDefinition) FileNameHint() string {
 // AsDeclaration generates an AST node representing this struct definition
 func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 
+	definition.StructType.Tidy(definition.name)
+
 	var identifier *ast.Ident
 	if definition.IsResource() {
 		// if it's a resource then this is the Spec type and we will generate
@@ -156,6 +158,10 @@ func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 	}
 
 	return declarations
+}
+
+func (definition *StructDefinition) Tidy() {
+	definition.StructType.Tidy(definition.name)
 }
 
 func defineField(fieldName string, typeName string, tag string) *ast.Field {

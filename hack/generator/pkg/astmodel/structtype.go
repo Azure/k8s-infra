@@ -72,3 +72,10 @@ func (structType *StructType) References(t Type) bool {
 
 	return false
 }
+
+func (structType *StructType) Tidy(structName string) {
+
+	sort.Slice(structType.fields, func(left int, right int) bool {
+		return structType.fields[left].fieldName < structType.fields[right].fieldName
+	})
+}

@@ -26,6 +26,9 @@ type Definition interface {
 
 	// Type: What is the type associated to this definition?
 	Type() Type
+
+	// TidyUp cleans up the definition prior to code generation
+	Tidy()
 }
 
 // Type represents something that is a Go type

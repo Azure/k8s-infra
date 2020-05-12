@@ -12,6 +12,7 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
+	"sort"
 )
 
 // FileDefinition is the content of a file we're generating
@@ -26,6 +27,12 @@ type FileDefinition struct {
 func NewFileDefinition(packageRef PackageReference, definitions ...Definition) *FileDefinition {
 	// TODO: check that all definitions are from same package
 	return &FileDefinition{packageRef, definitions}
+}
+
+func (file *FileDefinition) Tidy() {
+	sort.Slice(file.definitions, func (left int, right int) bool {
+		return file.definitions[left].FileNameHint() < file.definitions[right].FileNameHint()
+	})
 }
 
 func (file *FileDefinition) generateImportSpecs() []ast.Spec {
