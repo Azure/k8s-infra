@@ -75,3 +75,24 @@ func sanitizePackageName(input string) string {
 
 	return string(builder)
 }
+
+func sliceIntoWords(identifier string) []string {
+	var result []string
+	chars := []rune(identifier)
+	lastStart := 0
+	for i := range chars {
+		preceedingLower := i > 0 && unicode.IsLower(chars[i-1])
+		succeedingLower := i+1 < len(chars) && unicode.IsLower(chars[i+1])
+		foundUpper := unicode.IsUpper(chars[i])
+		if i > lastStart && foundUpper && (preceedingLower || succeedingLower) {
+			result = append(result, string(chars[lastStart:i]))
+			lastStart = i
+		}
+	}
+
+	if lastStart < len(chars) {
+		result = append(result, string(chars[lastStart:]))
+	}
+
+	return result
+}
