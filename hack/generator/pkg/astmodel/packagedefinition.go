@@ -29,15 +29,15 @@ func (pkgDef *PackageDefinition) AddDefinition(def Definition) {
 
 func (pkgDef *PackageDefinition) EmitDefinitions(outputDir string) {
 
-	defs := filterOutResources(pkgDef.definitions)
+	resources, otherDefinitions := partitionDefinitions(pkgDef.definitions)
 
 	// initialize with 1 resource per file
 	filesToGenerate := make(map[string][]Definition)
-	for _, resource := range defs.resources {
+	for _, resource := range resources {
 		filesToGenerate[resource.FileNameHint()] = []Definition{resource}
 	}
 
-	allocateTypesToFiles(defs.notResources, filesToGenerate)
+	allocateTypesToFiles(otherDefinitions, filesToGenerate)
 	emitFiles(filesToGenerate, outputDir)
 	emitGroupVersionFile(pkgDef, outputDir)
 }
@@ -62,12 +62,7 @@ func anyReferences(defs []Definition, t Type) bool {
 	return false
 }
 
-type resourcesAndNotResources struct {
-	resources    []*StructDefinition
-	notResources []Definition
-}
-
-func filterOutResources(definitions []Definition) resourcesAndNotResources {
+func partitionDefinitions(definitions []Definition) (resourceStructs []*StructDefinition, otherDefinitions []Definition) {
 
 	var resources []*StructDefinition
 	var notResources []Definition
@@ -80,7 +75,7 @@ func filterOutResources(definitions []Definition) resourcesAndNotResources {
 		}
 	}
 
-	return resourcesAndNotResources{resources, notResources}
+	return resources, notResources
 }
 
 func allocateTypesToFiles(typesToAllocate []Definition, filesToGenerate map[string][]Definition) {
