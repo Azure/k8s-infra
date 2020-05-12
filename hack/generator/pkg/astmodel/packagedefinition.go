@@ -78,6 +78,20 @@ func partitionDefinitions(definitions []Definition) (resourceStructs []*StructDe
 	return resources, notResources
 }
 
+/*
+TODO: Fix allocation to files so it is deterministic
+
+Get all files referencing the type
+If more than one, put it in its own file
+
+Get all outstanding references to the type
+If no outstanding references
+	If referenced by just one file, put in that file
+	otherwise put into its own file
+
+But how to handle cycles?
+ */
+
 func allocateTypesToFiles(typesToAllocate []Definition, filesToGenerate map[string][]Definition) {
 	for len(typesToAllocate) > 0 {
 		// dequeue!
