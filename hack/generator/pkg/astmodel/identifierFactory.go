@@ -82,6 +82,32 @@ func sanitizePackageName(input string) string {
 	return string(builder)
 }
 
+func simplifyName(context string, name string) string {
+	contextWords := sliceIntoWords(context)
+	nameWords := sliceIntoWords(name)
+
+	var result []string
+	for _, w := range nameWords {
+		found := false
+		for i, c := range contextWords {
+			if c == w {
+				found = true
+				contextWords[i] = ""
+				break
+			}
+		}
+		if !found {
+			result = append(result, w)
+		}
+	}
+
+	if len(result) == 0 {
+		return name
+	}
+
+	return strings.Join(result, "")
+}
+
 func sliceIntoWords(identifier string) []string {
 	var result []string
 	chars := []rune(identifier)

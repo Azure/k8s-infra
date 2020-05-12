@@ -63,3 +63,36 @@ func Test_SliceIntoWords_GivenIdentifier_ReturnsExpectedSlice(t *testing.T) {
 		})
 	}
 }
+
+func Test_SimplifyIdentifier_GivenContextAndName_ReturnsExpectedResult(t *testing.T) {
+	cases := []struct {
+		context    string
+		identifier string
+		expected   string
+	}{
+		// No change if no overlap
+		{context: "Person", identifier: "FullName", expected: "FullName"},
+		{context: "Person", identifier: "KnownAs", expected: "KnownAs"},
+		{context: "Person", identifier: "FamilyName", expected: "FamilyName"},
+		// Removes Single words
+		{context: "SecurityPolicy", identifier: "PolicyDefaultDeny", expected: "DefaultDeny"},
+		{context: "SecurityPolicy", identifier: "SecurityException", expected: "Exception"},
+		// Removes Multiple words, regardless of order
+		{context: "SecurityPolicy", identifier: "SecurityPolicyType", expected: "Type"},
+		{context: "SecurityPolicy", identifier: "PolicyTypeSecurity", expected: "Type"},
+		// Removes words only once
+		{context: "SecurityPolicy", identifier: "SecurityPolicyPolicyType", expected: "PolicyType"},
+		// Won't return an empty string
+		{context: "SecurityPolicy", identifier: "SecurityPolicy", expected: "SecurityPolicy"},
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.identifier, func(t *testing.T) {
+			t.Parallel()
+			g := NewGomegaWithT(t)
+			actual := simplifyName(c.context, c.identifier)
+			g.Expect(actual).To(Equal(c.expected))
+		})
+	}
+}
