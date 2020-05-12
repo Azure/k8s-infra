@@ -11,9 +11,12 @@ import (
 	"go/token"
 )
 
+// FieldName is a semantic type
+type FieldName string
+
 // FieldDefinition encapsulates the definition of a field
 type FieldDefinition struct {
-	fieldName   string
+	fieldName   FieldName
 	fieldType   Type
 	jsonName    string
 	description string
@@ -22,7 +25,7 @@ type FieldDefinition struct {
 // NewFieldDefinition is a factory method for creating a new FieldDefinition
 // name is the name for the new field (mandatory)
 // fieldType is the type for the new field (mandatory)
-func NewFieldDefinition(fieldName string, jsonName string, fieldType Type) *FieldDefinition {
+func NewFieldDefinition(fieldName FieldName, jsonName string, fieldType Type) *FieldDefinition {
 	return &FieldDefinition{
 		fieldName:   fieldName,
 		fieldType:   fieldType,
@@ -44,7 +47,7 @@ func NewEmbeddedStructDefinition(structType Type) *FieldDefinition {
 }
 
 // FieldName returns the name of the field
-func (field *FieldDefinition) FieldName() string {
+func (field *FieldDefinition) FieldName() FieldName {
 	return field.fieldName
 }
 
@@ -69,7 +72,7 @@ func (field *FieldDefinition) AsField() *ast.Field {
 
 	// TODO: add field tags for api hints / json binding
 	result := &ast.Field{
-		Names: []*ast.Ident{ast.NewIdent(field.fieldName)},
+		Names: []*ast.Ident{ast.NewIdent(string(field.fieldName))},
 		Type:  field.FieldType().AsType(),
 		Tag: &ast.BasicLit{
 			Kind:  token.STRING,

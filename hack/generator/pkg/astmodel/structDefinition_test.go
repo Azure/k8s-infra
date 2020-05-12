@@ -41,7 +41,7 @@ func Test_StructDefinitionAsAst_GivenValidStruct_ReturnsNonNilResult(t *testing.
 }
 
 func createStringField(name string, description string) *FieldDefinition {
-	return NewFieldDefinition(name, name, StringType).WithDescription(&description)
+	return NewFieldDefinition(FieldName(name), name, StringType).WithDescription(&description)
 }
 
 func createIntField(name string, description string) *FieldDefinition {

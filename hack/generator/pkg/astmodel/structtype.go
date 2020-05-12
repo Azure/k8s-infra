@@ -86,7 +86,7 @@ func (structType *StructType) Equals(t Type) bool {
 			return false
 		}
 
-		ourFields := make(map[string]*FieldDefinition)
+		ourFields := make(map[FieldName]*FieldDefinition)
 		for _, f := range structType.fields {
 			ourFields[f.fieldName] = f
 		}

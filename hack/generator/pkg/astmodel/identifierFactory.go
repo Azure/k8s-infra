@@ -16,6 +16,7 @@ var filterRegex = regexp.MustCompile("[$@._-]")
 // IdentifierFactory is a factory for creating Go identifiers from Json schema names
 type IdentifierFactory interface {
 	CreateIdentifier(name string) string
+	CreateFieldName(fieldName string) FieldName
 	CreatePackageNameFromVersion(version string) string
 	CreateGroupName(name string) string
 }
@@ -47,6 +48,11 @@ func (factory *identifierFactory) CreateIdentifier(name string) string {
 	titled := strings.Title(clean)
 	result := strings.ReplaceAll(titled, " ", "")
 	return result
+}
+
+func (factory *identifierFactory) CreateFieldName(fieldName string) FieldName {
+	id := factory.CreateIdentifier(fieldName)
+	return FieldName(id)
 }
 
 func createRenames() map[string]string {
