@@ -90,49 +90,92 @@ If no outstanding references
 	otherwise put into its own file
 
 But how to handle cycles?
- */
+*/
 
 func allocateTypesToFiles(typesToAllocate []Definition, filesToGenerate map[string][]Definition) {
+	// Keep track of how many types we've checked since we last allocated one
+	// This lets us detect if/when we stall during allocation
+	skippedTypes := 0
+
+	// Limit to how many types we skip before taking remedial action
+	// len(typesToAllocate) changes during execution, so we cache it
+	skipLimit := len(typesToAllocate)
+
 	for len(typesToAllocate) > 0 {
 		// dequeue!
 		typeToAllocate := typesToAllocate[0]
 		typesToAllocate = typesToAllocate[1:]
 
-		allocateToFile := allocateTypeToFile(typeToAllocate, filesToGenerate)
+		allocatedFileName := ""
+		filesReferencingType := findFilesReferencingType(typeToAllocate, filesToGenerate)
+		pendingReferences := anyReferences(typesToAllocate, typeToAllocate.Reference())
 
-		if allocateToFile == "" {
-			// couldn't find a file to put it in
-			// see if any other types will reference it on a future round
-			if !anyReferences(typesToAllocate, typeToAllocate.Reference()) {
-				// couldn't find any references, put it in its own file
-				allocateToFile = typeToAllocate.FileNameHint()
+		if len(filesReferencingType) > 1 {
+			// Referenced by more than one file, put it in its own file
+			allocatedFileName = typeToAllocate.FileNameHint()
+		}
+
+		if len(filesReferencingType) == 1 && !pendingReferences {
+			// Only referenced in one place, and not refeferenced anywhere else, put it in that file
+			allocatedFileName = filesReferencingType[0]
+		}
+
+		if len(filesReferencingType) == 0 && !pendingReferences {
+			// Not referenced by any file and not referenced elsewhere, put it in its own file
+			allocatedFileName = typeToAllocate.FileNameHint()
+		}
+
+		if skippedTypes > skipLimit {
+			// We've processed the entire queue without allocating any files, so we have a cycle of related types to allocate
+			// None of these types are referenced by multiple files (they would already be allocated, per rule above)
+			// So either they're referenced by one file, or none at all
+			// Breaking the cycle requires allocating one of these types; we need to do this deterministicly
+			// So we prefer allocating to an existing file if we can, and we prefer names earlier in the alphabet
+
+			breakCycle := true
+			for _, t := range typesToAllocate {
+				refs := findFilesReferencingType(t, filesToGenerate)
+				if len(refs) > len(filesReferencingType) {
+					// Type 't' would go into an existing file; `typeToAllocate` wouldn't
+					breakCycle = false
+					break
+				}
+
+				if t.FileNameHint() < typeToAllocate.FileNameHint() {
+					// Type `t` is closer to the start of the alphabet
+					breakCycle = false
+					break
+				}
+			}
+
+			if breakCycle {
+				allocatedFileName = typeToAllocate.FileNameHint()
 			}
 		}
 
-		if allocateToFile != "" {
-			filesToGenerate[allocateToFile] = append(filesToGenerate[allocateToFile], typeToAllocate)
-		} else {
-			// re-queue it for later, it will eventually be allocated
-			typesToAllocate = append(typesToAllocate, typeToAllocate)
+		if allocatedFileName != "" {
+			filesToGenerate[allocatedFileName] = append(filesToGenerate[allocatedFileName], typeToAllocate)
+			skippedTypes = 0
+			continue
 		}
+
+		// re-queue it for later, it will eventually be allocated
+		typesToAllocate = append(typesToAllocate, typeToAllocate)
+		skippedTypes++
+
 	}
 }
 
-func allocateTypeToFile(def Definition, filesToGenerate map[string][]Definition) string {
+func findFilesReferencingType(def Definition, filesToGenerate map[string][]Definition) []string {
 
-	var allocatedToFile string
+	var result []string
 	for fileName, fileDefs := range filesToGenerate {
 		if anyReferences(fileDefs, def.Reference()) {
-			if allocatedToFile == "" {
-				allocatedToFile = fileName
-			} else if allocatedToFile != fileName {
-				// more than one owner... put it in its own file
-				return def.FileNameHint()
-			}
+			result = append(result, fileName)
 		}
 	}
 
-	return allocatedToFile
+	return result
 }
 
 var groupVersionFileTemplate = template.Must(template.New("groupVersionFile").Parse(`
