@@ -9,8 +9,8 @@ import "go/ast"
 
 // DefinitionName encapsulates all the information required to uniquely identify a definition
 type DefinitionName struct {
-	PackageReference
-	name string
+	PackageReference PackageReference
+	name             string
 }
 
 // NewDefinitionName is a factory method for creating a DefinitionName

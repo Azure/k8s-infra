@@ -24,7 +24,7 @@ func Test_NewStructDefinition_GivenValues_InitializesFields(t *testing.T) {
 	ref := NewStructReference(name, group, version, false)
 	definition := NewStructDefinition(ref, NewStructType(fullNameField, familyNameField, knownAsField))
 
-	definitionGroup, definitionPackage, err := definition.StructReference.GroupAndPackage()
+	definitionGroup, definitionPackage, err := definition.StructReference.PackageReference.GroupAndPackage()
 	g.Expect(err).ShouldNot(HaveOccurred())
 
 	g.Expect(definition.StructReference.name).To(Equal(name))

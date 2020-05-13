@@ -15,5 +15,3 @@ func TestLocalPackageReferenceMustEndWithSlash(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	g.Expect(localPathPrefix).To(gomega.HaveSuffix("/"))
 }
-
-

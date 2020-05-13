@@ -61,3 +61,8 @@ func (prim *PrimitiveType) Equals(t Type) bool {
 func (prim *PrimitiveType) CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
 	return nil
 }
+
+// Name returns the name of the primitive type
+func (prim *PrimitiveType) Name() string {
+	return prim.name
+}
