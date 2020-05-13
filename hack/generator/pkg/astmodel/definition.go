@@ -27,7 +27,7 @@ type Definition interface {
 	// Type: What is the type associated to this definition?
 	Type() Type
 
-	// TidyUp cleans up the definition prior to code generation
+	// Tidy cleans up the definition prior to code generation
 	Tidy()
 }
 
