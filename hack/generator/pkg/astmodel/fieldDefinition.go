@@ -17,6 +17,7 @@ type FieldDefinition struct {
 	fieldType   Type
 	jsonName    string
 	description string
+	validations []Validation
 }
 
 // NewFieldDefinition is a factory method for creating a new FieldDefinition
@@ -64,11 +65,18 @@ func (field *FieldDefinition) WithDescription(description *string) *FieldDefinit
 	return &result
 }
 
+// WithValidation adds the given validation to the field's set of validations
+func (field *FieldDefinition) WithValidation(validation Validation) *FieldDefinition {
+	result := *field
+	result.validations = append(result.validations, validation)
+	return &result
+}
+
 // AsField generates an AST field node representing this field definition
 func (field *FieldDefinition) AsField() *ast.Field {
 
-	// TODO: add field tags for api hints / json binding
 	result := &ast.Field{
+		Doc:   &ast.CommentGroup{},
 		Names: []*ast.Ident{ast.NewIdent(field.fieldName)},
 		Type:  field.FieldType().AsType(),
 		Tag: &ast.BasicLit{
@@ -77,14 +85,31 @@ func (field *FieldDefinition) AsField() *ast.Field {
 		},
 	}
 
-	if field.description != "" {
-		result.Doc = &ast.CommentGroup{
-			List: []*ast.Comment{
-				{
-					Text: fmt.Sprintf("\n/* %s: %s */", field.fieldName, field.description),
-				},
-			},
+	// generate validation comments:
+	for _, validation := range field.validations {
+
+		newLine := ""
+		if result.Doc.List == nil {
+			// if first, insert newline
+			newLine = "\n"
 		}
+
+		// these are not doc comments but they must go here to be emitted before the field
+		result.Doc.List = append(result.Doc.List, &ast.Comment{
+			Text: newLine + GenerateKubebuilderComment(validation),
+		})
+	}
+
+	// generate doc comment:
+	if field.description != "" {
+		newLine := ""
+		if result.Doc.List == nil {
+			newLine = "\n"
+		}
+
+		result.Doc.List = append(result.Doc.List, &ast.Comment{
+			Text: fmt.Sprintf("%s/* %s: %s */", newLine, field.fieldName, field.description),
+		})
 	}
 
 	return result
