@@ -49,8 +49,8 @@ func (m *MapType) References(t Type) bool {
 
 // Equals returns true if the passed type is a map type with the same kinds of keys and elements, false otherwise
 func (m *MapType) Equals(t Type) bool {
-	if mt, ok := t.(*MapType);ok {
-		return m.key.Equals(mt.key) && m.value.Equals(mt.value)
+	if mt, ok := t.(*MapType); ok {
+		return m == mt || (m.key.Equals(mt.key) && m.value.Equals(mt.value))
 	}
 
 	return false

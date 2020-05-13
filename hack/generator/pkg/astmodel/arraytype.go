@@ -39,8 +39,8 @@ func (array *ArrayType) References(t Type) bool {
 
 // Equals returns true if the passed type is an array type with the same kind of elements, false otherwise
 func (array *ArrayType) Equals(t Type) bool {
-	if et, ok := t.(*ArrayType);ok {
-		return array.element.Equals(et.element)
+	if et, ok := t.(*ArrayType); ok {
+		return array == et || array.element.Equals(et.element)
 	}
 
 	return false
