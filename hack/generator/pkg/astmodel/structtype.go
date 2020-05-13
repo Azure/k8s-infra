@@ -83,11 +83,11 @@ func (structType *StructType) Tidy(structName string) {
 // Equals returns true if the passed type is a struct type with the same fields, false otherwise
 // The order of the fields is not relevant
 func (structType *StructType) Equals(t Type) bool {
-	if st, ok := t.(*StructType); ok {
-		if structType == st {
-			return true
-		}
+	if structType == t {
+		return true
+	}
 
+	if st, ok := t.(*StructType); ok {
 		if len(structType.fields) != len(st.fields) {
 			// Different number of fields, not equal
 			return false
