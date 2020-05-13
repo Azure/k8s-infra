@@ -92,51 +92,13 @@ func allocateTypesToFiles(typesToAllocate []Definition, filesToGenerate map[stri
 		typeToAllocate := typesToAllocate[0]
 		typesToAllocate = typesToAllocate[1:]
 
-		allocatedFileName := ""
 		filesReferencingType := findFilesReferencingType(typeToAllocate, filesToGenerate)
-		pendingReferences := anyReferences(typesToAllocate, typeToAllocate.Reference())
+		hasPendingReferences := anyReferences(typesToAllocate, typeToAllocate.Reference())
 
-		if len(filesReferencingType) > 1 {
-			// Referenced by more than one file, put it in its own file
-			allocatedFileName = typeToAllocate.FileNameHint()
-		}
-
-		if len(filesReferencingType) == 1 && !pendingReferences {
-			// Only referenced in one place, and not refeferenced anywhere else, put it in that file
-			allocatedFileName = filesReferencingType[0]
-		}
-
-		if len(filesReferencingType) == 0 && !pendingReferences {
-			// Not referenced by any file and not referenced elsewhere, put it in its own file
-			allocatedFileName = typeToAllocate.FileNameHint()
-		}
-
-		if skippedTypes > skipLimit {
-			// We've processed the entire queue without allocating any files, so we have a cycle of related types to allocate
-			// None of these types are referenced by multiple files (they would already be allocated, per rule above)
-			// So either they're referenced by one file, or none at all
-			// Breaking the cycle requires allocating one of these types; we need to do this deterministicly
-			// So we prefer allocating to an existing file if we can, and we prefer names earlier in the alphabet
-
-			breakCycle := true
-			for _, t := range typesToAllocate {
-				refs := findFilesReferencingType(t, filesToGenerate)
-				if len(refs) > len(filesReferencingType) {
-					// Type 't' would go into an existing file; `typeToAllocate` wouldn't
-					breakCycle = false
-					break
-				}
-
-				if t.FileNameHint() < typeToAllocate.FileNameHint() {
-					// Type `t` is closer to the start of the alphabet
-					breakCycle = false
-					break
-				}
-			}
-
-			if breakCycle {
-				allocatedFileName = typeToAllocate.FileNameHint()
-			}
+		allocatedFileName := allocateFileName(filesReferencingType, typeToAllocate, hasPendingReferences)
+		if allocatedFileName == "" && skippedTypes > skipLimit {
+			// We've stalled during allocation of types, implying we have a cycle of mutually referencing types
+			allocatedFileName = allocateFilenameWhenStalled(typesToAllocate, filesToGenerate, len(filesReferencingType), typeToAllocate)
 		}
 
 		if allocatedFileName != "" {
@@ -150,6 +112,52 @@ func allocateTypesToFiles(typesToAllocate []Definition, filesToGenerate map[stri
 		skippedTypes++
 
 	}
+}
+
+func allocateFileName(filesReferencingType []string, typeToAllocate Definition, pendingReferences bool) string {
+	if len(filesReferencingType) > 1 {
+		// Type is referenced by more than one file, put it in its own file
+		return typeToAllocate.FileNameHint()
+	}
+
+	if len(filesReferencingType) == 1 && !pendingReferences {
+		// Type is only referenced from one file, and is not refeferenced anywhere else, put it in that file
+		return filesReferencingType[0]
+	}
+
+	if len(filesReferencingType) == 0 && !pendingReferences {
+		// Type is not referenced by any file and is not referenced elsewhere, put it in its own file
+		return typeToAllocate.FileNameHint()
+	}
+
+	// Not allocating to a file at this time
+	return ""
+}
+
+func allocateFilenameWhenStalled(typesToAllocate []Definition, filesToGenerate map[string][]Definition, filesReferencingTypeToAllocate int, typeToAllocate Definition) string {
+	// We've processed the entire queue without allocating any files, so we have a cycle of related types to allocate
+	// None of these types are referenced by multiple files (they would already be allocated, per rule above)
+	// So either they're referenced by one file, or none at all
+	// Breaking the cycle requires allocating one of these types; we need to do this deterministicly
+	// So we prefer allocating to an existing file if we can, and we prefer names earlier in the alphabet
+
+	for _, t := range typesToAllocate {
+		refs := findFilesReferencingType(t, filesToGenerate)
+		if len(refs) > filesReferencingTypeToAllocate {
+			// Type 't' would go into an existing file and is a better choice
+			// Don't allocate a file name to 'typeToAllocate'
+			return ""
+		}
+
+		if t.FileNameHint() < typeToAllocate.FileNameHint() {
+			// Type `t` is closer to the start of the alphabet and is a better choice
+			// Don't allocate a file name to 'typeToAllocate'
+			return ""
+		}
+	}
+
+	// This is the best candidate for breaking the cycle, allocate it to a file of its own
+	return typeToAllocate.FileNameHint()
 }
 
 func findFilesReferencingType(def Definition, filesToGenerate map[string][]Definition) []string {
