@@ -13,13 +13,6 @@ import (
 
 func TestStructType_Equals_WhenGivenType_ReturnsExpectedResult(t *testing.T) {
 
-	// TODO: Equal to self
-	// TODO: Equal to same
-	// TODO: Equal if fields in different sequence
-	// TODO: Not equal if fields have different names
-	// TODO: Not equal to different type
-	// TODO: Equal if reference to this struct
-
 	fullNameField := NewFieldDefinition("FullName", "full-name", StringType)
 	familyNameField := NewFieldDefinition("FamilyName", "family-name", StringType)
 	knownAsField := NewFieldDefinition("KnownAs", "known-as", StringType)
