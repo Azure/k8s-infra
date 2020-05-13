@@ -73,13 +73,6 @@ func (structType *StructType) References(t Type) bool {
 	return false
 }
 
-func (structType *StructType) Tidy(structName string) {
-
-	sort.Slice(structType.fields, func(left int, right int) bool {
-		return structType.fields[left].fieldName < structType.fields[right].fieldName
-	})
-}
-
 // Equals returns true if the passed type is a struct type with the same fields, false otherwise
 // The order of the fields is not relevant
 func (structType *StructType) Equals(t Type) bool {

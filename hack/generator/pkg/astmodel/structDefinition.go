@@ -8,6 +8,7 @@ package astmodel
 import (
 	"go/ast"
 	"go/token"
+	"sort"
 )
 
 // StructReference is the (versioned) name of a struct
@@ -88,7 +89,7 @@ func (definition *StructDefinition) FileNameHint() string {
 // AsDeclaration generates an AST node representing this struct definition
 func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 
-	definition.StructType.Tidy(definition.name)
+	definition.Tidy()
 
 	var identifier *ast.Ident
 	if definition.IsResource() {
@@ -161,7 +162,9 @@ func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 }
 
 func (definition *StructDefinition) Tidy() {
-	definition.StructType.Tidy(definition.name)
+	sort.Slice(definition.fields, func(left int, right int) bool {
+		return definition.fields[left].fieldName < definition.fields[right].fieldName
+	})
 }
 
 func defineField(fieldName string, typeName string, tag string) *ast.Field {
