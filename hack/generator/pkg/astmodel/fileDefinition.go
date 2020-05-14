@@ -114,14 +114,11 @@ func (file *FileDefinition) AsAst() ast.Node {
 
 	// We set Package (the offset of the package keyword) so that it follows the header comments
 	result := &ast.File{
+		Doc:     &ast.CommentGroup{header},
 		Name:    ast.NewIdent(file.PackageName()),
 		Decls:   decls,
 		Package: token.Pos(headerLen),
 	}
-
-	result.Doc = &ast.CommentGroup{header}
-
-	result.Comments = append(result.Comments, &ast.CommentGroup{header})
 
 	return result
 }
