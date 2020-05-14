@@ -22,7 +22,7 @@ func NewOptionalType(element Type) *OptionalType {
 // assert we implemented Type correctly
 var _ Type = (*OptionalType)(nil)
 
-// AsType renders the Go abstract syntax tree for an array type
+// AsType renders the Go abstract syntax tree for an optional type
 func (optional *OptionalType) AsType() ast.Expr {
 	return &ast.StarExpr{
 		X: optional.element.AsType(),
