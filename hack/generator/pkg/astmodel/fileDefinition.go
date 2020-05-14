@@ -34,6 +34,10 @@ func (file *FileDefinition) Tidy() {
 	sort.Slice(file.definitions, func (left int, right int) bool {
 		return file.definitions[left].FileNameHint() < file.definitions[right].FileNameHint()
 	})
+
+	for _, d := range file.definitions {
+		d.Tidy()
+	}
 }
 
 func (file *FileDefinition) generateImportSpecs() []ast.Spec {
