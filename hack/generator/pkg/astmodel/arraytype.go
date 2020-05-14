@@ -57,7 +57,6 @@ func (array *ArrayType) RelatedDefinitions(ref PackageReference, namehint string
 	if df, ok := array.element.(HasRelatedDefinitions); ok {
 		defns := df.RelatedDefinitions(ref, namehint, idFactory)
 		result = append(result, defns...)
-
 	}
 
 	return result
