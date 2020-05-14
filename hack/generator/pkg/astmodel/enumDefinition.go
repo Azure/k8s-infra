@@ -27,12 +27,21 @@ func (enum *EnumDefinition) Type() Type {
 
 // AsDeclarations generates the Go code representing this definition
 func (enum *EnumDefinition) AsDeclarations() []ast.Decl {
-	result := []ast.Decl{enum.createBaseDeclaration()}
-
+	var specs []ast.Spec
 	for _, v := range enum.Options {
-		decl := enum.createValueDeclaration(v)
-		result = append(result, decl)
+		s := enum.createValueDeclaration(v)
+		specs = append(specs, s)
 	}
+
+	declaration := &ast.GenDecl{
+		Tok:   token.CONST,
+		Doc:   &ast.CommentGroup{},
+		Specs: specs,
+	}
+
+	result := []ast.Decl{
+		enum.createBaseDeclaration(),
+		declaration}
 
 	return result
 }
@@ -64,7 +73,7 @@ func (enum *EnumDefinition) createBaseDeclaration() ast.Decl {
 	return declaration
 }
 
-func (enum *EnumDefinition) createValueDeclaration(value EnumValue) ast.Decl {
+func (enum *EnumDefinition) createValueDeclaration(value EnumValue) ast.Spec {
 
 	var enumIdentifier *ast.Ident
 	enumIdentifier = ast.NewIdent(enum.name)
@@ -85,13 +94,5 @@ func (enum *EnumDefinition) createValueDeclaration(value EnumValue) ast.Decl {
 		},
 	}
 
-	declaration := &ast.GenDecl{
-		Tok: token.CONST,
-		Doc: &ast.CommentGroup{},
-		Specs: []ast.Spec{
-			valueSpec,
-		},
-	}
-
-	return declaration
+	return valueSpec
 }
