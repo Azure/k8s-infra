@@ -72,6 +72,16 @@ func (field *FieldDefinition) WithValidation(validation Validation) *FieldDefini
 	return &result
 }
 
+func (field *FieldDefinition) MakeRequired() *FieldDefinition {
+	return field.WithValidation(ValidateRequired())
+}
+
+func (field *FieldDefinition) MakeOptional() *FieldDefinition {
+	result := *field
+	result.fieldType = NewOptionalType(result.fieldType)
+	return &result
+}
+
 // AsField generates an AST field node representing this field definition
 func (field *FieldDefinition) AsField() *ast.Field {
 

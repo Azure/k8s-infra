@@ -312,7 +312,9 @@ func getFields(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema
 		}
 
 		if isRequired {
-			fieldDefinition = fieldDefinition.WithValidation(astmodel.ValidateRequired())
+			fieldDefinition = fieldDefinition.MakeRequired()
+		} else {
+			fieldDefinition = fieldDefinition.MakeOptional()
 		}
 
 		fields = append(fields, fieldDefinition)
