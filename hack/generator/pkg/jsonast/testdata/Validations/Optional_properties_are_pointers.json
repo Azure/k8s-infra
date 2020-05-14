@@ -6,9 +6,8 @@
     "title": "Test",
     "type": "object",
     "properties": {
-        "required": {
+        "notRequired": {
             "type": "string"
         }
-    },
-    "required": ["required"]
+    }
 }
