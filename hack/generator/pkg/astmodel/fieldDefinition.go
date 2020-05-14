@@ -85,31 +85,27 @@ func (field *FieldDefinition) AsField() *ast.Field {
 		},
 	}
 
-	// generate validation comments:
-	for _, validation := range field.validations {
-
+	addDocComment := func(comment string) {
 		newLine := ""
 		if result.Doc.List == nil {
-			// if first, insert newline
+			// if first comment, add a newline
 			newLine = "\n"
 		}
 
-		// these are not doc comments but they must go here to be emitted before the field
 		result.Doc.List = append(result.Doc.List, &ast.Comment{
-			Text: newLine + GenerateKubebuilderComment(validation),
+			Text: newLine + comment,
 		})
+	}
+
+	// generate validation comments:
+	for _, validation := range field.validations {
+		// these are not doc comments but they must go here to be emitted before the field
+		addDocComment(GenerateKubebuilderComment(validation))
 	}
 
 	// generate doc comment:
 	if field.description != "" {
-		newLine := ""
-		if result.Doc.List == nil {
-			newLine = "\n"
-		}
-
-		result.Doc.List = append(result.Doc.List, &ast.Comment{
-			Text: fmt.Sprintf("%s/* %s: %s */", newLine, field.fieldName, field.description),
-		})
+		addDocComment(fmt.Sprintf("/* %s: %s */", field.fieldName, field.description))
 	}
 
 	return result
