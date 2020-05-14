@@ -8,6 +8,7 @@ package astmodel
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 type Validation struct {
@@ -25,20 +26,16 @@ func GenerateKubebuilderComment(validation Validation) string {
 
 		if value.Kind() == reflect.Slice {
 			// handle slice values which should look like "x,y,z"
-			valueString := ""
+			var values []string
 			for i := 0; i < value.Len(); i += 1 {
-				if i != 0 {
-					valueString += ","
-				}
-
-				valueString += fmt.Sprintf("%v", value.Index(i))
+				values = append(values, fmt.Sprintf("%v", value.Index(i)))
 			}
 
-			return fmt.Sprintf("%s%s=%s", prefix, validation.name, valueString)
-		} else {
-			// everything else
-			return fmt.Sprintf("%s%s=%v", prefix, validation.name, validation.value)
+			return fmt.Sprintf("%s%s=%s", prefix, validation.name, strings.Join(values, ","))
 		}
+
+		// everything else
+		return fmt.Sprintf("%s%s=%v", prefix, validation.name, validation.value)
 	}
 
 	// validation without argument
