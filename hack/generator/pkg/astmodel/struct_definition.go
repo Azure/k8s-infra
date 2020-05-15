@@ -21,7 +21,7 @@ type StructReference struct {
 func NewStructReference(name string, group string, version string, isResource bool) *StructReference {
 	return &StructReference{
 		DefinitionName{
-			PackageReference: PackageReference{group, version},
+			PackageReference: NewLocalPackageReference(group, version),
 			name: name,
 		},
 		isResource,

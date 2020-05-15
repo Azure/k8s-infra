@@ -62,8 +62,7 @@ func (file *FileDefinition) generateImportSpecs() []ast.Spec {
 			Name: nil,
 			Path: &ast.BasicLit{
 				Kind: token.STRING,
-				// TODO: this will need adjusting in future:
-				Value: "\"github.com/Azure/k8s-infra/hack/generator/apis/" + requiredImport.PackagePath() + "\"",
+				Value: "\"" + requiredImport.PackagePath() + "\"",
 			},
 		})
 	}
