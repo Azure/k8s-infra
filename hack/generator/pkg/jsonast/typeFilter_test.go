@@ -50,7 +50,7 @@ func Test_FilterByVersion_CorrectlySelectsStructs(t *testing.T) {
 func Test_FilterByName_CorrectlySelectsStructs(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	filter := jsonast.TypeFilter{Version: "2019-*"}
+	filter := jsonast.TypeFilter{Name: "p*"}
 
 	// Name starts with "p" should be selected
 	g.Expect(filter.AppliesToType(person2020)).To(BeTrue())
