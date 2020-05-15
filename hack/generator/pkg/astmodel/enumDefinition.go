@@ -78,7 +78,7 @@ func (enum *EnumDefinition) createValueDeclaration(value EnumValue) ast.Spec {
 	var enumIdentifier *ast.Ident
 	enumIdentifier = ast.NewIdent(enum.name)
 
-	valueIdentifier := ast.NewIdent(enum.Name() + "_" + value.Identifier)
+	valueIdentifier := ast.NewIdent(enum.Name() + value.Identifier)
 	valueLiteral := ast.BasicLit{
 		Kind:  token.STRING,
 		Value: value.Value,
