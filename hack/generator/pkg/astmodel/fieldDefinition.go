@@ -90,6 +90,7 @@ func (field *FieldDefinition) AsField() *ast.Field {
 	return result
 }
 
+// Equals tests to see if the specified FieldDefinition specifies the same field
 func (field *FieldDefinition) Equals(f *FieldDefinition) bool {
 	return field == f || (field.fieldName == f.fieldName && field.fieldType.Equals(f.fieldType))
 }

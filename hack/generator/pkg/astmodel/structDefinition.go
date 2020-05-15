@@ -168,6 +168,7 @@ func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 	return declarations
 }
 
+// Tidy the content of this struct before generating the AST
 func (definition *StructDefinition) Tidy() {
 	sort.Slice(definition.fields, func(left int, right int) bool {
 		return definition.fields[left].fieldName < definition.fields[right].fieldName
