@@ -72,10 +72,12 @@ func (field *FieldDefinition) WithValidation(validation Validation) *FieldDefini
 	return &result
 }
 
+// MakeRequired returns a new FieldDefinition that is marked as required
 func (field *FieldDefinition) MakeRequired() *FieldDefinition {
 	return field.WithValidation(ValidateRequired())
 }
 
+// MakeOptional returns a new FieldDefinition that has an optional value
 func (field *FieldDefinition) MakeOptional() *FieldDefinition {
 	result := *field
 	result.fieldType = NewOptionalType(result.fieldType)

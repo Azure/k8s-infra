@@ -11,6 +11,7 @@ import (
 	"strings"
 )
 
+// Validation represents some kind of data validation on a property
 type Validation struct {
 	name string
 
@@ -18,6 +19,8 @@ type Validation struct {
 	value interface{}
 }
 
+// GenerateKubebuilderComment converts the given validation to
+// a Kubebuilder magic comment
 func GenerateKubebuilderComment(validation Validation) string {
 	const prefix = "// +kubebuilder:validation:"
 
@@ -27,7 +30,7 @@ func GenerateKubebuilderComment(validation Validation) string {
 		if value.Kind() == reflect.Slice {
 			// handle slice values which should look like "x,y,z"
 			var values []string
-			for i := 0; i < value.Len(); i += 1 {
+			for i := 0; i < value.Len(); i++ {
 				values = append(values, fmt.Sprintf("%v", value.Index(i)))
 			}
 
@@ -42,10 +45,13 @@ func GenerateKubebuilderComment(validation Validation) string {
 	return fmt.Sprintf("%s%s", prefix, validation.name)
 }
 
+// ValidateEnum returns a Validation that requires the value be one of the
+// passed 'permittedValues'
 func ValidateEnum(permittedValues []interface{}) Validation {
 	return Validation{"Enum", permittedValues}
 }
 
+// ValidateRequired returns a Validation that requires a value be present
 func ValidateRequired() Validation {
 	return Validation{"Required", nil}
 }

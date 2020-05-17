@@ -29,10 +29,12 @@ func (optional *OptionalType) AsType() ast.Expr {
 	}
 }
 
+// RequiredImports returns the imports required by the 'element' type
 func (optional *OptionalType) RequiredImports() []PackageReference {
 	return optional.element.RequiredImports()
 }
 
+// References is true if it is this type or the 'element' type references it
 func (optional *OptionalType) References(t Type) bool {
 	return optional == t || optional.element.References(t)
 }
