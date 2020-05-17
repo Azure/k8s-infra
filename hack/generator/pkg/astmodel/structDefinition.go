@@ -18,10 +18,13 @@ type StructReference struct {
 	isResource bool // this might seem like a strange place to have this, but it affects how the struct is referenced
 }
 
+// NewStructReference creates a new StructReference
+// TODO[dj]: any "New" func should return a ptr
 func NewStructReference(name string, group string, version string, isResource bool) StructReference {
 	return StructReference{DefinitionName{PackageReference{group, version}, name}, isResource}
 }
 
+// IsResource indicates that the struct is an Azure resource
 func (sr *StructReference) IsResource() bool {
 	return sr.isResource
 }
@@ -40,10 +43,12 @@ var _ Definition = (*StructDefinition)(nil)
 // Ensure StructDefinition implements the HasRelatedDefinitions interface correctly
 var _ HasRelatedDefinitions = (*StructDefinition)(nil)
 
+// Reference provides the definition name
 func (definition *StructDefinition) Reference() *DefinitionName {
 	return &definition.DefinitionName
 }
 
+// Type provides the type of the struct
 func (definition *StructDefinition) Type() Type {
 	return &definition.StructType
 }
@@ -74,6 +79,7 @@ func (definition *StructDefinition) FieldCount() int {
 	return len(definition.fields)
 }
 
+// RequiredImports returns a list of package required by this
 func (definition *StructDefinition) RequiredImports() []PackageReference {
 	var result []PackageReference
 	for _, field := range definition.fields {
@@ -85,6 +91,7 @@ func (definition *StructDefinition) RequiredImports() []PackageReference {
 	return result
 }
 
+// FileNameHint is a hint of what to name the file
 func (definition *StructDefinition) FileNameHint() string {
 	return definition.Name()
 }
@@ -164,6 +171,7 @@ func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 	return declarations
 }
 
+// Tidy the content of this struct before generating the AST
 func (definition *StructDefinition) Tidy() {
 	sort.Slice(definition.fields, func(left int, right int) bool {
 		return definition.fields[left].fieldName < definition.fields[right].fieldName

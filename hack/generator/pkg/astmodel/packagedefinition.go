@@ -8,24 +8,29 @@ package astmodel
 import (
 	"bytes"
 	"io/ioutil"
+	"log"
 	"path/filepath"
 	"text/template"
 )
 
+// PackageDefinition is the definiton of a package
 type PackageDefinition struct {
 	PackageReference
 
 	definitions []Definition
 }
 
+// NewPackageDefinition creates a new PackageDefinition
 func NewPackageDefinition(reference PackageReference) *PackageDefinition {
 	return &PackageDefinition{reference, nil}
 }
 
+// AddDefinition adds a Definition to the PackageDefinition
 func (pkgDef *PackageDefinition) AddDefinition(def Definition) {
 	pkgDef.definitions = append(pkgDef.definitions, def)
 }
 
+// EmitDefinitions emits the PackageDefinition to an output directory
 func (pkgDef *PackageDefinition) EmitDefinitions(outputDir string) {
 
 	resources, otherDefinitions := partitionDefinitions(pkgDef.definitions)
@@ -45,6 +50,7 @@ func emitFiles(filesToGenerate map[string][]Definition, outputDir string) {
 	for fileName, defs := range filesToGenerate {
 		genFile := NewFileDefinition(defs[0].Reference().PackageReference, defs...)
 		outputFile := filepath.Join(outputDir, fileName+"_types.go")
+		log.Printf("Writing '%s'\n", outputFile)
 		genFile.Tidy()
 		genFile.SaveTo(outputFile)
 	}
@@ -204,5 +210,6 @@ func emitGroupVersionFile(pkgDef *PackageDefinition, outputDir string) {
 	groupVersionFileTemplate.Execute(buf, pkgDef)
 
 	gvFile := filepath.Join(outputDir, "groupversion_info.go")
+	// TODO[dj]: handle this error
 	ioutil.WriteFile(gvFile, buf.Bytes(), 0700)
 }

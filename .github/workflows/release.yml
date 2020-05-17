@@ -26,6 +26,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: make release
         env:
+          REGISTRY: azk8sinfra
           IMG: k8s-infra-controller:${{ env.RELEASE_VERSION }}
         run: |
           make release
@@ -40,11 +41,20 @@ jobs:
           draft: false
           prerelease: false
           body: |
-            This controller requires cert-manager and can be installed with `kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v0.13.0/cert-manager.yaml`.
-
-            Install Azure specific secrets to the cluster with the following:
+            Install this release
             ``` bash
-            kubectl create namespace k8s-infra-system || true
+            # This controller requires cert-manager and can be installed with:
+            kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v0.13.0/cert-manager.yaml
+
+            kubectl apply namespace k8s-infra-system
+
+            cat <<EOF | kubectl apply -f -
+            apiVersion: v1
+            kind: Namespace
+            metadata:
+              name: k8s-infra-system
+            EOF
+
             cat <<EOF | kubectl apply -f -
             apiVersion: v1
             kind: Secret
@@ -58,11 +68,13 @@ jobs:
               client-id: $(echo "${AZURE_CLIENT_ID}" | tr -d '\n' | base64 | tr -d '\n')
               client-secret: $(echo "${AZURE_CLIENT_SECRET}" | tr -d '\n' | base64 | tr -d '\n')
             EOF
+
+            kubectl apply -f https://github.com/Azure/k8s-infra/releases/download/${{ env.RELEASE_VERSION }}/manifest.yaml
             ```
 
-            The image for this release is `devigned/k8s-infra-controller:${{ env.RELEASE_VERSION }}`.
+            To delete these components, just run the script replacing `apply` with `delete`.
       - name: upload manifest
-        id: manifest
+        id: manifest-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -70,4 +82,4 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./dist/release.yaml
           asset_name: manifest.yaml
-          asset_content_type: application/x-yaml
+          asset_content_type: application/octet-stream

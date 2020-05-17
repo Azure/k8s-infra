@@ -96,7 +96,7 @@ lint-full: $(GOLANGCI_LINT) ## Run slower linters to detect possible issues
 ## --------------------------------------
 
 .PHONY: build
-build: fmt ## Build manager binary
+build: fmt vet lint ## Build manager binary
 	go build -o bin/manager main.go
 
 .PHONY: fmt
@@ -111,10 +111,9 @@ vet: ## Run go vet against code
 header-check: ## Runs header checks on all files to verify boilerplate
 	./scripts/verify_boilerplate.sh
 
-.PHONY: modules
-modules: ## Runs go mod to ensure tidy.
+.PHONY: tidy
+tidy: ## Runs go mod to ensure tidy.
 	go mod tidy
-	cd $(TOOLS_DIR); go mod tidy
 
 ## --------------------------------------
 ## Generate
@@ -125,7 +124,7 @@ manifests: $(CONTROLLER_GEN) ## Generate manifests e.g. CRD, RBAC etc.
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code
+generate: manifests $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code
 	$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
 
 	$(CONVERSION_GEN) \
@@ -187,7 +186,7 @@ deploy: manifests $(KUBECTL) $(KUSTOMIZE) docker-build docker-push ## Deploy con
 	$(KUSTOMIZE) build config/default | sed "s_${CONFIG_REGISTRY}_${REGISTRY}/${IMG}_" | $(KUBECTL) apply -f -
 
 .PHONY: docker-build
-docker-build: test ## Build the docker image
+docker-build: ## Build the docker image
 	docker build . -t $(REGISTRY)/${IMG}
 
 .PHONY: docker-push
@@ -195,9 +194,9 @@ docker-push: ## Push the docker image
 	docker push $(REGISTRY)/${IMG}
 
 .PHONY: dist
-dist:
+dist: $(KUSTOMIZE)
 	mkdir -p dist
-	$(KUSTOMIZE) build config/default | sed "s_${CONFIG_REGISTRY}_${REGISTRY}/${IMG}_" | > dist/release.yaml
+	$(KUSTOMIZE) build config/default | sed "s_${CONFIG_REGISTRY}_${REGISTRY}/${IMG}_" > dist/release.yaml
 
 .PHONY: release
-release: dist docker-build docker-push $(KUSTOMIZE) ## Build, push, generate dist for release
+release: dist docker-build docker-push ## Build, push, generate dist for release

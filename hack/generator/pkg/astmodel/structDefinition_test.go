@@ -47,3 +47,7 @@ func createStringField(name string, description string) *FieldDefinition {
 func createIntField(name string, description string) *FieldDefinition {
 	return NewFieldDefinition(FieldName(name), name, IntType).WithDescription(&description)
 }
+
+func createIntField(name string, description string) *FieldDefinition {
+	return NewFieldDefinition(name, name, IntType).WithDescription(&description)
+}

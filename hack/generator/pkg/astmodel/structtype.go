@@ -53,6 +53,7 @@ func (structType *StructType) AsType() ast.Expr {
 	}
 }
 
+// RequiredImports returns a list of packages required by this
 func (structType *StructType) RequiredImports() []PackageReference {
 	var result []PackageReference
 	for _, field := range structType.fields {
@@ -62,6 +63,7 @@ func (structType *StructType) RequiredImports() []PackageReference {
 	return result
 }
 
+// References this type has to the given type
 func (structType *StructType) References(t Type) bool {
 	if structType.Equals(t) {
 		return true
@@ -74,13 +76,6 @@ func (structType *StructType) References(t Type) bool {
 	}
 
 	return false
-}
-
-// Tidy does cleanup to ensure deterministic code generation
-func (structType *StructType) Tidy(structName string) {
-	sort.Slice(structType.fields, func(left int, right int) bool {
-		return structType.fields[left].fieldName < structType.fields[right].fieldName
-	})
 }
 
 // Equals returns true if the passed type is a struct type with the same fields, false otherwise

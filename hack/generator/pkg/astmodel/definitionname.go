@@ -13,9 +13,6 @@ type DefinitionName struct {
 	name string
 }
 
-// DefinitionName must implement the Type interface correctly
-var _ Type = (*DefinitionName)(nil)
-
 // NewDefinitionName is a factory method for creating a DefinitionName
 func NewDefinitionName(pr PackageReference, name string) DefinitionName {
 	return DefinitionName{pr, name}
