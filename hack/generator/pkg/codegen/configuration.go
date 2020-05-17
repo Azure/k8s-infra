@@ -3,10 +3,11 @@
  * Licensed under the MIT license.
  */
 
-package jsonast
+package codegen
 
 import (
 	"errors"
+	"github.com/Azure/k8s-infra/hack/generator/pkg/jsonast"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
@@ -16,7 +17,7 @@ type ExportConfiguration struct {
 	// Base URL for the JSON schema to generate
 	SchemaURL string
 	// Filters used to control which types are included
-	TypeFilters []*TypeFilter
+	TypeFilters []*jsonast.TypeFilter
 }
 
 // ShouldExportResult is returned by ShouldExport to indicate whether the supplied type should be exported
@@ -30,7 +31,7 @@ const (
 )
 
 // NewExportConfiguration is a convenience factory for ExportConfiguration
-func NewExportConfiguration(filters ...*TypeFilter) *ExportConfiguration {
+func NewExportConfiguration(filters ...*jsonast.TypeFilter) *ExportConfiguration {
 	result := ExportConfiguration{
 		TypeFilters: filters,
 	}
@@ -52,9 +53,9 @@ func (config *ExportConfiguration) Validate() error {
 func (config *ExportConfiguration) ShouldExport(definition astmodel.Definition) (result ShouldExportResult, because string) {
 	for _, f := range config.TypeFilters {
 		if f.AppliesToType(definition) {
-			if f.Action == ExcludeType {
+			if f.Action == jsonast.ExcludeType {
 				return Skip, f.Because
-			} else if f.Action == IncludeType {
+			} else if f.Action == jsonast.IncludeType {
 				return Export, f.Because
 			}
 		}
