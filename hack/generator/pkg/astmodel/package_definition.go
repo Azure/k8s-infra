@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
+	"k8s.io/klog/v2"
 	"path/filepath"
 	"text/template"
 )
@@ -61,7 +61,7 @@ func emitFiles(filesToGenerate map[string][]Definition, outputDir string) error 
 	for fileName, defs := range filesToGenerate {
 		genFile := NewFileDefinition(defs[0].Reference().PackageReference, defs...)
 		outputFile := filepath.Join(outputDir, fileName+"_types.go")
-		log.Printf("Writing '%s'\n", outputFile)
+		klog.V(5).Infof("Writing '%s'\n", outputFile)
 		err := genFile.SaveTo(outputFile)
 		if err != nil {
 			return fmt.Errorf("error saving definitions to file '%v'(%w)", outputFile, err)
