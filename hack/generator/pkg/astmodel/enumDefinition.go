@@ -13,14 +13,17 @@ type EnumDefinition struct {
 
 var _ Definition = (*EnumDefinition)(nil)
 
+// FileNameHint returns a desired name for this enum if it goes into a standalone file
 func (enum *EnumDefinition) FileNameHint() string {
 	return enum.name
 }
 
+// Reference returns the unique name to use for specifying this enumeration
 func (enum *EnumDefinition) Reference() *DefinitionName {
 	return &enum.DefinitionName
 }
 
+// Type returns the underlying EnumerationType for this enum
 func (enum *EnumDefinition) Type() Type {
 	return &enum.EnumType
 }
