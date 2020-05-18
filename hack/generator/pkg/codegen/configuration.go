@@ -12,8 +12,8 @@ import (
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
 
-// ExportConfiguration is used to control which types get generated
-type ExportConfiguration struct {
+// Configuration is used to control which types get generated
+type Configuration struct {
 	// Base URL for the JSON schema to generate
 	SchemaURL string
 	// Filters used to control which types are included
@@ -30,9 +30,9 @@ const (
 	Skip ShouldExportResult = "skip"
 )
 
-// NewExportConfiguration is a convenience factory for ExportConfiguration
-func NewExportConfiguration(filters ...*jsonast.TypeFilter) *ExportConfiguration {
-	result := ExportConfiguration{
+// NewExportConfiguration is a convenience factory for Configuration
+func NewExportConfiguration(filters ...*jsonast.TypeFilter) *Configuration {
+	result := Configuration{
 		TypeFilters: filters,
 	}
 
@@ -40,7 +40,7 @@ func NewExportConfiguration(filters ...*jsonast.TypeFilter) *ExportConfiguration
 }
 
 // Validate checks our configuration for common issues
-func (config *ExportConfiguration) Validate() error {
+func (config *Configuration) Validate() error {
 	if config.SchemaURL == "" {
 		return errors.New("SchemaURL missing")
 	}
@@ -50,7 +50,7 @@ func (config *ExportConfiguration) Validate() error {
 
 // ShouldExport tests for whether a given struct should be exported
 // Returns a result indicating whether export should occur as well as a reason for logging
-func (config *ExportConfiguration) ShouldExport(definition astmodel.Definition) (result ShouldExportResult, because string) {
+func (config *Configuration) ShouldExport(definition astmodel.Definition) (result ShouldExportResult, because string) {
 	for _, f := range config.TypeFilters {
 		if f.AppliesToType(definition) {
 			if f.Action == jsonast.ExcludeType {
