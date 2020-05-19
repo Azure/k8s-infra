@@ -9,19 +9,12 @@ import "go/ast"
 
 // EnumType represents a set of mutually exclusive predefined options
 type EnumType struct {
-	DefinitionName
 	// BaseType is the underlying type used to define the values
 	BaseType *PrimitiveType
 	// Options is the set of all unique values
 	Options []EnumValue
-}
-
-// EnumValue captures a single value of the enumeration
-type EnumValue struct {
-	// Identifer is a Go identifer for the value
-	Identifier string
-	// Value is the actual value expected by ARM
-	Value string
+	// name is our actual name, only available once generated, assigned by CreateRelatedDefinitions()
+	name string
 }
 
 // EnumType must implement the Type interface correctly
@@ -42,10 +35,42 @@ func (enum *EnumType) References(d *DefinitionName) bool {
 	return enum.DefinitionName.References(d)
 }
 
-// RelatedDefinitions implements the HasRelatedDefinitions interface for EnumType
-func (enum *EnumType) RelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
+// CreateRelatedDefinitions returns a definition for our enumeration, with a name based on the referencing property
+func (enum *EnumType) CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
 	identifier := idFactory.CreateEnumIdentifier(namehint)
-	enum.DefinitionName = DefinitionName{PackageReference: ref, name: identifier}
-	var definition Definition = &EnumDefinition{EnumType: *enum}
+	dn := DefinitionName{PackageReference: ref, name: identifier}
+	definition := NewEnumDefinition(dn, enum)
+
+	enum.name = dn.name
 	return []Definition{definition}
+}
+
+// Equals will return true if the supplied type has the same base type and options
+func (enum *EnumType) Equals(t Type) bool {
+	if e, ok := t.(*EnumType); ok {
+		if !enum.BaseType.Equals(e.BaseType) {
+			return false
+		}
+
+		if len(enum.Options) != len(e.Options) {
+			// Different number of fields, not equal
+			return false
+		}
+
+		for i := range enum.Options {
+			if !enum.Options[i].Equals(&e.Options[i]) {
+				return false
+			}
+		}
+
+		// All options match, equal
+		return true
+	}
+
+	return false
+}
+
+// RequiredImports indicates that Enums never need additional imports
+func (enum *EnumType) RequiredImports() []PackageReference {
+	return nil
 }
