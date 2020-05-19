@@ -13,8 +13,8 @@ type EnumType struct {
 	BaseType *PrimitiveType
 	// Options is the set of all unique values
 	Options []EnumValue
-	// name is our actual name, only available once generated, assigned by CreateRelatedDefinitions()
-	name string
+	// canonicalName is our actual name, only available once generated, assigned by CreateRelatedDefinitions()
+	canonicalName DefinitionName
 }
 
 // EnumType must implement the Type interface correctly
@@ -27,21 +27,19 @@ func NewEnumType(baseType *PrimitiveType, options []EnumValue) *EnumType {
 
 // AsType implements Type for EnumType
 func (enum *EnumType) AsType() ast.Expr {
-	return ast.NewIdent(enum.name)
+	return ast.NewIdent(enum.canonicalName.name)
 }
 
 // References indicates whether this Type includes any direct references to the given Type?
 func (enum *EnumType) References(d *DefinitionName) bool {
-	return enum.DefinitionName.References(d)
+	return enum.canonicalName.References(d)
 }
 
 // CreateRelatedDefinitions returns a definition for our enumeration, with a name based on the referencing property
 func (enum *EnumType) CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
 	identifier := idFactory.CreateEnumIdentifier(namehint)
-	dn := DefinitionName{PackageReference: ref, name: identifier}
-	definition := NewEnumDefinition(dn, enum)
-
-	enum.name = dn.name
+	enum.canonicalName = DefinitionName{PackageReference: ref, name: identifier}
+	definition := NewEnumDefinition(enum.canonicalName, enum)
 	return []Definition{definition}
 }
 
