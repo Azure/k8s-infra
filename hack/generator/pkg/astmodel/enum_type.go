@@ -27,9 +27,6 @@ type EnumValue struct {
 // EnumType must implement the Type interface correctly
 var _ Type = (*EnumType)(nil)
 
-// EnumType must implement the HasRelatedDefinitions interface correctly
-var _ HasRelatedDefinitions = (*EnumType)(nil)
-
 // NewEnumType defines a new enumeration including the legal values
 func NewEnumType(baseType *PrimitiveType, options []EnumValue) *EnumType {
 	return &EnumType{BaseType: baseType, Options: options}
