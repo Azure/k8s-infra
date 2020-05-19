@@ -20,8 +20,16 @@ type ReferenceChecker interface {
 	References(d *DefinitionName) bool
 }
 
+type HasRelatedDefinitions interface {
+	// CreateRelatedDefinitions returns any additional definitions related to this one
+	// (This allows one definition to act as a factory creating others)
+	CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition
+}
+
 // Definition represents models that can render into Go code
 type Definition interface {
+	HasRelatedDefinitions
+
 	// FileNameHint returns what a file that contains this definition (if any) should be called
 	// this is not always used as we might combine multiple definitions into one file
 	FileNameHint() string
@@ -37,16 +45,13 @@ type Definition interface {
 
 	// Tidy cleans up the definition prior to code generation
 	Tidy()
-
-	// CreateRelatedDefinitions returns any additional definitions related to this one
-	// (This allows one definition to act as a factory creating others)
-	CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition
 }
 
 // Type represents something that is a Go type
 type Type interface {
 	HasImports
 	ReferenceChecker
+	HasRelatedDefinitions
 
 	// AsType renders the current instance as a Go abstract syntax tree
 	AsType() ast.Expr
