@@ -69,6 +69,9 @@ func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder strin
 		return fmt.Errorf("failed to assign generated definitions to packages (%w)", err)
 	}
 
+	fileCount := 0
+	definitionCount := 0
+
 	// emit each package
 	klog.V(0).Infof("Writing output files into %v", outputFolder)
 	for _, pkg := range packages {
@@ -91,7 +94,7 @@ func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder strin
 		fileCount += count
 	}
 
-	klog.V(0).Infof("Completed writing %v resources\n", len(generator.scanner.Definitions))
+	klog.V(0).Infof("Completed writing %v files containing %v definitions", fileCount, definitionCount)
 
 	return nil
 }
