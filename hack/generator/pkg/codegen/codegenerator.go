@@ -62,7 +62,6 @@ func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder strin
 	if err != nil {
 		return fmt.Errorf("Failed to walk JSON schema: %w", err)
 	}
-
 	
 	// group definitions by package
 	packages, err := generator.CreatePackages()
@@ -102,11 +101,6 @@ func (generator *CodeGenerator) CreatePackages() (map[astmodel.PackageReference]
 	for _, def := range generator.scanner.Definitions {
 
 		shouldExport, reason := generator.configuration.ShouldExport(def)
-		var motivation string
-		if reason != "" {
-			motivation = "because " + reason
-		}
-
 		defRef := def.Reference()
 		groupName, pkgName, err := defRef.GroupAndPackage()
 		if err != nil {
@@ -118,8 +112,11 @@ func (generator *CodeGenerator) CreatePackages() (map[astmodel.PackageReference]
 			klog.V(2).Infof("Skipping %s/%s because %s", defRef.PackagePath(), defRef.Name(), reason)
 
 		case Export:
+			if reason == "" {
 				klog.V(3).Infof("Exporting %s/%s", defRef.PackagePath(), defRef.Name())
+			} else {
 				klog.V(2).Infof("Exporting %s/%s because %s", defRef.PackagePath(), defRef.Name(), reason)
+			}
 
 			pkgRef := defRef.PackageReference
 			if pkg, ok := packages[pkgRef]; ok {
