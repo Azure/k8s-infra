@@ -19,6 +19,7 @@ type EnumDefinition struct {
 
 var _ Definition = (*EnumDefinition)(nil)
 
+// NewEnumDefinition is a factory method for creating new Enum Definitions
 func NewEnumDefinition(name DefinitionName, t *EnumType) *EnumDefinition {
 	return &EnumDefinition{DefinitionName: name, baseType: t}
 }

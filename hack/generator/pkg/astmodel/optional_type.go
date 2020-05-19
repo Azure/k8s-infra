@@ -52,6 +52,7 @@ func (optional *OptionalType) Equals(t Type) bool {
 	return false
 }
 
+// CreateRelatedDefinitions returns any additional definitions that need to be created
 func (optional *OptionalType) CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
 	return optional.element.CreateRelatedDefinitions(ref, namehint, idFactory)
 }

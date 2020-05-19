@@ -20,6 +20,7 @@ type ReferenceChecker interface {
 	References(d *DefinitionName) bool
 }
 
+// HasRelatedDefinitions specifies that the type might create additional supporting definitions
 type HasRelatedDefinitions interface {
 	// CreateRelatedDefinitions returns any additional definitions related to this one
 	// (This allows one definition to act as a factory creating others)
