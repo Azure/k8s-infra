@@ -64,7 +64,7 @@ jobs:
       - name: Convert coverage to lcov
         uses: jandelgado/gcov2lcov-action@v1.0.0
         with:
-          infile: profile.cov
+          infile: cover.out
           outfile: coverage.lcov
       - name: Coveralls
         uses: coverallsapp/github-action@v1.0.1
