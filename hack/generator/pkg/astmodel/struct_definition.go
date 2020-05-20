@@ -40,8 +40,8 @@ type StructDefinition struct {
 // Ensure StructDefinition implements Definition interface correctly
 var _ Definition = (*StructDefinition)(nil)
 
-// Reference provides the definition name
-func (definition *StructDefinition) Reference() *DefinitionName {
+// Name provides the struct name
+func (definition *StructDefinition) Name() *DefinitionName {
 	return &definition.DefinitionName
 }
 
@@ -86,11 +86,6 @@ func (definition *StructDefinition) RequiredImports() []PackageReference {
 	}
 
 	return result
-}
-
-// FileNameHint is a hint of what to name the file
-func (definition *StructDefinition) FileNameHint() string {
-	return definition.Name()
 }
 
 // AsDeclarations generates an AST node representing this struct definition

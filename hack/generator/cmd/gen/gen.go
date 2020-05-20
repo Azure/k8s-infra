@@ -88,16 +88,16 @@ func NewGenCommand() (*cobra.Command, error) {
 					motivation = "because " + reason
 				}
 
-				defRef := def.Reference()
+				defName := def.Name()
 
 				switch shouldExport {
 				case jsonast.Skip:
-					log.Printf("Skipping %s/%s %s", defRef.PackagePath(), defRef.Name(), motivation)
+					log.Printf("Skipping %s/%s %s", defName.PackagePath(), defName.Name(), motivation)
 
 				case jsonast.Export:
-					log.Printf("Will export %s/%s %s", defRef.PackagePath(), defRef.Name(), motivation)
+					log.Printf("Will export %s/%s %s", defName.PackagePath(), defName.Name(), motivation)
 
-					pkgRef := defRef.PackageReference
+					pkgRef := defName.PackageReference
 					if pkg, ok := packages[pkgRef]; ok {
 						pkg.AddDefinition(def)
 					} else {

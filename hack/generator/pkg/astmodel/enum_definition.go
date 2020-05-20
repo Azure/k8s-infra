@@ -24,13 +24,8 @@ func NewEnumDefinition(name DefinitionName, t *EnumType) *EnumDefinition {
 	return &EnumDefinition{DefinitionName: name, baseType: t}
 }
 
-// FileNameHint returns a desired name for this enum if it goes into a standalone file
-func (enum *EnumDefinition) FileNameHint() string {
-	return enum.name
-}
-
-// Reference returns the unique name to use for specifying this enumeration
-func (enum *EnumDefinition) Reference() *DefinitionName {
+// Name returns the unique name to use for specifying this enumeration
+func (enum *EnumDefinition) Name() *DefinitionName {
 	return &enum.DefinitionName
 }
 
@@ -92,7 +87,7 @@ func (enum *EnumDefinition) createValueDeclaration(value EnumValue) ast.Spec {
 	var enumIdentifier *ast.Ident
 	enumIdentifier = ast.NewIdent(enum.name)
 
-	valueIdentifier := ast.NewIdent(enum.Name() + value.Identifier)
+	valueIdentifier := ast.NewIdent(enum.Name().name + value.Identifier)
 	valueLiteral := ast.BasicLit{
 		Kind:  token.STRING,
 		Value: value.Value,

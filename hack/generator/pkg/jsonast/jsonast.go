@@ -53,7 +53,7 @@ func (scanner *SchemaScanner) FindDefinition(ref astmodel.DefinitionName) (astmo
 
 // AddDefinition makes a record of the specified struct so that FindStruct() can return it when it is needed again.
 func (scanner *SchemaScanner) AddDefinition(def astmodel.Definition) {
-	scanner.Definitions[*def.Reference()] = def
+	scanner.Definitions[*def.Name()] = def
 }
 
 // Definitions for different kinds of JSON schema
@@ -400,7 +400,7 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 		// see if we already generated a struct for this ref
 		// TODO: base this on URL?
 		if definition, ok := scanner.FindDefinition(structReference.DefinitionName); ok {
-			return definition.Reference(), nil
+			return definition.Name(), nil
 		}
 
 		// Add a placeholder to avoid recursive calls
@@ -431,7 +431,7 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 			scanner.AddDefinition(d)
 		}
 
-		return sd.Reference(), nil
+		return sd.Name(), nil
 	}
 
 	return result, err

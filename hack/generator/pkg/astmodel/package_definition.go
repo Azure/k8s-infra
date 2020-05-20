@@ -38,7 +38,7 @@ func (pkgDef *PackageDefinition) EmitDefinitions(outputDir string) {
 	// initialize with 1 resource per file
 	filesToGenerate := make(map[string][]Definition)
 	for _, resource := range resources {
-		filesToGenerate[resource.FileNameHint()] = []Definition{resource}
+		filesToGenerate[FileNameHint(resource)] = []Definition{resource}
 	}
 
 	allocateTypesToFiles(otherDefinitions, filesToGenerate)
@@ -48,7 +48,7 @@ func (pkgDef *PackageDefinition) EmitDefinitions(outputDir string) {
 
 func emitFiles(filesToGenerate map[string][]Definition, outputDir string) {
 	for fileName, defs := range filesToGenerate {
-		genFile := NewFileDefinition(defs[0].Reference().PackageReference, defs...)
+		genFile := NewFileDefinition(defs[0].Name().PackageReference, defs...)
 		outputFile := filepath.Join(outputDir, fileName+"_types.go")
 		log.Printf("Writing '%s'\n", outputFile)
 		genFile.Tidy()
@@ -97,7 +97,7 @@ func allocateTypesToFiles(typesToAllocate []Definition, filesToGenerate map[stri
 		typesToAllocate = typesToAllocate[1:]
 
 		filesReferencingType := findFilesReferencingType(typeToAllocate, filesToGenerate)
-		hasPendingReferences := anyReferences(typesToAllocate, typeToAllocate.Reference())
+		hasPendingReferences := anyReferences(typesToAllocate, typeToAllocate.Name())
 
 		allocatedFileName := allocateFileName(filesReferencingType, typeToAllocate, hasPendingReferences)
 		if allocatedFileName == "" && skippedTypes > skipLimit {
@@ -121,7 +121,7 @@ func allocateTypesToFiles(typesToAllocate []Definition, filesToGenerate map[stri
 func allocateFileName(filesReferencingType []string, typeToAllocate Definition, pendingReferences bool) string {
 	if len(filesReferencingType) > 1 {
 		// Type is referenced by more than one file, put it in its own file
-		return typeToAllocate.FileNameHint()
+		return FileNameHint(typeToAllocate)
 	}
 
 	if len(filesReferencingType) == 1 && !pendingReferences {
@@ -131,7 +131,7 @@ func allocateFileName(filesReferencingType []string, typeToAllocate Definition, 
 
 	if len(filesReferencingType) == 0 && !pendingReferences {
 		// Type is not referenced by any file and is not referenced elsewhere, put it in its own file
-		return typeToAllocate.FileNameHint()
+		return FileNameHint(typeToAllocate)
 	}
 
 	// Not allocating to a file at this time
@@ -153,7 +153,7 @@ func allocateFilenameWhenStalled(typesToAllocate []Definition, filesToGenerate m
 			return ""
 		}
 
-		if t.FileNameHint() < typeToAllocate.FileNameHint() {
+		if FileNameHint(t) < FileNameHint(typeToAllocate) {
 			// Type `t` is closer to the start of the alphabet and is a better choice
 			// Don't allocate a file name to 'typeToAllocate'
 			return ""
@@ -161,14 +161,14 @@ func allocateFilenameWhenStalled(typesToAllocate []Definition, filesToGenerate m
 	}
 
 	// This is the best candidate for breaking the cycle, allocate it to a file of its own
-	return typeToAllocate.FileNameHint()
+	return FileNameHint(typeToAllocate)
 }
 
 func findFilesReferencingType(def Definition, filesToGenerate map[string][]Definition) []string {
 
 	var result []string
 	for fileName, fileDefs := range filesToGenerate {
-		if anyReferences(fileDefs, def.Reference()) {
+		if anyReferences(fileDefs, def.Name()) {
 			result = append(result, fileName)
 		}
 	}
