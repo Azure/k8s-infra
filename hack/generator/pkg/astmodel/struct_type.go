@@ -112,5 +112,26 @@ func (structType *StructType) Equals(t Type) bool {
 func (st *StructType) MakeDefiner(name *DefinitionName, idFactory IdentifierFactory) TypeDefiner {
 	// TODO: we need to know if it is a resource
 	ref := NewStructReference(name.name, name.groupName, name.packageName, false)
-	return NewStructDefinition(ref, st.fields...)
+
+	var newFields []*FieldDefinition
+	for _, field := range st.fields {
+		newField := field
+
+		if et, ok := newField.FieldType().(*EnumType); ok {
+			// enums that are not explicitly refs get named here:
+			enumName := name.name + string(field.fieldName)
+			defName := NewDefinitionName(name.PackageReference, enumName)
+			ed := et.MakeDefiner(&defName, idFactory)
+
+			// TODO: emit 'ed'
+			newField = NewFieldDefinition(newField.fieldName, newField.jsonName, ed.Name())
+		} else if _, ok := newField.FieldType().(*StructType); ok {
+			// inline structs get named here:
+			// TODO
+		}
+
+		newFields = append(newFields, newField)
+	}
+
+	return NewStructDefinition(ref, newFields...)
 }

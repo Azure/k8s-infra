@@ -25,7 +25,8 @@ func NewEnumType(baseType *PrimitiveType, options []EnumValue) *EnumType {
 
 // AsType implements Type for EnumType
 func (enum *EnumType) AsType() ast.Expr {
-	// TODO: this is un-named, should be validated
+	// TODO: should warn here, emitting a non-named enum
+	// when this is feature-complete this should "never" happen
 	return enum.BaseType.AsType()
 }
 
