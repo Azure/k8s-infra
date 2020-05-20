@@ -74,6 +74,6 @@ func (m *MapType) CreateRelatedDefinitions(ref PackageReference, namehint string
 }
 */
 
-func (m *MapType) MakeDefiner(name *DefinitionName) TypeDefiner {
+func (m *MapType) MakeDefiner(name *DefinitionName, idFactory IdentifierFactory) TypeDefiner {
 	return &GenericTypeDefinition{name, m}
 }

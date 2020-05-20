@@ -51,6 +51,6 @@ func (dn *DefinitionName) Equals(t Type) bool {
 	return false
 }
 
-func (dn *DefinitionName) MakeDefiner(name *DefinitionName) TypeDefiner {
+func (dn *DefinitionName) MakeDefiner(name *DefinitionName, idFactory IdentifierFactory) TypeDefiner {
 	return &GenericTypeDefinition{name, dn}
 }

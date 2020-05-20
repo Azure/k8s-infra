@@ -13,8 +13,6 @@ type EnumType struct {
 	BaseType *PrimitiveType
 	// Options is the set of all unique values
 	Options []EnumValue
-	// canonicalName is our actual name, only available once generated, assigned by CreateRelatedDefinitions()
-	canonicalName DefinitionName
 }
 
 // EnumType must implement the Type interface correctly
@@ -27,23 +25,14 @@ func NewEnumType(baseType *PrimitiveType, options []EnumValue) *EnumType {
 
 // AsType implements Type for EnumType
 func (enum *EnumType) AsType() ast.Expr {
-	return ast.NewIdent(enum.canonicalName.name)
+	// TODO: this is un-named, should be validated
+	return enum.BaseType.AsType()
 }
 
 // References indicates whether this Type includes any direct references to the given Type?
 func (enum *EnumType) References(d *DefinitionName) bool {
-	return enum.canonicalName.References(d)
+	return false
 }
-
-// CreateRelatedDefinitions returns a definition for our enumeration, with a name based on the referencing property
-/*
-func (enum *EnumType) CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
-	identifier := idFactory.CreateEnumIdentifier(namehint)
-	enum.canonicalName = DefinitionName{PackageReference: ref, name: identifier}
-	definition := NewEnumDefinition(enum.canonicalName, enum)
-	return []Definition{definition}
-}
-*/
 
 // Equals will return true if the supplied type has the same base type and options
 func (enum *EnumType) Equals(t Type) bool {
@@ -75,6 +64,8 @@ func (enum *EnumType) RequiredImports() []PackageReference {
 	return nil
 }
 
-func (enum *EnumType) MakeDefiner(name *DefinitionName) TypeDefiner {
-	return NewEnumDefinition(name, enum)
+func (enum *EnumType) MakeDefiner(name *DefinitionName, idFactory IdentifierFactory) TypeDefiner {
+	identifier := idFactory.CreateEnumIdentifier(name.name)
+	canonicalName := &DefinitionName{PackageReference: name.PackageReference, name: identifier}
+	return NewEnumDefinition(canonicalName, enum)
 }

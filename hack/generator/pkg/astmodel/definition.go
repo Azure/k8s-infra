@@ -5,7 +5,10 @@
 
 package astmodel
 
-import "go/ast"
+import (
+	"go/ast"
+	"go/token"
+)
 
 type TypeDefiner interface {
 	Name() *DefinitionName
@@ -31,6 +34,7 @@ func (gtd *GenericTypeDefinition) Type() Type {
 func (gtd *GenericTypeDefinition) AsDeclarations() []ast.Decl {
 	return []ast.Decl{
 		&ast.GenDecl{
+			Tok: token.TYPE,
 			Specs: []ast.Spec{
 				&ast.TypeSpec{
 					Name: ast.NewIdent(gtd.name.name),
@@ -62,5 +66,5 @@ type Type interface {
 	// Equals returns true if the passed type is the same as this one, false otherwise
 	Equals(t Type) bool
 
-	MakeDefiner(name *DefinitionName) TypeDefiner
+	MakeDefiner(name *DefinitionName, idFactory IdentifierFactory) TypeDefiner
 }

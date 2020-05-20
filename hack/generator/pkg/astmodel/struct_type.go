@@ -109,7 +109,7 @@ func (structType *StructType) Equals(t Type) bool {
 	return false
 }
 
-func (st *StructType) MakeDefiner(name *DefinitionName) TypeDefiner {
+func (st *StructType) MakeDefiner(name *DefinitionName, idFactory IdentifierFactory) TypeDefiner {
 	// TODO: we need to know if it is a resource
 	ref := NewStructReference(name.name, name.groupName, name.packageName, false)
 	return NewStructDefinition(ref, st.fields...)
