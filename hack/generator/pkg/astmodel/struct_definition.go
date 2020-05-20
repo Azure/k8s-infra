@@ -8,7 +8,6 @@ package astmodel
 import (
 	"go/ast"
 	"go/token"
-	"sort"
 )
 
 // StructReference is the (versioned) name of a struct
@@ -32,7 +31,7 @@ func (sr *StructReference) IsResource() bool {
 // StructDefinition encapsulates the definition of a struct
 type StructDefinition struct {
 	StructReference
-	StructType
+	StructType *StructType
 
 	description string
 }
@@ -47,12 +46,12 @@ func (definition *StructDefinition) Reference() *DefinitionName {
 
 // Type provides the type of the struct
 func (definition *StructDefinition) Type() Type {
-	return &definition.StructType
+	return definition.StructType
 }
 
 // NewStructDefinition is a factory method for creating a new StructDefinition
 func NewStructDefinition(ref StructReference, fields ...*FieldDefinition) *StructDefinition {
-	return &StructDefinition{ref, StructType{fields}, ""}
+	return &StructDefinition{ref, NewStructType(fields...), ""}
 }
 
 // WithDescription adds a description (doc-comment) to the struct
@@ -68,18 +67,18 @@ func (definition *StructDefinition) WithDescription(description *string) *Struct
 
 // Field provides indexed access to our fields
 func (definition *StructDefinition) Field(index int) FieldDefinition {
-	return *definition.fields[index]
+	return *definition.StructType.fields[index]
 }
 
 // FieldCount indicates how many fields are contained
 func (definition *StructDefinition) FieldCount() int {
-	return len(definition.fields)
+	return len(definition.StructType.fields)
 }
 
 // RequiredImports returns a list of package required by this
 func (definition *StructDefinition) RequiredImports() []PackageReference {
 	var result []PackageReference
-	for _, field := range definition.fields {
+	for _, field := range definition.StructType.fields {
 		for _, requiredImport := range field.FieldType().RequiredImports() {
 			result = append(result, requiredImport)
 		}
@@ -95,9 +94,6 @@ func (definition *StructDefinition) FileNameHint() string {
 
 // AsDeclarations generates an AST node representing this struct definition
 func (definition *StructDefinition) AsDeclarations() []ast.Decl {
-
-	definition.Tidy()
-
 	var identifier *ast.Ident
 	if definition.IsResource() {
 		// if it's a resource then this is the Spec type and we will generate
@@ -166,13 +162,6 @@ func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 	}
 
 	return declarations
-}
-
-// Tidy the content of this struct before generating the AST
-func (definition *StructDefinition) Tidy() {
-	sort.Slice(definition.fields, func(left int, right int) bool {
-		return definition.fields[left].fieldName < definition.fields[right].fieldName
-	})
 }
 
 func defineField(fieldName string, typeName string, tag string) *ast.Field {
