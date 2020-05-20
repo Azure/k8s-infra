@@ -53,5 +53,5 @@ func (array *ArrayType) Equals(t Type) bool {
 }
 
 func (array *ArrayType) MakeDefiner(name *DefinitionName, _ IdentifierFactory) TypeDefiner {
-	return &GenericTypeDefinition{name, array}
+	return &SimpleTypeDefiner{name, array}
 }

@@ -7,7 +7,6 @@ package astmodel
 
 import (
 	"go/ast"
-	"go/token"
 )
 
 type TypeDefiner interface {
@@ -15,34 +14,6 @@ type TypeDefiner interface {
 	Type() Type
 
 	AsDeclarations() []ast.Decl
-}
-
-// GenericTypeDefinition is a TypeDefiner for simple cases (not structs or enums)
-type GenericTypeDefinition struct {
-	name    *DefinitionName
-	theType Type
-}
-
-func (gtd *GenericTypeDefinition) Name() *DefinitionName {
-	return gtd.name
-}
-
-func (gtd *GenericTypeDefinition) Type() Type {
-	return gtd.theType
-}
-
-func (gtd *GenericTypeDefinition) AsDeclarations() []ast.Decl {
-	return []ast.Decl{
-		&ast.GenDecl{
-			Tok: token.TYPE,
-			Specs: []ast.Spec{
-				&ast.TypeSpec{
-					Name: ast.NewIdent(gtd.name.name),
-					Type: gtd.theType.AsType(),
-				},
-			},
-		},
-	}
 }
 
 // FileNameHint returns what a file that contains this definition (if any) should be called

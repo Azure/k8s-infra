@@ -58,5 +58,5 @@ func (prim *PrimitiveType) Equals(t Type) bool {
 }
 
 func (prim *PrimitiveType) MakeDefiner(name *DefinitionName, idFactory IdentifierFactory) TypeDefiner {
-	return &GenericTypeDefinition{name, prim}
+	return &SimpleTypeDefiner{name, prim}
 }
