@@ -396,47 +396,32 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 		scanner.idFactory.CreatePackageNameFromVersion(version),
 		isResource)
 
-	if schemaType == Object {
-		// see if we already generated a struct for this ref
-		// TODO: base this on URL?
-		if definition, ok := scanner.FindDefinition(structReference.DefinitionName); ok {
-			return definition.Name(), nil
-		}
-
-		// Add a placeholder to avoid recursive calls
-		sd := astmodel.NewStructDefinition(structReference)
-		scanner.AddDefinition(sd)
+	// see if we already generated something for this ref
+	if definition, ok := scanner.FindDefinition(structReference.DefinitionName); ok {
+		return definition.Name(), nil
 	}
+
+	// Add a placeholder to avoid recursive calls
+	// (it doesn't matter that it's always a struct as we will overwrite it later)
+	// TODO: define a PlaceholderDefinition for this
+	sd := astmodel.NewStructDefinition(structReference)
+	scanner.AddDefinition(sd)
 
 	result, err := scanner.RunHandler(ctx, schemaType, schema.RefSchema)
 	if err != nil {
 		return nil, err
 	}
 
-	// if we got back a struct type, give it a name
-	// (i.e. emit it as a "type X struct {}")
-	// and return that instead
-	if structType, ok := result.(*astmodel.StructType); ok {
+	// Give the type a name:
+	// TODO: need to mark struct as resource
+	definer := result.MakeDefiner(&structReference.DefinitionName)
 
-		description := "Generated from: " + url.String()
+	// description := "Generated from: " + url.String()
+	// TODO: add description back in
+	scanner.AddDefinition(definer)
 
-		sd := astmodel.NewStructDefinition(structReference, structType.Fields()...).WithDescription(&description)
-
-		// this will overwrite placeholder added above
-		scanner.AddDefinition(sd)
-
-		// Add any further definitions needed to make this one complete (e.g. enumerations & methods)
-		/*
-			relatedDefinitions := sd.CreateRelatedDefinitions(structReference.PackageReference, structReference.Name(), scanner.idFactory)
-			for _, d := range relatedDefinitions {
-				scanner.AddDefinition(d)
-			}
-		*/
-
-		return sd.Name(), nil
-	}
-
-	return result, err
+	// return the name of the type:
+	return definer.Name(), nil
 }
 
 func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema.SubSchema) (astmodel.Type, error) {
