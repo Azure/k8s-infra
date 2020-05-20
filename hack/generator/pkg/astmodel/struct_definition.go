@@ -37,8 +37,8 @@ type StructDefinition struct {
 	description string
 }
 
-// Ensure StructDefinition implements Definition interface correctly
-var _ Definition = (*StructDefinition)(nil)
+// Ensure StructDefinition implements TypeDefiner interface correctly
+var _ TypeDefiner = (*StructDefinition)(nil)
 
 // Name provides the struct name
 func (definition *StructDefinition) Name() *DefinitionName {

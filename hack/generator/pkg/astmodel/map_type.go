@@ -62,6 +62,7 @@ func (m *MapType) Equals(t Type) bool {
 	return false
 }
 
+/*j
 // CreateRelatedDefinitions returns any definitions required by our key or value types
 func (m *MapType) CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
 	result := m.key.CreateRelatedDefinitions(ref, namehint, idFactory)
@@ -70,4 +71,9 @@ func (m *MapType) CreateRelatedDefinitions(ref PackageReference, namehint string
 	result = append(result, otherDefinitions...)
 
 	return result
+}
+*/
+
+func (m *MapType) MakeDefiner(name *DefinitionName) TypeDefiner {
+	return &GenericTypeDefinition{name, m}
 }

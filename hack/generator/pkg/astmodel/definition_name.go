@@ -51,7 +51,6 @@ func (dn *DefinitionName) Equals(t Type) bool {
 	return false
 }
 
-// CreateRelatedDefinitions indicates that a DefinitionName has no related definitions
-func (dn *DefinitionName) CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
-	return nil
+func (dn *DefinitionName) MakeDefiner(name *DefinitionName) TypeDefiner {
+	return &GenericTypeDefinition{name, dn}
 }

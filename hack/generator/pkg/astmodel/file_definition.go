@@ -13,7 +13,6 @@ import (
 	"go/token"
 	"log"
 	"os"
-	"sort"
 )
 
 // FileDefinition is the content of a file we're generating
@@ -21,15 +20,16 @@ type FileDefinition struct {
 	// the package this file is in
 	PackageReference
 	// definitions to include in this file
-	definitions []Definition
+	definitions []TypeDefiner
 }
 
 // NewFileDefinition creates a file definition containing specified definitions
-func NewFileDefinition(packageRef PackageReference, definitions ...Definition) *FileDefinition {
+func NewFileDefinition(packageRef PackageReference, definitions ...TypeDefiner) *FileDefinition {
 	// TODO: check that all definitions are from same package
 	return &FileDefinition{packageRef, definitions}
 }
 
+/*
 // Tidy the contents of this file prior to creating the AST
 func (file *FileDefinition) Tidy() {
 	sort.Slice(file.definitions, func(left int, right int) bool {
@@ -40,6 +40,7 @@ func (file *FileDefinition) Tidy() {
 		d.Tidy()
 	}
 }
+*/
 
 func (file *FileDefinition) generateImportSpecs() []ast.Spec {
 

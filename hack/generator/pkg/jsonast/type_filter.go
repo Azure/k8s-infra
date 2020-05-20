@@ -39,7 +39,7 @@ type TypeFilter struct {
 }
 
 // AppliesToType indicates whether this filter should be applied to the supplied type definition
-func (filter *TypeFilter) AppliesToType(definition astmodel.Definition) bool {
+func (filter *TypeFilter) AppliesToType(definition astmodel.TypeDefiner) bool {
 	defName := definition.Name()
 
 	result := filter.groupMatches(defName.GroupName()) &&

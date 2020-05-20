@@ -52,7 +52,6 @@ func (array *ArrayType) Equals(t Type) bool {
 	return false
 }
 
-// CreateRelatedDefinitions returns any additional definitions that need to be created
-func (array *ArrayType) CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
-	return array.element.CreateRelatedDefinitions(ref, namehint, idFactory)
+func (array *ArrayType) MakeDefiner(name *DefinitionName) TypeDefiner {
+	return &GenericTypeDefinition{name, array}
 }

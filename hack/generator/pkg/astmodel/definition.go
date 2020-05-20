@@ -7,58 +7,60 @@ package astmodel
 
 import "go/ast"
 
-// HasImports describes an entity that has required imports
-type HasImports interface {
-	// RequiredImports returns a list of packages required by this
-	RequiredImports() []PackageReference
-}
-
-// ReferenceChecker is used to check for references to a specific definition
-type ReferenceChecker interface {
-	// References determines if this type has a direct reference to the given definition name
-	// For example, a struct references its field
-	References(d *DefinitionName) bool
-}
-
-// HasRelatedDefinitions specifies that the type might create additional supporting definitions
-type HasRelatedDefinitions interface {
-	// CreateRelatedDefinitions returns any additional definitions related to this one
-	// (This allows one definition to act as a factory creating others)
-	CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition
-}
-
-// Definition represents models that can render into Go code
-type Definition interface {
-	HasRelatedDefinitions
-
-	// Name is the name of this definition
+type TypeDefiner interface {
 	Name() *DefinitionName
-
-	// AsDecalarations() generates the Go code representing this definition
-	AsDeclarations() []ast.Decl
-
-	// Type: What is the type associated to this definition?
 	Type() Type
 
-	// Tidy cleans up the definition prior to code generation
-	Tidy()
+	AsDeclarations() []ast.Decl
+}
+
+// GenericTypeDefinition is a TypeDefiner for simple cases (not structs or enums)
+type GenericTypeDefinition struct {
+	name    *DefinitionName
+	theType Type
+}
+
+func (gtd *GenericTypeDefinition) Name() *DefinitionName {
+	return gtd.name
+}
+
+func (gtd *GenericTypeDefinition) Type() Type {
+	return gtd.theType
+}
+
+func (gtd *GenericTypeDefinition) AsDeclarations() []ast.Decl {
+	return []ast.Decl{
+		&ast.GenDecl{
+			Specs: []ast.Spec{
+				&ast.TypeSpec{
+					Name: ast.NewIdent(gtd.name.name),
+					Type: gtd.theType.AsType(),
+				},
+			},
+		},
+	}
 }
 
 // FileNameHint returns what a file that contains this definition (if any) should be called
 // this is not always used as we might combine multiple definitions into one file
-func FileNameHint(def Definition) string {
+func FileNameHint(def TypeDefiner) string {
 	return def.Name().name
 }
 
 // Type represents something that is a Go type
 type Type interface {
-	HasImports
-	ReferenceChecker
-	HasRelatedDefinitions
+	RequiredImports() []PackageReference
 
-	// AsType renders the current instance as a Go abstract syntax tree
+	// ReferenceChecker is used to check for references to a specific definition
+	// References determines if this type has a direct reference to the given definition name
+	// For example, a struct references its field
+	References(d *DefinitionName) bool
+
+	// AsType renders as a Go abstract syntax tree for a type
 	AsType() ast.Expr
 
 	// Equals returns true if the passed type is the same as this one, false otherwise
 	Equals(t Type) bool
+
+	MakeDefiner(name *DefinitionName) TypeDefiner
 }

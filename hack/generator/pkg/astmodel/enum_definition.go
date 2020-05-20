@@ -13,20 +13,20 @@ import (
 
 // EnumDefinition generates the full definition of an enumeration
 type EnumDefinition struct {
-	DefinitionName
+	name     *DefinitionName
 	baseType *EnumType
 }
 
-var _ Definition = (*EnumDefinition)(nil)
+var _ TypeDefiner = (*EnumDefinition)(nil)
 
 // NewEnumDefinition is a factory method for creating new Enum Definitions
-func NewEnumDefinition(name DefinitionName, t *EnumType) *EnumDefinition {
-	return &EnumDefinition{DefinitionName: name, baseType: t}
+func NewEnumDefinition(name *DefinitionName, t *EnumType) *EnumDefinition {
+	return &EnumDefinition{name: name, baseType: t}
 }
 
 // Name returns the unique name to use for specifying this enumeration
 func (enum *EnumDefinition) Name() *DefinitionName {
-	return &enum.DefinitionName
+	return enum.name
 }
 
 // Type returns the underlying EnumerationType for this enum
@@ -64,7 +64,7 @@ func (enum *EnumDefinition) Tidy() {
 
 func (enum *EnumDefinition) createBaseDeclaration() ast.Decl {
 	var identifier *ast.Ident
-	identifier = ast.NewIdent(enum.name)
+	identifier = ast.NewIdent(enum.name.name)
 
 	typeSpecification := &ast.TypeSpec{
 		Name: identifier,
@@ -85,7 +85,7 @@ func (enum *EnumDefinition) createBaseDeclaration() ast.Decl {
 func (enum *EnumDefinition) createValueDeclaration(value EnumValue) ast.Spec {
 
 	var enumIdentifier *ast.Ident
-	enumIdentifier = ast.NewIdent(enum.name)
+	enumIdentifier = ast.NewIdent(enum.name.name)
 
 	valueIdentifier := ast.NewIdent(enum.Name().name + value.Identifier)
 	valueLiteral := ast.BasicLit{
@@ -104,9 +104,4 @@ func (enum *EnumDefinition) createValueDeclaration(value EnumValue) ast.Spec {
 	}
 
 	return valueSpec
-}
-
-// CreateRelatedDefinitions returns a set of definitions related to this one
-func (enum *EnumDefinition) CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
-	return enum.baseType.CreateRelatedDefinitions(ref, namehint, idFactory)
 }

@@ -17,7 +17,7 @@ import (
 type PackageDefinition struct {
 	PackageReference
 
-	definitions []Definition
+	definitions []TypeDefiner
 }
 
 // NewPackageDefinition creates a new PackageDefinition
@@ -26,7 +26,7 @@ func NewPackageDefinition(reference PackageReference) *PackageDefinition {
 }
 
 // AddDefinition adds a Definition to the PackageDefinition
-func (pkgDef *PackageDefinition) AddDefinition(def Definition) {
+func (pkgDef *PackageDefinition) AddDefinition(def TypeDefiner) {
 	pkgDef.definitions = append(pkgDef.definitions, def)
 }
 
@@ -36,9 +36,9 @@ func (pkgDef *PackageDefinition) EmitDefinitions(outputDir string) {
 	resources, otherDefinitions := partitionDefinitions(pkgDef.definitions)
 
 	// initialize with 1 resource per file
-	filesToGenerate := make(map[string][]Definition)
+	filesToGenerate := make(map[string][]TypeDefiner)
 	for _, resource := range resources {
-		filesToGenerate[FileNameHint(resource)] = []Definition{resource}
+		filesToGenerate[FileNameHint(resource)] = []TypeDefiner{resource}
 	}
 
 	allocateTypesToFiles(otherDefinitions, filesToGenerate)
@@ -46,17 +46,17 @@ func (pkgDef *PackageDefinition) EmitDefinitions(outputDir string) {
 	emitGroupVersionFile(pkgDef, outputDir)
 }
 
-func emitFiles(filesToGenerate map[string][]Definition, outputDir string) {
+func emitFiles(filesToGenerate map[string][]TypeDefiner, outputDir string) {
 	for fileName, defs := range filesToGenerate {
 		genFile := NewFileDefinition(defs[0].Name().PackageReference, defs...)
 		outputFile := filepath.Join(outputDir, fileName+"_types.go")
 		log.Printf("Writing '%s'\n", outputFile)
-		genFile.Tidy()
+		//genFile.Tidy()
 		genFile.SaveTo(outputFile)
 	}
 }
 
-func anyReferences(defs []Definition, defName *DefinitionName) bool {
+func anyReferences(defs []TypeDefiner, defName *DefinitionName) bool {
 	for _, def := range defs {
 		if def.Type().References(defName) {
 			return true
@@ -66,10 +66,10 @@ func anyReferences(defs []Definition, defName *DefinitionName) bool {
 	return false
 }
 
-func partitionDefinitions(definitions []Definition) (resourceStructs []*StructDefinition, otherDefinitions []Definition) {
+func partitionDefinitions(definitions []TypeDefiner) (resourceStructs []*StructDefinition, otherDefinitions []TypeDefiner) {
 
 	var resources []*StructDefinition
-	var notResources []Definition
+	var notResources []TypeDefiner
 
 	for _, def := range definitions {
 		if structDef, ok := def.(*StructDefinition); ok && structDef.IsResource() {
@@ -82,7 +82,7 @@ func partitionDefinitions(definitions []Definition) (resourceStructs []*StructDe
 	return resources, notResources
 }
 
-func allocateTypesToFiles(typesToAllocate []Definition, filesToGenerate map[string][]Definition) {
+func allocateTypesToFiles(typesToAllocate []TypeDefiner, filesToGenerate map[string][]TypeDefiner) {
 	// Keep track of how many types we've checked since we last allocated one
 	// This lets us detect if/when we stall during allocation
 	skippedTypes := 0
@@ -118,7 +118,7 @@ func allocateTypesToFiles(typesToAllocate []Definition, filesToGenerate map[stri
 	}
 }
 
-func allocateFileName(filesReferencingType []string, typeToAllocate Definition, pendingReferences bool) string {
+func allocateFileName(filesReferencingType []string, typeToAllocate TypeDefiner, pendingReferences bool) string {
 	if len(filesReferencingType) > 1 {
 		// Type is referenced by more than one file, put it in its own file
 		return FileNameHint(typeToAllocate)
@@ -138,7 +138,7 @@ func allocateFileName(filesReferencingType []string, typeToAllocate Definition, 
 	return ""
 }
 
-func allocateFilenameWhenStalled(typesToAllocate []Definition, filesToGenerate map[string][]Definition, filesReferencingTypeToAllocate int, typeToAllocate Definition) string {
+func allocateFilenameWhenStalled(typesToAllocate []TypeDefiner, filesToGenerate map[string][]TypeDefiner, filesReferencingTypeToAllocate int, typeToAllocate TypeDefiner) string {
 	// We've processed the entire queue without allocating any files, so we have a cycle of related types to allocate
 	// None of these types are referenced by multiple files (they would already be allocated, per rule above)
 	// So either they're referenced by one file, or none at all
@@ -164,7 +164,7 @@ func allocateFilenameWhenStalled(typesToAllocate []Definition, filesToGenerate m
 	return FileNameHint(typeToAllocate)
 }
 
-func findFilesReferencingType(def Definition, filesToGenerate map[string][]Definition) []string {
+func findFilesReferencingType(def TypeDefiner, filesToGenerate map[string][]TypeDefiner) []string {
 
 	var result []string
 	for fileName, fileDefs := range filesToGenerate {

@@ -15,7 +15,6 @@ type StructType struct {
 	fields []*FieldDefinition
 }
 
-
 // Ensure StructType implements the Type interface correctly
 var _ Type = (*StructType)(nil)
 
@@ -110,14 +109,8 @@ func (structType *StructType) Equals(t Type) bool {
 	return false
 }
 
-// CreateRelatedDefinitions implements the HasRelatedDefinitions interface for StructType
-func (structType *StructType) CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
-	var result []Definition
-	for _, f := range structType.fields {
-		nh := namehint + "." + string(f.fieldName)
-		defns := f.CreateRelatedDefinitions(ref, nh, idFactory)
-		result = append(result, defns...)
-	}
-
-	return result
+func (st *StructType) MakeDefiner(name *DefinitionName) TypeDefiner {
+	// TODO: we need to know if it is a resource
+	ref := NewStructReference(name.name, name.groupName, name.packageName, false)
+	return NewStructDefinition(ref, st.fields...)
 }

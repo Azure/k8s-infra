@@ -36,12 +36,14 @@ func (enum *EnumType) References(d *DefinitionName) bool {
 }
 
 // CreateRelatedDefinitions returns a definition for our enumeration, with a name based on the referencing property
+/*
 func (enum *EnumType) CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
 	identifier := idFactory.CreateEnumIdentifier(namehint)
 	enum.canonicalName = DefinitionName{PackageReference: ref, name: identifier}
 	definition := NewEnumDefinition(enum.canonicalName, enum)
 	return []Definition{definition}
 }
+*/
 
 // Equals will return true if the supplied type has the same base type and options
 func (enum *EnumType) Equals(t Type) bool {
@@ -71,4 +73,8 @@ func (enum *EnumType) Equals(t Type) bool {
 // RequiredImports indicates that Enums never need additional imports
 func (enum *EnumType) RequiredImports() []PackageReference {
 	return nil
+}
+
+func (enum *EnumType) MakeDefiner(name *DefinitionName) TypeDefiner {
+	return NewEnumDefinition(name, enum)
 }

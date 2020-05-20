@@ -38,21 +38,21 @@ type (
 
 	// A SchemaScanner is used to scan a JSON Schema extracting and collecting type definitions
 	SchemaScanner struct {
-		Definitions  map[astmodel.DefinitionName]astmodel.Definition
+		Definitions  map[astmodel.DefinitionName]astmodel.TypeDefiner
 		TypeHandlers map[SchemaType]TypeHandler
 		Filters      []string
 		idFactory    astmodel.IdentifierFactory
 	}
 )
 
-// FindDefinition looks to see if we have seen the specified definiton before, returning its definition if we have.
-func (scanner *SchemaScanner) FindDefinition(ref astmodel.DefinitionName) (astmodel.Definition, bool) {
+// FindDefinition looks to see if we have seen the specified definition before, returning its definition if we have.
+func (scanner *SchemaScanner) FindDefinition(ref astmodel.DefinitionName) (astmodel.TypeDefiner, bool) {
 	result, ok := scanner.Definitions[ref]
 	return result, ok
 }
 
 // AddDefinition makes a record of the specified struct so that FindStruct() can return it when it is needed again.
-func (scanner *SchemaScanner) AddDefinition(def astmodel.Definition) {
+func (scanner *SchemaScanner) AddDefinition(def astmodel.TypeDefiner) {
 	scanner.Definitions[*def.Name()] = def
 }
 
@@ -84,7 +84,7 @@ func (use *UnknownSchemaError) Error() string {
 // NewSchemaScanner constructs a new scanner, ready for use
 func NewSchemaScanner(idFactory astmodel.IdentifierFactory) *SchemaScanner {
 	return &SchemaScanner{
-		Definitions:  make(map[astmodel.DefinitionName]astmodel.Definition),
+		Definitions:  make(map[astmodel.DefinitionName]astmodel.TypeDefiner),
 		TypeHandlers: DefaultTypeHandlers(),
 		idFactory:    idFactory,
 	}
@@ -141,7 +141,7 @@ func (scanner *SchemaScanner) AddFilters(filters []string) {
 // 							- ARM specific resources. I'm not 100% sure why...
 //
 // 		allOf acts like composition which composites each schema from the child oneOf with the base reference from allOf.
-func (scanner *SchemaScanner) ToNodes(ctx context.Context, schema *gojsonschema.SubSchema, opts ...BuilderOption) (astmodel.Definition, error) {
+func (scanner *SchemaScanner) ToNodes(ctx context.Context, schema *gojsonschema.SubSchema, opts ...BuilderOption) (astmodel.TypeDefiner, error) {
 	ctx, span := tab.StartSpan(ctx, "ToNodes")
 	defer span.End()
 
@@ -426,10 +426,12 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 		scanner.AddDefinition(sd)
 
 		// Add any further definitions needed to make this one complete (e.g. enumerations & methods)
-		relatedDefinitions := sd.CreateRelatedDefinitions(structReference.PackageReference, structReference.Name(), scanner.idFactory)
-		for _, d := range relatedDefinitions {
-			scanner.AddDefinition(d)
-		}
+		/*
+			relatedDefinitions := sd.CreateRelatedDefinitions(structReference.PackageReference, structReference.Name(), scanner.idFactory)
+			for _, d := range relatedDefinitions {
+				scanner.AddDefinition(d)
+			}
+		*/
 
 		return sd.Name(), nil
 	}
