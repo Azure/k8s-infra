@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) Microsoft Corporation.
+ * Licensed under the MIT license.
+ */
+
 package codegen
 
 import (
@@ -23,12 +28,12 @@ type CodeGenerator struct {
 func NewCodeGenerator(configurationFile string) (*CodeGenerator, error) {
 	config, err := loadConfiguration(configurationFile)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to load configuration file %v (%w)", configurationFile, err)
+		return nil, fmt.Errorf("failed to load configuration file '%v' (%w)", configurationFile, err)
 	}
 
 	err = config.Validate()
 	if err != nil {
-		return nil, fmt.Errorf("Configuration loaded from %v is invalid: %2\n", configurationFile, err)
+		return nil, fmt.Errorf("configuration loaded from '%v' is invalid (%w)", configurationFile, err)
 	}
 
 	idFactory := astmodel.NewIdentifierFactory()
@@ -45,22 +50,22 @@ func NewCodeGenerator(configurationFile string) (*CodeGenerator, error) {
 
 func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder string) error {
 
-	klog.V(0).Info("Loading JSON schema %v", generator.configuration.SchemaURL)
+	klog.V(0).Infof("Loading JSON schema %v", generator.configuration.SchemaURL)
 	schema, err := loadSchema(generator.configuration.SchemaURL)
 	if err != nil {
-		return fmt.Errorf("Error loading schema from %v (%w)", generator.configuration.SchemaURL, err)
+		return fmt.Errorf("error loading schema from '%v' (%w)", generator.configuration.SchemaURL, err)
 	}
 
 	klog.V(0).Infof("Cleaning output folder '%v'", outputFolder)
 	err = cleanFolder(outputFolder)
 	if err != nil {
-		return fmt.Errorf("Error cleaning output folder '%v' (%w)", generator.configuration.SchemaURL, err)
+		return fmt.Errorf("error cleaning output folder '%v' (%w)", generator.configuration.SchemaURL, err)
 	}
 
 	klog.V(0).Infof("Walking JSON schema")
 	_, err = generator.scanner.ToNodes(ctx, schema.Root())
 	if err != nil {
-		return fmt.Errorf("Failed to walk JSON schema: %w", err)
+		return fmt.Errorf("failed to walk JSON schema (%w)", err)
 	}
 	
 	// group definitions by package
@@ -86,12 +91,13 @@ func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder strin
 			}
 		}
 
-		fileCount += pkg.EmitDefinitions(outputDir)
+		count, err := pkg.EmitDefinitions(outputDir)
 		if err != nil {
 			return fmt.Errorf("error writing definitions into '%v' (%w)", outputDir, err)
 		}
 
 		fileCount += count
+		definitionCount += pkg.DefinitionCount()
 	}
 
 	klog.V(0).Infof("Completed writing %v files containing %v definitions", fileCount, definitionCount)
@@ -112,13 +118,13 @@ func (generator *CodeGenerator) CreatePackages() (map[astmodel.PackageReference]
 
 		switch shouldExport {
 		case Skip:
-			klog.V(2).Infof("Skipping %s/%s because %s", defRef.PackagePath(), defRef.Name(), reason)
+			klog.V(2).Infof("Skipping %s/%s because %s", groupName, pkgName, reason)
 
 		case Export:
 			if reason == "" {
-				klog.V(3).Infof("Exporting %s/%s", defRef.PackagePath(), defRef.Name())
+				klog.V(3).Infof("Exporting %s/%s", groupName, pkgName)
 			} else {
-				klog.V(2).Infof("Exporting %s/%s because %s", defRef.PackagePath(), defRef.Name(), reason)
+				klog.V(2).Infof("Exporting %s/%s because %s", groupName, pkgName, reason)
 			}
 
 			pkgRef := defRef.PackageReference
@@ -155,7 +161,7 @@ func loadSchema(source string) (*gojsonschema.Schema, error) {
 	sl := gojsonschema.NewSchemaLoader()
 	schema, err := sl.Compile(gojsonschema.NewReferenceLoader(source))
 	if err != nil {
-		return nil, fmt.Errorf("Error loading schema from %v (%w)", source, err)
+		return nil, fmt.Errorf("error loading schema from '%v' (%w)", source, err)
 	}
 
 	return schema, nil
@@ -165,12 +171,12 @@ func loadSchema(source string) (*gojsonschema.Schema, error) {
 func cleanFolder(outputFolder string) error {
 	err := os.RemoveAll(outputFolder)
 	if err != nil {
-		return fmt.Errorf("Error removing output folder %v (%w)", outputFolder, err)
+		return fmt.Errorf("error removing output folder '%v' (%w)", outputFolder, err)
 	}
 
 	err = os.Mkdir(outputFolder, 0700)
 	if err != nil {
-		return fmt.Errorf("Error creating output folder %v (%w)", outputFolder, err)
+		return fmt.Errorf("error creating output folder '%v' (%w)", outputFolder, err)
 	}
 
 	return nil
