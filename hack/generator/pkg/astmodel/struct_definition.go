@@ -18,9 +18,8 @@ type StructReference struct {
 }
 
 // NewStructReference creates a new StructReference
-// TODO[dj]: any "New" func should return a ptr
-func NewStructReference(name string, group string, version string, isResource bool) StructReference {
-	return StructReference{DefinitionName{PackageReference{group, version}, name}, isResource}
+func NewStructReference(name string, group string, version string, isResource bool) *StructReference {
+	return &StructReference{DefinitionName{PackageReference{group, version}, name}, isResource}
 }
 
 // IsResource indicates that the struct is an Azure resource
@@ -30,7 +29,7 @@ func (sr *StructReference) IsResource() bool {
 
 // StructDefinition encapsulates the definition of a struct
 type StructDefinition struct {
-	StructReference
+	StructReference *StructReference
 	StructType *StructType
 
 	description string
@@ -41,7 +40,7 @@ var _ Definition = (*StructDefinition)(nil)
 
 // Reference provides the definition name
 func (definition *StructDefinition) Reference() *DefinitionName {
-	return &definition.DefinitionName
+	return &definition.StructReference.DefinitionName
 }
 
 // Type provides the type of the struct
@@ -50,7 +49,7 @@ func (definition *StructDefinition) Type() Type {
 }
 
 // NewStructDefinition is a factory method for creating a new StructDefinition
-func NewStructDefinition(ref StructReference, fields ...*FieldDefinition) *StructDefinition {
+func NewStructDefinition(ref *StructReference, fields ...*FieldDefinition) *StructDefinition {
 	return &StructDefinition{ref, NewStructType(fields...), ""}
 }
 
@@ -89,18 +88,18 @@ func (definition *StructDefinition) RequiredImports() []PackageReference {
 
 // FileNameHint is a hint of what to name the file
 func (definition *StructDefinition) FileNameHint() string {
-	return definition.Name()
+	return definition.StructReference.Name()
 }
 
 // AsDeclarations generates an AST node representing this struct definition
 func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 	var identifier *ast.Ident
-	if definition.IsResource() {
+	if definition.StructReference.IsResource() {
 		// if it's a resource then this is the Spec type and we will generate
 		// the non-spec type later:
-		identifier = ast.NewIdent(definition.name + "Spec")
+		identifier = ast.NewIdent(definition.StructReference.name + "Spec")
 	} else {
-		identifier = ast.NewIdent(definition.name)
+		identifier = ast.NewIdent(definition.StructReference.name)
 	}
 
 	typeSpecification := &ast.TypeSpec{
@@ -123,8 +122,8 @@ func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 
 	declarations := []ast.Decl{declaration}
 
-	if definition.IsResource() {
-		resourceIdentifier := ast.NewIdent(definition.name)
+	if definition.StructReference.IsResource() {
+		resourceIdentifier := ast.NewIdent(definition.StructReference.name)
 
 		/*
 			start off with:
@@ -176,6 +175,11 @@ func defineField(fieldName string, typeName string, tag string) *ast.Field {
 	}
 
 	return result
+}
+
+// CreateRelatedDefinitions implements the HasRelatedDefinitions interface for StructType
+func (definition *StructDefinition) CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
+	return definition.StructType.CreateRelatedDefinitions(ref, namehint, idFactory)
 }
 
 // TODO: metav1 import should be added via RequiredImports?

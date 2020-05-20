@@ -71,7 +71,7 @@ func partitionDefinitions(definitions []Definition) (resourceStructs []*StructDe
 	var notResources []Definition
 
 	for _, def := range definitions {
-		if structDef, ok := def.(*StructDefinition); ok && structDef.IsResource() {
+		if structDef, ok := def.(*StructDefinition); ok && structDef.StructReference.IsResource() {
 			resources = append(resources, structDef)
 		} else {
 			notResources = append(notResources, def)
