@@ -15,7 +15,6 @@ type StructType struct {
 	fields []*FieldDefinition
 }
 
-
 // Ensure StructType implements the Type interface correctly
 var _ Type = (*StructType)(nil)
 

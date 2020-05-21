@@ -30,7 +30,7 @@ func (sr *StructReference) IsResource() bool {
 // StructDefinition encapsulates the definition of a struct
 type StructDefinition struct {
 	StructReference *StructReference
-	StructType *StructType
+	StructType      *StructType
 
 	description string
 }
