@@ -56,6 +56,10 @@ func (scanner *SchemaScanner) AddTypeDefinition(def astmodel.TypeDefiner) {
 	scanner.Definitions[*def.Name()] = def
 }
 
+func (scanner *SchemaScanner) AddEmptyTypeDefinition(name astmodel.TypeName) {
+	scanner.Definitions[name] = nil
+}
+
 func (scanner *SchemaScanner) RemoveTypeDefinition(name astmodel.TypeName) {
 	delete(scanner.Definitions, name)
 }
@@ -401,13 +405,13 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 		scanner.idFactory.CreateIdentifier(name))
 
 	// see if we already generated something for this ref
-	if definition, ok := scanner.FindTypeDefinition(typeName); ok {
-		return definition.Name(), nil
+	if _, ok := scanner.FindTypeDefinition(typeName); ok {
+		return &typeName, nil
 	}
 
 	// Add a placeholder to avoid recursive calls
 	// we will overwrite this later
-	scanner.AddTypeDefinition(astmodel.NewPlaceholderTypeDefiner(&typeName))
+	scanner.AddEmptyTypeDefinition(typeName)
 
 	result, err := scanner.RunHandler(ctx, schemaType, schema.RefSchema)
 	if err != nil {
