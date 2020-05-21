@@ -420,7 +420,6 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 	}
 
 	// Give the type a name:
-	// TODO: need to mark struct as resource
 	definer, otherDefs := result.CreateDefinitions(&typeName, scanner.idFactory, isResource)
 
 	// description := "Generated from: " + url.String()
