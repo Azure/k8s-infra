@@ -1,0 +1,7 @@
+apiVersion: microsoft.compute.infra.azure.com/v1
+kind: VirtualMachineScaleSet
+metadata:
+  name: virtualmachinescaleset-sample
+spec:
+  # Add fields here
+  foo: bar

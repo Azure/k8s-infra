@@ -31,10 +31,6 @@ type (
 		Scheme *runtime.Scheme
 	}
 
-	idRef struct {
-		ID string `json:"id,omitempty"`
-	}
-
 	ownerReferenceState struct {
 		Obj   azcorev1.MetaObject
 		State string
@@ -513,7 +509,7 @@ func (m *ARMConverter) replaceReferenceWithID(ctx context.Context, unObj map[str
 }
 
 func (m *ARMConverter) replaceSliceReferenceWithIDs(ctx context.Context, unObj map[string]interface{}, obj azcorev1.MetaObject, ref TypeReferenceLocation) error {
-	unRef, found, err := unstructured.NestedSlice(unObj, ref.JSONFields()...)
+	unRefs, found, err := unstructured.NestedSlice(unObj, ref.JSONFields()...)
 	if err != nil {
 		return fmt.Errorf("unable to find path %v with: %w", ref.JSONFields(), err)
 	}
@@ -525,10 +521,9 @@ func (m *ARMConverter) replaceSliceReferenceWithIDs(ctx context.Context, unObj m
 
 	// remove the KnownTypeReference
 	unstructured.RemoveNestedField(unObj, ref.JSONFields()...)
-
 	var knownTypeRefsMap map[string][]azcorev1.KnownTypeReference
 	unRefMap := map[string]interface{}{
-		"ktrs": unRef,
+		"ktrs": unRefs,
 	}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unRefMap, &knownTypeRefsMap); err != nil {
 		return fmt.Errorf("unable to build KnownTypeReference from unstructured with: %w", err)
@@ -536,7 +531,7 @@ func (m *ARMConverter) replaceSliceReferenceWithIDs(ctx context.Context, unObj m
 
 	var ids []interface{}
 	knownTypeRefs := knownTypeRefsMap["ktrs"]
-	for _, ktr := range knownTypeRefs {
+	for i, ktr := range knownTypeRefs {
 		if ktr.Name == "" {
 			// name of the reference is not set, so we will ignore it
 			continue
@@ -553,7 +548,7 @@ func (m *ARMConverter) replaceSliceReferenceWithIDs(ctx context.Context, unObj m
 		}
 
 		gvk := schema.GroupVersionKind{
-			Group:   obj.GetObjectKind().GroupVersionKind().Group,
+			Group:   ref.Group,
 			Version: "v1",
 			Kind:    ref.Kind,
 		}
@@ -582,14 +577,14 @@ func (m *ARMConverter) replaceSliceReferenceWithIDs(ctx context.Context, unObj m
 		}
 
 		if found {
-			unId, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&idRef{
-				ID: id,
-			})
-
-			if err != nil {
-				return fmt.Errorf("unable to convert idRef to unstructured with: %w", err)
+			unRef, ok := unRefs[i].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("unable to cast %+v to map[string]interface{}", unRefs[i])
 			}
-			ids = append(ids, unId)
+			delete(unRef, "name")
+			delete(unRef, "namespace")
+			unRef["id"] = id
+			ids = append(ids, unRef)
 		}
 	}
 

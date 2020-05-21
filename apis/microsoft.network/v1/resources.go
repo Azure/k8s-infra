@@ -72,3 +72,11 @@ func (*SecurityRule) ResourceType() string {
 func (*Subnet) ResourceType() string {
 	return "Microsoft.Network/virtualNetworks/subnets"
 }
+
+func (*NetworkInterfaceIPConfiguration) ResourceType() string {
+	return "Microsoft.Network/networkInterfaces/ipConfigurations"
+}
+
+func (*NetworkInterface) ResourceType() string {
+	return "Microsoft.Network/networkInterfaces"
+}

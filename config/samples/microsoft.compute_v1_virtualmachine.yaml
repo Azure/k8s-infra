@@ -1,0 +1,7 @@
+apiVersion: microsoft.compute.infra.azure.com/v1
+kind: VirtualMachine
+metadata:
+  name: virtualmachine-sample
+spec:
+  # Add fields here
+  foo: bar

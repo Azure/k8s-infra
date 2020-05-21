@@ -291,3 +291,26 @@ func (dst *VirtualNetwork) ConvertFrom(srcRaw conversion.Hub) error {
 
 	return nil
 }
+
+func (src *NetworkInterface) ConvertTo(dstRaw conversion.Hub) error {
+	dst := dstRaw.(*v1.NetworkInterface)
+
+	if err := Convert_v20191101_NetworkInterface_To_v1_NetworkInterface(src, dst, nil); err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	dst.Spec.APIVersion = apiVersion
+	return nil
+}
+
+func (dst *NetworkInterface) ConvertFrom(srcRaw conversion.Hub) error {
+	src := srcRaw.(*v1.NetworkInterface)
+
+	if err := Convert_v1_NetworkInterface_To_v20191101_NetworkInterface(src, dst, nil); err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
+}

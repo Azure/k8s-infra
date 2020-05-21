@@ -35,7 +35,7 @@ func TestGetTypeReferenceData(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	g.Expect(err).ToNot(gomega.HaveOccurred())
 	g.Expect(refsData).ToNot(gomega.BeEmpty())
-	g.Expect(refsData).To(gomega.HaveLen(4))
+	g.Expect(refsData).To(gomega.HaveLen(6))
 	g.Expect(refsData).To(gomega.Equal([]TypeReferenceLocation{
 		{
 			JSONFieldName:     "embeddedBazzRef",
@@ -43,7 +43,6 @@ func TestGetTypeReferenceData(t *testing.T) {
 			Path:              []string{"spec", "properties"},
 			Group:             "microsoft.network.infra.azure.com",
 			Kind:              "Bazz",
-			IsSlice:           false,
 		},
 		{
 			Path:              []string{"spec", "properties"},
@@ -52,6 +51,13 @@ func TestGetTypeReferenceData(t *testing.T) {
 			Group:             "microsoft.network.infra.azure.com",
 			Kind:              "Route",
 			IsSlice:           true,
+		},
+		{
+			JSONFieldName:     "routeWithTemplateNameRef",
+			TemplateFieldName: "routeTemplateName",
+			Path:              []string{"spec", "properties"},
+			Group:             "microsoft.network.infra.azure.com",
+			Kind:              "Route",
 		},
 		{
 			JSONFieldName:     "blahRefs",
@@ -67,7 +73,14 @@ func TestGetTypeReferenceData(t *testing.T) {
 			Path:              []string{"spec", "properties", "foo"},
 			Group:             "microsoft.network.infra.azure.com",
 			Kind:              "Bazz",
-			IsSlice:           false,
+		},
+		{
+			JSONFieldName:     "compositeRefs",
+			TemplateFieldName: "composites",
+			Path:              []string{"spec", "properties"},
+			Group:             "microsoft.network.infra.azure.com",
+			Kind:              "Composite",
+			IsSlice:           true,
 		},
 	}))
 }
@@ -127,6 +140,11 @@ type (
 		BazzRef  *azcorev1.KnownTypeReference  `json:"bazzRef,omitempty" group:"microsoft.network.infra.azure.com" kind:"Bazz"`
 	}
 
+	Composite struct {
+		Primary                     *bool `json:"primary,omitempty"`
+		azcorev1.KnownTypeReference `json:""`
+	}
+
 	Embedded struct {
 		EmbeddedBazzRef *azcorev1.KnownTypeReference `json:"embeddedBazzRef,omitempty" group:"microsoft.network.infra.azure.com" kind:"Bazz"`
 	}
@@ -136,7 +154,9 @@ type (
 		*Embedded
 		DisableBGPRoutePropagation bool                          `json:"disableBgpRoutePropagation,omitempty"`
 		RouteRefs                  []azcorev1.KnownTypeReference `json:"routeRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"Route"`
+		RouteWithTemplateName      *azcorev1.KnownTypeReference  `json:"routeWithTemplateNameRef,omitempty" templateName:"routeTemplateName" group:"microsoft.network.infra.azure.com" kind:"Route"`
 		Foo                        *Foo                          `json:"foo,omitempty"`
+		CompositeRefs              *[]Composite                  `json:"compositeRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"Composite"`
 	}
 
 	// RouteTableSpec defines the desired state of RouteTable

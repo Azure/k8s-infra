@@ -204,6 +204,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*InterfaceDNSSettings)(nil), (*v1.InterfaceDNSSettings)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v20191101_InterfaceDNSSettings_To_v1_InterfaceDNSSettings(a.(*InterfaceDNSSettings), b.(*v1.InterfaceDNSSettings), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1.InterfaceDNSSettings)(nil), (*InterfaceDNSSettings)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1_InterfaceDNSSettings_To_v20191101_InterfaceDNSSettings(a.(*v1.InterfaceDNSSettings), b.(*InterfaceDNSSettings), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*LoadBalancer)(nil), (*v1.LoadBalancer)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v20191101_LoadBalancer_To_v1_LoadBalancer(a.(*LoadBalancer), b.(*v1.LoadBalancer), scope)
 	}); err != nil {
@@ -304,6 +314,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*NetworkInterface)(nil), (*v1.NetworkInterface)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v20191101_NetworkInterface_To_v1_NetworkInterface(a.(*NetworkInterface), b.(*v1.NetworkInterface), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1.NetworkInterface)(nil), (*NetworkInterface)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1_NetworkInterface_To_v20191101_NetworkInterface(a.(*v1.NetworkInterface), b.(*NetworkInterface), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*NetworkInterfaceIPConfiguration)(nil), (*v1.NetworkInterfaceIPConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v20191101_NetworkInterfaceIPConfiguration_To_v1_NetworkInterfaceIPConfiguration(a.(*NetworkInterfaceIPConfiguration), b.(*v1.NetworkInterfaceIPConfiguration), scope)
 	}); err != nil {
@@ -351,6 +371,46 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*v1.NetworkInterfaceIPConfigurationStatus)(nil), (*NetworkInterfaceIPConfigurationStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1_NetworkInterfaceIPConfigurationStatus_To_v20191101_NetworkInterfaceIPConfigurationStatus(a.(*v1.NetworkInterfaceIPConfigurationStatus), b.(*NetworkInterfaceIPConfigurationStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*NetworkInterfaceList)(nil), (*v1.NetworkInterfaceList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v20191101_NetworkInterfaceList_To_v1_NetworkInterfaceList(a.(*NetworkInterfaceList), b.(*v1.NetworkInterfaceList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1.NetworkInterfaceList)(nil), (*NetworkInterfaceList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1_NetworkInterfaceList_To_v20191101_NetworkInterfaceList(a.(*v1.NetworkInterfaceList), b.(*NetworkInterfaceList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*NetworkInterfaceSpec)(nil), (*v1.NetworkInterfaceSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v20191101_NetworkInterfaceSpec_To_v1_NetworkInterfaceSpec(a.(*NetworkInterfaceSpec), b.(*v1.NetworkInterfaceSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1.NetworkInterfaceSpec)(nil), (*NetworkInterfaceSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1_NetworkInterfaceSpec_To_v20191101_NetworkInterfaceSpec(a.(*v1.NetworkInterfaceSpec), b.(*NetworkInterfaceSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*NetworkInterfaceSpecProperties)(nil), (*v1.NetworkInterfaceSpecProperties)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v20191101_NetworkInterfaceSpecProperties_To_v1_NetworkInterfaceSpecProperties(a.(*NetworkInterfaceSpecProperties), b.(*v1.NetworkInterfaceSpecProperties), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1.NetworkInterfaceSpecProperties)(nil), (*NetworkInterfaceSpecProperties)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1_NetworkInterfaceSpecProperties_To_v20191101_NetworkInterfaceSpecProperties(a.(*v1.NetworkInterfaceSpecProperties), b.(*NetworkInterfaceSpecProperties), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*NetworkInterfaceStatus)(nil), (*v1.NetworkInterfaceStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v20191101_NetworkInterfaceStatus_To_v1_NetworkInterfaceStatus(a.(*NetworkInterfaceStatus), b.(*v1.NetworkInterfaceStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1.NetworkInterfaceStatus)(nil), (*NetworkInterfaceStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1_NetworkInterfaceStatus_To_v20191101_NetworkInterfaceStatus(a.(*v1.NetworkInterfaceStatus), b.(*NetworkInterfaceStatus), scope)
 	}); err != nil {
 		return err
 	}
@@ -1207,6 +1267,28 @@ func Convert_v1_InboundNatRuleStatus_To_v20191101_InboundNatRuleStatus(in *v1.In
 	return autoConvert_v1_InboundNatRuleStatus_To_v20191101_InboundNatRuleStatus(in, out, s)
 }
 
+func autoConvert_v20191101_InterfaceDNSSettings_To_v1_InterfaceDNSSettings(in *InterfaceDNSSettings, out *v1.InterfaceDNSSettings, s conversion.Scope) error {
+	out.DNSServers = (*[]string)(unsafe.Pointer(in.DNSServers))
+	out.InternalDNSNameLabel = (*string)(unsafe.Pointer(in.InternalDNSNameLabel))
+	return nil
+}
+
+// Convert_v20191101_InterfaceDNSSettings_To_v1_InterfaceDNSSettings is an autogenerated conversion function.
+func Convert_v20191101_InterfaceDNSSettings_To_v1_InterfaceDNSSettings(in *InterfaceDNSSettings, out *v1.InterfaceDNSSettings, s conversion.Scope) error {
+	return autoConvert_v20191101_InterfaceDNSSettings_To_v1_InterfaceDNSSettings(in, out, s)
+}
+
+func autoConvert_v1_InterfaceDNSSettings_To_v20191101_InterfaceDNSSettings(in *v1.InterfaceDNSSettings, out *InterfaceDNSSettings, s conversion.Scope) error {
+	out.DNSServers = (*[]string)(unsafe.Pointer(in.DNSServers))
+	out.InternalDNSNameLabel = (*string)(unsafe.Pointer(in.InternalDNSNameLabel))
+	return nil
+}
+
+// Convert_v1_InterfaceDNSSettings_To_v20191101_InterfaceDNSSettings is an autogenerated conversion function.
+func Convert_v1_InterfaceDNSSettings_To_v20191101_InterfaceDNSSettings(in *v1.InterfaceDNSSettings, out *InterfaceDNSSettings, s conversion.Scope) error {
+	return autoConvert_v1_InterfaceDNSSettings_To_v20191101_InterfaceDNSSettings(in, out, s)
+}
+
 func autoConvert_v20191101_LoadBalancer_To_v1_LoadBalancer(in *LoadBalancer, out *v1.LoadBalancer, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_v20191101_LoadBalancerSpec_To_v1_LoadBalancerSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -1513,6 +1595,38 @@ func Convert_v1_LoadBalancingRuleStatus_To_v20191101_LoadBalancingRuleStatus(in 
 	return autoConvert_v1_LoadBalancingRuleStatus_To_v20191101_LoadBalancingRuleStatus(in, out, s)
 }
 
+func autoConvert_v20191101_NetworkInterface_To_v1_NetworkInterface(in *NetworkInterface, out *v1.NetworkInterface, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_v20191101_NetworkInterfaceSpec_To_v1_NetworkInterfaceSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_v20191101_NetworkInterfaceStatus_To_v1_NetworkInterfaceStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v20191101_NetworkInterface_To_v1_NetworkInterface is an autogenerated conversion function.
+func Convert_v20191101_NetworkInterface_To_v1_NetworkInterface(in *NetworkInterface, out *v1.NetworkInterface, s conversion.Scope) error {
+	return autoConvert_v20191101_NetworkInterface_To_v1_NetworkInterface(in, out, s)
+}
+
+func autoConvert_v1_NetworkInterface_To_v20191101_NetworkInterface(in *v1.NetworkInterface, out *NetworkInterface, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_v1_NetworkInterfaceSpec_To_v20191101_NetworkInterfaceSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_v1_NetworkInterfaceStatus_To_v20191101_NetworkInterfaceStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1_NetworkInterface_To_v20191101_NetworkInterface is an autogenerated conversion function.
+func Convert_v1_NetworkInterface_To_v20191101_NetworkInterface(in *v1.NetworkInterface, out *NetworkInterface, s conversion.Scope) error {
+	return autoConvert_v1_NetworkInterface_To_v20191101_NetworkInterface(in, out, s)
+}
+
 func autoConvert_v20191101_NetworkInterfaceIPConfiguration_To_v1_NetworkInterfaceIPConfiguration(in *NetworkInterfaceIPConfiguration, out *v1.NetworkInterfaceIPConfiguration, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_v20191101_NetworkInterfaceIPConfigurationSpec_To_v1_NetworkInterfaceIPConfigurationSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -1659,6 +1773,108 @@ func autoConvert_v1_NetworkInterfaceIPConfigurationStatus_To_v20191101_NetworkIn
 // Convert_v1_NetworkInterfaceIPConfigurationStatus_To_v20191101_NetworkInterfaceIPConfigurationStatus is an autogenerated conversion function.
 func Convert_v1_NetworkInterfaceIPConfigurationStatus_To_v20191101_NetworkInterfaceIPConfigurationStatus(in *v1.NetworkInterfaceIPConfigurationStatus, out *NetworkInterfaceIPConfigurationStatus, s conversion.Scope) error {
 	return autoConvert_v1_NetworkInterfaceIPConfigurationStatus_To_v20191101_NetworkInterfaceIPConfigurationStatus(in, out, s)
+}
+
+func autoConvert_v20191101_NetworkInterfaceList_To_v1_NetworkInterfaceList(in *NetworkInterfaceList, out *v1.NetworkInterfaceList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]v1.NetworkInterface)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_v20191101_NetworkInterfaceList_To_v1_NetworkInterfaceList is an autogenerated conversion function.
+func Convert_v20191101_NetworkInterfaceList_To_v1_NetworkInterfaceList(in *NetworkInterfaceList, out *v1.NetworkInterfaceList, s conversion.Scope) error {
+	return autoConvert_v20191101_NetworkInterfaceList_To_v1_NetworkInterfaceList(in, out, s)
+}
+
+func autoConvert_v1_NetworkInterfaceList_To_v20191101_NetworkInterfaceList(in *v1.NetworkInterfaceList, out *NetworkInterfaceList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]NetworkInterface)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_v1_NetworkInterfaceList_To_v20191101_NetworkInterfaceList is an autogenerated conversion function.
+func Convert_v1_NetworkInterfaceList_To_v20191101_NetworkInterfaceList(in *v1.NetworkInterfaceList, out *NetworkInterfaceList, s conversion.Scope) error {
+	return autoConvert_v1_NetworkInterfaceList_To_v20191101_NetworkInterfaceList(in, out, s)
+}
+
+func autoConvert_v20191101_NetworkInterfaceSpec_To_v1_NetworkInterfaceSpec(in *NetworkInterfaceSpec, out *v1.NetworkInterfaceSpec, s conversion.Scope) error {
+	// INFO: in.APIVersion opted out of conversion generation
+	out.ResourceGroupRef = (*corev1.KnownTypeReference)(unsafe.Pointer(in.ResourceGroupRef))
+	out.Location = in.Location
+	out.Tags = *(*map[string]string)(unsafe.Pointer(&in.Tags))
+	out.Properties = (*v1.NetworkInterfaceSpecProperties)(unsafe.Pointer(in.Properties))
+	return nil
+}
+
+// Convert_v20191101_NetworkInterfaceSpec_To_v1_NetworkInterfaceSpec is an autogenerated conversion function.
+func Convert_v20191101_NetworkInterfaceSpec_To_v1_NetworkInterfaceSpec(in *NetworkInterfaceSpec, out *v1.NetworkInterfaceSpec, s conversion.Scope) error {
+	return autoConvert_v20191101_NetworkInterfaceSpec_To_v1_NetworkInterfaceSpec(in, out, s)
+}
+
+func autoConvert_v1_NetworkInterfaceSpec_To_v20191101_NetworkInterfaceSpec(in *v1.NetworkInterfaceSpec, out *NetworkInterfaceSpec, s conversion.Scope) error {
+	// INFO: in.APIVersion opted out of conversion generation
+	out.ResourceGroupRef = (*corev1.KnownTypeReference)(unsafe.Pointer(in.ResourceGroupRef))
+	out.Location = in.Location
+	out.Tags = *(*map[string]string)(unsafe.Pointer(&in.Tags))
+	out.Properties = (*NetworkInterfaceSpecProperties)(unsafe.Pointer(in.Properties))
+	return nil
+}
+
+// Convert_v1_NetworkInterfaceSpec_To_v20191101_NetworkInterfaceSpec is an autogenerated conversion function.
+func Convert_v1_NetworkInterfaceSpec_To_v20191101_NetworkInterfaceSpec(in *v1.NetworkInterfaceSpec, out *NetworkInterfaceSpec, s conversion.Scope) error {
+	return autoConvert_v1_NetworkInterfaceSpec_To_v20191101_NetworkInterfaceSpec(in, out, s)
+}
+
+func autoConvert_v20191101_NetworkInterfaceSpecProperties_To_v1_NetworkInterfaceSpecProperties(in *NetworkInterfaceSpecProperties, out *v1.NetworkInterfaceSpecProperties, s conversion.Scope) error {
+	out.NetworkSecurityGroupRef = (*corev1.KnownTypeReference)(unsafe.Pointer(in.NetworkSecurityGroupRef))
+	out.IPConfigurations = (*[]corev1.KnownTypeReference)(unsafe.Pointer(in.IPConfigurations))
+	out.DNSSettings = (*v1.InterfaceDNSSettings)(unsafe.Pointer(in.DNSSettings))
+	out.EnableAcceleratedNetworking = (*bool)(unsafe.Pointer(in.EnableAcceleratedNetworking))
+	out.EnableIPForwarding = (*bool)(unsafe.Pointer(in.EnableIPForwarding))
+	return nil
+}
+
+// Convert_v20191101_NetworkInterfaceSpecProperties_To_v1_NetworkInterfaceSpecProperties is an autogenerated conversion function.
+func Convert_v20191101_NetworkInterfaceSpecProperties_To_v1_NetworkInterfaceSpecProperties(in *NetworkInterfaceSpecProperties, out *v1.NetworkInterfaceSpecProperties, s conversion.Scope) error {
+	return autoConvert_v20191101_NetworkInterfaceSpecProperties_To_v1_NetworkInterfaceSpecProperties(in, out, s)
+}
+
+func autoConvert_v1_NetworkInterfaceSpecProperties_To_v20191101_NetworkInterfaceSpecProperties(in *v1.NetworkInterfaceSpecProperties, out *NetworkInterfaceSpecProperties, s conversion.Scope) error {
+	out.NetworkSecurityGroupRef = (*corev1.KnownTypeReference)(unsafe.Pointer(in.NetworkSecurityGroupRef))
+	out.IPConfigurations = (*[]corev1.KnownTypeReference)(unsafe.Pointer(in.IPConfigurations))
+	out.DNSSettings = (*InterfaceDNSSettings)(unsafe.Pointer(in.DNSSettings))
+	out.EnableAcceleratedNetworking = (*bool)(unsafe.Pointer(in.EnableAcceleratedNetworking))
+	out.EnableIPForwarding = (*bool)(unsafe.Pointer(in.EnableIPForwarding))
+	return nil
+}
+
+// Convert_v1_NetworkInterfaceSpecProperties_To_v20191101_NetworkInterfaceSpecProperties is an autogenerated conversion function.
+func Convert_v1_NetworkInterfaceSpecProperties_To_v20191101_NetworkInterfaceSpecProperties(in *v1.NetworkInterfaceSpecProperties, out *NetworkInterfaceSpecProperties, s conversion.Scope) error {
+	return autoConvert_v1_NetworkInterfaceSpecProperties_To_v20191101_NetworkInterfaceSpecProperties(in, out, s)
+}
+
+func autoConvert_v20191101_NetworkInterfaceStatus_To_v1_NetworkInterfaceStatus(in *NetworkInterfaceStatus, out *v1.NetworkInterfaceStatus, s conversion.Scope) error {
+	out.ID = in.ID
+	// INFO: in.DeploymentID opted out of conversion generation
+	out.ProvisioningState = in.ProvisioningState
+	return nil
+}
+
+// Convert_v20191101_NetworkInterfaceStatus_To_v1_NetworkInterfaceStatus is an autogenerated conversion function.
+func Convert_v20191101_NetworkInterfaceStatus_To_v1_NetworkInterfaceStatus(in *NetworkInterfaceStatus, out *v1.NetworkInterfaceStatus, s conversion.Scope) error {
+	return autoConvert_v20191101_NetworkInterfaceStatus_To_v1_NetworkInterfaceStatus(in, out, s)
+}
+
+func autoConvert_v1_NetworkInterfaceStatus_To_v20191101_NetworkInterfaceStatus(in *v1.NetworkInterfaceStatus, out *NetworkInterfaceStatus, s conversion.Scope) error {
+	out.ID = in.ID
+	// INFO: in.DeploymentID opted out of conversion generation
+	out.ProvisioningState = in.ProvisioningState
+	return nil
+}
+
+// Convert_v1_NetworkInterfaceStatus_To_v20191101_NetworkInterfaceStatus is an autogenerated conversion function.
+func Convert_v1_NetworkInterfaceStatus_To_v20191101_NetworkInterfaceStatus(in *v1.NetworkInterfaceStatus, out *NetworkInterfaceStatus, s conversion.Scope) error {
+	return autoConvert_v1_NetworkInterfaceStatus_To_v20191101_NetworkInterfaceStatus(in, out, s)
 }
 
 func autoConvert_v20191101_NetworkSecurityGroup_To_v1_NetworkSecurityGroup(in *NetworkSecurityGroup, out *v1.NetworkSecurityGroup, s conversion.Scope) error {

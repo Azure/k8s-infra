@@ -18,3 +18,4 @@ func (*RouteTable) Hub()                      {}
 func (*SecurityRule) Hub()                    {}
 func (*VirtualNetwork) Hub()                  {}
 func (*Subnet) Hub()                          {}
+func (*NetworkInterface) Hub()                {}
