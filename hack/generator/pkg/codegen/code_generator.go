@@ -54,8 +54,7 @@ func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder strin
 		return fmt.Errorf("error cleaning output folder '%v' (%w)", generator.configuration.SchemaURL, err)
 	}
 
-	idFactory := astmodel.NewIdentifierFactory()
-	scanner := jsonast.NewSchemaScanner(idFactory)
+	scanner := jsonast.NewSchemaScanner(astmodel.NewIdentifierFactory())
 
 	klog.V(0).Infof("Walking JSON schema")
 	defs, err := scanner.GenerateDefinitions(ctx, schema.Root())

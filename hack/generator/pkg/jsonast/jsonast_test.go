@@ -9,8 +9,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"go/format"
-	"go/token"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -39,13 +37,20 @@ func runGoldenTest(t *testing.T, path string) {
 	}
 
 	scanner := NewSchemaScanner(astmodel.NewIdentifierFactory())
-	nodes, err := scanner.ToNodes(context.TODO(), schema.Root())
+	defs, err := scanner.GenerateDefinitions(context.TODO(), schema.Root())
 	if err != nil {
 		t.Fatal(fmt.Errorf("could not produce nodes from scanner: %w", err))
 	}
 
+	// put all definitions in one file, regardless
+	// the package reference isn't really used here
+	fileDef := astmodel.NewFileDefinition(defs[0].Reference().PackageReference, defs...)
+
 	buf := &bytes.Buffer{}
-	_ = format.Node(buf, token.NewFileSet(), nodes.AsDeclarations())
+	err = fileDef.SaveToWriter(path, buf)
+	if err != nil {
+		t.Fatal(fmt.Errorf("could not generate file: %w", err))
+	}
 
 	g.Assert(t, testName, buf.Bytes())
 }
