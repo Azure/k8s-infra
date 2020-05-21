@@ -387,25 +387,24 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 		return nil, err
 	}
 
-	isResource := isResource(url)
+	// TODO:
+	//isResource := isResource(url)
 
-	// produce a usable struct name:
-	structReference := astmodel.NewStructReference(
-		scanner.idFactory.CreateIdentifier(name),
-		scanner.idFactory.CreateGroupName(group),
-		scanner.idFactory.CreatePackageNameFromVersion(version),
-		isResource)
+	// produce a usable name:
+	typeName := astmodel.NewTypeName(
+		astmodel.NewPackageReference(
+			scanner.idFactory.CreateGroupName(group),
+			scanner.idFactory.CreatePackageNameFromVersion(version)),
+		scanner.idFactory.CreateIdentifier(name))
 
 	// see if we already generated something for this ref
-	if definition, ok := scanner.FindTypeDefinition(structReference.TypeName); ok {
+	if definition, ok := scanner.FindTypeDefinition(typeName); ok {
 		return definition.Name(), nil
 	}
 
 	// Add a placeholder to avoid recursive calls
-	// (it doesn't matter that it's always a struct as we will overwrite it later)
-	// TODO: define a PlaceholderDefinition for this
-	sd := astmodel.NewStructDefinition(structReference)
-	scanner.AddTypeDefinition(sd)
+	// we will overwrite this later
+	scanner.AddTypeDefinition(astmodel.NewPlaceholderTypeDefiner(&typeName))
 
 	result, err := scanner.RunHandler(ctx, schemaType, schema.RefSchema)
 	if err != nil {
@@ -414,7 +413,7 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 
 	// Give the type a name:
 	// TODO: need to mark struct as resource
-	definer, otherDefs := result.CreateDefinitions(&structReference.TypeName, scanner.idFactory)
+	definer, otherDefs := result.CreateDefinitions(&typeName, scanner.idFactory)
 
 	// description := "Generated from: " + url.String()
 	// TODO: add description back in

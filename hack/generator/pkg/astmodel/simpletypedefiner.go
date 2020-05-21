@@ -16,6 +16,9 @@ type SimpleTypeDefiner struct {
 	theType Type
 }
 
+// SimpleTypeDefiner is a TypeDefiner
+var _ TypeDefiner = (*SimpleTypeDefiner)(nil)
+
 func (gtd *SimpleTypeDefiner) Name() *TypeName {
 	return gtd.name
 }

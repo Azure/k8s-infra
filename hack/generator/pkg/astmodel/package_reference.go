@@ -14,6 +14,10 @@ type PackageReference struct {
 	packageName string
 }
 
+func NewPackageReference(groupName string, packageName string) PackageReference {
+	return PackageReference{groupName, packageName}
+}
+
 // PackagePath is the path to the package reference
 func (pr *PackageReference) PackagePath() string {
 	return filepath.Join(pr.GroupName(), pr.PackageName())
