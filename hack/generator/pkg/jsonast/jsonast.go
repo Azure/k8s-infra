@@ -51,7 +51,7 @@ func (scanner *SchemaScanner) FindTypeDefinition(ref astmodel.TypeName) (astmode
 	return result, ok
 }
 
-// AddTypeDefinition makes a record of the specified struct so that FindStruct() can return it when it is needed again.
+// AddTypeDefinition adds a type definition to emit later
 func (scanner *SchemaScanner) AddTypeDefinition(def astmodel.TypeDefiner) {
 	scanner.Definitions[*def.Name()] = def
 }
