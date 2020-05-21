@@ -9,10 +9,16 @@ import (
 	"go/ast"
 )
 
+// TypeDefiner represents a named type in the output files, and knows how to generate the Go AST
 type TypeDefiner interface {
+
+	// Name is the name that will be bound to the type
 	Name() *TypeName
+
+	// Type is the type that the name will be bound to
 	Type() Type
 
+	// AsDeclarations generates the actual Go declarations
 	AsDeclarations() []ast.Decl
 }
 
@@ -24,14 +30,15 @@ func FileNameHint(def TypeDefiner) string {
 
 // Type represents something that is a Go type
 type Type interface {
+	// RequiredImports returns a list of packages required by this type
 	RequiredImports() []PackageReference
 
-	// ReferenceChecker is used to check for references to a specific definition
 	// References determines if this type has a direct reference to the given definition name
-	// For example, a struct references its field
+	// For example an Array of Persons references a Person
 	References(d *TypeName) bool
 
 	// AsType renders as a Go abstract syntax tree for a type
+	// (yes this says ast.Expr but that is what the Go 'ast' package uses for types)
 	AsType() ast.Expr
 
 	// Equals returns true if the passed type is the same as this one, false otherwise
