@@ -9,25 +9,6 @@ import (
 	"go/ast"
 )
 
-// TypeDefiner represents a named type in the output files, and knows how to generate the Go AST
-type TypeDefiner interface {
-
-	// Name is the name that will be bound to the type
-	Name() *TypeName
-
-	// Type is the type that the name will be bound to
-	Type() Type
-
-	// AsDeclarations generates the actual Go declarations
-	AsDeclarations() []ast.Decl
-}
-
-// FileNameHint returns what a file that contains this definition (if any) should be called
-// this is not always used as we might combine multiple definitions into one file
-func FileNameHint(def TypeDefiner) string {
-	return def.Name().name
-}
-
 // Type represents something that is a Go type
 type Type interface {
 	// RequiredImports returns a list of packages required by this type
