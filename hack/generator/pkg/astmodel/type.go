@@ -26,5 +26,6 @@ type Type interface {
 	Equals(t Type) bool
 
 	// CreateDefinitions gives a name to the type and might generate some asssociated definitions as well (the second result)
-	CreateDefinitions(name *TypeName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner)
+	// [isResource is only relevant to struct types and identifies if they are a root resource for Kubebuilder]
+	CreateDefinitions(name *TypeName, idFactory IdentifierFactory, isResource bool) (TypeDefiner, []TypeDefiner)
 }

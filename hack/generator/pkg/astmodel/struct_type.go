@@ -109,30 +109,38 @@ func (structType *StructType) Equals(t Type) bool {
 	return false
 }
 
-func (st *StructType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
+func (st *StructType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory, isResource bool) (TypeDefiner, []TypeDefiner) {
+
+	ref := NewStructReference(name.name, name.groupName, name.packageName, isResource)
 
 	var otherTypes []TypeDefiner
-
-	// TODO: we need to know if it is a resource
-	ref := NewStructReference(name.name, name.groupName, name.packageName, false)
-
 	var newFields []*FieldDefinition
+
 	for _, field := range st.fields {
 		newField := field
 
+		// TODO: figure out a generic way to do this:
 		if et, ok := newField.FieldType().(*EnumType); ok {
 			// enums that are not explicitly refs get named here:
 			enumName := name.name + string(field.fieldName)
 			defName := NewTypeName(name.PackageReference, enumName)
-			ed, edOther := et.CreateDefinitions(&defName, idFactory)
+			ed, edOther := et.CreateDefinitions(&defName, idFactory, false)
 
 			// append all definitions into output
 			otherTypes = append(append(otherTypes, ed), edOther...)
 
 			newField = NewFieldDefinition(newField.fieldName, newField.jsonName, ed.Name())
-		} else if _, ok := newField.FieldType().(*StructType); ok {
+		} else if st, ok := newField.FieldType().(*StructType); ok {
 			// inline structs get named here:
-			// TODO
+
+			structName := name.name + string(field.fieldName)
+			defName := NewTypeName(name.PackageReference, structName)
+			sd, sdOther := st.CreateDefinitions(&defName, idFactory, false) // nested types are never resources
+
+			// append all definitions into output
+			otherTypes = append(append(otherTypes, sd), sdOther...)
+
+			newField = NewFieldDefinition(newField.fieldName, newField.jsonName, sd.Name())
 		}
 
 		newFields = append(newFields, newField)

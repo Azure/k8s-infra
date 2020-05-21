@@ -52,6 +52,6 @@ func (optional *OptionalType) Equals(t Type) bool {
 	return false
 }
 
-func (optional *OptionalType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
+func (optional *OptionalType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
 	return &SimpleTypeDefiner{name, optional}, nil
 }

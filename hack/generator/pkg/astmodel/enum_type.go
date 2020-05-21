@@ -65,7 +65,7 @@ func (enum *EnumType) RequiredImports() []PackageReference {
 	return nil
 }
 
-func (enum *EnumType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
+func (enum *EnumType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
 	identifier := idFactory.CreateEnumIdentifier(name.name)
 	canonicalName := &TypeName{PackageReference: name.PackageReference, name: identifier}
 	return NewEnumDefinition(canonicalName, enum), nil

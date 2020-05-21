@@ -57,6 +57,6 @@ func (prim *PrimitiveType) Equals(t Type) bool {
 	return false
 }
 
-func (prim *PrimitiveType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
+func (prim *PrimitiveType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
 	return &SimpleTypeDefiner{name, prim}, nil
 }

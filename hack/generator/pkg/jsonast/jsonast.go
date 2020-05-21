@@ -46,14 +46,18 @@ type (
 )
 
 // FindTypeDefinition looks to see if we have seen the specified definition before, returning its definition if we have.
-func (scanner *SchemaScanner) FindTypeDefinition(ref astmodel.TypeName) (astmodel.TypeDefiner, bool) {
-	result, ok := scanner.Definitions[ref]
+func (scanner *SchemaScanner) FindTypeDefinition(name astmodel.TypeName) (astmodel.TypeDefiner, bool) {
+	result, ok := scanner.Definitions[name]
 	return result, ok
 }
 
 // AddTypeDefinition adds a type definition to emit later
 func (scanner *SchemaScanner) AddTypeDefinition(def astmodel.TypeDefiner) {
 	scanner.Definitions[*def.Name()] = def
+}
+
+func (scanner *SchemaScanner) RemoveTypeDefinition(name astmodel.TypeName) {
+	delete(scanner.Definitions, name)
 }
 
 // Definitions for different kinds of JSON schema
@@ -387,8 +391,7 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 		return nil, err
 	}
 
-	// TODO:
-	//isResource := isResource(url)
+	isResource := isResource(url)
 
 	// produce a usable name:
 	typeName := astmodel.NewTypeName(
@@ -408,12 +411,13 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 
 	result, err := scanner.RunHandler(ctx, schemaType, schema.RefSchema)
 	if err != nil {
+		scanner.RemoveTypeDefinition(typeName) // we weren't able to generate it, remove placeholder
 		return nil, err
 	}
 
 	// Give the type a name:
 	// TODO: need to mark struct as resource
-	definer, otherDefs := result.CreateDefinitions(&typeName, scanner.idFactory)
+	definer, otherDefs := result.CreateDefinitions(&typeName, scanner.idFactory, isResource)
 
 	// description := "Generated from: " + url.String()
 	// TODO: add description back in

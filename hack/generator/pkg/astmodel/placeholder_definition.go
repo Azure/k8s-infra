@@ -25,7 +25,7 @@ func (placeholder *PlaceholderTypeDefinition) AsDeclarations() []ast.Decl {
 }
 
 func (placeholder *PlaceholderTypeDefinition) Type() Type {
-	return nil
+	panic("Placeholder was not replaced! Bad code! Bad code!")
 }
 
 func (placeholder *PlaceholderTypeDefinition) Name() *TypeName {
