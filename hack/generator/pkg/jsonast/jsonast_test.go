@@ -56,7 +56,9 @@ func TestGolden(t *testing.T) {
 		name string
 		path string
 	}
+
 	testGroups := make(map[string][]Test)
+
 	// find all input .json files
 	err := filepath.Walk("testdata", func(path string, info os.FileInfo, err error) error {
 		if filepath.Ext(path) == ".json" {
