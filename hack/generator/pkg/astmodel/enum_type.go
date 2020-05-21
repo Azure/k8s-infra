@@ -31,8 +31,8 @@ func (enum *EnumType) AsType() ast.Expr {
 }
 
 // References indicates whether this Type includes any direct references to the given Type?
-func (enum *EnumType) References(d *TypeName) bool {
-	return false
+func (enum *EnumType) References(tn *TypeName) bool {
+	return enum.BaseType.References(tn)
 }
 
 // Equals will return true if the supplied type has the same base type and options
