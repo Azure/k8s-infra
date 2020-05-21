@@ -45,22 +45,24 @@ type (
 	}
 )
 
-// FindTypeDefinition looks to see if we have seen the specified definition before, returning its definition if we have.
-func (scanner *SchemaScanner) FindTypeDefinition(name astmodel.TypeName) (astmodel.TypeDefiner, bool) {
+// findTypeDefinition looks to see if we have seen the specified definition before, returning its definition if we have.
+func (scanner *SchemaScanner) findTypeDefinition(name astmodel.TypeName) (astmodel.TypeDefiner, bool) {
 	result, ok := scanner.Definitions[name]
 	return result, ok
 }
 
-// AddTypeDefinition adds a type definition to emit later
-func (scanner *SchemaScanner) AddTypeDefinition(def astmodel.TypeDefiner) {
+// addTypeDefinition adds a type definition to emit later
+func (scanner *SchemaScanner) addTypeDefinition(def astmodel.TypeDefiner) {
 	scanner.Definitions[*def.Name()] = def
 }
 
-func (scanner *SchemaScanner) AddEmptyTypeDefinition(name astmodel.TypeName) {
+// addEmptyTypeDefinition adds a placeholder definition; it should always be replaced later
+func (scanner *SchemaScanner) addEmptyTypeDefinition(name astmodel.TypeName) {
 	scanner.Definitions[name] = nil
 }
 
-func (scanner *SchemaScanner) RemoveTypeDefinition(name astmodel.TypeName) {
+// removeTypeDefinition removes a type definition
+func (scanner *SchemaScanner) removeTypeDefinition(name astmodel.TypeName) {
 	delete(scanner.Definitions, name)
 }
 
@@ -198,7 +200,7 @@ func (scanner *SchemaScanner) ToNodes(ctx context.Context, schema *gojsonschema.
 	description := "Generated from: " + url.String()
 	root = root.WithDescription(&description)
 
-	scanner.AddTypeDefinition(root)
+	scanner.addTypeDefinition(root)
 
 	return root, nil
 }
@@ -405,17 +407,17 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 		scanner.idFactory.CreateIdentifier(name))
 
 	// see if we already generated something for this ref
-	if _, ok := scanner.FindTypeDefinition(typeName); ok {
+	if _, ok := scanner.findTypeDefinition(typeName); ok {
 		return &typeName, nil
 	}
 
 	// Add a placeholder to avoid recursive calls
 	// we will overwrite this later
-	scanner.AddEmptyTypeDefinition(typeName)
+	scanner.addEmptyTypeDefinition(typeName)
 
 	result, err := scanner.RunHandler(ctx, schemaType, schema.RefSchema)
 	if err != nil {
-		scanner.RemoveTypeDefinition(typeName) // we weren't able to generate it, remove placeholder
+		scanner.removeTypeDefinition(typeName) // we weren't able to generate it, remove placeholder
 		return nil, err
 	}
 
@@ -426,9 +428,9 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 	// TODO: add description back in
 
 	// register all definitions
-	scanner.AddTypeDefinition(definer)
+	scanner.addTypeDefinition(definer)
 	for _, otherDef := range otherDefs {
-		scanner.AddTypeDefinition(otherDef)
+		scanner.addTypeDefinition(otherDef)
 	}
 
 	// return the name of the primary type
