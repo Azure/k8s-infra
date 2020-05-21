@@ -109,7 +109,10 @@ func (structType *StructType) Equals(t Type) bool {
 	return false
 }
 
-func (st *StructType) MakeDefiner(name *DefinitionName, idFactory IdentifierFactory) TypeDefiner {
+func (st *StructType) CreateDefinitions(name *DefinitionName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
+
+	var otherTypes []TypeDefiner
+
 	// TODO: we need to know if it is a resource
 	ref := NewStructReference(name.name, name.groupName, name.packageName, false)
 
@@ -121,9 +124,11 @@ func (st *StructType) MakeDefiner(name *DefinitionName, idFactory IdentifierFact
 			// enums that are not explicitly refs get named here:
 			enumName := name.name + string(field.fieldName)
 			defName := NewDefinitionName(name.PackageReference, enumName)
-			ed := et.MakeDefiner(&defName, idFactory)
+			ed, edOther := et.CreateDefinitions(&defName, idFactory)
 
-			// TODO: emit 'ed'
+			// append all definitions into output
+			otherTypes = append(append(otherTypes, ed), edOther...)
+
 			newField = NewFieldDefinition(newField.fieldName, newField.jsonName, ed.Name())
 		} else if _, ok := newField.FieldType().(*StructType); ok {
 			// inline structs get named here:
@@ -133,5 +138,5 @@ func (st *StructType) MakeDefiner(name *DefinitionName, idFactory IdentifierFact
 		newFields = append(newFields, newField)
 	}
 
-	return NewStructDefinition(ref, newFields...)
+	return NewStructDefinition(ref, newFields...), otherTypes
 }

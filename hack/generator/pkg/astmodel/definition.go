@@ -37,5 +37,5 @@ type Type interface {
 	// Equals returns true if the passed type is the same as this one, false otherwise
 	Equals(t Type) bool
 
-	MakeDefiner(name *DefinitionName, idFactory IdentifierFactory) TypeDefiner
+	CreateDefinitions(name *DefinitionName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner)
 }

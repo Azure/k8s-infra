@@ -414,13 +414,18 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 
 	// Give the type a name:
 	// TODO: need to mark struct as resource
-	definer := result.MakeDefiner(&structReference.DefinitionName, scanner.idFactory)
+	definer, otherDefs := result.CreateDefinitions(&structReference.DefinitionName, scanner.idFactory)
 
 	// description := "Generated from: " + url.String()
 	// TODO: add description back in
-	scanner.AddDefinition(definer)
 
-	// return the name of the type:
+	// register all definitions
+	scanner.AddDefinition(definer)
+	for _, otherDef := range otherDefs {
+		scanner.AddDefinition(otherDef)
+	}
+
+	// return the name of the primary type
 	return definer.Name(), nil
 }
 

@@ -52,6 +52,6 @@ func (array *ArrayType) Equals(t Type) bool {
 	return false
 }
 
-func (array *ArrayType) MakeDefiner(name *DefinitionName, _ IdentifierFactory) TypeDefiner {
-	return &SimpleTypeDefiner{name, array}
+func (array *ArrayType) CreateDefinitions(name *DefinitionName, _ IdentifierFactory) (TypeDefiner, []TypeDefiner) {
+	return &SimpleTypeDefiner{name, array}, nil
 }
