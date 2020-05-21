@@ -30,7 +30,7 @@ func (enum *EnumType) AsType() ast.Expr {
 	return enum.BaseType.AsType()
 }
 
-// References indicates whether this Type includes any direct references to the given Type?
+// References indicates whether this Type includes any direct references to the given Type
 func (enum *EnumType) References(tn *TypeName) bool {
 	return enum.BaseType.References(tn)
 }
