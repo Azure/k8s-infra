@@ -16,12 +16,13 @@ import (
 
 // PackageDefinition is the definition of a package
 type PackageDefinition struct {
-	GroupName string
+	GroupName   string
 	PackageName string
 
 	definitions []Definition
 }
 
+// NewPackageDefinition constructs a new package definition
 func NewPackageDefinition(groupName string, packageName string) *PackageDefinition {
 	return &PackageDefinition{groupName, packageName, nil}
 }

@@ -21,7 +21,7 @@ type PackageReference struct {
 	packagePath string
 }
 
-// Creates a new local package reference
+// NewLocalPackageReference Creates a new local package reference from a group and package name
 func NewLocalPackageReference(groupName string, packageName string) PackageReference {
 	return PackageReference{
 		packagePath: filepath.Join(localPathPrefix, groupName, packageName),
@@ -40,6 +40,8 @@ func (pr *PackageReference) stripLocalPackagePrefix() (string, error) {
 	return strings.Replace(pr.packagePath, localPathPrefix, "", -1), nil
 }
 
+// GroupAndPackage gets the group and package for this package reference if applicable,
+// or an error if not
 func (pr *PackageReference) GroupAndPackage() (string, string, error) {
 	groupAndVersion, err := pr.stripLocalPackagePrefix()
 	if err != nil {
@@ -50,7 +52,7 @@ func (pr *PackageReference) GroupAndPackage() (string, string, error) {
 	return result[0], result[1], nil
 }
 
-// The fully qualified package path
+// PackagePath returns the fully qualified package path
 func (pr *PackageReference) PackagePath() string {
 	return pr.packagePath
 }
@@ -58,7 +60,7 @@ func (pr *PackageReference) PackagePath() string {
 // PackageName is the package name of the package reference
 func (pr *PackageReference) PackageName() string {
 	l := strings.Split(pr.packagePath, "/")
-	return l[len(l) - 1]
+	return l[len(l)-1]
 }
 
 // Equals returns true if the passed package reference references the same package, false otherwise

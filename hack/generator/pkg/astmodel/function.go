@@ -9,7 +9,7 @@ import (
 	"go/ast"
 )
 
-// Represents something that is an (unnamed) Go function
+// Function represents something that is an (unnamed) Go function
 type Function interface {
 	HasImports
 	ReferenceChecker

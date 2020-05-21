@@ -12,10 +12,11 @@ import (
 
 // StructType represents an (unnamed) struct type
 type StructType struct {
-	fields []*FieldDefinition
+	fields    []*FieldDefinition
 	functions map[string]Function
 }
 
+// EmptyStructType is an empty struct
 var EmptyStructType = NewStructType()
 
 // Ensure StructType implements the Type interface correctly
@@ -152,6 +153,7 @@ func (structType *StructType) CreateRelatedDefinitions(ref PackageReference, nam
 	return result
 }
 
+// WithFunction creates a new StructType with a function (method) attached to it
 func (structType *StructType) WithFunction(name string, function Function) *StructType {
 	// Create a copy of structType to preserve immutability
 	result := structType.copy()

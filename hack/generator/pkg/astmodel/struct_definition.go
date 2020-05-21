@@ -22,7 +22,7 @@ func NewStructReference(name string, group string, version string, isResource bo
 	return &StructReference{
 		DefinitionName{
 			PackageReference: NewLocalPackageReference(group, version),
-			name: name,
+			name:             name,
 		},
 		isResource,
 	}

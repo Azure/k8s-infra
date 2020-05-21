@@ -61,7 +61,7 @@ func (file *FileDefinition) generateImportSpecs() []ast.Spec {
 		importSpecs = append(importSpecs, &ast.ImportSpec{
 			Name: nil,
 			Path: &ast.BasicLit{
-				Kind: token.STRING,
+				Kind:  token.STRING,
 				Value: "\"" + requiredImport.PackagePath() + "\"",
 			},
 		})
