@@ -35,7 +35,7 @@ func (optional *OptionalType) RequiredImports() []PackageReference {
 }
 
 // References is true if it is this type or the 'element' type references it
-func (optional *OptionalType) References(d *DefinitionName) bool {
+func (optional *OptionalType) References(d *TypeName) bool {
 	return optional.element.References(d)
 }
 
@@ -52,6 +52,6 @@ func (optional *OptionalType) Equals(t Type) bool {
 	return false
 }
 
-func (optional *OptionalType) CreateDefinitions(name *DefinitionName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
+func (optional *OptionalType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
 	return &SimpleTypeDefiner{name, optional}, nil
 }

@@ -45,7 +45,7 @@ func (m *MapType) RequiredImports() []PackageReference {
 }
 
 // References this type has to the given type
-func (m *MapType) References(d *DefinitionName) bool {
+func (m *MapType) References(d *TypeName) bool {
 	return m.key.References(d) || m.value.References(d)
 }
 
@@ -74,6 +74,6 @@ func (m *MapType) CreateRelatedDefinitions(ref PackageReference, namehint string
 }
 */
 
-func (m *MapType) CreateDefinitions(name *DefinitionName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
+func (m *MapType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
 	return &SimpleTypeDefiner{name, m}, nil
 }

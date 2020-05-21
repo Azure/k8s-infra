@@ -61,7 +61,7 @@ func (structType *StructType) RequiredImports() []PackageReference {
 }
 
 // References this type has to the given type
-func (structType *StructType) References(d *DefinitionName) bool {
+func (structType *StructType) References(d *TypeName) bool {
 	for _, field := range structType.fields {
 		if field.FieldType().References(d) {
 			return true
@@ -109,7 +109,7 @@ func (structType *StructType) Equals(t Type) bool {
 	return false
 }
 
-func (st *StructType) CreateDefinitions(name *DefinitionName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
+func (st *StructType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
 
 	var otherTypes []TypeDefiner
 
@@ -123,7 +123,7 @@ func (st *StructType) CreateDefinitions(name *DefinitionName, idFactory Identifi
 		if et, ok := newField.FieldType().(*EnumType); ok {
 			// enums that are not explicitly refs get named here:
 			enumName := name.name + string(field.fieldName)
-			defName := NewDefinitionName(name.PackageReference, enumName)
+			defName := NewTypeName(name.PackageReference, enumName)
 			ed, edOther := et.CreateDefinitions(&defName, idFactory)
 
 			// append all definitions into output

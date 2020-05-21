@@ -10,7 +10,7 @@ import (
 )
 
 type TypeDefiner interface {
-	Name() *DefinitionName
+	Name() *TypeName
 	Type() Type
 
 	AsDeclarations() []ast.Decl
@@ -29,7 +29,7 @@ type Type interface {
 	// ReferenceChecker is used to check for references to a specific definition
 	// References determines if this type has a direct reference to the given definition name
 	// For example, a struct references its field
-	References(d *DefinitionName) bool
+	References(d *TypeName) bool
 
 	// AsType renders as a Go abstract syntax tree for a type
 	AsType() ast.Expr
@@ -37,5 +37,5 @@ type Type interface {
 	// Equals returns true if the passed type is the same as this one, false otherwise
 	Equals(t Type) bool
 
-	CreateDefinitions(name *DefinitionName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner)
+	CreateDefinitions(name *TypeName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner)
 }

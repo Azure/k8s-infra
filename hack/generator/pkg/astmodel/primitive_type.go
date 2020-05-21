@@ -43,7 +43,7 @@ func (prim *PrimitiveType) RequiredImports() []PackageReference {
 }
 
 // References this type has to the given type
-func (prim *PrimitiveType) References(d *DefinitionName) bool {
+func (prim *PrimitiveType) References(d *TypeName) bool {
 	// Primitive types dont have references
 	return false
 }
@@ -57,6 +57,6 @@ func (prim *PrimitiveType) Equals(t Type) bool {
 	return false
 }
 
-func (prim *PrimitiveType) CreateDefinitions(name *DefinitionName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
+func (prim *PrimitiveType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
 	return &SimpleTypeDefiner{name, prim}, nil
 }

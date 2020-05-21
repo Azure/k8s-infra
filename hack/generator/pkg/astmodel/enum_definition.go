@@ -13,19 +13,19 @@ import (
 
 // EnumDefinition generates the full definition of an enumeration
 type EnumDefinition struct {
-	name     *DefinitionName
+	name     *TypeName
 	baseType *EnumType
 }
 
 var _ TypeDefiner = (*EnumDefinition)(nil)
 
 // NewEnumDefinition is a factory method for creating new Enum Definitions
-func NewEnumDefinition(name *DefinitionName, t *EnumType) *EnumDefinition {
+func NewEnumDefinition(name *TypeName, t *EnumType) *EnumDefinition {
 	return &EnumDefinition{name: name, baseType: t}
 }
 
 // Name returns the unique name to use for specifying this enumeration
-func (enum *EnumDefinition) Name() *DefinitionName {
+func (enum *EnumDefinition) Name() *TypeName {
 	return enum.name
 }
 

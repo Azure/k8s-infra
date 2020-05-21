@@ -35,7 +35,7 @@ func (array *ArrayType) RequiredImports() []PackageReference {
 }
 
 // References this type has to the given type
-func (array *ArrayType) References(d *DefinitionName) bool {
+func (array *ArrayType) References(d *TypeName) bool {
 	return array.element.References(d)
 }
 
@@ -52,6 +52,6 @@ func (array *ArrayType) Equals(t Type) bool {
 	return false
 }
 
-func (array *ArrayType) CreateDefinitions(name *DefinitionName, _ IdentifierFactory) (TypeDefiner, []TypeDefiner) {
+func (array *ArrayType) CreateDefinitions(name *TypeName, _ IdentifierFactory) (TypeDefiner, []TypeDefiner) {
 	return &SimpleTypeDefiner{name, array}, nil
 }

@@ -56,7 +56,7 @@ func emitFiles(filesToGenerate map[string][]TypeDefiner, outputDir string) {
 	}
 }
 
-func anyReferences(defs []TypeDefiner, defName *DefinitionName) bool {
+func anyReferences(defs []TypeDefiner, defName *TypeName) bool {
 	for _, def := range defs {
 		if def.Type().References(defName) {
 			return true

@@ -12,11 +12,11 @@ import (
 
 // SimpleTypeDefiner is a TypeDefiner for simple cases (not structs or enums)
 type SimpleTypeDefiner struct {
-	name    *DefinitionName
+	name    *TypeName
 	theType Type
 }
 
-func (gtd *SimpleTypeDefiner) Name() *DefinitionName {
+func (gtd *SimpleTypeDefiner) Name() *TypeName {
 	return gtd.name
 }
 

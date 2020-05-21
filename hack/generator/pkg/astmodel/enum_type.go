@@ -31,7 +31,7 @@ func (enum *EnumType) AsType() ast.Expr {
 }
 
 // References indicates whether this Type includes any direct references to the given Type?
-func (enum *EnumType) References(d *DefinitionName) bool {
+func (enum *EnumType) References(d *TypeName) bool {
 	return false
 }
 
@@ -65,8 +65,8 @@ func (enum *EnumType) RequiredImports() []PackageReference {
 	return nil
 }
 
-func (enum *EnumType) CreateDefinitions(name *DefinitionName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
+func (enum *EnumType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
 	identifier := idFactory.CreateEnumIdentifier(name.name)
-	canonicalName := &DefinitionName{PackageReference: name.PackageReference, name: identifier}
+	canonicalName := &TypeName{PackageReference: name.PackageReference, name: identifier}
 	return NewEnumDefinition(canonicalName, enum), nil
 }

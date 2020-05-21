@@ -7,50 +7,50 @@ package astmodel
 
 import "go/ast"
 
-// DefinitionName encapsulates all the information required to uniquely identify a definition
-type DefinitionName struct {
+// TypeName is a name associated with another Type (it also is usable as a Type)
+type TypeName struct {
 	PackageReference
 	name string
 }
 
-// NewDefinitionName is a factory method for creating a DefinitionName
-func NewDefinitionName(pr PackageReference, name string) DefinitionName {
-	return DefinitionName{pr, name}
+// NewTypeName is a factory method for creating a TypeName
+func NewTypeName(pr PackageReference, name string) TypeName {
+	return TypeName{pr, name}
 }
 
-// Name returns the unique name for this definition
-func (dn *DefinitionName) Name() string {
+// Name returns the package-local name of the type
+func (dn *TypeName) Name() string {
 	return dn.name
 }
 
-// A DefinitionName can be used as a Type,
+// A TypeName can be used as a Type,
 // it is simply a reference to the name.
-var _ Type = (*DefinitionName)(nil)
+var _ Type = (*TypeName)(nil)
 
-// AsType implements Type for DefinitionName
-func (dn *DefinitionName) AsType() ast.Expr {
+// AsType implements Type for TypeName
+func (dn *TypeName) AsType() ast.Expr {
 	return ast.NewIdent(dn.name)
 }
 
-// References indicates whether this Type includes any direct references to the given Type?
-func (dn *DefinitionName) References(d *DefinitionName) bool {
+// References indicates whether this Type includes any direct references to the given Type
+func (dn *TypeName) References(d *TypeName) bool {
 	return dn.Equals(d)
 }
 
 // RequiredImports returns all the imports required for this definition
-func (dn *DefinitionName) RequiredImports() []PackageReference {
+func (dn *TypeName) RequiredImports() []PackageReference {
 	return []PackageReference{dn.PackageReference}
 }
 
-// Equals returns true if the passed type references the same definition, false otherwise
-func (dn *DefinitionName) Equals(t Type) bool {
-	if d, ok := t.(*DefinitionName); ok {
+// Equals returns true if the passed type is the same TypeName, false otherwise
+func (dn *TypeName) Equals(t Type) bool {
+	if d, ok := t.(*TypeName); ok {
 		return dn.name == d.name && dn.PackageReference.Equals(&d.PackageReference)
 	}
 
 	return false
 }
 
-func (dn *DefinitionName) CreateDefinitions(name *DefinitionName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
+func (dn *TypeName) CreateDefinitions(name *TypeName, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
 	return &SimpleTypeDefiner{name, dn}, nil
 }

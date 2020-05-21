@@ -38,21 +38,21 @@ type (
 
 	// A SchemaScanner is used to scan a JSON Schema extracting and collecting type definitions
 	SchemaScanner struct {
-		Definitions  map[astmodel.DefinitionName]astmodel.TypeDefiner
+		Definitions  map[astmodel.TypeName]astmodel.TypeDefiner
 		TypeHandlers map[SchemaType]TypeHandler
 		Filters      []string
 		idFactory    astmodel.IdentifierFactory
 	}
 )
 
-// FindDefinition looks to see if we have seen the specified definition before, returning its definition if we have.
-func (scanner *SchemaScanner) FindDefinition(ref astmodel.DefinitionName) (astmodel.TypeDefiner, bool) {
+// FindTypeDefinition looks to see if we have seen the specified definition before, returning its definition if we have.
+func (scanner *SchemaScanner) FindTypeDefinition(ref astmodel.TypeName) (astmodel.TypeDefiner, bool) {
 	result, ok := scanner.Definitions[ref]
 	return result, ok
 }
 
-// AddDefinition makes a record of the specified struct so that FindStruct() can return it when it is needed again.
-func (scanner *SchemaScanner) AddDefinition(def astmodel.TypeDefiner) {
+// AddTypeDefinition makes a record of the specified struct so that FindStruct() can return it when it is needed again.
+func (scanner *SchemaScanner) AddTypeDefinition(def astmodel.TypeDefiner) {
 	scanner.Definitions[*def.Name()] = def
 }
 
@@ -84,7 +84,7 @@ func (use *UnknownSchemaError) Error() string {
 // NewSchemaScanner constructs a new scanner, ready for use
 func NewSchemaScanner(idFactory astmodel.IdentifierFactory) *SchemaScanner {
 	return &SchemaScanner{
-		Definitions:  make(map[astmodel.DefinitionName]astmodel.TypeDefiner),
+		Definitions:  make(map[astmodel.TypeName]astmodel.TypeDefiner),
 		TypeHandlers: DefaultTypeHandlers(),
 		idFactory:    idFactory,
 	}
@@ -190,7 +190,7 @@ func (scanner *SchemaScanner) ToNodes(ctx context.Context, schema *gojsonschema.
 	description := "Generated from: " + url.String()
 	root = root.WithDescription(&description)
 
-	scanner.AddDefinition(root)
+	scanner.AddTypeDefinition(root)
 
 	return root, nil
 }
@@ -397,7 +397,7 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 		isResource)
 
 	// see if we already generated something for this ref
-	if definition, ok := scanner.FindDefinition(structReference.DefinitionName); ok {
+	if definition, ok := scanner.FindTypeDefinition(structReference.TypeName); ok {
 		return definition.Name(), nil
 	}
 
@@ -405,7 +405,7 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 	// (it doesn't matter that it's always a struct as we will overwrite it later)
 	// TODO: define a PlaceholderDefinition for this
 	sd := astmodel.NewStructDefinition(structReference)
-	scanner.AddDefinition(sd)
+	scanner.AddTypeDefinition(sd)
 
 	result, err := scanner.RunHandler(ctx, schemaType, schema.RefSchema)
 	if err != nil {
@@ -414,15 +414,15 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 
 	// Give the type a name:
 	// TODO: need to mark struct as resource
-	definer, otherDefs := result.CreateDefinitions(&structReference.DefinitionName, scanner.idFactory)
+	definer, otherDefs := result.CreateDefinitions(&structReference.TypeName, scanner.idFactory)
 
 	// description := "Generated from: " + url.String()
 	// TODO: add description back in
 
 	// register all definitions
-	scanner.AddDefinition(definer)
+	scanner.AddTypeDefinition(definer)
 	for _, otherDef := range otherDefs {
-		scanner.AddDefinition(otherDef)
+		scanner.AddTypeDefinition(otherDef)
 	}
 
 	// return the name of the primary type

@@ -14,14 +14,14 @@ import (
 // StructReference is the (versioned) name of a struct
 // that can be used as a type
 type StructReference struct {
-	DefinitionName
+	TypeName
 	isResource bool // this might seem like a strange place to have this, but it affects how the struct is referenced
 }
 
 // NewStructReference creates a new StructReference
 // TODO[dj]: any "New" func should return a ptr
 func NewStructReference(name string, group string, version string, isResource bool) StructReference {
-	return StructReference{DefinitionName{PackageReference{group, version}, name}, isResource}
+	return StructReference{TypeName{PackageReference{group, version}, name}, isResource}
 }
 
 // IsResource indicates that the struct is an Azure resource
@@ -41,8 +41,8 @@ type StructDefinition struct {
 var _ TypeDefiner = (*StructDefinition)(nil)
 
 // Name provides the struct name
-func (definition *StructDefinition) Name() *DefinitionName {
-	return &definition.DefinitionName
+func (definition *StructDefinition) Name() *TypeName {
+	return &definition.TypeName
 }
 
 // Type provides the type of the struct
