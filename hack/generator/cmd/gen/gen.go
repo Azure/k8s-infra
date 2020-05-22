@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/klog/v2"
-	"log"
 )
 
 // NewGenCommand creates a new cobra Command when invoked from the command line
@@ -24,7 +23,7 @@ func NewGenCommand() (*cobra.Command, error) {
 
 			cg, err := codegen.NewCodeGenerator("azure-cloud.yaml")
 			if err != nil {
-				log.Printf("Error: %v\n", err)
+				klog.Errorf("Error creating code generator: %v\n", err)
 				return err
 			}
 
