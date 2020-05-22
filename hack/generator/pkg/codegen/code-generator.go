@@ -147,14 +147,14 @@ func loadConfiguration(configurationFile string) (*Configuration, error) {
 		return nil, err
 	}
 
-	result := Configuration{}
+	result := NewConfiguration()
 
-	err = yaml.Unmarshal(data, &result)
+	err = yaml.Unmarshal(data, result)
 	if err != nil {
 		return nil, err
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 func loadSchema(source string) (*gojsonschema.Schema, error) {

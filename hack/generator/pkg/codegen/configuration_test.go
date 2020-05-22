@@ -32,7 +32,7 @@ func Test_WithSingleFilter_FiltersExpectedTypes(t *testing.T) {
 	student := student2019
 
 	filter := jsonast.TypeFilter{Action: jsonast.IncludeType, Version: "2019*"}
-	config := NewExportConfiguration(&filter)
+	config := NewConfiguration(&filter)
 
 	g.Expect(config.ShouldExport(person)).To(Equal(Export))
 	g.Expect(config.ShouldExport(post)).To(Equal(Export))
@@ -52,7 +52,7 @@ func Test_WithMultipleFilters_FiltersExpectedTypes(t *testing.T) {
 	nameFilter := jsonast.TypeFilter{
 		Action: jsonast.IncludeType,
 		Name:   "*ss"}
-	config := NewExportConfiguration(&versionFilter, &nameFilter)
+	config := NewConfiguration(&versionFilter, &nameFilter)
 
 	g.Expect(config.ShouldExport(person)).To(Equal(Export))
 	g.Expect(config.ShouldExport(post)).To(Equal(Export))
@@ -69,7 +69,7 @@ func Test_WithMultipleFilters_GivesPrecedenceToEarlierFilters(t *testing.T) {
 	exclude2019 := jsonast.TypeFilter{
 		Action:  jsonast.ExcludeType,
 		Version: "2019-01-01"}
-	config := NewExportConfiguration(&alwaysExportPerson, &exclude2019)
+	config := NewConfiguration(&alwaysExportPerson, &exclude2019)
 
 	g.Expect(config.ShouldExport(person2019)).To(Equal(Export))
 	g.Expect(config.ShouldExport(student2019)).To(Equal(Skip))

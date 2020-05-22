@@ -30,8 +30,8 @@ const (
 	Skip ShouldExportResult = "skip"
 )
 
-// NewExportConfiguration is a convenience factory for Configuration
-func NewExportConfiguration(filters ...*jsonast.TypeFilter) *Configuration {
+// NewConfiguration is a convenience factory for Configuration
+func NewConfiguration(filters ...*jsonast.TypeFilter) *Configuration {
 	result := Configuration{
 		TypeFilters: filters,
 	}
