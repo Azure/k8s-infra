@@ -8,7 +8,6 @@ package astmodel
 import (
 	"go/ast"
 	"go/token"
-	"sort"
 )
 
 // EnumDefinition generates the full definition of an enumeration
@@ -37,7 +36,7 @@ func (enum *EnumDefinition) Type() Type {
 // AsDeclarations generates the Go code representing this definition
 func (enum *EnumDefinition) AsDeclarations() []ast.Decl {
 	var specs []ast.Spec
-	for _, v := range enum.baseType.Options {
+	for _, v := range enum.baseType.Options() {
 		s := enum.createValueDeclaration(v)
 		specs = append(specs, s)
 	}
@@ -55,16 +54,8 @@ func (enum *EnumDefinition) AsDeclarations() []ast.Decl {
 	return result
 }
 
-// Tidy does cleanup to ensure deterministic code generation
-func (enum *EnumDefinition) Tidy() {
-	sort.Slice(enum.baseType.Options, func(left int, right int) bool {
-		return enum.baseType.Options[left].Identifier < enum.baseType.Options[right].Identifier
-	})
-}
-
 func (enum *EnumDefinition) createBaseDeclaration() ast.Decl {
-	var identifier *ast.Ident
-	identifier = ast.NewIdent(enum.typeName.name)
+	identifier := ast.NewIdent(enum.typeName.name)
 
 	typeSpecification := &ast.TypeSpec{
 		Name: identifier,
@@ -84,8 +75,7 @@ func (enum *EnumDefinition) createBaseDeclaration() ast.Decl {
 
 func (enum *EnumDefinition) createValueDeclaration(value EnumValue) ast.Spec {
 
-	var enumIdentifier *ast.Ident
-	enumIdentifier = ast.NewIdent(enum.typeName.name)
+	enumIdentifier := ast.NewIdent(enum.typeName.name)
 
 	valueIdentifier := ast.NewIdent(enum.Name().name + value.Identifier)
 	valueLiteral := ast.BasicLit{

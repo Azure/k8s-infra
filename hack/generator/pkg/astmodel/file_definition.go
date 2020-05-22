@@ -11,8 +11,10 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
-	"log"
+	"io"
 	"os"
+
+	"k8s.io/klog/v2"
 )
 
 // FileDefinition is the content of a file we're generating
@@ -28,19 +30,6 @@ func NewFileDefinition(packageRef PackageReference, definitions ...TypeDefiner) 
 	// TODO: check that all definitions are from same package
 	return &FileDefinition{packageRef, definitions}
 }
-
-/*
-// Tidy the contents of this file prior to creating the AST
-func (file *FileDefinition) Tidy() {
-	sort.Slice(file.definitions, func(left int, right int) bool {
-		return file.definitions[left].Name().name < file.definitions[right].Name().name
-	})
-
-	for _, d := range file.definitions {
-		d.Tidy()
-	}
-}
-*/
 
 func (file *FileDefinition) generateImportSpecs() []ast.Spec {
 
@@ -69,9 +58,8 @@ func (file *FileDefinition) generateImportSpecs() []ast.Spec {
 		importSpecs = append(importSpecs, &ast.ImportSpec{
 			Name: nil,
 			Path: &ast.BasicLit{
-				Kind: token.STRING,
-				// TODO: this will need adjusting in future:
-				Value: "\"github.com/Azure/k8s-infra/hack/generator/apis/" + requiredImport.PackagePath() + "\"",
+				Kind:  token.STRING,
+				Value: "\"" + requiredImport.PackagePath() + "\"",
 			},
 		})
 	}
@@ -95,7 +83,7 @@ func (file *FileDefinition) AsAst() ast.Node {
 	// Emit struct registration for each resource:
 	var exprs []ast.Expr
 	for _, defn := range file.definitions {
-		if structDefn, ok := defn.(*StructDefinition); ok && structDefn.IsResource() {
+		if structDefn, ok := defn.(*StructDefinition); ok && structDefn.StructReference.IsResource() {
 			exprs = append(exprs, &ast.UnaryExpr{
 				Op: token.AND,
 				X:  &ast.CompositeLit{Type: structDefn.StructReference.AsType()},
@@ -153,13 +141,13 @@ func createComments(lines ...string) ([]*ast.Comment, int) {
 	return result, length
 }
 
-// SaveTo writes this generated file to disk
-func (file FileDefinition) SaveTo(filePath string) error {
+// SaveToWriter writes the file to the specifier io.Writer
+func (file FileDefinition) SaveToWriter(filename string, dst io.Writer) error {
 	original := file.AsAst()
 
 	// Write generated source into a memory buffer
 	fset := token.NewFileSet()
-	fset.AddFile(filePath, 1, 102400)
+	fset.AddFile(filename, 1, 102400)
 
 	var buffer bytes.Buffer
 	err := format.Node(&buffer, fset, original)
@@ -169,18 +157,24 @@ func (file FileDefinition) SaveTo(filePath string) error {
 
 	// Parse it out of the buffer again so we can "go fmt" it
 	var toFormat ast.Node
-	toFormat, err = parser.ParseFile(fset, filePath, &buffer, parser.ParseComments)
+	toFormat, err = parser.ParseFile(fset, filename, &buffer, parser.ParseComments)
 	if err != nil {
-		log.Printf("Failed to reformat code (%s); keeping code as is.", err)
+		klog.Errorf("Failed to reformat code (%s); keeping code as is.", err)
 		toFormat = original
 	}
 
-	// Write it to a file
+	return format.Node(dst, fset, toFormat)
+}
+
+// SaveToFile writes this generated file to disk
+func (file FileDefinition) SaveToFile(filePath string) error {
+
 	f, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}
+
 	defer f.Close()
 
-	return format.Node(f, fset, toFormat)
+	return file.SaveToWriter(filePath, f)
 }

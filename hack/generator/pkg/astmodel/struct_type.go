@@ -12,15 +12,23 @@ import (
 
 // StructType represents an (unnamed) struct type
 type StructType struct {
-	fields []*FieldDefinition
+	fields    []*FieldDefinition
+	functions map[string]Function
 }
+
+// EmptyStructType is an empty struct
+var EmptyStructType = NewStructType()
 
 // Ensure StructType implements the Type interface correctly
 var _ Type = (*StructType)(nil)
 
 // NewStructType is a factory method for creating a new StructTypeDefinition
 func NewStructType(fields ...*FieldDefinition) *StructType {
-	return &StructType{fields}
+	sort.Slice(fields, func(left int, right int) bool {
+		return fields[left].fieldName < fields[right].fieldName
+	})
+
+	return &StructType{fields, make(map[string]Function)}
 }
 
 // Fields returns all our field definitions
@@ -57,6 +65,10 @@ func (structType *StructType) RequiredImports() []PackageReference {
 		result = append(result, field.FieldType().RequiredImports()...)
 	}
 
+	for _, function := range structType.functions {
+		result = append(result, function.RequiredImports()...)
+	}
+
 	return result
 }
 
@@ -67,6 +79,8 @@ func (structType *StructType) References(d *TypeName) bool {
 			return true
 		}
 	}
+
+	// For now, not considering functions in references on purpose
 
 	return false
 }
@@ -102,6 +116,24 @@ func (structType *StructType) Equals(t Type) bool {
 			}
 		}
 
+		if len(structType.functions) != len(st.functions) {
+			// Different number of functions, not equal
+			return false
+		}
+
+		for functionName, function := range st.functions {
+			ourFunction, ok := structType.functions[functionName]
+			if !ok {
+				// Didn't find the func, not equal
+				return false
+			}
+
+			if !ourFunction.Equals(function) {
+				// Different function, even though same name; not-equal
+				return false
+			}
+		}
+
 		// All fields match, equal
 		return true
 	}
@@ -111,7 +143,7 @@ func (structType *StructType) Equals(t Type) bool {
 
 func (st *StructType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory, isResource bool) (TypeDefiner, []TypeDefiner) {
 
-	ref := NewStructReference(name.name, name.groupName, name.packageName, isResource)
+	ref := NewStructReferenceFromName(name, isResource)
 
 	var otherTypes []TypeDefiner
 	var newFields []*FieldDefinition
@@ -146,5 +178,24 @@ func (st *StructType) CreateDefinitions(name *TypeName, idFactory IdentifierFact
 		newFields = append(newFields, newField)
 	}
 
-	return NewStructDefinition(ref, newFields...), otherTypes
+	return NewStructDefinition(ref, NewStructType(newFields...)), otherTypes
+}
+
+// WithFunction creates a new StructType with a function (method) attached to it
+func (structType *StructType) WithFunction(name string, function Function) *StructType {
+	// Create a copy of structType to preserve immutability
+	result := structType.copy()
+	result.functions[name] = function
+
+	return result
+}
+
+func (structType *StructType) copy() *StructType {
+	result := NewStructType(structType.fields...)
+
+	for key, value := range structType.functions {
+		result.functions[key] = value
+	}
+
+	return result
 }

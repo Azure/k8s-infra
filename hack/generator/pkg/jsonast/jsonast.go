@@ -8,10 +8,11 @@ package jsonast
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/url"
 	"regexp"
 	"strings"
+
+	"k8s.io/klog/v2"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/devigned/tab"
@@ -38,7 +39,7 @@ type (
 
 	// A SchemaScanner is used to scan a JSON Schema extracting and collecting type definitions
 	SchemaScanner struct {
-		Definitions  map[astmodel.TypeName]astmodel.TypeDefiner
+		definitions  map[astmodel.TypeName]astmodel.TypeDefiner
 		TypeHandlers map[SchemaType]TypeHandler
 		Filters      []string
 		idFactory    astmodel.IdentifierFactory
@@ -47,23 +48,23 @@ type (
 
 // findTypeDefinition looks to see if we have seen the specified definition before, returning its definition if we have.
 func (scanner *SchemaScanner) findTypeDefinition(name astmodel.TypeName) (astmodel.TypeDefiner, bool) {
-	result, ok := scanner.Definitions[name]
+	result, ok := scanner.definitions[name]
 	return result, ok
 }
 
 // addTypeDefinition adds a type definition to emit later
 func (scanner *SchemaScanner) addTypeDefinition(def astmodel.TypeDefiner) {
-	scanner.Definitions[*def.Name()] = def
+	scanner.definitions[*def.Name()] = def
 }
 
 // addEmptyTypeDefinition adds a placeholder definition; it should always be replaced later
 func (scanner *SchemaScanner) addEmptyTypeDefinition(name astmodel.TypeName) {
-	scanner.Definitions[name] = nil
+	scanner.definitions[name] = nil
 }
 
 // removeTypeDefinition removes a type definition
 func (scanner *SchemaScanner) removeTypeDefinition(name astmodel.TypeName) {
-	delete(scanner.Definitions, name)
+	delete(scanner.definitions, name)
 }
 
 // Definitions for different kinds of JSON schema
@@ -94,7 +95,7 @@ func (use *UnknownSchemaError) Error() string {
 // NewSchemaScanner constructs a new scanner, ready for use
 func NewSchemaScanner(idFactory astmodel.IdentifierFactory) *SchemaScanner {
 	return &SchemaScanner{
-		Definitions:  make(map[astmodel.TypeName]astmodel.TypeDefiner),
+		definitions:  make(map[astmodel.TypeName]astmodel.TypeDefiner),
 		TypeHandlers: DefaultTypeHandlers(),
 		idFactory:    idFactory,
 	}
@@ -151,7 +152,7 @@ func (scanner *SchemaScanner) AddFilters(filters []string) {
 // 							- ARM specific resources. I'm not 100% sure why...
 //
 // 		allOf acts like composition which composites each schema from the child oneOf with the base reference from allOf.
-func (scanner *SchemaScanner) ToNodes(ctx context.Context, schema *gojsonschema.SubSchema, opts ...BuilderOption) (astmodel.TypeDefiner, error) {
+func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema *gojsonschema.SubSchema, opts ...BuilderOption) ([]astmodel.TypeDefiner, error) {
 	ctx, span := tab.StartSpan(ctx, "ToNodes")
 	defer span.End()
 
@@ -196,13 +197,19 @@ func (scanner *SchemaScanner) ToNodes(ctx context.Context, schema *gojsonschema.
 		false)
 
 	// TODO: make safer:
-	root := astmodel.NewStructDefinition(rootStructRef, nodes.(*astmodel.StructType).Fields()...)
+	root := astmodel.NewStructDefinition(rootStructRef, nodes.(*astmodel.StructType))
 	description := "Generated from: " + url.String()
 	root = root.WithDescription(&description)
 
 	scanner.addTypeDefinition(root)
 
-	return root, nil
+	// produce the results
+	var defs []astmodel.TypeDefiner
+	for _, def := range scanner.definitions {
+		defs = append(defs, def)
+	}
+
+	return defs, nil
 }
 
 // DefaultTypeHandlers will create a default map of JSONType to AST transformers
@@ -223,7 +230,7 @@ func DefaultTypeHandlers() map[SchemaType]TypeHandler {
 }
 
 func enumHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema.SubSchema) (astmodel.Type, error) {
-	ctx, span := tab.StartSpan(ctx, "enumHandler")
+	_, span := tab.StartSpan(ctx, "enumHandler")
 	defer span.End()
 
 	// Default to a string base type
@@ -252,7 +259,7 @@ func enumHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsche
 
 func fixedTypeHandler(typeToReturn astmodel.Type, handlerName string) TypeHandler {
 	return func(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema.SubSchema) (astmodel.Type, error) {
-		ctx, span := tab.StartSpan(ctx, handlerName+"Handler")
+		_, span := tab.StartSpan(ctx, handlerName+"Handler")
 		defer span.End()
 
 		return typeToReturn, nil
@@ -401,7 +408,7 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 
 	// produce a usable name:
 	typeName := astmodel.NewTypeName(
-		astmodel.NewPackageReference(
+		astmodel.NewLocalPackageReference(
 			scanner.idFactory.CreateGroupName(group),
 			scanner.idFactory.CreatePackageNameFromVersion(version)),
 		scanner.idFactory.CreateIdentifier(name))
@@ -454,19 +461,17 @@ func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsch
 		}
 
 		// unpack the contents of what we got from subhandlers:
-		switch d.(type) {
+		switch s := d.(type) {
 		case *astmodel.StructType:
 			// if it's a struct type get all its fields:
-			s := d.(*astmodel.StructType)
 			fields = append(fields, s.Fields()...)
 
 		case *astmodel.StructReference:
 			// if it's a reference to a defined struct, embed it inside:
-			s := d.(*astmodel.StructReference)
 			fields = append(fields, astmodel.NewEmbeddedStructDefinition(s))
 
 		default:
-			log.Printf("Unhandled type in allOf: %T\n", d)
+			klog.Errorf("Unhandled type in allOf: %#v\n", d)
 		}
 	}
 
@@ -536,7 +541,7 @@ func arrayHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsch
 
 	if len(schema.ItemsChildren) == 0 {
 		// there is no type to the elements, so we must assume interface{}
-		log.Printf("WRN Interface assumption unproven\n")
+		klog.Warning("Interface assumption unproven\n")
 
 		return astmodel.NewArrayType(astmodel.AnyType), nil
 	}
@@ -601,23 +606,6 @@ func getPrimitiveType(name SchemaType) (*astmodel.PrimitiveType, error) {
 	}
 }
 
-func isPrimitiveType(name SchemaType) bool {
-	switch name {
-	case String, Int, Number, Bool:
-		return true
-	default:
-		return false
-	}
-}
-
-func asComment(text *string) string {
-	if text == nil {
-		return ""
-	}
-
-	return "// " + *text
-}
-
 func isURLPathSeparator(c rune) bool {
 	return c == '/'
 }
@@ -653,7 +641,7 @@ func isResource(url *url.URL) bool {
 	return false
 }
 
-var versionRegex = regexp.MustCompile("\\d{4}-\\d{2}-\\d{2}")
+var versionRegex = regexp.MustCompile(`\d{4}-\d{2}-\d{2}`)
 
 // Extract the name of an object from the supplied schema URL
 func versionOf(url *url.URL) (string, error) {

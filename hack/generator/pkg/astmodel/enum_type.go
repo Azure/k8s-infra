@@ -5,14 +5,17 @@
 
 package astmodel
 
-import "go/ast"
+import (
+	"go/ast"
+	"sort"
+)
 
 // EnumType represents a set of mutually exclusive predefined options
 type EnumType struct {
 	// BaseType is the underlying type used to define the values
 	BaseType *PrimitiveType
 	// Options is the set of all unique values
-	Options []EnumValue
+	options []EnumValue
 }
 
 // EnumType must implement the Type interface correctly
@@ -20,7 +23,11 @@ var _ Type = (*EnumType)(nil)
 
 // NewEnumType defines a new enumeration including the legal values
 func NewEnumType(baseType *PrimitiveType, options []EnumValue) *EnumType {
-	return &EnumType{BaseType: baseType, Options: options}
+	sort.Slice(options, func(left int, right int) bool {
+		return options[left].Identifier < options[right].Identifier
+	})
+
+	return &EnumType{BaseType: baseType, options: options}
 }
 
 // AsType implements Type for EnumType
@@ -42,13 +49,13 @@ func (enum *EnumType) Equals(t Type) bool {
 			return false
 		}
 
-		if len(enum.Options) != len(e.Options) {
+		if len(enum.options) != len(e.options) {
 			// Different number of fields, not equal
 			return false
 		}
 
-		for i := range enum.Options {
-			if !enum.Options[i].Equals(&e.Options[i]) {
+		for i := range enum.options {
+			if !enum.options[i].Equals(&e.options[i]) {
 				return false
 			}
 		}
@@ -69,4 +76,10 @@ func (enum *EnumType) CreateDefinitions(name *TypeName, idFactory IdentifierFact
 	identifier := idFactory.CreateEnumIdentifier(name.name)
 	canonicalName := &TypeName{PackageReference: name.PackageReference, name: identifier}
 	return NewEnumDefinition(canonicalName, enum), nil
+}
+
+// Options returns all the enum options
+// A copy of the slice is returned to preserve immutability
+func (enum *EnumType) Options() []EnumValue {
+	return append(enum.options[:0:0], enum.options...)
 }

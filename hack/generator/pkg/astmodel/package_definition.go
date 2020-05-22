@@ -7,22 +7,25 @@ package astmodel
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"path/filepath"
 	"text/template"
+
+	"k8s.io/klog/v2"
 )
 
-// PackageDefinition is the definiton of a package
+// PackageDefinition is the definition of a package
 type PackageDefinition struct {
-	PackageReference
+	GroupName   string
+	PackageName string
 
 	definitions []TypeDefiner
 }
 
-// NewPackageDefinition creates a new PackageDefinition
-func NewPackageDefinition(reference PackageReference) *PackageDefinition {
-	return &PackageDefinition{reference, nil}
+// NewPackageDefinition constructs a new package definition
+func NewPackageDefinition(groupName string, packageName string) *PackageDefinition {
+	return &PackageDefinition{groupName, packageName, nil}
 }
 
 // AddDefinition adds a Definition to the PackageDefinition
@@ -31,8 +34,7 @@ func (pkgDef *PackageDefinition) AddDefinition(def TypeDefiner) {
 }
 
 // EmitDefinitions emits the PackageDefinition to an output directory
-func (pkgDef *PackageDefinition) EmitDefinitions(outputDir string) {
-
+func (pkgDef *PackageDefinition) EmitDefinitions(outputDir string) (int, error) {
 	resources, otherDefinitions := partitionDefinitions(pkgDef.definitions)
 
 	// initialize with 1 resource per file
@@ -42,18 +44,36 @@ func (pkgDef *PackageDefinition) EmitDefinitions(outputDir string) {
 	}
 
 	allocateTypesToFiles(otherDefinitions, filesToGenerate)
-	emitFiles(filesToGenerate, outputDir)
-	emitGroupVersionFile(pkgDef, outputDir)
+	err := emitFiles(filesToGenerate, outputDir)
+	if err != nil {
+		return 0, err
+	}
+
+	err = emitGroupVersionFile(pkgDef, outputDir)
+	if err != nil {
+		return 0, err
+	}
+
+	return len(filesToGenerate), nil
 }
 
-func emitFiles(filesToGenerate map[string][]TypeDefiner, outputDir string) {
+// DefinitionCount returns the count of definitions that have been sorted into this package
+func (pkgDef *PackageDefinition) DefinitionCount() int {
+	return len(pkgDef.definitions)
+}
+
+func emitFiles(filesToGenerate map[string][]TypeDefiner, outputDir string) error {
 	for fileName, defs := range filesToGenerate {
 		genFile := NewFileDefinition(defs[0].Name().PackageReference, defs...)
 		outputFile := filepath.Join(outputDir, fileName+"_types.go")
-		log.Printf("Writing '%s'\n", outputFile)
-		//genFile.Tidy()
-		genFile.SaveTo(outputFile)
+		klog.V(5).Infof("Writing '%s'\n", outputFile)
+		err := genFile.SaveToFile(outputFile)
+		if err != nil {
+			return fmt.Errorf("error saving definitions to file '%v'(%w)", outputFile, err)
+		}
 	}
+
+	return nil
 }
 
 func anyReferences(defs []TypeDefiner, defName *TypeName) bool {
@@ -72,7 +92,7 @@ func partitionDefinitions(definitions []TypeDefiner) (resourceStructs []*StructD
 	var notResources []TypeDefiner
 
 	for _, def := range definitions {
-		if structDef, ok := def.(*StructDefinition); ok && structDef.IsResource() {
+		if structDef, ok := def.(*StructDefinition); ok && structDef.StructReference.IsResource() {
 			resources = append(resources, structDef)
 		} else {
 			notResources = append(notResources, def)
@@ -207,11 +227,19 @@ var (
 	localSchemeBuilder = SchemeBuilder.SchemeBuilder
 )`))
 
-func emitGroupVersionFile(pkgDef *PackageDefinition, outputDir string) {
+func emitGroupVersionFile(pkgDef *PackageDefinition, outputDir string) error {
 	buf := &bytes.Buffer{}
-	groupVersionFileTemplate.Execute(buf, pkgDef)
+	err := groupVersionFileTemplate.Execute(buf, pkgDef)
+	if err != nil {
+		return err
+	}
 
 	gvFile := filepath.Join(outputDir, "groupversion_info.go")
-	// TODO[dj]: handle this error
-	ioutil.WriteFile(gvFile, buf.Bytes(), 0700)
+
+	err = ioutil.WriteFile(gvFile, buf.Bytes(), 0700)
+	if err != nil {
+		return fmt.Errorf("error writing group version file '%v'(%w)", gvFile, err)
+	}
+
+	return nil
 }

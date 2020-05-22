@@ -9,8 +9,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"go/format"
-	"go/token"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -34,11 +32,25 @@ func runGoldenTest(t *testing.T, path string) {
 	loader := gojsonschema.NewSchemaLoader()
 	schema, err := loader.Compile(gojsonschema.NewBytesLoader(inputFile))
 
+	if err != nil {
+		t.Fatal(fmt.Errorf("could not compile input: %w", err))
+	}
+
 	scanner := NewSchemaScanner(astmodel.NewIdentifierFactory())
-	nodes, err := scanner.ToNodes(context.TODO(), schema.Root())
+	defs, err := scanner.GenerateDefinitions(context.TODO(), schema.Root())
+	if err != nil {
+		t.Fatal(fmt.Errorf("could not produce nodes from scanner: %w", err))
+	}
+
+	// put all definitions in one file, regardless
+	// the package reference isn't really used here
+	fileDef := astmodel.NewFileDefinition(defs[0].Name().PackageReference, defs...)
 
 	buf := &bytes.Buffer{}
-	format.Node(buf, token.NewFileSet(), nodes.AsDeclarations())
+	err = fileDef.SaveToWriter(path, buf)
+	if err != nil {
+		t.Fatal(fmt.Errorf("could not generate file: %w", err))
+	}
 
 	g.Assert(t, testName, buf.Bytes())
 }
@@ -49,7 +61,9 @@ func TestGolden(t *testing.T) {
 		name string
 		path string
 	}
+
 	testGroups := make(map[string][]Test)
+
 	// find all input .json files
 	err := filepath.Walk("testdata", func(path string, info os.FileInfo, err error) error {
 		if filepath.Ext(path) == ".json" {
