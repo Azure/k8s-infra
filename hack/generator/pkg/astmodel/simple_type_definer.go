@@ -52,10 +52,10 @@ func (std *SimpleTypeDefiner) AsDeclarations() []ast.Decl {
 
 	return []ast.Decl{
 		&ast.GenDecl{
+			Doc:  docComments,
 			Tok: token.TYPE,
 			Specs: []ast.Spec{
 				&ast.TypeSpec{
-					Doc:  docComments,
 					Name: ast.NewIdent(std.name.name),
 					Type: std.theType.AsType(),
 				},
