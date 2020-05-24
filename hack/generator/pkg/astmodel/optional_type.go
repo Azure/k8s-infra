@@ -58,5 +58,5 @@ func (optional *OptionalType) CreateInternalDefinitions(name *TypeName, idFactor
 }
 
 func (optional *OptionalType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
-	return &SimpleTypeDefiner{name, optional}, nil
+	return NewSimpleTypeDefiner(name, optional), nil
 }

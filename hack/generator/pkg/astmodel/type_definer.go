@@ -18,6 +18,9 @@ type TypeDefiner interface {
 	// Type is the type that the name will be bound to
 	Type() Type
 
+	// WithDescription adds (or removes!) a description for the defined type
+	WithDescription(description *string) TypeDefiner
+
 	// AsDeclarations generates the actual Go declarations
 	AsDeclarations() []ast.Decl
 }

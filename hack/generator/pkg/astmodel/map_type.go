@@ -69,5 +69,5 @@ func (m *MapType) CreateInternalDefinitions(name *TypeName, idFactory Identifier
 }
 
 func (m *MapType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
-	return &SimpleTypeDefiner{name, m}, nil
+	return NewSimpleTypeDefiner(name, m), nil
 }

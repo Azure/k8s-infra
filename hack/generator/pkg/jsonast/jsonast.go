@@ -185,23 +185,25 @@ func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema *g
 		return nil, fmt.Errorf("Unable to extract version for schema: %w", err)
 	}
 
-	nodes, err := scanner.RunHandler(ctx, schemaType, schema)
+	rootType, err := scanner.RunHandler(ctx, schemaType, schema)
 	if err != nil {
 		return nil, err
 	}
 
-	rootStructRef := astmodel.NewStructReference(
-		scanner.idFactory.CreateIdentifier(rootStructName),
+	rootPackage := astmodel.NewLocalPackageReference(
 		scanner.idFactory.CreateGroupName(rootStructGroup),
-		scanner.idFactory.CreatePackageNameFromVersion(rootStructVersion),
-		false)
+		scanner.idFactory.CreatePackageNameFromVersion(rootStructVersion))
+	rootTypeName := astmodel.NewTypeName(rootPackage, rootStructName)
 
-	// TODO: make safer:
-	root := astmodel.NewStructDefinition(rootStructRef, nodes.(*astmodel.StructType))
+	rootDefinition, otherTypes := rootType.CreateDefinitions(&rootTypeName, scanner.idFactory, false)
+
 	description := "Generated from: " + url.String()
-	root = root.WithDescription(&description)
+	rootDefinition = rootDefinition.WithDescription(&description)
 
-	scanner.addTypeDefinition(root)
+	scanner.addTypeDefinition(rootDefinition)
+	for _, otherType := range otherTypes {
+		scanner.addTypeDefinition(otherType)
+	}
 
 	// produce the results
 	var defs []astmodel.TypeDefiner
@@ -431,8 +433,8 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 	// Give the type a name:
 	definer, otherDefs := result.CreateDefinitions(&typeName, scanner.idFactory, isResource)
 
-	// description := "Generated from: " + url.String()
-	// TODO: add description back in
+	description := "Generated from: " + url.String()
+	definer = definer.WithDescription(&description)
 
 	// register all definitions
 	scanner.addTypeDefinition(definer)

@@ -42,7 +42,7 @@ type StructDefinition struct {
 	StructReference *StructReference
 	StructType      *StructType
 
-	description string
+	description *string
 }
 
 // Ensure StructDefinition implements TypeDefiner interface correctly
@@ -60,17 +60,13 @@ func (definition *StructDefinition) Type() Type {
 
 // NewStructDefinition is a factory method for creating a new StructDefinition
 func NewStructDefinition(ref *StructReference, structType *StructType) *StructDefinition {
-	return &StructDefinition{ref, structType, ""}
+	return &StructDefinition{ref, structType, nil}
 }
 
 // WithDescription adds a description (doc-comment) to the struct
-func (definition *StructDefinition) WithDescription(description *string) *StructDefinition {
-	if description == nil {
-		return definition
-	}
-
+func (definition *StructDefinition) WithDescription(description *string) TypeDefiner {
 	result := *definition
-	result.description = *description
+	result.description = description
 	return &result
 }
 
@@ -108,9 +104,9 @@ func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 		},
 	}
 
-	if definition.description != "" {
+	if definition.description != nil {
 		declaration.Doc.List = append(declaration.Doc.List,
-			&ast.Comment{Text: "\n/* " + definition.description + " */"})
+			&ast.Comment{Text: "\n/*" + *definition.description + "*/"})
 	}
 
 	declarations := []ast.Decl{declaration}

@@ -12,8 +12,9 @@ import (
 
 // EnumDefinition generates the full definition of an enumeration
 type EnumDefinition struct {
-	typeName *TypeName
-	baseType *EnumType
+	typeName    *TypeName
+	baseType    *EnumType
+	description *string
 }
 
 var _ TypeDefiner = (*EnumDefinition)(nil)
@@ -31,6 +32,12 @@ func (enum *EnumDefinition) Name() *TypeName {
 // Type returns the underlying EnumerationType for this enum
 func (enum *EnumDefinition) Type() Type {
 	return enum.baseType
+}
+
+func (enum *EnumDefinition) WithDescription(description *string) TypeDefiner {
+	result := *enum
+	result.description = description
+	return &result
 }
 
 // AsDeclarations generates the Go code representing this definition

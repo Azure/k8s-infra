@@ -63,5 +63,5 @@ func (prim *PrimitiveType) CreateInternalDefinitions(_ *TypeName, _ IdentifierFa
 }
 
 func (prim *PrimitiveType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
-	return &SimpleTypeDefiner{name, prim}, nil
+	return NewSimpleTypeDefiner(name, prim), nil
 }

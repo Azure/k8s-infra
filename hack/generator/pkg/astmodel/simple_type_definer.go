@@ -12,29 +12,52 @@ import (
 
 // SimpleTypeDefiner is a TypeDefiner for simple cases (not structs or enums)
 type SimpleTypeDefiner struct {
-	name    *TypeName
-	theType Type
+	name        *TypeName
+	description *string
+	theType     Type
+}
+
+func NewSimpleTypeDefiner(name *TypeName, theType Type) *SimpleTypeDefiner {
+	return &SimpleTypeDefiner{name: name, theType: theType}
 }
 
 // SimpleTypeDefiner is a TypeDefiner
 var _ TypeDefiner = (*SimpleTypeDefiner)(nil)
 
-func (gtd *SimpleTypeDefiner) Name() *TypeName {
-	return gtd.name
+func (std *SimpleTypeDefiner) Name() *TypeName {
+	return std.name
 }
 
-func (gtd *SimpleTypeDefiner) Type() Type {
-	return gtd.theType
+func (std *SimpleTypeDefiner) Type() Type {
+	return std.theType
 }
 
-func (gtd *SimpleTypeDefiner) AsDeclarations() []ast.Decl {
+func (std *SimpleTypeDefiner) WithDescription(desc *string) TypeDefiner {
+	result := *std
+	result.description = desc
+	return &result
+}
+
+func (std *SimpleTypeDefiner) AsDeclarations() []ast.Decl {
+	var docComments *ast.CommentGroup
+	if std.description != nil {
+		docComments = &ast.CommentGroup{
+			List: []*ast.Comment{
+				&ast.Comment{
+					Text: "\n/*" + *std.description + "*/",
+				},
+			},
+		}
+	}
+
 	return []ast.Decl{
 		&ast.GenDecl{
 			Tok: token.TYPE,
 			Specs: []ast.Spec{
 				&ast.TypeSpec{
-					Name: ast.NewIdent(gtd.name.name),
-					Type: gtd.theType.AsType(),
+					Doc:  docComments,
+					Name: ast.NewIdent(std.name.name),
+					Type: std.theType.AsType(),
 				},
 			},
 		},

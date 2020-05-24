@@ -58,5 +58,5 @@ func (array *ArrayType) CreateInternalDefinitions(name *TypeName, idFactory Iden
 }
 
 func (array *ArrayType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
-	return &SimpleTypeDefiner{name, array}, nil
+	return NewSimpleTypeDefiner(name, array), nil
 }

@@ -51,11 +51,11 @@ func (dn *TypeName) Equals(t Type) bool {
 	return false
 }
 
-func (tn *TypeName) CreateInternalDefinitions(_ *TypeName, _ IdentifierFactory) (Type, []TypeDefiner) {
+func (typeName *TypeName) CreateInternalDefinitions(_ *TypeName, _ IdentifierFactory) (Type, []TypeDefiner) {
 	// there is nothing internal to a TypeName, return it unchanged
-	return tn, nil
+	return typeName, nil
 }
 
-func (dn *TypeName) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
-	return &SimpleTypeDefiner{name, dn}, nil
+func (typeName *TypeName) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
+	return NewSimpleTypeDefiner(name, typeName), nil
 }
