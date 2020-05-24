@@ -52,6 +52,11 @@ func (optional *OptionalType) Equals(t Type) bool {
 	return false
 }
 
+func (optional *OptionalType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []TypeDefiner) {
+	newElementType, otherTypes := optional.element.CreateInternalDefinitions(name, idFactory)
+	return NewOptionalType(newElementType), otherTypes
+}
+
 func (optional *OptionalType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
 	return &SimpleTypeDefiner{name, optional}, nil
 }

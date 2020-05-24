@@ -57,6 +57,11 @@ func (prim *PrimitiveType) Equals(t Type) bool {
 	return false
 }
 
+func (prim *PrimitiveType) CreateInternalDefinitions(_ *TypeName, _ IdentifierFactory) (Type, []TypeDefiner) {
+	// a primitive type has no internal types that require definition
+	return prim, nil
+}
+
 func (prim *PrimitiveType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
 	return &SimpleTypeDefiner{name, prim}, nil
 }

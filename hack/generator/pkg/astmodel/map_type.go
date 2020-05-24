@@ -62,17 +62,11 @@ func (m *MapType) Equals(t Type) bool {
 	return false
 }
 
-/*j
-// CreateRelatedDefinitions returns any definitions required by our key or value types
-func (m *MapType) CreateRelatedDefinitions(ref PackageReference, namehint string, idFactory IdentifierFactory) []Definition {
-	result := m.key.CreateRelatedDefinitions(ref, namehint, idFactory)
-
-	otherDefinitions := m.value.CreateRelatedDefinitions(ref, namehint, idFactory)
-	result = append(result, otherDefinitions...)
-
-	return result
+func (m *MapType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []TypeDefiner) {
+	newKeyType, otherTypes := m.key.CreateInternalDefinitions(name, idFactory)
+	newValueType, otherTypes2 := m.value.CreateInternalDefinitions(name, idFactory)
+	return NewMap(newKeyType, newValueType), append(otherTypes, otherTypes2...)
 }
-*/
 
 func (m *MapType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
 	return &SimpleTypeDefiner{name, m}, nil

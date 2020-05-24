@@ -72,6 +72,12 @@ func (enum *EnumType) RequiredImports() []PackageReference {
 	return nil
 }
 
+func (enum *EnumType) CreateInternalDefinitions(nameHint *TypeName, idFactory IdentifierFactory) (Type, []TypeDefiner) {
+	// an internal enum must always be named:
+	definedEnum, otherTypes := enum.CreateDefinitions(nameHint, idFactory, false)
+	return definedEnum.Name(), append(otherTypes, definedEnum)
+}
+
 func (enum *EnumType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
 	identifier := idFactory.CreateEnumIdentifier(name.name)
 	canonicalName := &TypeName{PackageReference: name.PackageReference, name: identifier}

@@ -141,7 +141,14 @@ func (structType *StructType) Equals(t Type) bool {
 	return false
 }
 
-func (st *StructType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory, isResource bool) (TypeDefiner, []TypeDefiner) {
+func (st *StructType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []TypeDefiner) {
+	// an internal struct must always be named:
+	definedStruct, otherTypes := st.createDefinitions(name, idFactory, false /* nested structs are never resources */)
+	// note we return StructReference here not TypeName
+	return definedStruct.StructReference, append(otherTypes, definedStruct)
+}
+
+func (st *StructType) createDefinitions(name *TypeName, idFactory IdentifierFactory, isResource bool) (*StructDefinition, []TypeDefiner) {
 
 	ref := NewStructReferenceFromName(name, isResource)
 
@@ -149,36 +156,21 @@ func (st *StructType) CreateDefinitions(name *TypeName, idFactory IdentifierFact
 	var newFields []*FieldDefinition
 
 	for _, field := range st.fields {
-		newField := field
 
-		// TODO: figure out a generic way to do this:
-		if et, ok := newField.FieldType().(*EnumType); ok {
-			// enums that are not explicitly refs get named here:
-			enumName := name.name + string(field.fieldName)
-			defName := NewTypeName(name.PackageReference, enumName)
-			ed, edOther := et.CreateDefinitions(&defName, idFactory, false)
+		// create definitions for nested types
+		nestedName := name.Name() + string(field.fieldName)
+		nameHint := NewTypeName(name.PackageReference, nestedName)
+		newFieldType, moreTypes := field.fieldType.CreateInternalDefinitions(&nameHint, idFactory)
 
-			// append all definitions into output
-			otherTypes = append(append(otherTypes, ed), edOther...)
-
-			newField = NewFieldDefinition(newField.fieldName, newField.jsonName, ed.Name())
-		} else if st, ok := newField.FieldType().(*StructType); ok {
-			// inline structs get named here:
-
-			structName := name.name + string(field.fieldName)
-			defName := NewTypeName(name.PackageReference, structName)
-			sd, sdOther := st.CreateDefinitions(&defName, idFactory, false) // nested types are never resources
-
-			// append all definitions into output
-			otherTypes = append(append(otherTypes, sd), sdOther...)
-
-			newField = NewFieldDefinition(newField.fieldName, newField.jsonName, sd.Name())
-		}
-
-		newFields = append(newFields, newField)
+		otherTypes = append(otherTypes, moreTypes...)
+		newFields = append(newFields, NewFieldDefinition(field.fieldName, field.jsonName, newFieldType))
 	}
 
 	return NewStructDefinition(ref, NewStructType(newFields...)), otherTypes
+}
+
+func (st *StructType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory, isResource bool) (TypeDefiner, []TypeDefiner) {
+	return st.createDefinitions(name, idFactory, isResource)
 }
 
 // WithFunction creates a new StructType with a function (method) attached to it
