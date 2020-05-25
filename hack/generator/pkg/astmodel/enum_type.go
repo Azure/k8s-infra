@@ -8,6 +8,8 @@ package astmodel
 import (
 	"go/ast"
 	"sort"
+
+	"k8s.io/klog/v2"
 )
 
 // EnumType represents a set of mutually exclusive predefined options
@@ -32,8 +34,8 @@ func NewEnumType(baseType *PrimitiveType, options []EnumValue) *EnumType {
 
 // AsType implements Type for EnumType
 func (enum *EnumType) AsType() ast.Expr {
-	// TODO: should warn here, emitting a non-named enum
-	// when this is feature-complete this should "never" happen
+	// this should "never" happen as we name all enums; warn about it if it does
+	klog.Warning("emitting unnamed enum, something’s awry")
 	return enum.BaseType.AsType()
 }
 
