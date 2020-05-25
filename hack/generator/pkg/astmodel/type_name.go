@@ -19,8 +19,8 @@ func NewTypeName(pr PackageReference, name string) *TypeName {
 }
 
 // Name returns the package-local name of the type
-func (dn *TypeName) Name() string {
-	return dn.name
+func (typeName *TypeName) Name() string {
+	return typeName.name
 }
 
 // A TypeName can be used as a Type,
@@ -28,34 +28,36 @@ func (dn *TypeName) Name() string {
 var _ Type = (*TypeName)(nil)
 
 // AsType implements Type for TypeName
-func (dn *TypeName) AsType() ast.Expr {
-	return ast.NewIdent(dn.name)
+func (typeName *TypeName) AsType() ast.Expr {
+	return ast.NewIdent(typeName.name)
 }
 
 // References indicates whether this Type includes any direct references to the given Type
-func (dn *TypeName) References(d *TypeName) bool {
-	return dn.Equals(d)
+func (typeName *TypeName) References(d *TypeName) bool {
+	return typeName.Equals(d)
 }
 
 // RequiredImports returns all the imports required for this definition
-func (dn *TypeName) RequiredImports() []PackageReference {
-	return []PackageReference{dn.PackageReference}
+func (typeName *TypeName) RequiredImports() []PackageReference {
+	return []PackageReference{typeName.PackageReference}
 }
 
 // Equals returns true if the passed type is the same TypeName, false otherwise
-func (dn *TypeName) Equals(t Type) bool {
+func (typeName *TypeName) Equals(t Type) bool {
 	if d, ok := t.(*TypeName); ok {
-		return dn.name == d.name && dn.PackageReference.Equals(&d.PackageReference)
+		return typeName.name == d.name && typeName.PackageReference.Equals(&d.PackageReference)
 	}
 
 	return false
 }
 
+// CreateInternalDefinitions does nothing
 func (typeName *TypeName) CreateInternalDefinitions(_ *TypeName, _ IdentifierFactory) (Type, []TypeDefiner) {
 	// there is nothing internal to a TypeName, return it unchanged
 	return typeName, nil
 }
 
+// CreateDefinitions adds another name to this already-named type
 func (typeName *TypeName) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
 	return NewSimpleTypeDefiner(name, typeName), nil
 }
