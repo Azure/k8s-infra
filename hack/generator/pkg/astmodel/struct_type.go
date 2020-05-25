@@ -158,10 +158,10 @@ func (st *StructType) CreateDefinitions(name *TypeName, idFactory IdentifierFact
 		// create definitions for nested types
 		nestedName := name.Name() + string(field.fieldName)
 		nameHint := NewTypeName(name.PackageReference, nestedName)
-		newFieldType, moreTypes := field.fieldType.CreateInternalDefinitions(&nameHint, idFactory)
+		newFieldType, moreTypes := field.fieldType.CreateInternalDefinitions(nameHint, idFactory)
 
 		otherTypes = append(otherTypes, moreTypes...)
-		newFields = append(newFields, NewFieldDefinition(field.fieldName, field.jsonName, newFieldType))
+		newFields = append(newFields, field.WithType(newFieldType))
 	}
 
 	return NewStructDefinition(name, NewStructType(newFields...), isResource), otherTypes

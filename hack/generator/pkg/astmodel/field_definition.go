@@ -68,6 +68,13 @@ func (field *FieldDefinition) WithDescription(description *string) *FieldDefinit
 	return &result
 }
 
+// WithType clones the field and returns it with a new type
+func (field *FieldDefinition) WithType(newType Type) *FieldDefinition {
+	result := *field
+	result.fieldType = newType
+	return &result
+}
+
 // WithValidation adds the given validation to the field's set of validations
 func (field *FieldDefinition) WithValidation(validation Validation) *FieldDefinition {
 	result := *field

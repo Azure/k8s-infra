@@ -13,6 +13,7 @@ import (
 	"go/token"
 	"io"
 	"os"
+	"sort"
 
 	"k8s.io/klog/v2"
 )
@@ -27,6 +28,11 @@ type FileDefinition struct {
 
 // NewFileDefinition creates a file definition containing specified definitions
 func NewFileDefinition(packageRef PackageReference, definitions ...TypeDefiner) *FileDefinition {
+
+	sort.Slice(definitions, func(i, j int) bool {
+		return definitions[i].Name().name < definitions[j].Name().name
+	})
+
 	// TODO: check that all definitions are from same package
 	return &FileDefinition{packageRef, definitions}
 }

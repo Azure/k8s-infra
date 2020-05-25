@@ -14,8 +14,8 @@ type TypeName struct {
 }
 
 // NewTypeName is a factory method for creating a TypeName
-func NewTypeName(pr PackageReference, name string) TypeName {
-	return TypeName{pr, name}
+func NewTypeName(pr PackageReference, name string) *TypeName {
+	return &TypeName{pr, name}
 }
 
 // Name returns the package-local name of the type

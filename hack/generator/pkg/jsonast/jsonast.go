@@ -47,8 +47,8 @@ type (
 )
 
 // findTypeDefinition looks to see if we have seen the specified definition before, returning its definition if we have.
-func (scanner *SchemaScanner) findTypeDefinition(name astmodel.TypeName) (astmodel.TypeDefiner, bool) {
-	result, ok := scanner.definitions[name]
+func (scanner *SchemaScanner) findTypeDefinition(name *astmodel.TypeName) (astmodel.TypeDefiner, bool) {
+	result, ok := scanner.definitions[*name]
 	return result, ok
 }
 
@@ -58,13 +58,13 @@ func (scanner *SchemaScanner) addTypeDefinition(def astmodel.TypeDefiner) {
 }
 
 // addEmptyTypeDefinition adds a placeholder definition; it should always be replaced later
-func (scanner *SchemaScanner) addEmptyTypeDefinition(name astmodel.TypeName) {
-	scanner.definitions[name] = nil
+func (scanner *SchemaScanner) addEmptyTypeDefinition(name *astmodel.TypeName) {
+	scanner.definitions[*name] = nil
 }
 
 // removeTypeDefinition removes a type definition
-func (scanner *SchemaScanner) removeTypeDefinition(name astmodel.TypeName) {
-	delete(scanner.definitions, name)
+func (scanner *SchemaScanner) removeTypeDefinition(name *astmodel.TypeName) {
+	delete(scanner.definitions, *name)
 }
 
 // Definitions for different kinds of JSON schema
@@ -162,47 +162,33 @@ func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema *g
 		}
 	}
 
-	schemaType, err := getSubSchemaType(schema)
-	if err != nil {
-		return nil, err
-	}
-
 	// get initial topic from ID and Title:
 	url := schema.ID.GetUrl()
 	if schema.Title == nil {
 		return nil, fmt.Errorf("Given schema has no Title")
 	}
 
-	rootStructName := *schema.Title
+	rootName := *schema.Title
 
-	rootStructGroup, err := groupOf(url)
+	rootGroup, err := groupOf(url)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to extract group for schema: %w", err)
 	}
 
-	rootStructVersion, err := versionOf(url)
+	rootVersion, err := versionOf(url)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to extract version for schema: %w", err)
 	}
 
-	rootType, err := scanner.RunHandler(ctx, schemaType, schema)
+	rootPackage := astmodel.NewLocalPackageReference(
+		scanner.idFactory.CreateGroupName(rootGroup),
+		scanner.idFactory.CreatePackageNameFromVersion(rootVersion))
+
+	rootTypeName := astmodel.NewTypeName(rootPackage, rootName)
+
+	_, err = generateDefinitionsFor(ctx, scanner, rootTypeName, false, url, schema)
 	if err != nil {
 		return nil, err
-	}
-
-	rootPackage := astmodel.NewLocalPackageReference(
-		scanner.idFactory.CreateGroupName(rootStructGroup),
-		scanner.idFactory.CreatePackageNameFromVersion(rootStructVersion))
-	rootTypeName := astmodel.NewTypeName(rootPackage, rootStructName)
-
-	rootDefinition, otherTypes := rootType.CreateDefinitions(&rootTypeName, scanner.idFactory, false)
-
-	description := "Generated from: " + url.String()
-	rootDefinition = rootDefinition.WithDescription(&description)
-
-	scanner.addTypeDefinition(rootDefinition)
-	for _, otherType := range otherTypes {
-		scanner.addTypeDefinition(otherType)
 	}
 
 	// produce the results
@@ -382,12 +368,8 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 	url := schema.Ref.GetUrl()
 
 	if url.Fragment == expressionFragment {
+		// skip expressions
 		return nil, nil
-	}
-
-	schemaType, err := getSubSchemaType(schema.RefSchema)
-	if err != nil {
-		return nil, err
 	}
 
 	// make a new topic based on the ref URL
@@ -415,23 +397,33 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 			scanner.idFactory.CreatePackageNameFromVersion(version)),
 		scanner.idFactory.CreateIdentifier(name))
 
+	return generateDefinitionsFor(ctx, scanner, typeName, isResource, url, schema.RefSchema)
+}
+
+func generateDefinitionsFor(ctx context.Context, scanner *SchemaScanner, typeName *astmodel.TypeName, isResource bool, url *url.URL, schema *gojsonschema.SubSchema) (astmodel.Type, error) {
+
+	schemaType, err := getSubSchemaType(schema)
+	if err != nil {
+		return nil, err
+	}
+
 	// see if we already generated something for this ref
 	if _, ok := scanner.findTypeDefinition(typeName); ok {
-		return &typeName, nil
+		return typeName, nil
 	}
 
 	// Add a placeholder to avoid recursive calls
 	// we will overwrite this later
 	scanner.addEmptyTypeDefinition(typeName)
 
-	result, err := scanner.RunHandler(ctx, schemaType, schema.RefSchema)
+	result, err := scanner.RunHandler(ctx, schemaType, schema)
 	if err != nil {
 		scanner.removeTypeDefinition(typeName) // we weren't able to generate it, remove placeholder
 		return nil, err
 	}
 
 	// Give the type a name:
-	definer, otherDefs := result.CreateDefinitions(&typeName, scanner.idFactory, isResource)
+	definer, otherDefs := result.CreateDefinitions(typeName, scanner.idFactory, isResource)
 
 	description := "Generated from: " + url.String()
 	definer = definer.WithDescription(&description)
