@@ -470,6 +470,7 @@ func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsch
 
 		case *astmodel.TypeName:
 			// TODO: need to check if this is a reference to a struct type or not
+
 			// if it's a reference to a defined struct, embed it inside:
 			fields = append(fields, astmodel.NewEmbeddedStructDefinition(s))
 
