@@ -52,11 +52,13 @@ func (array *ArrayType) Equals(t Type) bool {
 	return false
 }
 
+// CreateInternalDefinitions invokes CreateInternalDefinitions on the inner 'element' type
 func (array *ArrayType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []TypeDefiner) {
 	newElementType, otherTypes := array.element.CreateInternalDefinitions(name, idFactory)
 	return NewArrayType(newElementType), otherTypes
 }
 
+// CreateDefinitions defines a named type for this array type
 func (array *ArrayType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
 	return NewSimpleTypeDefiner(name, array), nil
 }
