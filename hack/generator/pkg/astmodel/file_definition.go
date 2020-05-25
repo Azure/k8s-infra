@@ -83,10 +83,10 @@ func (file *FileDefinition) AsAst() ast.Node {
 	// Emit struct registration for each resource:
 	var exprs []ast.Expr
 	for _, defn := range file.definitions {
-		if structDefn, ok := defn.(*StructDefinition); ok && structDefn.StructReference.IsResource() {
+		if structDefn, ok := defn.(*StructDefinition); ok && structDefn.IsResource() {
 			exprs = append(exprs, &ast.UnaryExpr{
 				Op: token.AND,
-				X:  &ast.CompositeLit{Type: structDefn.StructReference.AsType()},
+				X:  &ast.CompositeLit{Type: structDefn.Name().AsType()},
 			})
 		}
 	}

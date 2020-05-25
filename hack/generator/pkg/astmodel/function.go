@@ -16,7 +16,7 @@ type Function interface {
 	References(name *TypeName)
 
 	// AsFunc renders the current instance as a Go abstract syntax tree
-	AsFunc(receiver *StructReference, methodName string) *ast.FuncDecl
+	AsFunc(receiver *TypeName, methodName string) *ast.FuncDecl
 
 	// Equals determines if this Function is equal to another one
 	Equals(f Function) bool

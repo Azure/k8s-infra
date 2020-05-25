@@ -143,14 +143,12 @@ func (structType *StructType) Equals(t Type) bool {
 
 func (st *StructType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []TypeDefiner) {
 	// an internal struct must always be named:
-	definedStruct, otherTypes := st.createDefinitions(name, idFactory, false /* nested structs are never resources */)
+	definedStruct, otherTypes := st.CreateDefinitions(name, idFactory, false /* nested structs are never resources */)
 	// note we return StructReference here not TypeName
-	return definedStruct.StructReference, append(otherTypes, definedStruct)
+	return definedStruct.Name(), append(otherTypes, definedStruct)
 }
 
-func (st *StructType) createDefinitions(name *TypeName, idFactory IdentifierFactory, isResource bool) (*StructDefinition, []TypeDefiner) {
-
-	ref := NewStructReferenceFromName(name, isResource)
+func (st *StructType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory, isResource bool) (TypeDefiner, []TypeDefiner) {
 
 	var otherTypes []TypeDefiner
 	var newFields []*FieldDefinition
@@ -166,11 +164,7 @@ func (st *StructType) createDefinitions(name *TypeName, idFactory IdentifierFact
 		newFields = append(newFields, NewFieldDefinition(field.fieldName, field.jsonName, newFieldType))
 	}
 
-	return NewStructDefinition(ref, NewStructType(newFields...)), otherTypes
-}
-
-func (st *StructType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory, isResource bool) (TypeDefiner, []TypeDefiner) {
-	return st.createDefinitions(name, idFactory, isResource)
+	return NewStructDefinition(name, NewStructType(newFields...), isResource), otherTypes
 }
 
 // WithFunction creates a new StructType with a function (method) attached to it

@@ -468,7 +468,8 @@ func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsch
 			// if it's a struct type get all its fields:
 			fields = append(fields, s.Fields()...)
 
-		case *astmodel.StructReference:
+		case *astmodel.TypeName:
+			// TODO: need to check if this is a reference to a struct type or not
 			// if it's a reference to a defined struct, embed it inside:
 			fields = append(fields, astmodel.NewEmbeddedStructDefinition(s))
 

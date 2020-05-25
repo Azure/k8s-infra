@@ -10,39 +10,18 @@ import (
 	"go/token"
 )
 
-// StructReference is the (versioned) name of a struct
-// that can be used as a type
-type StructReference struct {
-	TypeName
-	isResource bool // this might seem like a strange place to have this, but it affects how the struct is referenced
-}
-
-// NewStructReference creates a new StructReference
-func NewStructReference(name string, group string, version string, isResource bool) *StructReference {
-	return &StructReference{
-		TypeName{
-			PackageReference: NewLocalPackageReference(group, version),
-			name:             name,
-		},
-		isResource,
-	}
-}
-
-func NewStructReferenceFromName(name *TypeName, isResource bool) *StructReference {
-	return &StructReference{*name, isResource}
-}
-
-// IsResource indicates that the struct is an Azure resource
-func (sr *StructReference) IsResource() bool {
-	return sr.isResource
-}
-
 // StructDefinition encapsulates the definition of a struct
 type StructDefinition struct {
-	StructReference *StructReference
-	StructType      *StructType
+	TypeName   *TypeName
+	StructType *StructType
 
+	isResource bool
 	description *string
+}
+
+// IsResource indicates if this is a ARM resource and should be a kubebuilder root
+func (definition *StructDefinition) IsResource() bool {
+	return definition.isResource
 }
 
 // Ensure StructDefinition implements TypeDefiner interface correctly
@@ -50,7 +29,7 @@ var _ TypeDefiner = (*StructDefinition)(nil)
 
 // Name provides the struct name
 func (definition *StructDefinition) Name() *TypeName {
-	return &definition.StructReference.TypeName
+	return definition.TypeName
 }
 
 // Type provides the type of the struct
@@ -59,8 +38,8 @@ func (definition *StructDefinition) Type() Type {
 }
 
 // NewStructDefinition is a factory method for creating a new StructDefinition
-func NewStructDefinition(ref *StructReference, structType *StructType) *StructDefinition {
-	return &StructDefinition{ref, structType, nil}
+func NewStructDefinition(name *TypeName, structType *StructType, isResource bool) *StructDefinition {
+	return &StructDefinition{name, structType, isResource, nil}
 }
 
 // WithDescription adds a description (doc-comment) to the struct
@@ -83,12 +62,12 @@ func (definition *StructDefinition) FieldCount() int {
 // AsDeclarations generates an AST node representing this struct definition
 func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 	var identifier *ast.Ident
-	if definition.StructReference.IsResource() {
+	if definition.IsResource() {
 		// if it's a resource then this is the Spec type and we will generate
 		// the non-spec type later:
-		identifier = ast.NewIdent(definition.StructReference.name + "Spec")
+		identifier = ast.NewIdent(definition.Name().name + "Spec")
 	} else {
-		identifier = ast.NewIdent(definition.StructReference.name)
+		identifier = ast.NewIdent(definition.Name().name)
 	}
 
 	typeSpecification := &ast.TypeSpec{
@@ -111,8 +90,8 @@ func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 
 	declarations := []ast.Decl{declaration}
 
-	if definition.StructReference.IsResource() {
-		resourceIdentifier := ast.NewIdent(definition.StructReference.name)
+	if definition.IsResource() {
+		resourceIdentifier := ast.NewIdent(definition.Name().name)
 
 		/*
 			start off with:
@@ -158,7 +137,7 @@ func (definition *StructDefinition) AsDeclarations() []ast.Decl {
 func (definition *StructDefinition) generateMethodDecls() []ast.Decl {
 	var result []ast.Decl
 	for methodName, function := range definition.StructType.functions {
-		funcDef := function.AsFunc(definition.StructReference, methodName)
+		funcDef := function.AsFunc(definition.Name(), methodName)
 		result = append(result, funcDef)
 	}
 
