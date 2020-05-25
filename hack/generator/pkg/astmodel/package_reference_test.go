@@ -8,11 +8,11 @@ package astmodel
 import (
 	"testing"
 
-	"github.com/onsi/gomega"
+	. "github.com/onsi/gomega"
 )
 
 // If `localPathPrefix` does not have a trailing slash, `stripLocalPackagePrefix()` and `NewLocalPackageReference()` will misbehave
 func TestLocalPackageReferenceMustEndWithSlash(t *testing.T) {
-	g := gomega.NewGomegaWithT(t)
-	g.Expect(localPathPrefix).To(gomega.HaveSuffix("/"))
+	g := NewGomegaWithT(t)
+	g.Expect(localPathPrefix).To(HaveSuffix("/"))
 }
