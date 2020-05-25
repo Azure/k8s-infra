@@ -83,7 +83,6 @@ func (enum *EnumDefinition) createBaseDeclaration() ast.Decl {
 func (enum *EnumDefinition) createValueDeclaration(value EnumValue) ast.Spec {
 
 	enumIdentifier := ast.NewIdent(enum.typeName.name)
-
 	valueIdentifier := ast.NewIdent(enum.typeName.name + value.Identifier)
 
 	valueLiteral := ast.BasicLit{
