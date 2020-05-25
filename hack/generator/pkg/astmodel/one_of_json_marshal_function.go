@@ -35,13 +35,13 @@ func (f *OneOfJSONMarshalFunction) Equals(other Function) bool {
 }
 
 // References indicates whether this function includes any direct references to the given type
-func (f *OneOfJSONMarshalFunction) References(d *DefinitionName) bool {
+func (f *OneOfJSONMarshalFunction) References(name *TypeName) bool {
 	// Defer this check to the owning struct as we only refer to its fields and it
-	return f.oneOfStruct.References(d)
+	return f.oneOfStruct.References(name)
 }
 
 // AsFunc returns the function as a go ast
-func (f *OneOfJSONMarshalFunction) AsFunc(receiver *StructReference, methodName string) *ast.FuncDecl {
+func (f *OneOfJSONMarshalFunction) AsFunc(receiver *TypeName, methodName string) *ast.FuncDecl {
 	receiverName := f.idFactory.CreateIdentifier(receiver.name, Internal)
 
 	header, _ := createComments("Marshal marshals the object as JSON")

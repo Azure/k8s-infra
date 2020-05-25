@@ -8,13 +8,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-/* Generated from: https://test.test/schemas/2020-01-01/test.json */
+/*Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/Foo*/
+type Foo int
+
+/*Generated from: https://test.test/schemas/2020-01-01/test.json*/
 type Test struct {
-	Bool1   *bool `json:"bool1"`
-	Int0    *int  `json:"int0"`
-	Object2 *struct {
-		Foo *string `json:"foo"`
-	} `json:"object2"`
+	Bool1   *bool        `json:"bool1"`
+	Foo     *Foo         `json:"foo"`
+	Object2 *TestObject2 `json:"object2"`
 }
 
 // Marshal marshals the object as JSON
@@ -22,11 +23,15 @@ func (test Test) Marshal() ([]byte, error) {
 	if test.Bool1 != nil {
 		return json.Marshal(test.Bool1)
 	}
-	if test.Int0 != nil {
-		return json.Marshal(test.Int0)
+	if test.Foo != nil {
+		return json.Marshal(test.Foo)
 	}
 	if test.Object2 != nil {
 		return json.Marshal(test.Object2)
 	}
 	return nil, nil
+}
+
+type TestObject2 struct {
+	Foo *string `json:"foo"`
 }
