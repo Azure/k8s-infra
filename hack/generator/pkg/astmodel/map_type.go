@@ -15,14 +15,14 @@ type MapType struct {
 	value Type
 }
 
-// NewMap creates a new map with the specified key and value types
-func NewMap(key Type, value Type) *MapType {
+// NewMapType creates a new map with the specified key and value types
+func NewMapType(key Type, value Type) *MapType {
 	return &MapType{key, value}
 }
 
-// NewStringMap creates a new map with string keys and the specified value type
-func NewStringMap(value Type) *MapType {
-	return NewMap(StringType, value)
+// NewStringMapType creates a new map with string keys and the specified value type
+func NewStringMapType(value Type) *MapType {
+	return NewMapType(StringType, value)
 }
 
 // assert that we implemented Type correctly
@@ -62,12 +62,14 @@ func (m *MapType) Equals(t Type) bool {
 	return false
 }
 
+// CreateInternalDefinitions invokes CreateInCreateInternalDefinitions on both key and map types
 func (m *MapType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []TypeDefiner) {
-	newKeyType, otherTypes := m.key.CreateInternalDefinitions(name, idFactory)
-	newValueType, otherTypes2 := m.value.CreateInternalDefinitions(name, idFactory)
-	return NewMap(newKeyType, newValueType), append(otherTypes, otherTypes2...)
+	newKeyType, keyOtherTypes := m.key.CreateInternalDefinitions(name, idFactory)
+	newValueType, valueOtherTypes := m.value.CreateInternalDefinitions(name, idFactory)
+	return NewMapType(newKeyType, newValueType), append(keyOtherTypes, valueOtherTypes...)
 }
 
+// CreateDefinitions defines a named type for this MapType
 func (m *MapType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
 	return NewSimpleTypeDefiner(name, m), nil
 }

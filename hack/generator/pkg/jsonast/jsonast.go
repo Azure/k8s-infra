@@ -343,7 +343,7 @@ func getFields(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema
 		// only generate this field if there are no other fields:
 		if len(fields) == 0 {
 			// TODO: for JSON serialization this needs to be unpacked into "parent"
-			additionalPropsField := astmodel.NewFieldDefinition("additionalProperties", "additionalProperties", astmodel.NewStringMap(astmodel.AnyType))
+			additionalPropsField := astmodel.NewFieldDefinition("additionalProperties", "additionalProperties", astmodel.NewStringMapType(astmodel.AnyType))
 			fields = append(fields, additionalPropsField)
 		}
 	} else if schema.AdditionalProperties != false {
@@ -354,7 +354,7 @@ func getFields(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema
 			return nil, err
 		}
 
-		additionalPropsField := astmodel.NewFieldDefinition(astmodel.FieldName("additionalProperties"), "additionalProperties", astmodel.NewStringMap(additionalPropsType))
+		additionalPropsField := astmodel.NewFieldDefinition(astmodel.FieldName("additionalProperties"), "additionalProperties", astmodel.NewStringMapType(additionalPropsType))
 		fields = append(fields, additionalPropsField)
 	}
 

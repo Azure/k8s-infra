@@ -26,9 +26,12 @@ type Type interface {
 	Equals(t Type) bool
 
 	// CreateDefinitions gives a name to the type and might generate some asssociated definitions as well (the second result)
+	// that also must be included in the output.
+	//
 	// [isResource is only relevant to struct types and identifies if they are a root resource for Kubebuilder]
 	CreateDefinitions(name *TypeName, idFactory IdentifierFactory, isResource bool) (TypeDefiner, []TypeDefiner)
 
-	// CreateInternalDefinitions creates definitions for nested types where needed (e.g. nested anonymous enums, structs)
+	// CreateInternalDefinitions creates definitions for nested types where needed (e.g. nested anonymous enums, structs),
+	// and returns the new, updated type to use in this type’s place.
 	CreateInternalDefinitions(nameHint *TypeName, idFactory IdentifierFactory) (Type, []TypeDefiner)
 }
