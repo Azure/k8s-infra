@@ -144,7 +144,6 @@ func (structType *StructType) Equals(t Type) bool {
 func (st *StructType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []TypeDefiner) {
 	// an internal struct must always be named:
 	definedStruct, otherTypes := st.CreateDefinitions(name, idFactory, false /* nested structs are never resources */)
-	// note we return StructReference here not TypeName
 	return definedStruct.Name(), append(otherTypes, definedStruct)
 }
 
