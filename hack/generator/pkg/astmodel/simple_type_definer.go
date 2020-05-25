@@ -43,7 +43,7 @@ func (std *SimpleTypeDefiner) AsDeclarations() []ast.Decl {
 	if std.description != nil {
 		docComments = &ast.CommentGroup{
 			List: []*ast.Comment{
-				&ast.Comment{
+				{
 					Text: "\n/*" + *std.description + "*/",
 				},
 			},
@@ -52,7 +52,7 @@ func (std *SimpleTypeDefiner) AsDeclarations() []ast.Decl {
 
 	return []ast.Decl{
 		&ast.GenDecl{
-			Doc:  docComments,
+			Doc: docComments,
 			Tok: token.TYPE,
 			Specs: []ast.Spec{
 				&ast.TypeSpec{

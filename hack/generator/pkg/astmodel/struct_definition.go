@@ -12,10 +12,9 @@ import (
 
 // StructDefinition encapsulates the definition of a struct
 type StructDefinition struct {
-	TypeName   *TypeName
-	StructType *StructType
-
-	isResource bool
+	TypeName    *TypeName
+	StructType  *StructType
+	isResource  bool
 	description *string
 }
 

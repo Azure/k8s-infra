@@ -66,8 +66,8 @@ func Test_SliceIntoWords_GivenIdentifier_ReturnsExpectedSlice(t *testing.T) {
 
 func Test_TransformToSnakeCase_ReturnsExpectedString(t *testing.T) {
 	cases := []struct {
-		string 	   string
-		expected   string
+		string   string
+		expected string
 	}{
 		// Single name doesn't get split
 		{string: "Name", expected: "name"},
