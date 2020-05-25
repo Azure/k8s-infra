@@ -80,7 +80,7 @@ func (enum *EnumType) CreateInternalDefinitions(nameHint *TypeName, idFactory Id
 
 func (enum *EnumType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
 	identifier := idFactory.CreateEnumIdentifier(name.name)
-	canonicalName := &TypeName{PackageReference: name.PackageReference, name: identifier}
+	canonicalName := NewTypeName(name.PackageReference, identifier)
 	return NewEnumDefinition(canonicalName, enum), nil
 }
 
