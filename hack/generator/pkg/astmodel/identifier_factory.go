@@ -11,6 +11,7 @@ import (
 	"unicode"
 )
 
+// \W is all non-word characters (https://golang.org/pkg/regexp/syntax/)
 var filterRegex = regexp.MustCompile(`[\W_]`)
 
 type Visibility string
@@ -54,23 +55,17 @@ func (factory *identifierFactory) CreateIdentifier(name string, visibility Visib
 	// replace with spaces so titlecasing works nicely
 	clean := filterRegex.ReplaceAllLiteralString(name, " ")
 
-	result := strings.Title(clean)
-
-	if visibility == Internal {
-		// TODO: This is a hack, as there are cases (acronyms, etc) where
-		// TODO: this doesn't work...
-		// Lowercase the first rune if visibility is internal
-		done := false
-		result = strings.Map(
-			func(r rune) rune {
-				if !done {
-					done = true
-					return unicode.ToLower(r)
-				}
-				return r
-			},
-			result)
+	cleanWords := sliceIntoWords(clean)
+	var caseCorrectedWords []string
+	for i, word := range cleanWords {
+		if visibility == Internal && i == 0 {
+			caseCorrectedWords = append(caseCorrectedWords, strings.ToLower(word))
+		} else {
+			caseCorrectedWords = append(caseCorrectedWords, strings.Title(word))
+		}
 	}
+
+	result := strings.Join(caseCorrectedWords, "")
 	result = strings.ReplaceAll(result, " ", "")
 	return result
 }
@@ -151,16 +146,23 @@ func simplifyName(context string, name string) string {
 }
 
 func sliceIntoWords(identifier string) []string {
+	// Trim any leading and trailing spaces to make our life easier later
+	identifier = strings.Trim(identifier, " ")
+
 	var result []string
 	chars := []rune(identifier)
 	lastStart := 0
 	for i := range chars {
 		preceedingLower := i > 0 && unicode.IsLower(chars[i-1])
 		succeedingLower := i+1 < len(chars) && unicode.IsLower(chars[i+1])
+		isSpace := unicode.IsSpace(chars[i])
 		foundUpper := unicode.IsUpper(chars[i])
 		if i > lastStart && foundUpper && (preceedingLower || succeedingLower) {
 			result = append(result, string(chars[lastStart:i]))
 			lastStart = i
+		} else if i > lastStart && isSpace {
+			result = append(result, string(chars[lastStart:i]))
+			lastStart = i + 1 // skip the space
 		}
 	}
 

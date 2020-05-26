@@ -6,6 +6,7 @@
 package astmodel
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 )
@@ -44,7 +45,7 @@ func (f *OneOfJSONMarshalFunction) References(name *TypeName) bool {
 func (f *OneOfJSONMarshalFunction) AsFunc(receiver *TypeName, methodName string) *ast.FuncDecl {
 	receiverName := f.idFactory.CreateIdentifier(receiver.name, Internal)
 
-	header, _ := createComments("Marshal marshals the object as JSON")
+	header, _ := createComments(fmt.Sprintf("%s marshals the object as JSON", methodName))
 
 	result := &ast.FuncDecl{
 		Doc: &ast.CommentGroup{
@@ -112,7 +113,8 @@ func (f *OneOfJSONMarshalFunction) AsFunc(receiver *TypeName, methodName string)
 
 	finalReturnStatement := &ast.ReturnStmt{
 		Results: []ast.Expr{
-			ast.NewIdent("nil, nil"), // TODO: Is this the right way to do this?
+			ast.NewIdent("nil"),
+			ast.NewIdent("nil"),
 		},
 	}
 	statements = append(statements, finalReturnStatement)

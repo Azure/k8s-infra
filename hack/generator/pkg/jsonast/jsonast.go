@@ -561,7 +561,7 @@ func oneOfHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsch
 
 	structType := astmodel.NewStructType(fields...)
 	structType = structType.WithFunction(
-		"Marshal",
+		"MarshalJSON",
 		astmodel.NewOneOfJSONMarshalFunction(structType, scanner.idFactory))
 
 	return structType, nil

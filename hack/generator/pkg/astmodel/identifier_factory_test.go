@@ -22,11 +22,13 @@ func Test_CreateIdentifier_GivenName_ReturnsExpectedIdentifier(t *testing.T) {
 		{"$schema", Public, "Schema"},
 		{"my_important_name", Public, "MyImportantName"},
 		{"MediaServices_liveEvents_liveOutputs_childResource", Public, "MediaServicesLiveEventsLiveOutputsChildResource"},
+		{"XMLDocument", Public, "XMLDocument"},
 		{"name", Internal, "name"},
 		{"Name", Internal, "name"},
 		{"$schema", Internal, "schema"},
 		{"my_important_name", Internal, "myImportantName"},
 		{"MediaServices_liveEvents_liveOutputs_childResource", Internal, "mediaServicesLiveEventsLiveOutputsChildResource"},
+		{"XMLDocument", Internal, "xmlDocument"},
 	}
 
 	idfactory := NewIdentifierFactory()
@@ -57,6 +59,9 @@ func Test_SliceIntoWords_GivenIdentifier_ReturnsExpectedSlice(t *testing.T) {
 		// Correctly splits all-caps acronyms
 		{identifier: "XMLDocument", expected: []string{"XML", "Document"}},
 		{identifier: "ResultAsXML", expected: []string{"Result", "As", "XML"}},
+		// Correctly splits strings that already have spaces
+		{identifier: "AlreadyHas spaces", expected: []string{"Already", "Has", "spaces"}},
+		{identifier: "AlreadyHas spaces    ", expected: []string{"Already", "Has", "spaces"}},
 	}
 
 	for _, c := range cases {
@@ -85,6 +90,8 @@ func Test_TransformToSnakeCase_ReturnsExpectedString(t *testing.T) {
 		// Correctly splits all-caps acronyms
 		{string: "XMLDocument", expected: "xml_document"},
 		{string: "ResultAsXML", expected: "result_as_xml"},
+		{string: "AlreadyHas spaces", expected: "already_has_spaces"},
+		{string: "AlreadyHas spaces    ", expected: "already_has_spaces"},
 	}
 
 	for _, c := range cases {

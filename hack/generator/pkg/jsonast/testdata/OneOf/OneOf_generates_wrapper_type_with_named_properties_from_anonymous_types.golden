@@ -18,8 +18,8 @@ type Test struct {
 	Object2 *TestObject2 `json:"object2"`
 }
 
-// Marshal marshals the object as JSON
-func (test Test) Marshal() ([]byte, error) {
+// MarshalJSON marshals the object as JSON
+func (test Test) MarshalJSON() ([]byte, error) {
 	if test.Bool1 != nil {
 		return json.Marshal(test.Bool1)
 	}
