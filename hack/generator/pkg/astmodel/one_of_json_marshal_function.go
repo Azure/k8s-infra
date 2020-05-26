@@ -43,9 +43,13 @@ func (f *OneOfJSONMarshalFunction) References(name *TypeName) bool {
 
 // AsFunc returns the function as a go ast
 func (f *OneOfJSONMarshalFunction) AsFunc(receiver *TypeName, methodName string) *ast.FuncDecl {
-	receiverName := f.idFactory.CreateIdentifier(receiver.name, Internal)
+	receiverName := f.idFactory.CreateIdentifier(receiver.name, NotExported)
 
-	header, _ := createComments(fmt.Sprintf("%s marshals the object as JSON", methodName))
+	header, _ := createComments(
+		fmt.Sprintf(
+			"%s defers JSON marshaling to the first non-nil property, because %s represents a discriminated union (JSON OneOf)",
+			methodName,
+			receiver.name))
 
 	result := &ast.FuncDecl{
 		Doc: &ast.CommentGroup{

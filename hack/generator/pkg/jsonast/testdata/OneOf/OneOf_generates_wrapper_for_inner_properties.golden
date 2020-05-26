@@ -31,7 +31,7 @@ type TestProperties struct {
 	Foo *Foo `json:"foo"`
 }
 
-// MarshalJSON marshals the object as JSON
+// MarshalJSON defers JSON marshaling to the first non-nil property, because TestProperties represents a discriminated union (JSON OneOf)
 func (testProperties TestProperties) MarshalJSON() ([]byte, error) {
 	if testProperties.Bar != nil {
 		return json.Marshal(testProperties.Bar)

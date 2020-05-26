@@ -236,7 +236,7 @@ func enumHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsche
 
 	var values []astmodel.EnumValue
 	for _, v := range schema.Enum {
-		id := scanner.idFactory.CreateIdentifier(v, astmodel.Public)
+		id := scanner.idFactory.CreateIdentifier(v, astmodel.Exported)
 		values = append(values, astmodel.EnumValue{Identifier: id, Value: v})
 	}
 
@@ -275,7 +275,7 @@ func objectHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsc
 }
 
 func generateFieldDefinition(ctx context.Context, scanner *SchemaScanner, prop *gojsonschema.SubSchema) (*astmodel.FieldDefinition, error) {
-	fieldName := scanner.idFactory.CreateFieldName(prop.Property, astmodel.Public)
+	fieldName := scanner.idFactory.CreateFieldName(prop.Property, astmodel.Exported)
 
 	schemaType, err := getSubSchemaType(prop)
 	if _, ok := err.(*UnknownSchemaError); ok {
@@ -395,7 +395,7 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 		astmodel.NewLocalPackageReference(
 			scanner.idFactory.CreateGroupName(group),
 			scanner.idFactory.CreatePackageNameFromVersion(version)),
-		scanner.idFactory.CreateIdentifier(name, astmodel.Public))
+		scanner.idFactory.CreateIdentifier(name, astmodel.Exported))
 
 	return generateDefinitionsFor(ctx, scanner, typeName, isResource, url, schema.RefSchema)
 }
@@ -510,31 +510,31 @@ func oneOfHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsch
 			if _, ok := scanner.findTypeDefinition(concreteType); !ok {
 				return nil, fmt.Errorf("couldn't find struct for definition: %v", concreteType)
 			}
-			fieldName := scanner.idFactory.CreateFieldName(concreteType.Name(), astmodel.Public)
+			fieldName := scanner.idFactory.CreateFieldName(concreteType.Name(), astmodel.Exported)
 
 			// JSON name is unimportant here because we will implement the JSON marshaller anyway,
 			// but we still need it for controller-gen
-			jsonName := scanner.idFactory.CreateIdentifier(concreteType.Name(), astmodel.Internal)
+			jsonName := scanner.idFactory.CreateIdentifier(concreteType.Name(), astmodel.NotExported)
 			field := astmodel.NewFieldDefinition(fieldName, jsonName, concreteType).MakeOptional()
 			fields = append(fields, field)
 		case *astmodel.EnumType:
 			// TODO: This name sucks but what alternative do we have?
 			name := fmt.Sprintf("enum%v", i)
-			fieldName := scanner.idFactory.CreateFieldName(name, astmodel.Public)
+			fieldName := scanner.idFactory.CreateFieldName(name, astmodel.Exported)
 
 			// JSON name is unimportant here because we will implement the JSON marshaller anyway,
 			// but we still need it for controller-gen
-			jsonName := scanner.idFactory.CreateIdentifier(name, astmodel.Internal)
+			jsonName := scanner.idFactory.CreateIdentifier(name, astmodel.NotExported)
 			field := astmodel.NewFieldDefinition(fieldName, jsonName, concreteType).MakeOptional()
 			fields = append(fields, field)
 		case *astmodel.StructType:
 			// TODO: This name sucks but what alternative do we have?
 			name := fmt.Sprintf("object%v", i)
-			fieldName := scanner.idFactory.CreateFieldName(name, astmodel.Public)
+			fieldName := scanner.idFactory.CreateFieldName(name, astmodel.Exported)
 
 			// JSON name is unimportant here because we will implement the JSON marshaller anyway,
 			// but we still need it for controller-gen
-			jsonName := scanner.idFactory.CreateIdentifier(name, astmodel.Internal)
+			jsonName := scanner.idFactory.CreateIdentifier(name, astmodel.NotExported)
 			field := astmodel.NewFieldDefinition(fieldName, jsonName, concreteType).MakeOptional()
 			fields = append(fields, field)
 		case *astmodel.PrimitiveType:
@@ -547,11 +547,11 @@ func oneOfHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsch
 
 			// TODO: This name sucks but what alternative do we have?
 			name := fmt.Sprintf("%v%v", primitiveTypeName, i)
-			fieldName := scanner.idFactory.CreateFieldName(name, astmodel.Public)
+			fieldName := scanner.idFactory.CreateFieldName(name, astmodel.Exported)
 
 			// JSON name is unimportant here because we will implement the JSON marshaller anyway,
 			// but we still need it for controller-gen
-			jsonName := scanner.idFactory.CreateIdentifier(name, astmodel.Internal)
+			jsonName := scanner.idFactory.CreateIdentifier(name, astmodel.NotExported)
 			field := astmodel.NewFieldDefinition(fieldName, jsonName, concreteType).MakeOptional()
 			fields = append(fields, field)
 		default:

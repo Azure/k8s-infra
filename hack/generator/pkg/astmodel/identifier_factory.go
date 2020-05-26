@@ -17,8 +17,8 @@ var filterRegex = regexp.MustCompile(`[\W_]`)
 type Visibility string
 
 const (
-	Public   = Visibility("public")
-	Internal = Visibility("internal")
+	Exported    = Visibility("exported")
+	NotExported = Visibility("notexported")
 )
 
 // IdentifierFactory is a factory for creating Go identifiers from Json schema names
@@ -49,7 +49,14 @@ func NewIdentifierFactory() IdentifierFactory {
 // CreateIdentifier returns a valid Go public identifier
 func (factory *identifierFactory) CreateIdentifier(name string, visibility Visibility) string {
 	if identifier, ok := factory.renames[name]; ok {
-		name = identifier
+		// Just lowercase the first character according to visibility
+		r := []rune(identifier)
+		if visibility == NotExported {
+			r[0] = unicode.ToLower(r[0])
+		} else {
+			r[0] = unicode.ToUpper(r[0])
+		}
+		return string(r)
 	}
 
 	// replace with spaces so titlecasing works nicely
@@ -58,7 +65,7 @@ func (factory *identifierFactory) CreateIdentifier(name string, visibility Visib
 	cleanWords := sliceIntoWords(clean)
 	var caseCorrectedWords []string
 	for i, word := range cleanWords {
-		if visibility == Internal && i == 0 {
+		if visibility == NotExported && i == 0 {
 			caseCorrectedWords = append(caseCorrectedWords, strings.ToLower(word))
 		} else {
 			caseCorrectedWords = append(caseCorrectedWords, strings.Title(word))
@@ -66,7 +73,6 @@ func (factory *identifierFactory) CreateIdentifier(name string, visibility Visib
 	}
 
 	result := strings.Join(caseCorrectedWords, "")
-	result = strings.ReplaceAll(result, " ", "")
 	return result
 }
 
@@ -90,7 +96,7 @@ func (factory *identifierFactory) CreateGroupName(group string) string {
 }
 
 func (factory *identifierFactory) CreateEnumIdentifier(namehint string) string {
-	return factory.CreateIdentifier(namehint, Public)
+	return factory.CreateIdentifier(namehint, Exported)
 }
 
 // sanitizePackageName removes all non-alphanum characters and converts to lower case

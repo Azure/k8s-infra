@@ -17,18 +17,18 @@ func Test_CreateIdentifier_GivenName_ReturnsExpectedIdentifier(t *testing.T) {
 		visibility Visibility
 		expected   string
 	}{
-		{"name", Public, "Name"},
-		{"Name", Public, "Name"},
-		{"$schema", Public, "Schema"},
-		{"my_important_name", Public, "MyImportantName"},
-		{"MediaServices_liveEvents_liveOutputs_childResource", Public, "MediaServicesLiveEventsLiveOutputsChildResource"},
-		{"XMLDocument", Public, "XMLDocument"},
-		{"name", Internal, "name"},
-		{"Name", Internal, "name"},
-		{"$schema", Internal, "schema"},
-		{"my_important_name", Internal, "myImportantName"},
-		{"MediaServices_liveEvents_liveOutputs_childResource", Internal, "mediaServicesLiveEventsLiveOutputsChildResource"},
-		{"XMLDocument", Internal, "xmlDocument"},
+		{"name", Exported, "Name"},
+		{"Name", Exported, "Name"},
+		{"$schema", Exported, "Schema"},
+		{"my_important_name", Exported, "MyImportantName"},
+		{"MediaServices_liveEvents_liveOutputs_childResource", Exported, "MediaServicesLiveEventsLiveOutputsChildResource"},
+		{"XMLDocument", Exported, "XMLDocument"},
+		{"name", NotExported, "name"},
+		{"Name", NotExported, "name"},
+		{"$schema", NotExported, "schema"},
+		{"my_important_name", NotExported, "myImportantName"},
+		{"MediaServices_liveEvents_liveOutputs_childResource", NotExported, "mediaServicesLiveEventsLiveOutputsChildResource"},
+		{"XMLDocument", NotExported, "xmlDocument"},
 	}
 
 	idfactory := NewIdentifierFactory()
@@ -90,6 +90,7 @@ func Test_TransformToSnakeCase_ReturnsExpectedString(t *testing.T) {
 		// Correctly splits all-caps acronyms
 		{string: "XMLDocument", expected: "xml_document"},
 		{string: "ResultAsXML", expected: "result_as_xml"},
+		// Correctly transforms strings with spaces
 		{string: "AlreadyHas spaces", expected: "already_has_spaces"},
 		{string: "AlreadyHas spaces    ", expected: "already_has_spaces"},
 	}
