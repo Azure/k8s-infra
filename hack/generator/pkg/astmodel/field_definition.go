@@ -95,12 +95,12 @@ func (field *FieldDefinition) MakeOptional() *FieldDefinition {
 }
 
 // AsField generates an AST field node representing this field definition
-func (field *FieldDefinition) AsField() *ast.Field {
+func (field *FieldDefinition) AsField(codeGenerationContext *CodeGenerationContext) *ast.Field {
 
 	result := &ast.Field{
 		Doc:   &ast.CommentGroup{},
 		Names: []*ast.Ident{ast.NewIdent(string(field.fieldName))},
-		Type:  field.FieldType().AsType(),
+		Type:  field.FieldType().AsType(codeGenerationContext),
 		Tag: &ast.BasicLit{
 			Kind:  token.STRING,
 			Value: fmt.Sprintf("`json:%q`", field.jsonName),

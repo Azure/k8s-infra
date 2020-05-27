@@ -184,7 +184,7 @@ func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema *g
 		scanner.idFactory.CreateGroupName(rootGroup),
 		scanner.idFactory.CreatePackageNameFromVersion(rootVersion))
 
-	rootTypeName := astmodel.NewTypeName(rootPackage, rootName)
+	rootTypeName := astmodel.NewTypeName(*rootPackage, rootName)
 
 	_, err = generateDefinitionsFor(ctx, scanner, rootTypeName, false, url, schema)
 	if err != nil {
@@ -392,7 +392,7 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 
 	// produce a usable name:
 	typeName := astmodel.NewTypeName(
-		astmodel.NewLocalPackageReference(
+		*astmodel.NewLocalPackageReference(
 			scanner.idFactory.CreateGroupName(group),
 			scanner.idFactory.CreatePackageNameFromVersion(version)),
 		scanner.idFactory.CreateIdentifier(name, astmodel.Exported))
