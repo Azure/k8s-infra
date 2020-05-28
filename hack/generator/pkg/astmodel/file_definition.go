@@ -39,17 +39,20 @@ func NewFileDefinition(packageRef *PackageReference, definitions ...TypeDefiner)
 
 // generateImports products the definitive set of imports for use in this file and
 // disambiguates any conflicts
-func (file *FileDefinition) generateImports() map[PackageReference]struct{} {
-	metav1Import := NewPackageReference("k8s.io/apimachinery/pkg/apis/meta/v1").WithName("metav1")
+func (file *FileDefinition) generateImports() map[PackageImport]struct{} {
 
-	var requiredImports = make(map[PackageReference]struct{}) // fake set type
+	metav1Import := NewPackageImport(
+		*NewPackageReference("k8s.io/apimachinery/pkg/apis/meta/v1")).WithName("metav1")
+
+	var requiredImports = make(map[PackageImport]struct{}) // fake set type
 	requiredImports[*metav1Import] = struct{}{}
 
 	for _, s := range file.definitions {
 		for _, requiredImport := range s.Type().RequiredImports() {
 			// no need to import the current package
 			if !requiredImport.Equals(file.packageReference) {
-				requiredImports[*requiredImport] = struct{}{}
+				newImport := NewPackageImport(*requiredImport)
+				requiredImports[*newImport] = struct{}{}
 			}
 		}
 	}
@@ -58,14 +61,14 @@ func (file *FileDefinition) generateImports() map[PackageReference]struct{} {
 
 	// Determine if there are any conflicting imports -- these are imports with the same "name"
 	// but a different package path
-	for imp, _ := range requiredImports {
-		for otherImp, _ := range requiredImports {
+	for imp := range requiredImports {
+		for otherImp := range requiredImports {
 			if !imp.Equals(&otherImp) && imp.PackageName() == otherImp.PackageName() {
 				klog.Warningf(
 					"Import %v (named %v) and import %v (named %v) conflict",
-					imp.PackagePath(),
+					imp.PackageReference.PackagePath(),
 					imp.PackageName(),
-					otherImp.PackagePath(),
+					otherImp.PackageReference.PackagePath(),
 					otherImp.PackageName())
 			}
 		}
@@ -74,7 +77,7 @@ func (file *FileDefinition) generateImports() map[PackageReference]struct{} {
 	return requiredImports
 }
 
-func (file *FileDefinition) generateImportSpecs(references map[PackageReference]struct{}) []ast.Spec {
+func (file *FileDefinition) generateImportSpecs(references map[PackageImport]struct{}) []ast.Spec {
 	var importSpecs []ast.Spec
 	for requiredImport := range references {
 		importSpecs = append(importSpecs, requiredImport.AsImportSpec())
