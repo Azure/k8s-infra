@@ -54,7 +54,23 @@ func (file *FileDefinition) generateImports() map[PackageReference]struct{} {
 		}
 	}
 
-	// TODO: handle conflicting names
+	// TODO: Do something about conflicting imports
+
+	// Determine if there are any conflicting imports -- these are imports with the same "name"
+	// but a different package path
+	for imp, _ := range requiredImports {
+		for otherImp, _ := range requiredImports {
+			if !imp.Equals(&otherImp) && imp.PackageName() == otherImp.PackageName() {
+				klog.Warningf(
+					"Import %v (named %v) and import %v (named %v) conflict",
+					imp.PackagePath(),
+					imp.PackageName(),
+					otherImp.PackagePath(),
+					otherImp.PackageName())
+			}
+		}
+	}
+
 	return requiredImports
 }
 

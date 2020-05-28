@@ -127,7 +127,7 @@ func (field *FieldDefinition) AsField(codeGenerationContext *CodeGenerationConte
 
 	// generate doc comment:
 	if field.description != "" {
-		addDocComment(fmt.Sprintf("/* %s: %s */", field.fieldName, field.description))
+		addDocComment(fmt.Sprintf("/*%s: %s*/", field.fieldName, field.description))
 	}
 
 	return result

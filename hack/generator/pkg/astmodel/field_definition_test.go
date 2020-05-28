@@ -49,8 +49,7 @@ func Test_FieldDefinitionAsAst_GivenValidField_ReturnsNonNilResult(t *testing.T)
 	g := NewGomegaWithT(t)
 
 	field := NewFieldDefinition("FullName", "fullName", StringType)
-	//cgCtx = NewCodeGenerationContext()
-	node := field.AsField(nil) // TODO: ?
+	node := field.AsField(nil)
 
 	g.Expect(node).NotTo(BeNil())
 }

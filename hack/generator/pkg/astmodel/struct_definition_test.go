@@ -38,7 +38,7 @@ func Test_StructDefinitionAsAst_GivenValidStruct_ReturnsNonNilResult(t *testing.
 
 	ref := NewTypeName(*NewLocalPackageReference("group", "2020-01-01"), "name")
 	field := NewStructDefinition(ref, NewStructType(), false)
-	node := field.AsDeclarations(nil) // TODO:
+	node := field.AsDeclarations(nil)
 
 	g.Expect(node).NotTo(BeNil())
 }

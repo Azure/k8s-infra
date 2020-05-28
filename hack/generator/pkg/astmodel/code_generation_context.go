@@ -14,8 +14,6 @@ type CodeGenerationContext struct {
 	currentPackage    *PackageReference
 }
 
-// TODO: How picky about immutability should we be -- should we put this in its own package?
-
 // New CodeGenerationContext creates a new immutable code generation context
 func NewCodeGenerationContext(currentPackage *PackageReference, packageReferences map[PackageReference]struct{}) *CodeGenerationContext {
 	return &CodeGenerationContext{currentPackage: currentPackage, packageReferences: packageReferences}

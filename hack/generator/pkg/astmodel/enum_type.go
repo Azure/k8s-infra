@@ -35,7 +35,7 @@ func NewEnumType(baseType *PrimitiveType, options []EnumValue) *EnumType {
 // AsType implements Type for EnumType
 func (enum *EnumType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
 	// this should "never" happen as we name all enums; warn about it if it does
-	klog.Warning("emitting unnamed enum, something’s awry")
+	klog.Warning("Emitting unnamed enum, something’s awry")
 	return enum.BaseType.AsType(codeGenerationContext)
 }
 
