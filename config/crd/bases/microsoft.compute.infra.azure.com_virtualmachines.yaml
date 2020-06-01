@@ -602,8 +602,6 @@ spec:
           spec:
             description: VirtualMachineSpec defines the desired state of VirtualMachine
             properties:
-              apiVersion:
-                type: string
               identity:
                 description: Identity - The identity of the virtual machine, if configured.
                 properties:
@@ -1129,16 +1127,12 @@ spec:
                   type: string
                 type: array
             required:
-            - apiVersion
             - location
             - resourceGroupRef
-            - tags
             type: object
           status:
             description: VirtualMachineStatus defines the observed state of VirtualMachine
             properties:
-              deploymentId:
-                type: string
               id:
                 type: string
               provisioningState:

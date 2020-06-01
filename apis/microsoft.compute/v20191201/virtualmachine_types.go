@@ -204,8 +204,6 @@ type (
 
 	// VirtualMachineSpec defines the desired state of VirtualMachine
 	VirtualMachineSpec struct {
-		// +k8s:conversion-gen=false
-		APIVersion string `json:"apiVersion"`
 		// ResourceGroupRef is the Azure Resource Group the VirtualNetwork resides within
 		// +kubebuilder:validation:Required
 		ResourceGroupRef *azcorev1.KnownTypeReference `json:"resourceGroupRef"`
@@ -219,16 +217,14 @@ type (
 		// Identity - The identity of the virtual machine, if configured.
 		Identity *VirtualMachineIdentity `json:"identity,omitempty"`
 		// Tags - Resource tags
-		Tags map[string]string `json:"tags"`
+		Tags map[string]string `json:"tags,omitempty"`
 		// Properties contains details which describe the virtual machine
 		Properties *VirtualMachineProperties `json:"properties,omitempty"`
 	}
 
 	// VirtualMachineStatus defines the observed state of VirtualMachine
 	VirtualMachineStatus struct {
-		ID string `json:"id,omitempty"`
-		// +k8s:conversion-gen=false
-		DeploymentID      string `json:"deploymentId,omitempty"`
+		ID                string `json:"id,omitempty"`
 		ProvisioningState string `json:"provisioningState,omitempty"`
 	}
 

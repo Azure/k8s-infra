@@ -354,6 +354,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*VirtualMachineScaleSetIPConfiguration)(nil), (*v1.VirtualMachineScaleSetIPConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v20191201_VirtualMachineScaleSetIPConfiguration_To_v1_VirtualMachineScaleSetIPConfiguration(a.(*VirtualMachineScaleSetIPConfiguration), b.(*v1.VirtualMachineScaleSetIPConfiguration), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1.VirtualMachineScaleSetIPConfiguration)(nil), (*VirtualMachineScaleSetIPConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1_VirtualMachineScaleSetIPConfiguration_To_v20191201_VirtualMachineScaleSetIPConfiguration(a.(*v1.VirtualMachineScaleSetIPConfiguration), b.(*VirtualMachineScaleSetIPConfiguration), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*VirtualMachineScaleSetIPConfigurationProperties)(nil), (*v1.VirtualMachineScaleSetIPConfigurationProperties)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v20191201_VirtualMachineScaleSetIPConfigurationProperties_To_v1_VirtualMachineScaleSetIPConfigurationProperties(a.(*VirtualMachineScaleSetIPConfigurationProperties), b.(*v1.VirtualMachineScaleSetIPConfigurationProperties), scope)
 	}); err != nil {
@@ -1050,7 +1060,7 @@ func Convert_v1_SSHPublicKey_To_v20191201_SSHPublicKey(in *v1.SSHPublicKey, out 
 }
 
 func autoConvert_v20191201_ScaleInPolicy_To_v1_ScaleInPolicy(in *ScaleInPolicy, out *v1.ScaleInPolicy, s conversion.Scope) error {
-	out.Rules = (*[]v1.VirtualMachineScaleSetScaleInRules)(unsafe.Pointer(in.Rules))
+	out.Rules = *(*[]v1.VirtualMachineScaleSetScaleInRules)(unsafe.Pointer(&in.Rules))
 	return nil
 }
 
@@ -1060,7 +1070,7 @@ func Convert_v20191201_ScaleInPolicy_To_v1_ScaleInPolicy(in *ScaleInPolicy, out 
 }
 
 func autoConvert_v1_ScaleInPolicy_To_v20191201_ScaleInPolicy(in *v1.ScaleInPolicy, out *ScaleInPolicy, s conversion.Scope) error {
-	out.Rules = (*[]VirtualMachineScaleSetScaleInRules)(unsafe.Pointer(in.Rules))
+	out.Rules = *(*[]VirtualMachineScaleSetScaleInRules)(unsafe.Pointer(&in.Rules))
 	return nil
 }
 
@@ -1090,9 +1100,9 @@ func Convert_v1_ScheduledEventsProfile_To_v20191201_ScheduledEventsProfile(in *v
 }
 
 func autoConvert_v20191201_Sku_To_v1_Sku(in *Sku, out *v1.Sku, s conversion.Scope) error {
-	out.Name = (*string)(unsafe.Pointer(in.Name))
-	out.Tier = (*string)(unsafe.Pointer(in.Tier))
-	out.Capacity = (*int64)(unsafe.Pointer(in.Capacity))
+	out.Name = in.Name
+	out.Tier = in.Tier
+	out.Capacity = in.Capacity
 	return nil
 }
 
@@ -1102,9 +1112,9 @@ func Convert_v20191201_Sku_To_v1_Sku(in *Sku, out *v1.Sku, s conversion.Scope) e
 }
 
 func autoConvert_v1_Sku_To_v20191201_Sku(in *v1.Sku, out *Sku, s conversion.Scope) error {
-	out.Name = (*string)(unsafe.Pointer(in.Name))
-	out.Tier = (*string)(unsafe.Pointer(in.Tier))
-	out.Capacity = (*int64)(unsafe.Pointer(in.Capacity))
+	out.Name = in.Name
+	out.Tier = in.Tier
+	out.Capacity = in.Capacity
 	return nil
 }
 
@@ -1259,7 +1269,17 @@ func Convert_v1_VirtualMachineIdentity_To_v20191201_VirtualMachineIdentity(in *v
 
 func autoConvert_v20191201_VirtualMachineList_To_v1_VirtualMachineList(in *VirtualMachineList, out *v1.VirtualMachineList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]v1.VirtualMachine)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]v1.VirtualMachine, len(*in))
+		for i := range *in {
+			if err := Convert_v20191201_VirtualMachine_To_v1_VirtualMachine(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -1270,7 +1290,17 @@ func Convert_v20191201_VirtualMachineList_To_v1_VirtualMachineList(in *VirtualMa
 
 func autoConvert_v1_VirtualMachineList_To_v20191201_VirtualMachineList(in *v1.VirtualMachineList, out *VirtualMachineList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]VirtualMachine)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]VirtualMachine, len(*in))
+		for i := range *in {
+			if err := Convert_v1_VirtualMachine_To_v20191201_VirtualMachine(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -1377,13 +1407,35 @@ func Convert_v1_VirtualMachineScaleSetDataDisk_To_v20191201_VirtualMachineScaleS
 	return autoConvert_v1_VirtualMachineScaleSetDataDisk_To_v20191201_VirtualMachineScaleSetDataDisk(in, out, s)
 }
 
+func autoConvert_v20191201_VirtualMachineScaleSetIPConfiguration_To_v1_VirtualMachineScaleSetIPConfiguration(in *VirtualMachineScaleSetIPConfiguration, out *v1.VirtualMachineScaleSetIPConfiguration, s conversion.Scope) error {
+	out.Name = (*string)(unsafe.Pointer(in.Name))
+	out.Properties = (*v1.VirtualMachineScaleSetIPConfigurationProperties)(unsafe.Pointer(in.Properties))
+	return nil
+}
+
+// Convert_v20191201_VirtualMachineScaleSetIPConfiguration_To_v1_VirtualMachineScaleSetIPConfiguration is an autogenerated conversion function.
+func Convert_v20191201_VirtualMachineScaleSetIPConfiguration_To_v1_VirtualMachineScaleSetIPConfiguration(in *VirtualMachineScaleSetIPConfiguration, out *v1.VirtualMachineScaleSetIPConfiguration, s conversion.Scope) error {
+	return autoConvert_v20191201_VirtualMachineScaleSetIPConfiguration_To_v1_VirtualMachineScaleSetIPConfiguration(in, out, s)
+}
+
+func autoConvert_v1_VirtualMachineScaleSetIPConfiguration_To_v20191201_VirtualMachineScaleSetIPConfiguration(in *v1.VirtualMachineScaleSetIPConfiguration, out *VirtualMachineScaleSetIPConfiguration, s conversion.Scope) error {
+	out.Name = (*string)(unsafe.Pointer(in.Name))
+	out.Properties = (*VirtualMachineScaleSetIPConfigurationProperties)(unsafe.Pointer(in.Properties))
+	return nil
+}
+
+// Convert_v1_VirtualMachineScaleSetIPConfiguration_To_v20191201_VirtualMachineScaleSetIPConfiguration is an autogenerated conversion function.
+func Convert_v1_VirtualMachineScaleSetIPConfiguration_To_v20191201_VirtualMachineScaleSetIPConfiguration(in *v1.VirtualMachineScaleSetIPConfiguration, out *VirtualMachineScaleSetIPConfiguration, s conversion.Scope) error {
+	return autoConvert_v1_VirtualMachineScaleSetIPConfiguration_To_v20191201_VirtualMachineScaleSetIPConfiguration(in, out, s)
+}
+
 func autoConvert_v20191201_VirtualMachineScaleSetIPConfigurationProperties_To_v1_VirtualMachineScaleSetIPConfigurationProperties(in *VirtualMachineScaleSetIPConfigurationProperties, out *v1.VirtualMachineScaleSetIPConfigurationProperties, s conversion.Scope) error {
 	out.SubnetRef = (*corev1.KnownTypeReference)(unsafe.Pointer(in.SubnetRef))
 	out.Primary = (*bool)(unsafe.Pointer(in.Primary))
 	out.PublicIPAddressConfiguration = (*v1.VirtualMachineScaleSetPublicIPAddressConfiguration)(unsafe.Pointer(in.PublicIPAddressConfiguration))
 	out.PrivateIPAddressVersion = in.PrivateIPAddressVersion
-	out.LoadBalancerBackendAddressPoolRefs = (*[]corev1.KnownTypeReference)(unsafe.Pointer(in.LoadBalancerBackendAddressPoolRefs))
-	out.LoadBalancerInboundNatPoolRefs = (*[]corev1.KnownTypeReference)(unsafe.Pointer(in.LoadBalancerInboundNatPoolRefs))
+	out.LoadBalancerBackendAddressPoolRefs = *(*[]corev1.KnownTypeReference)(unsafe.Pointer(&in.LoadBalancerBackendAddressPoolRefs))
+	out.LoadBalancerInboundNatPoolRefs = *(*[]corev1.KnownTypeReference)(unsafe.Pointer(&in.LoadBalancerInboundNatPoolRefs))
 	return nil
 }
 
@@ -1397,8 +1449,8 @@ func autoConvert_v1_VirtualMachineScaleSetIPConfigurationProperties_To_v20191201
 	out.Primary = (*bool)(unsafe.Pointer(in.Primary))
 	out.PublicIPAddressConfiguration = (*VirtualMachineScaleSetPublicIPAddressConfiguration)(unsafe.Pointer(in.PublicIPAddressConfiguration))
 	out.PrivateIPAddressVersion = in.PrivateIPAddressVersion
-	out.LoadBalancerBackendAddressPoolRefs = (*[]corev1.KnownTypeReference)(unsafe.Pointer(in.LoadBalancerBackendAddressPoolRefs))
-	out.LoadBalancerInboundNatPoolRefs = (*[]corev1.KnownTypeReference)(unsafe.Pointer(in.LoadBalancerInboundNatPoolRefs))
+	out.LoadBalancerBackendAddressPoolRefs = *(*[]corev1.KnownTypeReference)(unsafe.Pointer(&in.LoadBalancerBackendAddressPoolRefs))
+	out.LoadBalancerInboundNatPoolRefs = *(*[]corev1.KnownTypeReference)(unsafe.Pointer(&in.LoadBalancerInboundNatPoolRefs))
 	return nil
 }
 
@@ -1536,7 +1588,7 @@ func Convert_v1_VirtualMachineScaleSetNetworkConfiguration_To_v20191201_VirtualM
 }
 
 func autoConvert_v20191201_VirtualMachineScaleSetNetworkConfigurationDNSSettings_To_v1_VirtualMachineScaleSetNetworkConfigurationDNSSettings(in *VirtualMachineScaleSetNetworkConfigurationDNSSettings, out *v1.VirtualMachineScaleSetNetworkConfigurationDNSSettings, s conversion.Scope) error {
-	out.DNSServers = (*[]string)(unsafe.Pointer(in.DNSServers))
+	out.DNSServers = *(*[]string)(unsafe.Pointer(&in.DNSServers))
 	return nil
 }
 
@@ -1546,7 +1598,7 @@ func Convert_v20191201_VirtualMachineScaleSetNetworkConfigurationDNSSettings_To_
 }
 
 func autoConvert_v1_VirtualMachineScaleSetNetworkConfigurationDNSSettings_To_v20191201_VirtualMachineScaleSetNetworkConfigurationDNSSettings(in *v1.VirtualMachineScaleSetNetworkConfigurationDNSSettings, out *VirtualMachineScaleSetNetworkConfigurationDNSSettings, s conversion.Scope) error {
-	out.DNSServers = (*[]string)(unsafe.Pointer(in.DNSServers))
+	out.DNSServers = *(*[]string)(unsafe.Pointer(&in.DNSServers))
 	return nil
 }
 
@@ -1560,7 +1612,7 @@ func autoConvert_v20191201_VirtualMachineScaleSetNetworkConfigurationProperties_
 	out.EnableAcceleratedNetworking = (*bool)(unsafe.Pointer(in.EnableAcceleratedNetworking))
 	out.NetworkSecurityGroupRef = (*corev1.KnownTypeReference)(unsafe.Pointer(in.NetworkSecurityGroupRef))
 	out.DNSSettings = (*v1.VirtualMachineScaleSetNetworkConfigurationDNSSettings)(unsafe.Pointer(in.DNSSettings))
-	out.IPConfigurationRefs = (*[]corev1.KnownTypeReference)(unsafe.Pointer(in.IPConfigurationRefs))
+	out.IPConfigurations = *(*[]v1.VirtualMachineScaleSetIPConfiguration)(unsafe.Pointer(&in.IPConfigurations))
 	out.EnableIPForwarding = (*bool)(unsafe.Pointer(in.EnableIPForwarding))
 	return nil
 }
@@ -1575,7 +1627,7 @@ func autoConvert_v1_VirtualMachineScaleSetNetworkConfigurationProperties_To_v201
 	out.EnableAcceleratedNetworking = (*bool)(unsafe.Pointer(in.EnableAcceleratedNetworking))
 	out.NetworkSecurityGroupRef = (*corev1.KnownTypeReference)(unsafe.Pointer(in.NetworkSecurityGroupRef))
 	out.DNSSettings = (*VirtualMachineScaleSetNetworkConfigurationDNSSettings)(unsafe.Pointer(in.DNSSettings))
-	out.IPConfigurationRefs = (*[]corev1.KnownTypeReference)(unsafe.Pointer(in.IPConfigurationRefs))
+	out.IPConfigurations = *(*[]VirtualMachineScaleSetIPConfiguration)(unsafe.Pointer(&in.IPConfigurations))
 	out.EnableIPForwarding = (*bool)(unsafe.Pointer(in.EnableIPForwarding))
 	return nil
 }
@@ -1587,7 +1639,7 @@ func Convert_v1_VirtualMachineScaleSetNetworkConfigurationProperties_To_v2019120
 
 func autoConvert_v20191201_VirtualMachineScaleSetNetworkProfile_To_v1_VirtualMachineScaleSetNetworkProfile(in *VirtualMachineScaleSetNetworkProfile, out *v1.VirtualMachineScaleSetNetworkProfile, s conversion.Scope) error {
 	out.HealthProbeRef = (*corev1.KnownTypeReference)(unsafe.Pointer(in.HealthProbeRef))
-	out.NetworkInterfaceConfigurations = (*[]v1.VirtualMachineScaleSetNetworkConfiguration)(unsafe.Pointer(in.NetworkInterfaceConfigurations))
+	out.NetworkInterfaceConfigurations = *(*[]v1.VirtualMachineScaleSetNetworkConfiguration)(unsafe.Pointer(&in.NetworkInterfaceConfigurations))
 	return nil
 }
 
@@ -1598,7 +1650,7 @@ func Convert_v20191201_VirtualMachineScaleSetNetworkProfile_To_v1_VirtualMachine
 
 func autoConvert_v1_VirtualMachineScaleSetNetworkProfile_To_v20191201_VirtualMachineScaleSetNetworkProfile(in *v1.VirtualMachineScaleSetNetworkProfile, out *VirtualMachineScaleSetNetworkProfile, s conversion.Scope) error {
 	out.HealthProbeRef = (*corev1.KnownTypeReference)(unsafe.Pointer(in.HealthProbeRef))
-	out.NetworkInterfaceConfigurations = (*[]VirtualMachineScaleSetNetworkConfiguration)(unsafe.Pointer(in.NetworkInterfaceConfigurations))
+	out.NetworkInterfaceConfigurations = *(*[]VirtualMachineScaleSetNetworkConfiguration)(unsafe.Pointer(&in.NetworkInterfaceConfigurations))
 	return nil
 }
 
@@ -1615,7 +1667,7 @@ func autoConvert_v20191201_VirtualMachineScaleSetOSDisk_To_v1_VirtualMachineScal
 	out.DiskSizeGB = (*int32)(unsafe.Pointer(in.DiskSizeGB))
 	out.OsType = (*string)(unsafe.Pointer(in.OsType))
 	out.Image = (*v1.VirtualHardDisk)(unsafe.Pointer(in.Image))
-	out.VhdContainers = (*[]string)(unsafe.Pointer(in.VhdContainers))
+	out.VhdContainers = *(*[]string)(unsafe.Pointer(&in.VhdContainers))
 	out.ManagedDisk = (*v1.VirtualMachineScaleSetManagedDiskParameters)(unsafe.Pointer(in.ManagedDisk))
 	return nil
 }
@@ -1633,7 +1685,7 @@ func autoConvert_v1_VirtualMachineScaleSetOSDisk_To_v20191201_VirtualMachineScal
 	out.DiskSizeGB = (*int32)(unsafe.Pointer(in.DiskSizeGB))
 	out.OsType = (*string)(unsafe.Pointer(in.OsType))
 	out.Image = (*VirtualHardDisk)(unsafe.Pointer(in.Image))
-	out.VhdContainers = (*[]string)(unsafe.Pointer(in.VhdContainers))
+	out.VhdContainers = *(*[]string)(unsafe.Pointer(&in.VhdContainers))
 	out.ManagedDisk = (*VirtualMachineScaleSetManagedDiskParameters)(unsafe.Pointer(in.ManagedDisk))
 	return nil
 }
@@ -1644,8 +1696,8 @@ func Convert_v1_VirtualMachineScaleSetOSDisk_To_v20191201_VirtualMachineScaleSet
 }
 
 func autoConvert_v20191201_VirtualMachineScaleSetOSProfile_To_v1_VirtualMachineScaleSetOSProfile(in *VirtualMachineScaleSetOSProfile, out *v1.VirtualMachineScaleSetOSProfile, s conversion.Scope) error {
-	out.ComputerNamePrefix = (*string)(unsafe.Pointer(in.ComputerNamePrefix))
-	out.AdminUsername = (*string)(unsafe.Pointer(in.AdminUsername))
+	out.ComputerNamePrefix = in.ComputerNamePrefix
+	out.AdminUsername = in.AdminUsername
 	out.AdminPassword = (*string)(unsafe.Pointer(in.AdminPassword))
 	out.CustomData = (*string)(unsafe.Pointer(in.CustomData))
 	out.LinuxConfiguration = (*v1.LinuxConfiguration)(unsafe.Pointer(in.LinuxConfiguration))
@@ -1658,8 +1710,8 @@ func Convert_v20191201_VirtualMachineScaleSetOSProfile_To_v1_VirtualMachineScale
 }
 
 func autoConvert_v1_VirtualMachineScaleSetOSProfile_To_v20191201_VirtualMachineScaleSetOSProfile(in *v1.VirtualMachineScaleSetOSProfile, out *VirtualMachineScaleSetOSProfile, s conversion.Scope) error {
-	out.ComputerNamePrefix = (*string)(unsafe.Pointer(in.ComputerNamePrefix))
-	out.AdminUsername = (*string)(unsafe.Pointer(in.AdminUsername))
+	out.ComputerNamePrefix = in.ComputerNamePrefix
+	out.AdminUsername = in.AdminUsername
 	out.AdminPassword = (*string)(unsafe.Pointer(in.AdminPassword))
 	out.CustomData = (*string)(unsafe.Pointer(in.CustomData))
 	out.LinuxConfiguration = (*LinuxConfiguration)(unsafe.Pointer(in.LinuxConfiguration))
@@ -1672,9 +1724,13 @@ func Convert_v1_VirtualMachineScaleSetOSProfile_To_v20191201_VirtualMachineScale
 }
 
 func autoConvert_v20191201_VirtualMachineScaleSetProperties_To_v1_VirtualMachineScaleSetProperties(in *VirtualMachineScaleSetProperties, out *v1.VirtualMachineScaleSetProperties, s conversion.Scope) error {
-	out.UpgradePolicy = (*v1.UpgradePolicy)(unsafe.Pointer(in.UpgradePolicy))
+	if err := Convert_v20191201_UpgradePolicy_To_v1_UpgradePolicy(&in.UpgradePolicy, &out.UpgradePolicy, s); err != nil {
+		return err
+	}
 	out.AutomaticRepairsPolicy = (*v1.AutomaticRepairsPolicy)(unsafe.Pointer(in.AutomaticRepairsPolicy))
-	out.VirtualMachineProfile = (*v1.VirtualMachineScaleSetVMProfile)(unsafe.Pointer(in.VirtualMachineProfile))
+	if err := Convert_v20191201_VirtualMachineScaleSetVMProfile_To_v1_VirtualMachineScaleSetVMProfile(&in.VirtualMachineProfile, &out.VirtualMachineProfile, s); err != nil {
+		return err
+	}
 	out.ProvisioningState = (*string)(unsafe.Pointer(in.ProvisioningState))
 	out.Overprovision = (*bool)(unsafe.Pointer(in.Overprovision))
 	out.DoNotRunExtensionsOnOverprovisionedVMs = (*bool)(unsafe.Pointer(in.DoNotRunExtensionsOnOverprovisionedVMs))
@@ -1692,9 +1748,13 @@ func Convert_v20191201_VirtualMachineScaleSetProperties_To_v1_VirtualMachineScal
 }
 
 func autoConvert_v1_VirtualMachineScaleSetProperties_To_v20191201_VirtualMachineScaleSetProperties(in *v1.VirtualMachineScaleSetProperties, out *VirtualMachineScaleSetProperties, s conversion.Scope) error {
-	out.UpgradePolicy = (*UpgradePolicy)(unsafe.Pointer(in.UpgradePolicy))
+	if err := Convert_v1_UpgradePolicy_To_v20191201_UpgradePolicy(&in.UpgradePolicy, &out.UpgradePolicy, s); err != nil {
+		return err
+	}
 	out.AutomaticRepairsPolicy = (*AutomaticRepairsPolicy)(unsafe.Pointer(in.AutomaticRepairsPolicy))
-	out.VirtualMachineProfile = (*VirtualMachineScaleSetVMProfile)(unsafe.Pointer(in.VirtualMachineProfile))
+	if err := Convert_v1_VirtualMachineScaleSetVMProfile_To_v20191201_VirtualMachineScaleSetVMProfile(&in.VirtualMachineProfile, &out.VirtualMachineProfile, s); err != nil {
+		return err
+	}
 	out.ProvisioningState = (*string)(unsafe.Pointer(in.ProvisioningState))
 	out.Overprovision = (*bool)(unsafe.Pointer(in.Overprovision))
 	out.DoNotRunExtensionsOnOverprovisionedVMs = (*bool)(unsafe.Pointer(in.DoNotRunExtensionsOnOverprovisionedVMs))
@@ -1756,7 +1816,7 @@ func Convert_v1_VirtualMachineScaleSetPublicIPAddressConfigurationDNSSettings_To
 func autoConvert_v20191201_VirtualMachineScaleSetPublicIPAddressConfigurationProperties_To_v1_VirtualMachineScaleSetPublicIPAddressConfigurationProperties(in *VirtualMachineScaleSetPublicIPAddressConfigurationProperties, out *v1.VirtualMachineScaleSetPublicIPAddressConfigurationProperties, s conversion.Scope) error {
 	out.IdleTimeoutInMinutes = (*int32)(unsafe.Pointer(in.IdleTimeoutInMinutes))
 	out.DNSSettings = (*v1.VirtualMachineScaleSetPublicIPAddressConfigurationDNSSettings)(unsafe.Pointer(in.DNSSettings))
-	out.IPTags = (*[]v1.VirtualMachineScaleSetIPTag)(unsafe.Pointer(in.IPTags))
+	out.IPTags = *(*[]v1.VirtualMachineScaleSetIPTag)(unsafe.Pointer(&in.IPTags))
 	out.PublicIPAddressVersion = in.PublicIPAddressVersion
 	return nil
 }
@@ -1769,7 +1829,7 @@ func Convert_v20191201_VirtualMachineScaleSetPublicIPAddressConfigurationPropert
 func autoConvert_v1_VirtualMachineScaleSetPublicIPAddressConfigurationProperties_To_v20191201_VirtualMachineScaleSetPublicIPAddressConfigurationProperties(in *v1.VirtualMachineScaleSetPublicIPAddressConfigurationProperties, out *VirtualMachineScaleSetPublicIPAddressConfigurationProperties, s conversion.Scope) error {
 	out.IdleTimeoutInMinutes = (*int32)(unsafe.Pointer(in.IdleTimeoutInMinutes))
 	out.DNSSettings = (*VirtualMachineScaleSetPublicIPAddressConfigurationDNSSettings)(unsafe.Pointer(in.DNSSettings))
-	out.IPTags = (*[]VirtualMachineScaleSetIPTag)(unsafe.Pointer(in.IPTags))
+	out.IPTags = *(*[]VirtualMachineScaleSetIPTag)(unsafe.Pointer(&in.IPTags))
 	out.PublicIPAddressVersion = in.PublicIPAddressVersion
 	return nil
 }
@@ -1781,11 +1841,15 @@ func Convert_v1_VirtualMachineScaleSetPublicIPAddressConfigurationProperties_To_
 
 func autoConvert_v20191201_VirtualMachineScaleSetSpec_To_v1_VirtualMachineScaleSetSpec(in *VirtualMachineScaleSetSpec, out *v1.VirtualMachineScaleSetSpec, s conversion.Scope) error {
 	out.ResourceGroupRef = (*corev1.KnownTypeReference)(unsafe.Pointer(in.ResourceGroupRef))
-	out.Sku = (*v1.Sku)(unsafe.Pointer(in.Sku))
+	if err := Convert_v20191201_Sku_To_v1_Sku(&in.Sku, &out.Sku, s); err != nil {
+		return err
+	}
 	out.Plan = (*v1.Plan)(unsafe.Pointer(in.Plan))
-	out.Properties = (*v1.VirtualMachineScaleSetProperties)(unsafe.Pointer(in.Properties))
+	if err := Convert_v20191201_VirtualMachineScaleSetProperties_To_v1_VirtualMachineScaleSetProperties(&in.Properties, &out.Properties, s); err != nil {
+		return err
+	}
 	out.Identity = (*v1.VirtualMachineScaleSetIdentity)(unsafe.Pointer(in.Identity))
-	out.Zones = (*[]string)(unsafe.Pointer(in.Zones))
+	out.Zones = *(*[]string)(unsafe.Pointer(&in.Zones))
 	out.Location = in.Location
 	out.Tags = *(*map[string]string)(unsafe.Pointer(&in.Tags))
 	return nil
@@ -1799,11 +1863,15 @@ func Convert_v20191201_VirtualMachineScaleSetSpec_To_v1_VirtualMachineScaleSetSp
 func autoConvert_v1_VirtualMachineScaleSetSpec_To_v20191201_VirtualMachineScaleSetSpec(in *v1.VirtualMachineScaleSetSpec, out *VirtualMachineScaleSetSpec, s conversion.Scope) error {
 	// INFO: in.APIVersion opted out of conversion generation
 	out.ResourceGroupRef = (*corev1.KnownTypeReference)(unsafe.Pointer(in.ResourceGroupRef))
-	out.Sku = (*Sku)(unsafe.Pointer(in.Sku))
+	if err := Convert_v1_Sku_To_v20191201_Sku(&in.Sku, &out.Sku, s); err != nil {
+		return err
+	}
 	out.Plan = (*Plan)(unsafe.Pointer(in.Plan))
-	out.Properties = (*VirtualMachineScaleSetProperties)(unsafe.Pointer(in.Properties))
+	if err := Convert_v1_VirtualMachineScaleSetProperties_To_v20191201_VirtualMachineScaleSetProperties(&in.Properties, &out.Properties, s); err != nil {
+		return err
+	}
 	out.Identity = (*VirtualMachineScaleSetIdentity)(unsafe.Pointer(in.Identity))
-	out.Zones = (*[]string)(unsafe.Pointer(in.Zones))
+	out.Zones = *(*[]string)(unsafe.Pointer(&in.Zones))
 	out.Location = in.Location
 	out.Tags = *(*map[string]string)(unsafe.Pointer(&in.Tags))
 	return nil
@@ -1840,7 +1908,7 @@ func Convert_v1_VirtualMachineScaleSetStatus_To_v20191201_VirtualMachineScaleSet
 func autoConvert_v20191201_VirtualMachineScaleSetStorageProfile_To_v1_VirtualMachineScaleSetStorageProfile(in *VirtualMachineScaleSetStorageProfile, out *v1.VirtualMachineScaleSetStorageProfile, s conversion.Scope) error {
 	out.ImageReference = (*v1.ImageReference)(unsafe.Pointer(in.ImageReference))
 	out.OsDisk = (*v1.VirtualMachineScaleSetOSDisk)(unsafe.Pointer(in.OsDisk))
-	out.DataDisks = (*[]v1.VirtualMachineScaleSetDataDisk)(unsafe.Pointer(in.DataDisks))
+	out.DataDisks = *(*[]v1.VirtualMachineScaleSetDataDisk)(unsafe.Pointer(&in.DataDisks))
 	return nil
 }
 
@@ -1852,7 +1920,7 @@ func Convert_v20191201_VirtualMachineScaleSetStorageProfile_To_v1_VirtualMachine
 func autoConvert_v1_VirtualMachineScaleSetStorageProfile_To_v20191201_VirtualMachineScaleSetStorageProfile(in *v1.VirtualMachineScaleSetStorageProfile, out *VirtualMachineScaleSetStorageProfile, s conversion.Scope) error {
 	out.ImageReference = (*ImageReference)(unsafe.Pointer(in.ImageReference))
 	out.OsDisk = (*VirtualMachineScaleSetOSDisk)(unsafe.Pointer(in.OsDisk))
-	out.DataDisks = (*[]VirtualMachineScaleSetDataDisk)(unsafe.Pointer(in.DataDisks))
+	out.DataDisks = *(*[]VirtualMachineScaleSetDataDisk)(unsafe.Pointer(&in.DataDisks))
 	return nil
 }
 
@@ -1862,9 +1930,15 @@ func Convert_v1_VirtualMachineScaleSetStorageProfile_To_v20191201_VirtualMachine
 }
 
 func autoConvert_v20191201_VirtualMachineScaleSetVMProfile_To_v1_VirtualMachineScaleSetVMProfile(in *VirtualMachineScaleSetVMProfile, out *v1.VirtualMachineScaleSetVMProfile, s conversion.Scope) error {
-	out.OsProfile = (*v1.VirtualMachineScaleSetOSProfile)(unsafe.Pointer(in.OsProfile))
-	out.StorageProfile = (*v1.VirtualMachineScaleSetStorageProfile)(unsafe.Pointer(in.StorageProfile))
-	out.NetworkProfile = (*v1.VirtualMachineScaleSetNetworkProfile)(unsafe.Pointer(in.NetworkProfile))
+	if err := Convert_v20191201_VirtualMachineScaleSetOSProfile_To_v1_VirtualMachineScaleSetOSProfile(&in.OsProfile, &out.OsProfile, s); err != nil {
+		return err
+	}
+	if err := Convert_v20191201_VirtualMachineScaleSetStorageProfile_To_v1_VirtualMachineScaleSetStorageProfile(&in.StorageProfile, &out.StorageProfile, s); err != nil {
+		return err
+	}
+	if err := Convert_v20191201_VirtualMachineScaleSetNetworkProfile_To_v1_VirtualMachineScaleSetNetworkProfile(&in.NetworkProfile, &out.NetworkProfile, s); err != nil {
+		return err
+	}
 	out.DiagnosticsProfile = (*v1.DiagnosticsProfile)(unsafe.Pointer(in.DiagnosticsProfile))
 	out.Priority = (*string)(unsafe.Pointer(in.Priority))
 	out.EvictionPolicy = (*string)(unsafe.Pointer(in.EvictionPolicy))
@@ -1879,9 +1953,15 @@ func Convert_v20191201_VirtualMachineScaleSetVMProfile_To_v1_VirtualMachineScale
 }
 
 func autoConvert_v1_VirtualMachineScaleSetVMProfile_To_v20191201_VirtualMachineScaleSetVMProfile(in *v1.VirtualMachineScaleSetVMProfile, out *VirtualMachineScaleSetVMProfile, s conversion.Scope) error {
-	out.OsProfile = (*VirtualMachineScaleSetOSProfile)(unsafe.Pointer(in.OsProfile))
-	out.StorageProfile = (*VirtualMachineScaleSetStorageProfile)(unsafe.Pointer(in.StorageProfile))
-	out.NetworkProfile = (*VirtualMachineScaleSetNetworkProfile)(unsafe.Pointer(in.NetworkProfile))
+	if err := Convert_v1_VirtualMachineScaleSetOSProfile_To_v20191201_VirtualMachineScaleSetOSProfile(&in.OsProfile, &out.OsProfile, s); err != nil {
+		return err
+	}
+	if err := Convert_v1_VirtualMachineScaleSetStorageProfile_To_v20191201_VirtualMachineScaleSetStorageProfile(&in.StorageProfile, &out.StorageProfile, s); err != nil {
+		return err
+	}
+	if err := Convert_v1_VirtualMachineScaleSetNetworkProfile_To_v20191201_VirtualMachineScaleSetNetworkProfile(&in.NetworkProfile, &out.NetworkProfile, s); err != nil {
+		return err
+	}
 	out.DiagnosticsProfile = (*DiagnosticsProfile)(unsafe.Pointer(in.DiagnosticsProfile))
 	out.Priority = (*string)(unsafe.Pointer(in.Priority))
 	out.EvictionPolicy = (*string)(unsafe.Pointer(in.EvictionPolicy))
@@ -1896,7 +1976,6 @@ func Convert_v1_VirtualMachineScaleSetVMProfile_To_v20191201_VirtualMachineScale
 }
 
 func autoConvert_v20191201_VirtualMachineSpec_To_v1_VirtualMachineSpec(in *VirtualMachineSpec, out *v1.VirtualMachineSpec, s conversion.Scope) error {
-	// INFO: in.APIVersion opted out of conversion generation
 	out.ResourceGroupRef = (*corev1.KnownTypeReference)(unsafe.Pointer(in.ResourceGroupRef))
 	out.Plan = (*v1.Plan)(unsafe.Pointer(in.Plan))
 	out.Zones = (*[]string)(unsafe.Pointer(in.Zones))
@@ -1931,7 +2010,6 @@ func Convert_v1_VirtualMachineSpec_To_v20191201_VirtualMachineSpec(in *v1.Virtua
 
 func autoConvert_v20191201_VirtualMachineStatus_To_v1_VirtualMachineStatus(in *VirtualMachineStatus, out *v1.VirtualMachineStatus, s conversion.Scope) error {
 	out.ID = in.ID
-	// INFO: in.DeploymentID opted out of conversion generation
 	out.ProvisioningState = in.ProvisioningState
 	return nil
 }

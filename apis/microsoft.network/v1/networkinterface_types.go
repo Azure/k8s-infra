@@ -19,11 +19,28 @@ type (
 		InternalDNSNameLabel *string `json:"internalDnsNameLabel,omitempty"`
 	}
 
+	NetworkInterfaceIPConfigurationSpecProperties struct {
+		Primary          bool   `json:"primary,omitempty"`
+		PrivateIPAddress string `json:"privateIPAddress,omitempty"`
+		// +kubebuilder:validation:Enum=IPv4;IPv6
+		PrivateIPAddressVersion string `json:"privateIPAddressVersion,omitempty"`
+		// +kubebuilder:validation:Enum=Dynamic;Static
+		PrivateIPAllocationMethod string                       `json:"privateIPAllocationMethod,omitempty"`
+		PublicIPAddressRef        *azcorev1.KnownTypeReference `json:"publicIPAddressRef,omitempty"`
+		SubnetRef                 *azcorev1.KnownTypeReference `json:"subnetRef,omitempty" group:"microsoft.network.infra.azure.com" kind:"Subnet"`
+	}
+
+	// NetworkInterfaceIPConfigurationSpec defines the desired state of NetworkInterfaceIPConfiguration
+	NetworkInterfaceIPConfigurationSpec struct {
+		Name       string                                         `json:"name"`
+		Properties *NetworkInterfaceIPConfigurationSpecProperties `json:"properties,omitempty"`
+	}
+
 	NetworkInterfaceSpecProperties struct {
 		// NetworkSecurityGroup - The reference to the NetworkSecurityGroup resource.
 		NetworkSecurityGroupRef *azcorev1.KnownTypeReference `json:"networkSecurityGroupRef,omitempty" group:"microsoft.network.infra.azure.com" kind:"NetworkSecurityGroup"`
 		// IPConfigurations - A list of IPConfigurations of the network interface.
-		IPConfigurations *[]azcorev1.KnownTypeReference `json:"ipConfigurationRefs,omitempty" group:"microsoft.network.infra.azure.com" kind:"NetworkInterfaceIPConfiguration" owns:"true"`
+		IPConfigurations []NetworkInterfaceIPConfigurationSpec `json:"ipConfigurations,omitempty"`
 		// DNSSettings - The DNS settings in network interface.
 		DNSSettings *InterfaceDNSSettings `json:"dnsSettings,omitempty"`
 		// EnableAcceleratedNetworking - If the network interface is accelerated networking enabled.

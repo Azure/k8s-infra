@@ -19,11 +19,28 @@ type (
 		InternalDNSNameLabel *string `json:"internalDnsNameLabel,omitempty"`
 	}
 
+	NetworkInterfaceIPConfigurationSpecProperties struct {
+		Primary          bool   `json:"primary,omitempty"`
+		PrivateIPAddress string `json:"privateIPAddress,omitempty"`
+		// +kubebuilder:validation:Enum=IPv4;IPv6
+		PrivateIPAddressVersion string `json:"privateIPAddressVersion,omitempty"`
+		// +kubebuilder:validation:Enum=Dynamic;Static
+		PrivateIPAllocationMethod string                       `json:"privateIPAllocationMethod,omitempty"`
+		PublicIPAddressRef        *azcorev1.KnownTypeReference `json:"publicIPAddressRef,omitempty"`
+		SubnetRef                 *azcorev1.KnownTypeReference `json:"subnetRef,omitempty"`
+	}
+
+	// NetworkInterfaceIPConfigurationSpec defines the desired state of NetworkInterfaceIPConfiguration
+	NetworkInterfaceIPConfigurationSpec struct {
+		Name       string                                         `json:"name"`
+		Properties *NetworkInterfaceIPConfigurationSpecProperties `json:"properties,omitempty"`
+	}
+
 	NetworkInterfaceSpecProperties struct {
 		// NetworkSecurityGroup - The reference to the NetworkSecurityGroup resource.
 		NetworkSecurityGroupRef *azcorev1.KnownTypeReference `json:"networkSecurityGroupRef,omitempty"`
 		// IPConfigurations - A list of IPConfigurations of the network interface.
-		IPConfigurations *[]azcorev1.KnownTypeReference `json:"ipConfigurationRefs,omitempty"`
+		IPConfigurations []NetworkInterfaceIPConfigurationSpec `json:"ipConfigurations,omitempty"`
 		// DNSSettings - The DNS settings in network interface.
 		DNSSettings *InterfaceDNSSettings `json:"dnsSettings,omitempty"`
 		// EnableAcceleratedNetworking - If the network interface is accelerated networking enabled.
@@ -34,8 +51,6 @@ type (
 
 	// NetworkInterfaceSpec defines the desired state of NetworkInterface
 	NetworkInterfaceSpec struct {
-		// +k8s:conversion-gen=false
-		APIVersion string `json:"apiVersion"`
 		// ResourceGroupRef is the Azure Resource Group the VirtualNetwork resides within
 		// +kubebuilder:validation:Required
 		ResourceGroupRef *azcorev1.KnownTypeReference `json:"resourceGroupRef" group:"microsoft.resources.infra.azure.com" kind:"ResourceGroup"`
@@ -54,9 +69,7 @@ type (
 
 	// NetworkInterfaceStatus defines the observed state of NetworkInterface
 	NetworkInterfaceStatus struct {
-		ID string `json:"id,omitempty"`
-		// +k8s:conversion-gen=false
-		DeploymentID      string `json:"deploymentId,omitempty"`
+		ID                string `json:"id,omitempty"`
 		ProvisioningState string `json:"provisioningState,omitempty"`
 	}
 

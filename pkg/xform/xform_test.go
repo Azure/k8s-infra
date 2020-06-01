@@ -180,6 +180,198 @@ func TestARMConverter_ToResource(t *testing.T) {
 				g.Expect(vmWithNetworkInterfaceEmbedded.APIVersion).To(gomega.Equal(vm.Spec.APIVersion))
 			},
 		},
+		{
+			Name: "NetworkInterfaceWithInterfaceConfigurationsAndSubnetRefs",
+			Setup: func(g *gomega.WithT, mc *MockClient) azcorev1.MetaObject {
+				randomName := test.RandomName("foo", 10)
+				nn := &client.ObjectKey{
+					Namespace: "default",
+					Name:      randomName,
+				}
+
+				group := newResourceGroup(nn)
+				subnet0 := newSubnet(nn, 0)
+				subnet1 := newSubnet(nn, 1)
+				nic := newNetworkInterface(nn)
+				nic.Spec.Properties.IPConfigurations = []microsoftnetworkv1.NetworkInterfaceIPConfigurationSpec{
+					{
+						Name: "config1",
+						Properties: &microsoftnetworkv1.NetworkInterfaceIPConfigurationSpecProperties{
+							Primary: true,
+							SubnetRef: &azcorev1.KnownTypeReference{
+								Name:      subnet0.Name,
+								Namespace: subnet0.Namespace,
+							},
+						},
+					},
+					{
+						Name: "config2",
+						Properties: &microsoftnetworkv1.NetworkInterfaceIPConfigurationSpecProperties{
+							SubnetRef: &azcorev1.KnownTypeReference{
+								Name:      subnet1.Name,
+								Namespace: subnet1.Namespace,
+							},
+						},
+					},
+				}
+
+				nic.Spec.ResourceGroupRef = &azcorev1.KnownTypeReference{
+					Name:      group.Name,
+					Namespace: group.Namespace,
+				}
+
+				for _, subnet := range []*microsoftnetworkv1.Subnet{subnet0, subnet1} {
+					subnet := subnet
+					mc.On("Get", mock.Anything, client.ObjectKey{
+						Namespace: subnet.Namespace,
+						Name:      subnet.Name,
+					}, new(microsoftnetworkv1.Subnet)).Run(func(args mock.Arguments) {
+						dst := args.Get(2).(*microsoftnetworkv1.Subnet)
+						subnet.DeepCopyInto(dst)
+						dst.Status.ID = fmt.Sprintf("subnets/%s", subnet.Name)
+					}).Return(nil)
+				}
+
+				return nic
+			},
+			Expect: func(g *gomega.WithT, metaObject azcorev1.MetaObject, res *zips.Resource) {
+				nic := struct {
+					Name       string
+					Location   string
+					APIVersion string
+					Type       string
+					Properties struct {
+						IPConfigurations []struct {
+							Name       string
+							Properties struct {
+								Primary *bool `json:"primary,omitempty"`
+								Subnet  struct {
+									ID string `json:"id,omitempty"`
+								}
+							} `json:"properties"`
+						} `json:"ipConfigurations"`
+					}
+				}{}
+
+				bits, _ := json.Marshal(res)
+				g.Expect(json.Unmarshal(bits, &nic)).ToNot(gomega.HaveOccurred())
+				g.Expect(nic.Properties.IPConfigurations).ToNot(gomega.BeNil())
+				g.Expect(nic.Properties.IPConfigurations).To(gomega.HaveLen(2))
+				g.Expect(nic.Properties.IPConfigurations[0].Properties.Subnet.ID).To(gomega.ContainSubstring("subnet_0"))
+				g.Expect(nic.Properties.IPConfigurations[0].Properties.Primary).ToNot(gomega.BeNil())
+				g.Expect(*nic.Properties.IPConfigurations[0].Properties.Primary).To(gomega.BeTrue())
+				g.Expect(nic.Properties.IPConfigurations[1].Properties.Subnet.ID).To(gomega.ContainSubstring("subnet_1"))
+				iface, ok := metaObject.(*microsoftnetworkv1.NetworkInterface)
+				g.Expect(ok).To(gomega.BeTrue())
+				g.Expect(nic.Name).To(gomega.Equal(iface.Name))
+				g.Expect(nic.Location).To(gomega.Equal(iface.Spec.Location))
+				g.Expect(nic.Type).To(gomega.Equal(iface.ResourceType()))
+				g.Expect(nic.APIVersion).To(gomega.Equal(iface.Spec.APIVersion))
+			},
+		},
+		{
+			Name: "VMSSWithDoublyEmbeddedSlices",
+			Setup: func(g *gomega.WithT, mc *MockClient) azcorev1.MetaObject {
+				randomName := test.RandomName("foo", 10)
+				nn := &client.ObjectKey{
+					Namespace: "default",
+					Name:      randomName,
+				}
+
+				group := newResourceGroup(nn)
+				subnet := newSubnet(nn, 0)
+				vmss := newVMSS(nn)
+				vmss.Spec.Properties.VirtualMachineProfile = microsoftcomputev1.VirtualMachineScaleSetVMProfile{
+					NetworkProfile: microsoftcomputev1.VirtualMachineScaleSetNetworkProfile{
+						NetworkInterfaceConfigurations: []microsoftcomputev1.VirtualMachineScaleSetNetworkConfiguration{
+							{
+								Name: to.StringPtr("netconfig1"),
+								Properties: &microsoftcomputev1.VirtualMachineScaleSetNetworkConfigurationProperties{
+									Primary: to.BoolPtr(true),
+									IPConfigurations: []microsoftcomputev1.VirtualMachineScaleSetIPConfiguration{
+										{
+											Name: to.StringPtr("ipconfig1"),
+											Properties: &microsoftcomputev1.VirtualMachineScaleSetIPConfigurationProperties{
+												SubnetRef: &azcorev1.KnownTypeReference{
+													Name:      subnet.Name,
+													Namespace: subnet.Namespace,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+
+				vmss.Spec.ResourceGroupRef = &azcorev1.KnownTypeReference{
+					Name:      group.Name,
+					Namespace: group.Namespace,
+				}
+
+				mc.On("Get", mock.Anything, client.ObjectKey{
+					Namespace: subnet.Namespace,
+					Name:      subnet.Name,
+				}, new(microsoftnetworkv1.Subnet)).Run(func(args mock.Arguments) {
+					dst := args.Get(2).(*microsoftnetworkv1.Subnet)
+					subnet.DeepCopyInto(dst)
+					dst.Status.ID = fmt.Sprintf("subnets/%s", subnet.Name)
+				}).Return(nil)
+
+				return vmss
+			},
+			Expect: func(g *gomega.WithT, metaObject azcorev1.MetaObject, res *zips.Resource) {
+				vmssRes := struct {
+					Name       string
+					Location   string
+					APIVersion string
+					Type       string
+					Properties struct {
+						VirtualMachineProfie *struct {
+							NetworkProfile *struct {
+								NetworkInterfaceConfigurations []struct {
+									Name       string
+									Properties *struct {
+										Primary          *bool `json:"primary,omitempty"`
+										IPConfigurations []struct {
+											Name       string
+											Properties struct {
+												Subnet struct {
+													ID string
+												}
+											} `json:"properties,omitempty"`
+										} `json:"ipConfigurations,omitempty"`
+									} `json:"properties,omitempty"`
+								} `json:"networkInterfaceConfigurations,omitempty"`
+							} `json:"networkProfile,omitempty"`
+						} `json:"virtualMachineProfile,omitempty"`
+					}
+				}{}
+
+				bits, _ := json.Marshal(res)
+				g.Expect(json.Unmarshal(bits, &vmssRes)).ToNot(gomega.HaveOccurred())
+				g.Expect(vmssRes.Properties.VirtualMachineProfie).ToNot(gomega.BeNil())
+				g.Expect(vmssRes.Properties.VirtualMachineProfie.NetworkProfile).ToNot(gomega.BeNil())
+				g.Expect(vmssRes.Properties.VirtualMachineProfie.NetworkProfile.NetworkInterfaceConfigurations).ToNot(gomega.BeNil())
+				netconfigs := vmssRes.Properties.VirtualMachineProfie.NetworkProfile.NetworkInterfaceConfigurations
+				g.Expect(netconfigs).To(gomega.HaveLen(1))
+				g.Expect(netconfigs[0].Properties).ToNot(gomega.BeNil())
+				g.Expect(netconfigs[0].Properties.IPConfigurations).ToNot(gomega.BeNil())
+				g.Expect(netconfigs[0].Properties.IPConfigurations).To(gomega.HaveLen(1))
+				ipconfig := netconfigs[0].Properties.IPConfigurations[0]
+				g.Expect(ipconfig.Properties).ToNot(gomega.BeNil())
+				g.Expect(ipconfig.Properties.Subnet).ToNot(gomega.BeNil())
+				g.Expect(ipconfig.Properties.Subnet.ID).To(gomega.ContainSubstring("subnet_0"))
+				g.Expect(ipconfig.Name).To(gomega.Equal("ipconfig1"))
+				vmss, ok := metaObject.(*microsoftcomputev1.VirtualMachineScaleSet)
+				g.Expect(ok).To(gomega.BeTrue())
+				g.Expect(vmssRes.Name).To(gomega.Equal(vmss.Name))
+				g.Expect(vmssRes.Location).To(gomega.Equal(vmss.Spec.Location))
+				g.Expect(vmssRes.Type).To(gomega.Equal(vmss.ResourceType()))
+				g.Expect(vmssRes.APIVersion).To(gomega.Equal(vmss.Spec.APIVersion))
+			},
+		},
 	}
 
 	scheme := runtime.NewScheme()
@@ -355,6 +547,39 @@ func newVM(nn *client.ObjectKey) *microsoftcomputev1.VirtualMachine {
 			Properties: &microsoftcomputev1.VirtualMachineProperties{
 				NetworkProfile: new(microsoftcomputev1.NetworkProfile),
 			},
+		},
+	}
+}
+
+func newSubnet(nn *client.ObjectKey, index int) *microsoftnetworkv1.Subnet {
+	return &microsoftnetworkv1.Subnet{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Subnet",
+			APIVersion: microsoftnetworkv1.GroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s_subnet_%d", nn.Name, index),
+			Namespace: nn.Namespace,
+		},
+		Spec: microsoftnetworkv1.SubnetSpec{
+			APIVersion: "2019-11-01",
+			Properties: microsoftnetworkv1.SubnetProperties{},
+		},
+	}
+}
+
+func newVMSS(nn *client.ObjectKey) *microsoftcomputev1.VirtualMachineScaleSet {
+	return &microsoftcomputev1.VirtualMachineScaleSet{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "VirtualMachineScaleSet",
+			APIVersion: microsoftcomputev1.GroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      nn.Name + "_vmss",
+			Namespace: nn.Namespace,
+		},
+		Spec: microsoftcomputev1.VirtualMachineScaleSetSpec{
+			APIVersion: "2019-12-01",
 		},
 	}
 }

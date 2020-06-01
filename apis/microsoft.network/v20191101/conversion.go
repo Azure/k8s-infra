@@ -122,27 +122,6 @@ func (dst *LoadBalancingRule) ConvertFrom(srcRaw conversion.Hub) error {
 	return nil
 }
 
-func (src *NetworkInterfaceIPConfiguration) ConvertTo(dstRaw conversion.Hub) error {
-	dst := dstRaw.(*v1.NetworkInterfaceIPConfiguration)
-
-	if err := Convert_v20191101_NetworkInterfaceIPConfiguration_To_v1_NetworkInterfaceIPConfiguration(src, dst, nil); err != nil {
-		return err
-	}
-
-	dst.Spec.APIVersion = apiVersion
-	return nil
-}
-
-func (dst *NetworkInterfaceIPConfiguration) ConvertFrom(srcRaw conversion.Hub) error {
-	src := srcRaw.(*v1.NetworkInterfaceIPConfiguration)
-
-	if err := Convert_v1_NetworkInterfaceIPConfiguration_To_v20191101_NetworkInterfaceIPConfiguration(src, dst, nil); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (src *NetworkSecurityGroup) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*v1.NetworkSecurityGroup)
 

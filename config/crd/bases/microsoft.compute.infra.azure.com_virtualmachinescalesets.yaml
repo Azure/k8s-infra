@@ -211,6 +211,7 @@ spec:
                             type: boolean
                         type: object
                       mode:
+                        default: Manual
                         description: 'Mode - Specifies the mode of an upgrade to virtual
                           machines in the scale set. Possible values are: **Manual**
                           - You  control the application of updates to virtual machines
@@ -376,25 +377,163 @@ spec:
                                       description: EnableIPForwarding - Whether IP
                                         forwarding enabled on this NIC.
                                       type: boolean
-                                    ipConfigurationRefs:
+                                    ipConfigurations:
                                       description: IPConfigurations - Specifies the
                                         IP configurations of the network interface.
                                       items:
-                                        description: KnownTypeReference is a reference
-                                          to an object which the type and version
-                                          is already known
                                         properties:
                                           name:
-                                            description: Name is the name of resource
-                                              being referenced
                                             type: string
-                                          namespace:
-                                            description: Namespace is the namespace
-                                              of resource being referenced.
-                                            type: string
-                                        required:
-                                        - name
-                                        - namespace
+                                          properties:
+                                            properties:
+                                              loadBalancerBackendAddressPoolRefs:
+                                                description: LoadBalancerBackendAddressPools
+                                                  - Specifies an array of references
+                                                  to backend address pools of load
+                                                  balancers. A scale set can reference
+                                                  backend address pools of one public
+                                                  and one internal load balancer.
+                                                  Multiple scale sets cannot use the
+                                                  same load balancer.
+                                                items:
+                                                  description: KnownTypeReference
+                                                    is a reference to an object which
+                                                    the type and version is already
+                                                    known
+                                                  properties:
+                                                    name:
+                                                      description: Name is the name
+                                                        of resource being referenced
+                                                      type: string
+                                                    namespace:
+                                                      description: Namespace is the
+                                                        namespace of resource being
+                                                        referenced.
+                                                      type: string
+                                                  required:
+                                                  - name
+                                                  - namespace
+                                                  type: object
+                                                type: array
+                                              loadBalancerInboundNatPoolRefs:
+                                                description: LoadBalancerInboundNatPools
+                                                  - Specifies an array of references
+                                                  to inbound Nat pools of the load
+                                                  balancers. A scale set can reference
+                                                  inbound nat pools of one public
+                                                  and one internal load balancer.
+                                                  Multiple scale sets cannot use the
+                                                  same load balancer
+                                                items:
+                                                  description: KnownTypeReference
+                                                    is a reference to an object which
+                                                    the type and version is already
+                                                    known
+                                                  properties:
+                                                    name:
+                                                      description: Name is the name
+                                                        of resource being referenced
+                                                      type: string
+                                                    namespace:
+                                                      description: Namespace is the
+                                                        namespace of resource being
+                                                        referenced.
+                                                      type: string
+                                                  required:
+                                                  - name
+                                                  - namespace
+                                                  type: object
+                                                type: array
+                                              primary:
+                                                description: Primary - Specifies the
+                                                  primary network interface in case
+                                                  the virtual machine has more than
+                                                  1 network interface.
+                                                type: boolean
+                                              privateIPAddressVersion:
+                                                enum:
+                                                - IPv4
+                                                - IPv6
+                                                type: string
+                                              publicIPAddressConfiguration:
+                                                description: PublicIPAddressConfiguration
+                                                  - The publicIPAddressConfiguration.
+                                                properties:
+                                                  name:
+                                                    description: Name - The publicIP
+                                                      address configuration name.
+                                                    type: string
+                                                  properties:
+                                                    properties:
+                                                      dnsSettings:
+                                                        description: DNSSettings -
+                                                          The dns settings to be applied
+                                                          on the publicIP addresses
+                                                          .
+                                                        properties:
+                                                          domainNameLabel:
+                                                            description: DomainNameLabel
+                                                              - The Domain name label.The
+                                                              concatenation of the
+                                                              domain name label and
+                                                              vm index will be the
+                                                              domain name labels of
+                                                              the PublicIPAddress
+                                                              resources that will
+                                                              be created
+                                                            type: string
+                                                        type: object
+                                                      idleTimeoutInMinutes:
+                                                        description: IdleTimeoutInMinutes
+                                                          - The idle timeout of the
+                                                          public IP address.
+                                                        format: int32
+                                                        type: integer
+                                                      ipTags:
+                                                        description: IPTags - The
+                                                          list of IP tags associated
+                                                          with the public IP address.
+                                                        items:
+                                                          properties:
+                                                            ipTagType:
+                                                              description: 'IPTagType
+                                                                - IP tag type. Example:
+                                                                FirstPartyUsage.'
+                                                              type: string
+                                                            tag:
+                                                              description: 'Tag -
+                                                                IP tag associated
+                                                                with the public IP.
+                                                                Example: SQL, Storage
+                                                                etc.'
+                                                              type: string
+                                                          type: object
+                                                        type: array
+                                                      publicIPAddressVersion:
+                                                        enum:
+                                                        - IPv4
+                                                        - IPv6
+                                                        type: string
+                                                    type: object
+                                                type: object
+                                              subnetRef:
+                                                description: Subnet - Specifies the
+                                                  identifier of the subnet.
+                                                properties:
+                                                  name:
+                                                    description: Name is the name
+                                                      of resource being referenced
+                                                    type: string
+                                                  namespace:
+                                                    description: Namespace is the
+                                                      namespace of resource being
+                                                      referenced.
+                                                    type: string
+                                                required:
+                                                - name
+                                                - namespace
+                                                type: object
+                                            type: object
                                         type: object
                                       type: array
                                     networkSecurityGroupRef:
@@ -525,6 +664,9 @@ spec:
                                     type: array
                                 type: object
                             type: object
+                        required:
+                        - adminUsername
+                        - computerNamePrefix
                         type: object
                       priority:
                         description: 'Priority - Specifies the priority for the virtual
@@ -755,11 +897,18 @@ spec:
                                 type: boolean
                             type: object
                         type: object
+                    required:
+                    - networkProfile
+                    - osProfile
+                    - storageProfile
                     type: object
                   zoneBalance:
                     description: ZoneBalance - Whether to force strictly even Virtual
                       Machine distribution cross x-zones in case there is zone outage.
                     type: boolean
+                required:
+                - upgradePolicy
+                - virtualMachineProfile
                 type: object
               resourceGroupRef:
                 description: ResourceGroupRef is the Azure Resource Group the VirtualNetwork
@@ -787,9 +936,17 @@ spec:
                     description: Name - The sku name.
                     type: string
                   tier:
+                    default: Standard
                     description: 'Tier - Specifies the tier of virtual machines in
                       a scale set. Possible Values: **Standard** **Basic**'
+                    enum:
+                    - Standard
+                    - Basic
                     type: string
+                required:
+                - capacity
+                - name
+                - tier
                 type: object
               tags:
                 additionalProperties:
@@ -805,7 +962,9 @@ spec:
             required:
             - apiVersion
             - location
+            - properties
             - resourceGroupRef
+            - sku
             type: object
           status:
             description: VirtualMachineScaleSetStatus defines the observed state of
@@ -1016,6 +1175,7 @@ spec:
                             type: boolean
                         type: object
                       mode:
+                        default: Manual
                         description: 'Mode - Specifies the mode of an upgrade to virtual
                           machines in the scale set. Possible values are: **Manual**
                           - You  control the application of updates to virtual machines
@@ -1181,25 +1341,163 @@ spec:
                                       description: EnableIPForwarding - Whether IP
                                         forwarding enabled on this NIC.
                                       type: boolean
-                                    ipConfigurationRefs:
+                                    ipConfigurations:
                                       description: IPConfigurations - Specifies the
                                         IP configurations of the network interface.
                                       items:
-                                        description: KnownTypeReference is a reference
-                                          to an object which the type and version
-                                          is already known
                                         properties:
                                           name:
-                                            description: Name is the name of resource
-                                              being referenced
                                             type: string
-                                          namespace:
-                                            description: Namespace is the namespace
-                                              of resource being referenced.
-                                            type: string
-                                        required:
-                                        - name
-                                        - namespace
+                                          properties:
+                                            properties:
+                                              loadBalancerBackendAddressPoolRefs:
+                                                description: LoadBalancerBackendAddressPools
+                                                  - Specifies an array of references
+                                                  to backend address pools of load
+                                                  balancers. A scale set can reference
+                                                  backend address pools of one public
+                                                  and one internal load balancer.
+                                                  Multiple scale sets cannot use the
+                                                  same load balancer.
+                                                items:
+                                                  description: KnownTypeReference
+                                                    is a reference to an object which
+                                                    the type and version is already
+                                                    known
+                                                  properties:
+                                                    name:
+                                                      description: Name is the name
+                                                        of resource being referenced
+                                                      type: string
+                                                    namespace:
+                                                      description: Namespace is the
+                                                        namespace of resource being
+                                                        referenced.
+                                                      type: string
+                                                  required:
+                                                  - name
+                                                  - namespace
+                                                  type: object
+                                                type: array
+                                              loadBalancerInboundNatPoolRefs:
+                                                description: LoadBalancerInboundNatPools
+                                                  - Specifies an array of references
+                                                  to inbound Nat pools of the load
+                                                  balancers. A scale set can reference
+                                                  inbound nat pools of one public
+                                                  and one internal load balancer.
+                                                  Multiple scale sets cannot use the
+                                                  same load balancer
+                                                items:
+                                                  description: KnownTypeReference
+                                                    is a reference to an object which
+                                                    the type and version is already
+                                                    known
+                                                  properties:
+                                                    name:
+                                                      description: Name is the name
+                                                        of resource being referenced
+                                                      type: string
+                                                    namespace:
+                                                      description: Namespace is the
+                                                        namespace of resource being
+                                                        referenced.
+                                                      type: string
+                                                  required:
+                                                  - name
+                                                  - namespace
+                                                  type: object
+                                                type: array
+                                              primary:
+                                                description: Primary - Specifies the
+                                                  primary network interface in case
+                                                  the virtual machine has more than
+                                                  1 network interface.
+                                                type: boolean
+                                              privateIPAddressVersion:
+                                                enum:
+                                                - IPv4
+                                                - IPv6
+                                                type: string
+                                              publicIPAddressConfiguration:
+                                                description: PublicIPAddressConfiguration
+                                                  - The publicIPAddressConfiguration.
+                                                properties:
+                                                  name:
+                                                    description: Name - The publicIP
+                                                      address configuration name.
+                                                    type: string
+                                                  properties:
+                                                    properties:
+                                                      dnsSettings:
+                                                        description: DNSSettings -
+                                                          The dns settings to be applied
+                                                          on the publicIP addresses
+                                                          .
+                                                        properties:
+                                                          domainNameLabel:
+                                                            description: DomainNameLabel
+                                                              - The Domain name label.The
+                                                              concatenation of the
+                                                              domain name label and
+                                                              vm index will be the
+                                                              domain name labels of
+                                                              the PublicIPAddress
+                                                              resources that will
+                                                              be created
+                                                            type: string
+                                                        type: object
+                                                      idleTimeoutInMinutes:
+                                                        description: IdleTimeoutInMinutes
+                                                          - The idle timeout of the
+                                                          public IP address.
+                                                        format: int32
+                                                        type: integer
+                                                      ipTags:
+                                                        description: IPTags - The
+                                                          list of IP tags associated
+                                                          with the public IP address.
+                                                        items:
+                                                          properties:
+                                                            ipTagType:
+                                                              description: 'IPTagType
+                                                                - IP tag type. Example:
+                                                                FirstPartyUsage.'
+                                                              type: string
+                                                            tag:
+                                                              description: 'Tag -
+                                                                IP tag associated
+                                                                with the public IP.
+                                                                Example: SQL, Storage
+                                                                etc.'
+                                                              type: string
+                                                          type: object
+                                                        type: array
+                                                      publicIPAddressVersion:
+                                                        enum:
+                                                        - IPv4
+                                                        - IPv6
+                                                        type: string
+                                                    type: object
+                                                type: object
+                                              subnetRef:
+                                                description: Subnet - Specifies the
+                                                  identifier of the subnet.
+                                                properties:
+                                                  name:
+                                                    description: Name is the name
+                                                      of resource being referenced
+                                                    type: string
+                                                  namespace:
+                                                    description: Namespace is the
+                                                      namespace of resource being
+                                                      referenced.
+                                                    type: string
+                                                required:
+                                                - name
+                                                - namespace
+                                                type: object
+                                            type: object
                                         type: object
                                       type: array
                                     networkSecurityGroupRef:
@@ -1330,6 +1628,9 @@ spec:
                                     type: array
                                 type: object
                             type: object
+                        required:
+                        - adminUsername
+                        - computerNamePrefix
                         type: object
                       priority:
                         description: 'Priority - Specifies the priority for the virtual
@@ -1560,11 +1861,18 @@ spec:
                                 type: boolean
                             type: object
                         type: object
+                    required:
+                    - networkProfile
+                    - osProfile
+                    - storageProfile
                     type: object
                   zoneBalance:
                     description: ZoneBalance - Whether to force strictly even Virtual
                       Machine distribution cross x-zones in case there is zone outage.
                     type: boolean
+                required:
+                - upgradePolicy
+                - virtualMachineProfile
                 type: object
               resourceGroupRef:
                 description: ResourceGroupRef is the Azure Resource Group the VirtualNetwork
@@ -1592,9 +1900,17 @@ spec:
                     description: Name - The sku name.
                     type: string
                   tier:
+                    default: Standard
                     description: 'Tier - Specifies the tier of virtual machines in
                       a scale set. Possible Values: **Standard** **Basic**'
+                    enum:
+                    - Standard
+                    - Basic
                     type: string
+                required:
+                - capacity
+                - name
+                - tier
                 type: object
               tags:
                 additionalProperties:
@@ -1609,7 +1925,9 @@ spec:
                 type: array
             required:
             - location
+            - properties
             - resourceGroupRef
+            - sku
             type: object
           status:
             description: VirtualMachineScaleSetStatus defines the observed state of

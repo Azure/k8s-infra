@@ -2,6 +2,16 @@ apiVersion: microsoft.network.infra.azure.com/v20191101
 kind: NetworkInterface
 metadata:
   name: networkinterface-sample
+  namespace: default
 spec:
-  # Add fields here
-  foo: bar
+  location: westus2
+  resourceGroupRef:
+    name: resourcegroup-sample
+    namespace: default
+  properties:
+    ipConfigurations:
+      - name: networkinterfaceipconfiguration-1
+        properties:
+          subnetRef:
+            name: subnet-sample
+            namespace: default
