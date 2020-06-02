@@ -146,7 +146,7 @@ func (structType *StructType) Equals(t Type) bool {
 
 // CreateInternalDefinitions defines a named type for this struct and returns that type to be used in-place
 // of the anonymous struct type. This is needed for controller-gen to work correctly:
-func (structType *StructType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []NamedType) {
+func (structType *StructType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []*NamedType) {
 	// an internal struct must always be named:
 	definedStruct, otherTypes := structType.CreateDefinitions(name, idFactory, false /* internal structs are never resources */)
 	return definedStruct.Name(), append(otherTypes, definedStruct)
@@ -154,9 +154,9 @@ func (structType *StructType) CreateInternalDefinitions(name *TypeName, idFactor
 
 // CreateDefinitions defines a named type for this struct and invokes CreateInternalDefinitions for each field type
 // to instantiate any definitions required by internal types.
-func (structType *StructType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory, isResource bool) (NamedType, []NamedType) {
+func (structType *StructType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory, isResource bool) (*NamedType, []*NamedType) {
 
-	var otherTypes []NamedType
+	var otherTypes []*NamedType
 	var newFields []*FieldDefinition
 
 	for _, field := range structType.fields {

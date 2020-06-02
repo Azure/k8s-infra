@@ -7,26 +7,103 @@ package astmodel
 
 import (
 	"go/ast"
+	"go/token"
 )
 
 // NamedType represents a named type in the output files, and knows how to generate the Go AST
-type NamedType interface {
+type NamedType struct {
+	name           *TypeName
+	underlyingType Type
+	description    *string
+}
 
-	// Name is the name that will be bound to the type
-	Name() *TypeName
+// Ensure NamedType is also a Type
+var _ Type = (*NamedType)(nil)
 
-	// Type is the type that the name will be bound to
-	Type() Type
+func NewNamedType(name *TypeName, underlyingType Type) *NamedType {
+	return &NamedType{
+		name:           name,
+		underlyingType: underlyingType,
+	}
+}
 
-	// WithDescription adds (or removes!) a description for the defined type
-	WithDescription(description *string) NamedType
+// Name is the name that will be bound to the type
+func (namedType *NamedType) Name() *TypeName {
+	return namedType.name
+}
 
-	// AsDeclarations generates the actual Go declarations
-	AsDeclarations(codeGenerationContext *CodeGenerationContext) []ast.Decl
+// Type is the type that the name will be bound to
+func (namedType *NamedType) Type() Type {
+	return namedType.underlyingType
+}
+
+// WithDescription adds (or removes!) a description for the defined type
+func (namedType *NamedType) WithDescription(description *string) *NamedType {
+	if namedType.description == description || *namedType.description == *description {
+		return namedType
+	}
+
+	return &NamedType{
+		name:           namedType.name,
+		underlyingType: namedType.underlyingType,
+		description:    description,
+	}
+}
+
+// AsDeclarations generates the actual Go declarations
+func (namedType *NamedType) AsDeclarations(codeGenerationContext *CodeGenerationContext) []ast.Decl {
+	var docComments *ast.CommentGroup
+	if namedType.description != nil {
+		docComments = &ast.CommentGroup{
+			List: []*ast.Comment{
+				{
+					Text: "\n/*" + *namedType.description + "*/",
+				},
+			},
+		}
+	}
+
+	return []ast.Decl{
+		&ast.GenDecl{
+			Doc: docComments,
+			Tok: token.TYPE,
+			Specs: []ast.Spec{
+				&ast.TypeSpec{
+					Name: ast.NewIdent(namedType.name.name),
+					Type: namedType.underlyingType.AsType(codeGenerationContext),
+				},
+			},
+		},
+	}
 }
 
 // FileNameHint returns what a file that contains this definition (if any) should be called
 // this is not always used as we might combine multiple definitions into one file
-func FileNameHint(def NamedType) string {
-	return transformToSnakeCase(def.Name().name)
+func (namedType *NamedType) FileNameHint() string {
+	return transformToSnakeCase(namedType.Name().name)
+}
+
+func (namedType *NamedType) RequiredImports() []*PackageReference {
+	return namedType.underlyingType.RequiredImports()
+}
+
+func (namedType *NamedType) References(name *TypeName) bool {
+	return namedType.name.References(name) || namedType.underlyingType.References(name)
+}
+
+func (namedType *NamedType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
+	panic("implement me")
+}
+
+func (namedType *NamedType) Equals(t Type) bool {
+	// TODO: This feels dodgy
+	return namedType.name.Equals(t)
+}
+
+func (namedType *NamedType) CreateInternalDefinitions(nameHint *TypeName, idFactory IdentifierFactory) (Type, []*NamedType) {
+	return namedType.underlyingType.CreateInternalDefinitions(nameHint, idFactory)
+}
+
+func (namedType *NamedType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory, isResource bool) (*NamedType, []*NamedType) {
+	return namedType.underlyingType.CreateDefinitions(name, idFactory, isResource)
 }
