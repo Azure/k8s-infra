@@ -58,12 +58,12 @@ func (optional *OptionalType) Equals(t Type) bool {
 }
 
 // CreateInternalDefinitions invokes CreateInternalDefinitions on the inner type
-func (optional *OptionalType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []NamedType) {
+func (optional *OptionalType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []*NamedType) {
 	newElementType, otherTypes := optional.element.CreateInternalDefinitions(name, idFactory)
 	return NewOptionalType(newElementType), otherTypes
 }
 
 // CreateDefinitions defines a named type for this OptionalType
-func (optional *OptionalType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (NamedType, []NamedType) {
-	return NewSimpleTypeDefiner(name, optional), nil
+func (optional *OptionalType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (*NamedType, []*NamedType) {
+	return NewNamedType(name, optional), nil
 }
