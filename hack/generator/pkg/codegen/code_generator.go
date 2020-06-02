@@ -104,7 +104,7 @@ func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder strin
 	return nil
 }
 
-func (generator *CodeGenerator) CreatePackagesForDefinitions(definitions []astmodel.TypeDefiner) ([]*astmodel.PackageDefinition, error) {
+func (generator *CodeGenerator) CreatePackagesForDefinitions(definitions []astmodel.NamedType) ([]*astmodel.PackageDefinition, error) {
 	packages := make(map[astmodel.PackageReference]*astmodel.PackageDefinition)
 	for _, def := range definitions {
 

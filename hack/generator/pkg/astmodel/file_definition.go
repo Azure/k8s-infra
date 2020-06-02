@@ -23,11 +23,11 @@ type FileDefinition struct {
 	// the package this file is in
 	packageReference *PackageReference
 	// definitions to include in this file
-	definitions []TypeDefiner
+	definitions []NamedType
 }
 
 // NewFileDefinition creates a file definition containing specified definitions
-func NewFileDefinition(packageRef *PackageReference, definitions ...TypeDefiner) *FileDefinition {
+func NewFileDefinition(packageRef *PackageReference, definitions ...NamedType) *FileDefinition {
 
 	sort.Slice(definitions, func(i, j int) bool {
 		return definitions[i].Name().name < definitions[j].Name().name

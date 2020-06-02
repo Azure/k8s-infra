@@ -63,13 +63,13 @@ func (m *MapType) Equals(t Type) bool {
 }
 
 // CreateInternalDefinitions invokes CreateInCreateInternalDefinitions on both key and map types
-func (m *MapType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []TypeDefiner) {
+func (m *MapType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []NamedType) {
 	newKeyType, keyOtherTypes := m.key.CreateInternalDefinitions(name, idFactory)
 	newValueType, valueOtherTypes := m.value.CreateInternalDefinitions(name, idFactory)
 	return NewMapType(newKeyType, newValueType), append(keyOtherTypes, valueOtherTypes...)
 }
 
 // CreateDefinitions defines a named type for this MapType
-func (m *MapType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
+func (m *MapType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (NamedType, []NamedType) {
 	return NewSimpleTypeDefiner(name, m), nil
 }

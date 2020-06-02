@@ -17,7 +17,7 @@ type EnumDefinition struct {
 	description *string
 }
 
-var _ TypeDefiner = (*EnumDefinition)(nil)
+var _ NamedType = (*EnumDefinition)(nil)
 
 // NewEnumDefinition is a factory method for creating new Enum Definitions
 func NewEnumDefinition(name *TypeName, t *EnumType) *EnumDefinition {
@@ -34,7 +34,7 @@ func (enum *EnumDefinition) Type() Type {
 	return enum.baseType
 }
 
-func (enum *EnumDefinition) WithDescription(description *string) TypeDefiner {
+func (enum *EnumDefinition) WithDescription(description *string) NamedType {
 	result := *enum
 	result.description = description
 	return &result

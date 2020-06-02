@@ -51,7 +51,7 @@ func (config *Configuration) Validate() error {
 
 // ShouldExport tests for whether a given struct should be exported
 // Returns a result indicating whether export should occur as well as a reason for logging
-func (config *Configuration) ShouldExport(definition astmodel.TypeDefiner) (result ShouldExportResult, because string) {
+func (config *Configuration) ShouldExport(definition astmodel.NamedType) (result ShouldExportResult, because string) {
 	for _, f := range config.TypeFilters {
 		if f.AppliesToType(definition) {
 			if f.Action == jsonast.ExcludeType {

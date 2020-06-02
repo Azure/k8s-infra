@@ -39,7 +39,7 @@ type (
 
 	// A SchemaScanner is used to scan a JSON Schema extracting and collecting type definitions
 	SchemaScanner struct {
-		definitions  map[astmodel.TypeName]astmodel.TypeDefiner
+		definitions  map[astmodel.TypeName]astmodel.NamedType
 		TypeHandlers map[SchemaType]TypeHandler
 		Filters      []string
 		idFactory    astmodel.IdentifierFactory
@@ -47,13 +47,13 @@ type (
 )
 
 // findTypeDefinition looks to see if we have seen the specified definition before, returning its definition if we have.
-func (scanner *SchemaScanner) findTypeDefinition(name *astmodel.TypeName) (astmodel.TypeDefiner, bool) {
+func (scanner *SchemaScanner) findTypeDefinition(name *astmodel.TypeName) (astmodel.NamedType, bool) {
 	result, ok := scanner.definitions[*name]
 	return result, ok
 }
 
 // addTypeDefinition adds a type definition to emit later
-func (scanner *SchemaScanner) addTypeDefinition(def astmodel.TypeDefiner) {
+func (scanner *SchemaScanner) addTypeDefinition(def astmodel.NamedType) {
 	scanner.definitions[*def.Name()] = def
 }
 
@@ -95,7 +95,7 @@ func (use *UnknownSchemaError) Error() string {
 // NewSchemaScanner constructs a new scanner, ready for use
 func NewSchemaScanner(idFactory astmodel.IdentifierFactory) *SchemaScanner {
 	return &SchemaScanner{
-		definitions:  make(map[astmodel.TypeName]astmodel.TypeDefiner),
+		definitions:  make(map[astmodel.TypeName]astmodel.NamedType),
 		TypeHandlers: DefaultTypeHandlers(),
 		idFactory:    idFactory,
 	}
@@ -152,7 +152,7 @@ func (scanner *SchemaScanner) AddFilters(filters []string) {
 // 							- ARM specific resources. I'm not 100% sure why...
 //
 // 		allOf acts like composition which composites each schema from the child oneOf with the base reference from allOf.
-func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema *gojsonschema.SubSchema, opts ...BuilderOption) ([]astmodel.TypeDefiner, error) {
+func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema *gojsonschema.SubSchema, opts ...BuilderOption) ([]astmodel.NamedType, error) {
 	ctx, span := tab.StartSpan(ctx, "GenerateDefinitions")
 	defer span.End()
 
@@ -192,7 +192,7 @@ func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema *g
 	}
 
 	// produce the results
-	var defs []astmodel.TypeDefiner
+	var defs []astmodel.NamedType
 	for _, def := range scanner.definitions {
 		defs = append(defs, def)
 	}

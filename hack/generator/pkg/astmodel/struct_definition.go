@@ -23,8 +23,8 @@ func (definition *StructDefinition) IsResource() bool {
 	return definition.isResource
 }
 
-// Ensure StructDefinition implements TypeDefiner interface correctly
-var _ TypeDefiner = (*StructDefinition)(nil)
+// Ensure StructDefinition implements NamedType interface correctly
+var _ NamedType = (*StructDefinition)(nil)
 
 // Name provides the struct name
 func (definition *StructDefinition) Name() *TypeName {
@@ -42,7 +42,7 @@ func NewStructDefinition(name *TypeName, structType *StructType, isResource bool
 }
 
 // WithDescription adds a description (doc-comment) to the struct
-func (definition *StructDefinition) WithDescription(description *string) TypeDefiner {
+func (definition *StructDefinition) WithDescription(description *string) NamedType {
 	result := *definition
 	result.description = description
 	return &result

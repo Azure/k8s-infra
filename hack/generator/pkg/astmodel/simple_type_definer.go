@@ -10,7 +10,7 @@ import (
 	"go/token"
 )
 
-// SimpleTypeDefiner is a TypeDefiner for simple cases (not structs or enums)
+// SimpleTypeDefiner is a NamedType for simple cases (not structs or enums)
 type SimpleTypeDefiner struct {
 	name        *TypeName
 	description *string
@@ -21,8 +21,8 @@ func NewSimpleTypeDefiner(name *TypeName, theType Type) *SimpleTypeDefiner {
 	return &SimpleTypeDefiner{name: name, theType: theType}
 }
 
-// SimpleTypeDefiner is a TypeDefiner
-var _ TypeDefiner = (*SimpleTypeDefiner)(nil)
+// SimpleTypeDefiner is a NamedType
+var _ NamedType = (*SimpleTypeDefiner)(nil)
 
 func (std *SimpleTypeDefiner) Name() *TypeName {
 	return std.name
@@ -32,7 +32,7 @@ func (std *SimpleTypeDefiner) Type() Type {
 	return std.theType
 }
 
-func (std *SimpleTypeDefiner) WithDescription(desc *string) TypeDefiner {
+func (std *SimpleTypeDefiner) WithDescription(desc *string) NamedType {
 	result := *std
 	result.description = desc
 	return &result
