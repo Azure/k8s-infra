@@ -8,6 +8,7 @@ package jsonast
 import (
 	"context"
 	"fmt"
+	"github.com/Azure/k8s-infra/hack/generator/pkg/config"
 	"net/url"
 	"regexp"
 	"strings"
@@ -39,10 +40,10 @@ type (
 
 	// A SchemaScanner is used to scan a JSON Schema extracting and collecting type definitions
 	SchemaScanner struct {
-		definitions      map[astmodel.TypeName]astmodel.TypeDefiner
-		TypeHandlers     map[SchemaType]TypeHandler
-		typeTransformers []*TypeTransformer
-		idFactory        astmodel.IdentifierFactory
+		definitions   map[astmodel.TypeName]astmodel.TypeDefiner
+		TypeHandlers  map[SchemaType]TypeHandler
+		configuration *config.Configuration
+		idFactory     astmodel.IdentifierFactory
 	}
 )
 
@@ -67,21 +68,6 @@ func (scanner *SchemaScanner) removeTypeDefinition(name *astmodel.TypeName) {
 	delete(scanner.definitions, *name)
 }
 
-// transformType uses the configured type transformers to transform a type name (reference) to a different type.
-// If no transformation is performed, nil is returned
-func (scanner *SchemaScanner) transformType(name *astmodel.TypeName) astmodel.Type {
-	for _, transformer := range scanner.typeTransformers {
-		result := transformer.TransformTypeName(name)
-		if result != nil {
-			klog.V(2).Infof("Transforming %s -> %s because %s", name, result, transformer.Because)
-			return result
-		}
-	}
-
-	// No matches, return nil
-	return nil
-}
-
 // Definitions for different kinds of JSON schema
 const (
 	AnyOf   SchemaType = "anyOf"
@@ -96,9 +82,6 @@ const (
 	String  SchemaType = "string"
 	Enum    SchemaType = "enum"
 	Unknown SchemaType = "unknown"
-
-	// TODO: Replace this
-	expressionFragment = "/definitions/expression"
 )
 
 func (use *UnknownSchemaError) Error() string {
@@ -109,12 +92,12 @@ func (use *UnknownSchemaError) Error() string {
 }
 
 // NewSchemaScanner constructs a new scanner, ready for use
-func NewSchemaScanner(idFactory astmodel.IdentifierFactory, typeTransformers []*TypeTransformer) *SchemaScanner {
+func NewSchemaScanner(idFactory astmodel.IdentifierFactory, configuration *config.Configuration) *SchemaScanner {
 	return &SchemaScanner{
-		definitions:      make(map[astmodel.TypeName]astmodel.TypeDefiner),
-		TypeHandlers:     DefaultTypeHandlers(),
-		typeTransformers: typeTransformers,
-		idFactory:        idFactory,
+		definitions:   make(map[astmodel.TypeName]astmodel.TypeDefiner),
+		TypeHandlers:  DefaultTypeHandlers(),
+		configuration: configuration,
+		idFactory:     idFactory,
 	}
 }
 
@@ -404,14 +387,16 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 			scanner.idFactory.CreatePackageNameFromVersion(version)),
 		scanner.idFactory.CreateIdentifier(name, astmodel.Exported))
 
-	// TODO: remove this
-	if url.Fragment == expressionFragment {
-		// skip expressions
-		return nil, nil
+	shouldPrune, because := scanner.configuration.ShouldPrune(typeName)
+	// Only handle obliterate here because it's the only thing that modifies the type tree-walking
+	if shouldPrune == config.Prune {
+		klog.V(2).Infof("Skipping %s because %s", typeName, because)
+		return nil, nil // Skip entirely
 	}
 
-	transformation := scanner.transformType(typeName)
+	transformation, because := scanner.configuration.TransformType(typeName)
 	if transformation != nil {
+		klog.V(2).Infof("Transforming %s -> %s because %s", typeName, transformation, because)
 		return transformation, nil
 	}
 

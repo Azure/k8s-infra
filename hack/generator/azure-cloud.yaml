@@ -1,5 +1,10 @@
 schemaurl: https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json
 typefilters:
+  - action: prune
+    group: definitions   # Note that this is case sensitive and should match the expected golang type's package case (lowercase)
+    name: Expression     # Note that this is case sensitive and should match the expected golang type's case (upper camel case)
+    because: expression is an ARM template construct which doesn't belong in CRDs
+exportfilters:
   - action: include
     version: 2020-*
     because: all 2020 API versions are included

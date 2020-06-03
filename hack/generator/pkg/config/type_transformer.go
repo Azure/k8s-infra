@@ -3,7 +3,7 @@
  * Licensed under the MIT license.
  */
 
-package jsonast
+package config
 
 import (
 	"fmt"

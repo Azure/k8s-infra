@@ -3,29 +3,17 @@
  * Licensed under the MIT license.
  */
 
-package jsonast
+package config
 
 import (
 	"fmt"
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"regexp"
 	"strings"
-
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
 
-// TypeFilterAction defines the possible actions that should happen for types matching the filter
-type TypeFilterAction string
-
-const (
-	// IncludeType indicates that any type matched by the filter should be exported to disk by the generator
-	IncludeType TypeFilterAction = "include"
-	// ExcludeType indicates that any type matched by the filter should be skipped and not exported
-	ExcludeType TypeFilterAction = "exclude"
-)
-
-// A TypeFilter is used to control which types should be exported by the generator
-type TypeFilter struct {
-	Action TypeFilterAction
+// Filter contains basic functionality for a filter
+type Filter struct {
 	// Group is a wildcard matching specifier for which groups are selected by this filter
 	Group      string `yaml:",omitempty"`
 	groupRegex *regexp.Regexp
@@ -39,34 +27,19 @@ type TypeFilter struct {
 	Because string
 }
 
-// AppliesToType indicates whether this filter should be applied to the supplied type definition
-func (filter *TypeFilter) AppliesToType(definition astmodel.TypeDefiner) bool {
-	groupName, packageName, err := definition.Name().PackageReference.GroupAndPackage()
-	if err != nil {
-		// TODO: Should this func return an error rather than panic?
-		panic(fmt.Sprintf("%v", err))
-	}
-
-	result := filter.groupMatches(groupName) &&
-		filter.versionMatches(packageName) &&
-		filter.nameMatches(definition.Name().Name())
-
-	return result
-}
-
-func (filter *TypeFilter) groupMatches(schema string) bool {
+func (filter *Filter) groupMatches(schema string) bool {
 	return filter.matches(filter.Group, &filter.groupRegex, schema)
 }
 
-func (filter *TypeFilter) versionMatches(version string) bool {
+func (filter *Filter) versionMatches(version string) bool {
 	return filter.matches(filter.Version, &filter.versionRegex, version)
 }
 
-func (filter *TypeFilter) nameMatches(name string) bool {
+func (filter *Filter) nameMatches(name string) bool {
 	return filter.matches(filter.Name, &filter.nameRegex, name)
 }
 
-func (filter *TypeFilter) matches(glob string, regex **regexp.Regexp, name string) bool {
+func (filter *Filter) matches(glob string, regex **regexp.Regexp, name string) bool {
 	if glob == "" {
 		return true
 	}
@@ -76,6 +49,21 @@ func (filter *TypeFilter) matches(glob string, regex **regexp.Regexp, name strin
 	}
 
 	return (*regex).MatchString(name)
+}
+
+// AppliesToType indicates whether this filter should be applied to the supplied type definition
+func (filter *Filter) AppliesToType(typeName *astmodel.TypeName) bool {
+	groupName, packageName, err := typeName.PackageReference.GroupAndPackage()
+	if err != nil {
+		// TODO: Should this func return an error rather than panic?
+		panic(fmt.Sprintf("%v", err))
+	}
+
+	result := filter.groupMatches(groupName) &&
+		filter.versionMatches(packageName) &&
+		filter.nameMatches(typeName.Name())
+
+	return result
 }
 
 // create a regex that does globbing of names

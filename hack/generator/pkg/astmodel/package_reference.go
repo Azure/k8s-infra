@@ -70,3 +70,11 @@ func (pr *PackageReference) PackageName() string {
 func (pr *PackageReference) Equals(ref *PackageReference) bool {
 	return pr.packagePath == ref.packagePath
 }
+
+// String returns the string representation of the package reference
+func (pr *PackageReference) String() string {
+	return pr.packagePath
+}
+
+// Ensure we implement Stringer
+var _ fmt.Stringer = &PackageReference{}
