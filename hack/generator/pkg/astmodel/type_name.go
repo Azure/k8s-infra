@@ -34,7 +34,7 @@ func (typeName *TypeName) AsType() ast.Expr {
 
 // References indicates whether this Type includes any direct references to the given Type
 func (typeName *TypeName) References(d *TypeName) bool {
-	return typeName.Equals(d)
+	return typeName.Equals(d, false)
 }
 
 // RequiredImports returns all the imports required for this definition
@@ -43,9 +43,9 @@ func (typeName *TypeName) RequiredImports() []PackageReference {
 }
 
 // Equals returns true if the passed type is the same TypeName, false otherwise
-func (typeName *TypeName) Equals(t Type) bool {
+func (typeName *TypeName) Equals(t Type, ignoreVersions bool) bool {
 	if d, ok := t.(*TypeName); ok {
-		return typeName.name == d.name && typeName.PackageReference.Equals(&d.PackageReference)
+		return typeName.name == d.name && typeName.PackageReference.Equals(&d.PackageReference, ignoreVersions)
 	}
 
 	return false

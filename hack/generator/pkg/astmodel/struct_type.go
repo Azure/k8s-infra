@@ -87,7 +87,7 @@ func (structType *StructType) References(d *TypeName) bool {
 
 // Equals returns true if the passed type is a struct type with the same fields, false otherwise
 // The order of the fields is not relevant
-func (structType *StructType) Equals(t Type) bool {
+func (structType *StructType) Equals(t Type, ignoreVersions bool) bool {
 	if structType == t {
 		return true
 	}
@@ -110,7 +110,7 @@ func (structType *StructType) Equals(t Type) bool {
 				return false
 			}
 
-			if !ourfield.Equals(f) {
+			if !ourfield.Equals(f, ignoreVersions) {
 				// Different field, even though same name; not-equal
 				return false
 			}
@@ -128,7 +128,7 @@ func (structType *StructType) Equals(t Type) bool {
 				return false
 			}
 
-			if !ourFunction.Equals(function) {
+			if !ourFunction.Equals(function, ignoreVersions) {
 				// Different function, even though same name; not-equal
 				return false
 			}

@@ -722,7 +722,7 @@ func versionOf(url *url.URL) (string, error) {
 func appendIfUniqueType(slice []astmodel.Type, item astmodel.Type) []astmodel.Type {
 	found := false
 	for _, r := range slice {
-		if r.Equals(item) {
+		if astmodel.TypesEqual(r, item) {
 			found = true
 			break
 		}

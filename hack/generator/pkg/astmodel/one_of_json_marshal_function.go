@@ -27,9 +27,9 @@ func NewOneOfJSONMarshalFunction(oneOfStruct *StructType, idFactory IdentifierFa
 var _ Function = (*OneOfJSONMarshalFunction)(nil)
 
 // Equals determines if this function is equal to the passed in function
-func (f *OneOfJSONMarshalFunction) Equals(other Function) bool {
+func (f *OneOfJSONMarshalFunction) Equals(other Function, ignoreVersions bool) bool {
 	if o, ok := other.(*OneOfJSONMarshalFunction); ok {
-		return f.oneOfStruct.Equals(o.oneOfStruct)
+		return f.oneOfStruct.Equals(o.oneOfStruct, ignoreVersions)
 	}
 
 	return false

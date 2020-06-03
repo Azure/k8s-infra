@@ -40,13 +40,13 @@ func (array *ArrayType) References(d *TypeName) bool {
 }
 
 // Equals returns true if the passed type is an array type with the same kind of elements, false otherwise
-func (array *ArrayType) Equals(t Type) bool {
+func (array *ArrayType) Equals(t Type, ignoreVersions bool) bool {
 	if array == t {
 		return true
 	}
 
 	if et, ok := t.(*ArrayType); ok {
-		return array.element.Equals(et.element)
+		return array.element.Equals(et.element, ignoreVersions)
 	}
 
 	return false

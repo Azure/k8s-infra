@@ -6,11 +6,15 @@
 package codegen
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"go/format"
+	"go/token"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/jsonast"
@@ -67,6 +71,8 @@ func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder strin
 		return fmt.Errorf("failed to assign generated definitions to packages (%w)", err)
 	}
 
+	doReport(packages)
+
 	fileCount := 0
 	definitionCount := 0
 
@@ -94,6 +100,142 @@ func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder strin
 	}
 
 	klog.V(0).Infof("Completed writing %v files containing %v definitions", fileCount, definitionCount)
+
+	return nil
+}
+
+func doReport(defs []*astmodel.PackageDefinition) {
+
+	// groupName → ordered (by version) list
+	newDefs := make(map[string][]*astmodel.PackageDefinition)
+
+	for _, def := range defs {
+		if group, ok := newDefs[def.GroupName]; ok {
+			newDefs[def.GroupName] = append(group, def)
+		} else {
+			newDefs[def.GroupName] = []*astmodel.PackageDefinition{def}
+		}
+	}
+
+	for _, group := range newDefs {
+		sort.Slice(group, func(i, j int) bool {
+			return group[i].PackageName < group[j].PackageName
+		})
+
+		reportGroup(group)
+	}
+}
+
+func reportGroup(versions []*astmodel.PackageDefinition) {
+
+	fmt.Printf("Group: %s\n", versions[0].GroupName)
+
+	types := make(map[string][]astmodel.TypeDefiner)
+	for _, version := range versions {
+		for _, T := range version.Definitions() {
+			typeName := T.Name().Name()
+			if Tversions, ok := types[typeName]; ok {
+				types[typeName] = append(Tversions, T)
+			} else {
+				types[typeName] = []astmodel.TypeDefiner{T}
+			}
+		}
+	}
+
+	for _, typeVersions := range types {
+		printedType := false
+		printTypeIfNeeded := func() {
+			if !printedType {
+				printedType = true
+				fmt.Printf(" - comparing type %s\n", typeVersions[0].Name().Name())
+			}
+		}
+
+		for i := range typeVersions {
+			if i+1 >= len(typeVersions) {
+				break
+			}
+
+			oldType := typeVersions[i]
+			newType := typeVersions[i+1]
+
+			compareTypes(oldType, newType, printTypeIfNeeded)
+		}
+	}
+}
+
+func findType(oldType astmodel.TypeDefiner, newTypes []astmodel.TypeDefiner) astmodel.TypeDefiner {
+	for _, newType := range newTypes {
+		if oldType.Name().Name() == newType.Name().Name() {
+			return newType
+		}
+	}
+
+	return nil
+}
+
+func compareTypes(oldType astmodel.TypeDefiner, newType astmodel.TypeDefiner, printTypeIfNeeded func()) {
+
+	printedVersion := false
+	printVersionIfNeeded := func() {
+		printTypeIfNeeded()
+		if !printedVersion {
+			printedVersion = true
+			fmt.Printf("   - version %s to %s\n", oldType.Name().PackageReference.PackageName(), newType.Name().PackageReference.PackageName())
+		}
+	}
+
+	// only compare structs for now
+	if oldStruct, ok := oldType.(*astmodel.StructDefinition); ok {
+		if newStruct, ok := newType.(*astmodel.StructDefinition); ok {
+
+			for _, oldField := range oldStruct.StructType.Fields() {
+
+				newField := findField(oldField, newStruct.StructType.Fields())
+				if newField == nil {
+					printVersionIfNeeded()
+					fmt.Printf("      ! field removed: %s\n", oldField.FieldName())
+				} else {
+					if !astmodel.TypesEqualIgnoringVersions(oldField.FieldType(), newField.FieldType()) {
+						if optional, ok := newField.FieldType().(*astmodel.OptionalType); ok &&
+							astmodel.TypesEqualIgnoringVersions(oldField.FieldType(), optional.ElementType()) {
+							printVersionIfNeeded()
+							fmt.Printf("      + field became optional: %s\n", newField.FieldName())
+						} else {
+							printVersionIfNeeded()
+
+							fset := token.NewFileSet()
+							fset.AddFile("text", 1, 102400)
+
+							var buffer bytes.Buffer
+							format.Node(&buffer, fset, oldField.FieldType().AsType())
+
+							var buffer2 bytes.Buffer
+							format.Node(&buffer2, fset, newField.FieldType().AsType())
+
+							fmt.Printf("      ! field type changed: %s (was %s, now %s)\n", oldField.FieldName(), buffer.String(), buffer2.String())
+						}
+					}
+				}
+			}
+
+			for _, newField := range newStruct.StructType.Fields() {
+				oldField := findField(newField, oldStruct.StructType.Fields())
+				if oldField == nil {
+					printVersionIfNeeded()
+					fmt.Printf("      + field added: %s\n", newField.FieldName())
+				}
+			}
+		}
+	}
+}
+
+func findField(oldField *astmodel.FieldDefinition, newFields []*astmodel.FieldDefinition) *astmodel.FieldDefinition {
+	for _, newField := range newFields {
+		if oldField.FieldName() == newField.FieldName() {
+			return newField
+		}
+	}
 
 	return nil
 }

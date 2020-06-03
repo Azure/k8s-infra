@@ -19,6 +19,10 @@ func NewOptionalType(element Type) *OptionalType {
 	return &OptionalType{element}
 }
 
+func (optional *OptionalType) ElementType() Type {
+	return optional.element
+}
+
 // assert we implemented Type correctly
 var _ Type = (*OptionalType)(nil)
 
@@ -40,13 +44,13 @@ func (optional *OptionalType) References(d *TypeName) bool {
 }
 
 // Equals returns true if this type is equal to the other type
-func (optional *OptionalType) Equals(t Type) bool {
+func (optional *OptionalType) Equals(t Type, ignoreVersions bool) bool {
 	if optional == t {
 		return true // reference equality short-cut
 	}
 
 	if otherOptional, ok := t.(*OptionalType); ok {
-		return optional.element.Equals(otherOptional.element)
+		return optional.element.Equals(otherOptional.element, ignoreVersions)
 	}
 
 	return false

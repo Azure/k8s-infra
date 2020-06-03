@@ -50,13 +50,13 @@ func (m *MapType) References(d *TypeName) bool {
 }
 
 // Equals returns true if the passed type is a map type with the same kinds of keys and elements, false otherwise
-func (m *MapType) Equals(t Type) bool {
+func (m *MapType) Equals(t Type, ignoreVersions bool) bool {
 	if m == t {
 		return true
 	}
 
 	if mt, ok := t.(*MapType); ok {
-		return (m.key.Equals(mt.key) && m.value.Equals(mt.value))
+		return (m.key.Equals(mt.key, ignoreVersions) && m.value.Equals(mt.value, ignoreVersions))
 	}
 
 	return false

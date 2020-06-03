@@ -23,7 +23,7 @@ type Type interface {
 	AsType() ast.Expr
 
 	// Equals returns true if the passed type is the same as this one, false otherwise
-	Equals(t Type) bool
+	Equals(t Type, ignoreVersionChanges bool) bool
 
 	// CreateDefinitions gives a name to the type and might generate some asssociated definitions as well (the second result)
 	// that also must be included in the output.
@@ -34,4 +34,12 @@ type Type interface {
 	// CreateInternalDefinitions creates definitions for nested types where needed (e.g. nested anonymous enums, structs),
 	// and returns the new, updated type to use in this type’s place.
 	CreateInternalDefinitions(nameHint *TypeName, idFactory IdentifierFactory) (Type, []TypeDefiner)
+}
+
+func TypesEqual(left Type, right Type) bool {
+	return left.Equals(right, false)
+}
+
+func TypesEqualIgnoringVersions(left Type, right Type) bool {
+	return left.Equals(right, true)
 }
