@@ -81,6 +81,11 @@ func (filter *TypeFilter) matches(glob string, regex **regexp.Regexp, name strin
 // create a regex that does globbing of names
 // * and ? have their usual (DOS style) meanings as wildcards
 func createGlobbingRegex(globbing string) *regexp.Regexp {
+	if globbing == "" {
+		// nil here as "" is fast-tracked elsewhere
+		return nil
+	}
+
 	g := regexp.QuoteMeta(globbing)
 	g = strings.ReplaceAll(g, "\\*", ".*")
 	g = strings.ReplaceAll(g, "\\?", ".")

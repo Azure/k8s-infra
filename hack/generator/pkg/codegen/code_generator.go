@@ -41,6 +41,14 @@ func NewCodeGenerator(configurationFile string) (*CodeGenerator, error) {
 		return nil, fmt.Errorf("configuration loaded from '%v' is invalid (%w)", configurationFile, err)
 	}
 
+	// TODO: Should there be a config.Init() rather than this?
+	for _, transformer := range config.TypeTransformers {
+		err := transformer.Init()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	result := &CodeGenerator{configuration: config}
 
 	return result, nil
@@ -60,7 +68,7 @@ func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder strin
 		return fmt.Errorf("error cleaning output folder '%v' (%w)", outputFolder, err)
 	}
 
-	scanner := jsonast.NewSchemaScanner(astmodel.NewIdentifierFactory())
+	scanner := jsonast.NewSchemaScanner(astmodel.NewIdentifierFactory(), generator.configuration.TypeTransformers)
 
 	klog.V(0).Infof("Walking JSON schema")
 	defs, err := scanner.GenerateDefinitions(ctx, schema.Root())

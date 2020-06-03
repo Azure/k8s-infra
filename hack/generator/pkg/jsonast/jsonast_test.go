@@ -36,7 +36,7 @@ func runGoldenTest(t *testing.T, path string) {
 		t.Fatal(fmt.Errorf("could not compile input: %w", err))
 	}
 
-	scanner := NewSchemaScanner(astmodel.NewIdentifierFactory())
+	scanner := NewSchemaScanner(astmodel.NewIdentifierFactory(), nil)
 	defs, err := scanner.GenerateDefinitions(context.TODO(), schema.Root())
 	if err != nil {
 		t.Fatal(fmt.Errorf("could not produce nodes from scanner: %w", err))

@@ -19,6 +19,8 @@ type Configuration struct {
 	SchemaURL string
 	// Filters used to control which types are included
 	TypeFilters []*jsonast.TypeFilter
+	// TypeTransformers used to remap types
+	TypeTransformers []*jsonast.TypeTransformer
 }
 
 // ShouldExportResult is returned by ShouldExport to indicate whether the supplied type should be exported

@@ -39,10 +39,10 @@ type (
 
 	// A SchemaScanner is used to scan a JSON Schema extracting and collecting type definitions
 	SchemaScanner struct {
-		definitions  map[astmodel.TypeName]astmodel.TypeDefiner
-		TypeHandlers map[SchemaType]TypeHandler
-		Filters      []string
-		idFactory    astmodel.IdentifierFactory
+		definitions      map[astmodel.TypeName]astmodel.TypeDefiner
+		TypeHandlers     map[SchemaType]TypeHandler
+		typeTransformers []*TypeTransformer
+		idFactory        astmodel.IdentifierFactory
 	}
 )
 
@@ -67,6 +67,21 @@ func (scanner *SchemaScanner) removeTypeDefinition(name *astmodel.TypeName) {
 	delete(scanner.definitions, *name)
 }
 
+// transformType uses the configured type transformers to transform a type name (reference) to a different type.
+// If no transformation is performed, nil is returned
+func (scanner *SchemaScanner) transformType(name *astmodel.TypeName) astmodel.Type {
+	for _, transformer := range scanner.typeTransformers {
+		result := transformer.TransformTypeName(name)
+		if result != nil {
+			klog.V(2).Infof("Transforming %s -> %s because %s", name, result, transformer.Because)
+			return result
+		}
+	}
+
+	// No matches, return nil
+	return nil
+}
+
 // Definitions for different kinds of JSON schema
 const (
 	AnyOf   SchemaType = "anyOf"
@@ -82,6 +97,7 @@ const (
 	Enum    SchemaType = "enum"
 	Unknown SchemaType = "unknown"
 
+	// TODO: Replace this
 	expressionFragment = "/definitions/expression"
 )
 
@@ -93,11 +109,12 @@ func (use *UnknownSchemaError) Error() string {
 }
 
 // NewSchemaScanner constructs a new scanner, ready for use
-func NewSchemaScanner(idFactory astmodel.IdentifierFactory) *SchemaScanner {
+func NewSchemaScanner(idFactory astmodel.IdentifierFactory, typeTransformers []*TypeTransformer) *SchemaScanner {
 	return &SchemaScanner{
-		definitions:  make(map[astmodel.TypeName]astmodel.TypeDefiner),
-		TypeHandlers: DefaultTypeHandlers(),
-		idFactory:    idFactory,
+		definitions:      make(map[astmodel.TypeName]astmodel.TypeDefiner),
+		TypeHandlers:     DefaultTypeHandlers(),
+		typeTransformers: typeTransformers,
+		idFactory:        idFactory,
 	}
 }
 
@@ -121,11 +138,6 @@ func (scanner *SchemaScanner) RunHandlerForSchema(ctx context.Context, schema *g
 	}
 
 	return scanner.RunHandler(ctx, schemaType, schema)
-}
-
-// AddFilters will add a filter (perhaps not currently used?)
-func (scanner *SchemaScanner) AddFilters(filters []string) {
-	scanner.Filters = append(scanner.Filters, filters...)
 }
 
 // GenerateDefinitions takes in the resources section of the Azure deployment template schema and returns golang AST Packages
@@ -367,11 +379,6 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 
 	url := schema.Ref.GetUrl()
 
-	if url.Fragment == expressionFragment {
-		// skip expressions
-		return nil, nil
-	}
-
 	// make a new topic based on the ref URL
 	name, err := objectTypeOf(url)
 	if err != nil {
@@ -397,10 +404,27 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 			scanner.idFactory.CreatePackageNameFromVersion(version)),
 		scanner.idFactory.CreateIdentifier(name, astmodel.Exported))
 
+	// TODO: remove this
+	if url.Fragment == expressionFragment {
+		// skip expressions
+		return nil, nil
+	}
+
+	transformation := scanner.transformType(typeName)
+	if transformation != nil {
+		return transformation, nil
+	}
+
 	return generateDefinitionsFor(ctx, scanner, typeName, isResource, url, schema.RefSchema)
 }
 
-func generateDefinitionsFor(ctx context.Context, scanner *SchemaScanner, typeName *astmodel.TypeName, isResource bool, url *url.URL, schema *gojsonschema.SubSchema) (astmodel.Type, error) {
+func generateDefinitionsFor(
+	ctx context.Context,
+	scanner *SchemaScanner,
+	typeName *astmodel.TypeName,
+	isResource bool,
+	url *url.URL,
+	schema *gojsonschema.SubSchema) (astmodel.Type, error) {
 
 	schemaType, err := getSubSchemaType(schema)
 	if err != nil {

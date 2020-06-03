@@ -7,5 +7,14 @@ typefilters:
     version: '*preview'
     because: preview SDK versions are excluded by default
   - action: exclude
-    group: 'deploymenttemplate'
+    group: deploymenttemplate
     because: this is the "container" group that holds references to all of the other groups and as such doesn't make sense to generate
+  - action: exclude
+    group: definitions
+    because: this is the "container" group that holds references to all of the other groups and as such doesn't make sense to generate
+typetransformers:
+  - group: definitions        # Note that this is case sensitive and should match the expected golang type's package case (lowercase)
+    name: NumberOrExpression  # Note that this is case sensitive and should match the expected golang type's case (upper camel case)
+    because: NumberOrExpression is an ARM template artifact that doesn't make sense in CRDs
+    transform:
+      name: float
