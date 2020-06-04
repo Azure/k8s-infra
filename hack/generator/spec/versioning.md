@@ -10,6 +10,10 @@ Specification for how storage versioning will operate for code generated CRD def
 
 **No modification of generated files.** Manual modification of generated files is a known antipattern that greatly increases the complexity and burden of updates. If some files have been manually changed, every difference showing after code generation needs to be manually reviewed before being committed. This is tedious and error prone because the vast majority of auto generated changes will be perfectly fine. 
 
+**Compliance with Kubernetes versioning.** To quote [Kubebuilder's documentation](https://book.kubebuilder.io/multiversion-tutorial/api-changes.html):
+
+> In Kubernetes, all versions must be safely round-tripable through each other. This means that if we convert from version 1 to version 2, and then back to version 1, we must not lose information. Thus, any change we make to our API must be compatible with whatever we supported in v1, and also need to make sure anything we add in v2 is supported in v1.
+
 ## Non-Goals
 
 **Coverage of every case by code generation:** While it's likely that very high coverage will be achievable with code generation, we don't believe that it will be practical to handle every possible situation automatically. It's therefore necessary for the solution to have some form of extensibility allowing for the injection of hand written code.
@@ -79,8 +83,8 @@ For each actual API version, an interface will be generated containing strongly 
 
 ``` go
 type ClusterPropertiesv20160301Converter {
-    AssignTo(clusterProperties ClusterPropertiesvStorage)
-    AssignFrom(clusterProperties ClusterPropertiesvStorage)
+    AssignTo(clusterProperties *ClusterPropertiesvStorage)
+    AssignFrom(clusterProperties *ClusterPropertiesvStorage)
 }
 ```
 
@@ -91,7 +95,7 @@ When the type of a property is changed between versions, we'll generate an inter
 ``` go
 type ClusterPropertiesv20160301ReliabilityLevelConverter {
     ConvertLevelToClusterPropertiesReliabilityLevel(level Level) *ClusterPropertiesReliabilityLevel
-    ConvertClusterPropertiesReliabilityLevelToLevel(clusterPropertiesReliabilityLevel ClusterPropertiesReliabilityLevel) Level
+    ConvertClusterPropertiesReliabilityLevelToLevel(clusterPropertiesReliabilityLevel *ClusterPropertiesReliabilityLevel) Level
 }
 ```
 
