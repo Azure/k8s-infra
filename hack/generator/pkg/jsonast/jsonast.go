@@ -290,6 +290,15 @@ func generateFieldDefinition(ctx context.Context, scanner *SchemaScanner, prop *
 		return field, nil
 	}
 
+	// This can happen if the property type was prune away by a type filter.
+	// There are a few options here: We can skip this property entirely, we can emit it
+	// with no type (won't compile), or we can emit with with interface{}.
+	// TODO: Currently setting this to anyType as that's easiest to deal with and will generate
+	// TODO: a warning during controller-gen
+	if propType == nil {
+		propType = astmodel.AnyType
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +347,10 @@ func getFields(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema
 		// only generate this field if there are no other fields:
 		if len(fields) == 0 {
 			// TODO: for JSON serialization this needs to be unpacked into "parent"
-			additionalPropsField := astmodel.NewFieldDefinition("additionalProperties", "additionalProperties", astmodel.NewStringMapType(astmodel.AnyType))
+			additionalPropsField := astmodel.NewFieldDefinition(
+				"additionalProperties",
+				"additionalProperties",
+				astmodel.NewStringMapType(astmodel.AnyType))
 			fields = append(fields, additionalPropsField)
 		}
 	} else if schema.AdditionalProperties != false {
@@ -349,7 +361,19 @@ func getFields(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema
 			return nil, err
 		}
 
-		additionalPropsField := astmodel.NewFieldDefinition(astmodel.FieldName("additionalProperties"), "additionalProperties", astmodel.NewStringMapType(additionalPropsType))
+		// This can happen if the property type was prune away by a type filter.
+		// There are a few options here: We can skip this property entirely, we can emit it
+		// with no type (won't compile), or we can emit with with interface{}.
+		// TODO: Currently setting this to anyType as that's easiest to deal with and will generate
+		// TODO: a warning during controller-gen
+		if additionalPropsType == nil {
+			additionalPropsType = astmodel.AnyType
+		}
+
+		additionalPropsField := astmodel.NewFieldDefinition(
+			astmodel.FieldName("additionalProperties"),
+			"additionalProperties",
+			astmodel.NewStringMapType(additionalPropsType))
 		fields = append(fields, additionalPropsField)
 	}
 
@@ -387,13 +411,14 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 			scanner.idFactory.CreatePackageNameFromVersion(version)),
 		scanner.idFactory.CreateIdentifier(name, astmodel.Exported))
 
+	// Prune the graph according to the configuration
 	shouldPrune, because := scanner.configuration.ShouldPrune(typeName)
-	// Only handle obliterate here because it's the only thing that modifies the type tree-walking
 	if shouldPrune == config.Prune {
 		klog.V(2).Infof("Skipping %s because %s", typeName, because)
 		return nil, nil // Skip entirely
 	}
 
+	// Transform types according to configuration
 	transformation, because := scanner.configuration.TransformType(typeName)
 	if transformation != nil {
 		klog.V(2).Infof("Transforming %s -> %s because %s", typeName, transformation, because)
@@ -644,6 +669,11 @@ func arrayHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsch
 	astType, err := scanner.RunHandlerForSchema(ctx, onlyChild)
 	if err != nil {
 		return nil, err
+	}
+
+	// astType can be nil if it was pruned from the tree
+	if astType == nil {
+		return nil, nil
 	}
 
 	return astmodel.NewArrayType(astType), nil
