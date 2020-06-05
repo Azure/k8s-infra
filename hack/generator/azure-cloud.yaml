@@ -16,7 +16,12 @@ exportfilters:
     because: this is the "container" group that holds references to all of the other groups and as such doesn't make sense to generate
   - action: exclude
     group: definitions
-    because: this is the "container" group that holds references to all of the other groups and as such doesn't make sense to generate
+    name: NumberOrExpression
+    because: this type is not really used, it's just float64. We remap this type to float64 in typetransformers so we can skip exporting it too
+  - action: exclude
+    group: definitions
+    name: ResourceBase
+    because: this type is not used
 typetransformers:
   - group: definitions        # Note that this is case sensitive and should match the expected golang type's package case (lowercase)
     name: NumberOrExpression  # Note that this is case sensitive and should match the expected golang type's case (upper camel case)
