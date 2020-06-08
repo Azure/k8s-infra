@@ -10,7 +10,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"github.com/Azure/k8s-infra/hack/generator/pkg/config"
 	"io/ioutil"
 	"os"
 	"path"
@@ -19,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
+	"github.com/Azure/k8s-infra/hack/generator/pkg/config"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/jsonast"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v3"

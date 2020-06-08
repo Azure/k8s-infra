@@ -18,7 +18,7 @@ func Test_TransformByGroup_CorrectlySelectsTypes(t *testing.T) {
 
 	transformer := config.TypeTransformer{
 		TypeMatcher: config.TypeMatcher{Group: "role"},
-		Transform: config.TransformTarget{
+		Target: config.TransformTarget{
 			Name: "int",
 		},
 	}
@@ -39,7 +39,7 @@ func Test_TransformByVersion_CorrectlySelectsTypes(t *testing.T) {
 
 	transformer := config.TypeTransformer{
 		TypeMatcher: config.TypeMatcher{Version: "2019-*"},
-		Transform: config.TransformTarget{
+		Target: config.TransformTarget{
 			Name: "int",
 		},
 	}
@@ -60,7 +60,7 @@ func Test_TransformByName_CorrectlySelectsTypes(t *testing.T) {
 
 	transformer := config.TypeTransformer{
 		TypeMatcher: config.TypeMatcher{Name: "p*"},
-		Transform: config.TransformTarget{
+		Target: config.TransformTarget{
 			Name: "int",
 		},
 	}
@@ -81,7 +81,7 @@ func Test_TransformCanTransform_ToComplexType(t *testing.T) {
 
 	transformer := config.TypeTransformer{
 		TypeMatcher: config.TypeMatcher{Name: "tutor"},
-		Transform: config.TransformTarget{
+		Target: config.TransformTarget{
 			PackagePath: "github.com/Azure/k8s-infra/hack/generator/apis/role/2019-01-01",
 			Name:        "student",
 		},

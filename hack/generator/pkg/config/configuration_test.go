@@ -32,7 +32,7 @@ func Test_WithSingleFilter_FiltersExpectedTypes(t *testing.T) {
 	post := post2019
 	student := student2019
 
-	filter := ExportFilter{Action: ExportFilterActionInclude, TypeMatcher: TypeMatcher{Version: "2019*"}}
+	filter := ExportFilter{Action: ExportFilterInclude, TypeMatcher: TypeMatcher{Version: "2019*"}}
 	config := NewConfiguration()
 	config = config.WithExportFilters(&filter)
 
@@ -49,11 +49,11 @@ func Test_WithMultipleFilters_FiltersExpectedTypes(t *testing.T) {
 	address := address2020
 
 	versionFilter := ExportFilter{
-		Action:      ExportFilterActionInclude,
+		Action:      ExportFilterInclude,
 		TypeMatcher: TypeMatcher{Version: "2019*"},
 	}
 	nameFilter := ExportFilter{
-		Action:      ExportFilterActionInclude,
+		Action:      ExportFilterInclude,
 		TypeMatcher: TypeMatcher{Name: "*ss"},
 	}
 	config := NewConfiguration()
@@ -69,10 +69,10 @@ func Test_WithMultipleFilters_GivesPrecedenceToEarlierFilters(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	alwaysExportPerson := ExportFilter{
-		Action:      ExportFilterActionInclude,
+		Action:      ExportFilterInclude,
 		TypeMatcher: TypeMatcher{Name: "person"}}
 	exclude2019 := ExportFilter{
-		Action:      ExportFilterActionExclude,
+		Action:      ExportFilterExclude,
 		TypeMatcher: TypeMatcher{Version: "2019-01-01"}}
 	config := NewConfiguration()
 	config = config.WithExportFilters(&alwaysExportPerson, &exclude2019)

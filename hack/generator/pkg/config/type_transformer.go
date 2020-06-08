@@ -19,9 +19,9 @@ type TransformTarget struct {
 type TypeTransformer struct {
 	TypeMatcher `yaml:",inline"`
 
-	Transform TransformTarget // TODO: Don't love this property name or type name...
+	Target TransformTarget
 
-	// This is used purely for "caching" the actual astmodel type
+	// This is used purely for "caching" the actual astmodel type after Initialize()
 	targetType astmodel.Type
 }
 
@@ -31,7 +31,7 @@ func (transformer *TypeTransformer) Initialize() error {
 		return err
 	}
 
-	if transformer.Transform.Name == "" {
+	if transformer.Target.Name == "" {
 		return fmt.Errorf(
 			"type transformer for group: %s, version: %s, name: %s is missing type name to transform to",
 			transformer.Group,
@@ -40,18 +40,18 @@ func (transformer *TypeTransformer) Initialize() error {
 	}
 
 	// Type has no package -- must be a primitive type
-	if transformer.Transform.PackagePath == "" {
+	if transformer.Target.PackagePath == "" {
 		return transformer.initializePrimitiveTypeTarget()
 	}
 
 	transformer.targetType = astmodel.NewTypeName(
-		*astmodel.NewPackageReference(transformer.Transform.PackagePath),
-		transformer.Transform.Name)
+		*astmodel.NewPackageReference(transformer.Target.PackagePath),
+		transformer.Target.Name)
 	return nil
 }
 
 func (transformer *TypeTransformer) initializePrimitiveTypeTarget() error {
-	switch transformer.Transform.Name {
+	switch transformer.Target.Name {
 	case "bool":
 		transformer.targetType = astmodel.BoolType
 	case "float":
@@ -67,7 +67,7 @@ func (transformer *TypeTransformer) initializePrimitiveTypeTarget() error {
 			transformer.Group,
 			transformer.Version,
 			transformer.Name,
-			transformer.Transform.Name)
+			transformer.Target.Name)
 
 	}
 

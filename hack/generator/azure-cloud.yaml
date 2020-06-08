@@ -26,5 +26,5 @@ typetransformers:
   - group: definitions        # Note that this is case sensitive and should match the expected golang type's package case (lowercase)
     name: NumberOrExpression  # Note that this is case sensitive and should match the expected golang type's case (upper camel case)
     because: NumberOrExpression is an ARM template artifact that doesn't make sense in CRDs
-    transform:
+    target:
       name: float

@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
-	"github.com/hashicorp/go-multierror" // TODO: Not sure what test I should be applying before importing a random package...
+	"github.com/hashicorp/go-multierror"
 )
 
 // Configuration is used to control which types get generated
@@ -97,9 +97,9 @@ func (config *Configuration) ShouldExport(typeName *astmodel.TypeName) (result S
 	for _, f := range config.ExportFilters {
 		if f.AppliesToType(typeName) {
 			switch f.Action {
-			case ExportFilterActionExclude:
+			case ExportFilterExclude:
 				return Skip, f.Because
-			case ExportFilterActionInclude:
+			case ExportFilterInclude:
 				return Export, f.Because
 			default:
 				panic(fmt.Errorf("unknown exportfilter directive: %s", f.Action))
@@ -116,9 +116,9 @@ func (config *Configuration) ShouldPrune(typeName *astmodel.TypeName) (result Sh
 	for _, f := range config.TypeFilters {
 		if f.AppliesToType(typeName) {
 			switch f.Action {
-			case TypeFilterActionPruneType:
+			case TypeFilterPrune:
 				return Prune, f.Because
-			case TypeFilterActionIncludeType:
+			case TypeFilterInclude:
 				return Include, f.Because
 			default:
 				panic(fmt.Errorf("unknown typefilter directive: %s", f.Action))

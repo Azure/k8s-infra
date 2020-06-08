@@ -291,12 +291,9 @@ func generateFieldDefinition(ctx context.Context, scanner *SchemaScanner, prop *
 	}
 
 	// This can happen if the property type was pruned away by a type filter.
-	// There are a few options here: We can skip this property entirely, we can emit it
-	// with no type (won't compile), or we can emit with with interface{}.
-	// TODO: Currently setting this to anyType as that's easiest to deal with and will generate
-	// TODO: a warning during controller-gen
 	if propType == nil {
-		propType = astmodel.AnyType
+		// returning nil here is a signal to the caller that this property cannot be constructed.
+		return nil, nil
 	}
 
 	if err != nil {
@@ -317,6 +314,17 @@ func getFields(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema
 		fieldDefinition, err := generateFieldDefinition(ctx, scanner, prop)
 		if err != nil {
 			return nil, err
+		}
+
+		// This can happen if the property type was pruned away by a type filter.
+		// There are a few options here: We can skip this property entirely, we can emit it
+		// with no type (won't compile), or we can emit with with interface{}.
+		// Currently emitting a warning and skipping
+		if fieldDefinition == nil {
+			// TODO: This log shouldn't happen in cases where the type in question is later excluded, see:
+			// TODO: https://github.com/Azure/k8s-infra/issues/138
+			klog.V(2).Infof("Property %s omitted due to nil propType (probably due to type filter)", prop.Property)
+			continue
 		}
 
 		// add documentation
@@ -418,7 +426,7 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 		return nil, nil // Skip entirely
 	}
 
-	// Transform types according to configuration
+	// Target types according to configuration
 	transformation, because := scanner.configuration.TransformType(typeName)
 	if transformation != nil {
 		klog.V(2).Infof("Transforming %s -> %s because %s", typeName, transformation, because)
