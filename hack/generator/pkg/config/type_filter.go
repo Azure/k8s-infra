@@ -9,11 +9,11 @@ package config
 type TypeFilterAction string
 
 const (
-	// TypeFilterIncludeType indicates that any type matched by the filter should be included in the type graph
-	TypeFilterIncludeType TypeFilterAction = "include"
-	// TypeFilterPruneType indicates that any type matched by the filter, and any types only referenced by that type
+	// TypeFilterActionIncludeType indicates that any type matched by the filter should be included in the type graph
+	TypeFilterActionIncludeType TypeFilterAction = "include"
+	// TypeFilterActionPruneType indicates that any type matched by the filter, and any types only referenced by that type
 	// should not be included in the type graph
-	TypeFilterPruneType TypeFilterAction = "prune"
+	TypeFilterActionPruneType TypeFilterAction = "prune"
 )
 
 // A TypeFilter is used to control which types should be included in the type graph when running the generator

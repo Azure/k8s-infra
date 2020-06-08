@@ -102,9 +102,9 @@ func (config *Configuration) ShouldPrune(typeName *astmodel.TypeName) (result Sh
 	for _, f := range config.TypeFilters {
 		if f.AppliesToType(typeName) {
 			switch f.Action {
-			case TypeFilterPruneType:
+			case TypeFilterActionPruneType:
 				return Prune, f.Because
-			case TypeFilterIncludeType:
+			case TypeFilterActionIncludeType:
 				return Include, f.Because
 			default:
 				panic(fmt.Errorf("unknown typefilter directive: %s", f.Action))
