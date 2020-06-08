@@ -118,19 +118,9 @@ func (definition *StructDefinition) AsDeclarations(codeGenerationContext *CodeGe
 	}
 
 	// Append the methods
-	declarations = append(declarations, definition.generateMethodDecls(codeGenerationContext)...)
+	declarations = append(declarations, definition.StructType.generateMethodDecls(codeGenerationContext, definition.Name())...)
 
 	return declarations
-}
-
-func (definition *StructDefinition) generateMethodDecls(codeGenerationContext *CodeGenerationContext) []ast.Decl {
-	var result []ast.Decl
-	for methodName, function := range definition.StructType.functions {
-		funcDef := function.AsFunc(codeGenerationContext, definition.Name(), methodName)
-		result = append(result, funcDef)
-	}
-
-	return result
 }
 
 func defineField(fieldName string, typeName string, tag string) *ast.Field {

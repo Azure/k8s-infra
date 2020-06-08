@@ -220,3 +220,13 @@ func (structType *StructType) copy() *StructType {
 
 	return result
 }
+
+func (structType *StructType) generateMethodDecls(codeGenerationContext *CodeGenerationContext, name *TypeName) []ast.Decl {
+	var result []ast.Decl
+	for methodName, function := range structType.functions {
+		funcDef := function.AsFunc(codeGenerationContext, name, methodName)
+		result = append(result, funcDef)
+	}
+
+	return result
+}
