@@ -31,12 +31,16 @@ func NewStructType() *StructType {
 }
 
 // Fields returns all our field definitions
-// A copy of the slice is returned to preserve immutability
+// A sorted copy of the slice is returned to preserve immutability and provide determinism
 func (structType *StructType) Fields() []*FieldDefinition {
 	var result []*FieldDefinition
 	for _, field := range structType.fields {
 		result = append(result, field)
 	}
+
+	sort.Slice(result, func(left int, right int) bool {
+		return result[left].fieldName < result[right].fieldName
+	})
 
 	return result
 }
