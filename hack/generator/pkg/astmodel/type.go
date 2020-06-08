@@ -22,6 +22,11 @@ type Type interface {
 	// (yes this says ast.Expr but that is what the Go 'ast' package uses for types)
 	AsType(codeGenerationContext *CodeGenerationContext) ast.Expr
 
+	// AsTypeReference renders a Go abstract syntax tree for referencing the type.
+	// For simple types this is just the type name. For named types, it's just the name of the type.
+	// For more complex types (e.g. maps) this is the appropriate declaration.
+	AsTypeReference(codeGenerationContext *CodeGenerationContext) ast.Expr
+
 	// Equals returns true if the passed type is the same as this one, false otherwise
 	Equals(t Type) bool
 

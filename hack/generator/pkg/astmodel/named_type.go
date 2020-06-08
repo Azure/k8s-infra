@@ -91,8 +91,14 @@ func (namedType *NamedType) References(name *TypeName) bool {
 	return namedType.name.References(name) || namedType.underlyingType.References(name)
 }
 
-func (namedType *NamedType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
-	panic("implement me")
+// AsTypeReference renders a Go abstract syntax tree for referencing the type.
+func (namedType *NamedType) AsTypeReference(codeGenerationContext *CodeGenerationContext) ast.Expr {
+	return ast.NewIdent(namedType.name.name)
+}
+
+// AsType generates a reference to our type as an identifier
+func (namedType *NamedType) AsType(_ *CodeGenerationContext) ast.Expr {
+	return ast.NewIdent(namedType.name.name)
 }
 
 func (namedType *NamedType) Equals(t Type) bool {
