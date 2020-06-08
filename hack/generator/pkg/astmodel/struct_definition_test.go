@@ -18,7 +18,7 @@ func Test_NewStructDefinition_GivenValues_InitializesFields(t *testing.T) {
 	const group = "group"
 	const version = "2020-01-01"
 	fullNameField := createStringField("fullName", "Full legal name")
-	familyNameField := createStringField("familiyName", "Shared family name")
+	familyNameField := createStringField("familyName", "Shared family name")
 	knownAsField := createStringField("knownAs", "Commonly known as")
 
 	ref := NewTypeName(*NewLocalPackageReference(group, version), name)
