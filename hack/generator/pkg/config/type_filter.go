@@ -18,6 +18,6 @@ const (
 
 // A TypeFilter is used to control which types should be included in the type graph when running the generator
 type TypeFilter struct {
-	Action TypeFilterAction
-	Filter `yaml:",inline"`
+	Action      TypeFilterAction
+	TypeMatcher `yaml:",inline"`
 }

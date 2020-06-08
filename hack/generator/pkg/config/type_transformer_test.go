@@ -17,12 +17,12 @@ func Test_TransformByGroup_CorrectlySelectsTypes(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	transformer := config.TypeTransformer{
-		Group: "role",
+		TypeMatcher: config.TypeMatcher{Group: "role"},
 		Transform: config.TransformTarget{
 			Name: "int",
 		},
 	}
-	err := transformer.Init()
+	err := transformer.Initialize()
 	g.Expect(err).To(BeNil())
 
 	// Roles should be selected
@@ -38,12 +38,12 @@ func Test_TransformByVersion_CorrectlySelectsTypes(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	transformer := config.TypeTransformer{
-		Version: "2019-*",
+		TypeMatcher: config.TypeMatcher{Version: "2019-*"},
 		Transform: config.TransformTarget{
 			Name: "int",
 		},
 	}
-	err := transformer.Init()
+	err := transformer.Initialize()
 	g.Expect(err).To(BeNil())
 
 	// 2019 versions should be transformed
@@ -59,12 +59,12 @@ func Test_TransformByName_CorrectlySelectsTypes(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	transformer := config.TypeTransformer{
-		Name: "p*",
+		TypeMatcher: config.TypeMatcher{Name: "p*"},
 		Transform: config.TransformTarget{
 			Name: "int",
 		},
 	}
-	err := transformer.Init()
+	err := transformer.Initialize()
 	g.Expect(err).To(BeNil())
 
 	// Names starting with p should be transformed
@@ -80,13 +80,13 @@ func Test_TransformCanTransform_ToComplexType(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	transformer := config.TypeTransformer{
-		Name: "tutor",
+		TypeMatcher: config.TypeMatcher{Name: "tutor"},
 		Transform: config.TransformTarget{
 			PackagePath: "github.com/Azure/k8s-infra/hack/generator/apis/role/2019-01-01",
 			Name:        "student",
 		},
 	}
-	err := transformer.Init()
+	err := transformer.Initialize()
 	g.Expect(err).To(BeNil())
 
 	// Tutor should be student

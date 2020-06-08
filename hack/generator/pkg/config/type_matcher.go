@@ -12,8 +12,8 @@ import (
 	"strings"
 )
 
-// Filter contains basic functionality for a filter
-type Filter struct {
+// TypeMatcher contains basic functionality for a filter
+type TypeMatcher struct {
 	// Group is a wildcard matching specifier for which groups are selected by this filter
 	Group      string `yaml:",omitempty"`
 	groupRegex *regexp.Regexp
@@ -27,19 +27,27 @@ type Filter struct {
 	Because string
 }
 
-func (filter *Filter) groupMatches(schema string) bool {
-	return filter.matches(filter.Group, &filter.groupRegex, schema)
+func (typeMatcher *TypeMatcher) Initialize() error {
+	typeMatcher.groupRegex = createGlobbingRegex(typeMatcher.Group)
+	typeMatcher.versionRegex = createGlobbingRegex(typeMatcher.Version)
+	typeMatcher.nameRegex = createGlobbingRegex(typeMatcher.Name)
+
+	return nil
 }
 
-func (filter *Filter) versionMatches(version string) bool {
-	return filter.matches(filter.Version, &filter.versionRegex, version)
+func (typeMatcher *TypeMatcher) groupMatches(schema string) bool {
+	return typeMatcher.matches(typeMatcher.Group, &typeMatcher.groupRegex, schema)
 }
 
-func (filter *Filter) nameMatches(name string) bool {
-	return filter.matches(filter.Name, &filter.nameRegex, name)
+func (typeMatcher *TypeMatcher) versionMatches(version string) bool {
+	return typeMatcher.matches(typeMatcher.Version, &typeMatcher.versionRegex, version)
 }
 
-func (filter *Filter) matches(glob string, regex **regexp.Regexp, name string) bool {
+func (typeMatcher *TypeMatcher) nameMatches(name string) bool {
+	return typeMatcher.matches(typeMatcher.Name, &typeMatcher.nameRegex, name)
+}
+
+func (typeMatcher *TypeMatcher) matches(glob string, regex **regexp.Regexp, name string) bool {
 	if glob == "" {
 		return true
 	}
@@ -52,16 +60,16 @@ func (filter *Filter) matches(glob string, regex **regexp.Regexp, name string) b
 }
 
 // AppliesToType indicates whether this filter should be applied to the supplied type definition
-func (filter *Filter) AppliesToType(typeName *astmodel.TypeName) bool {
+func (typeMatcher *TypeMatcher) AppliesToType(typeName *astmodel.TypeName) bool {
 	groupName, packageName, err := typeName.PackageReference.GroupAndPackage()
 	if err != nil {
 		// TODO: Should this func return an error rather than panic?
 		panic(fmt.Sprintf("%v", err))
 	}
 
-	result := filter.groupMatches(groupName) &&
-		filter.versionMatches(packageName) &&
-		filter.nameMatches(typeName.Name())
+	result := typeMatcher.groupMatches(groupName) &&
+		typeMatcher.versionMatches(packageName) &&
+		typeMatcher.nameMatches(typeName.Name())
 
 	return result
 }

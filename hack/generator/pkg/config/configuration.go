@@ -67,8 +67,22 @@ func (config *Configuration) Initialize() error {
 	}
 
 	var result *multierror.Error
+	for _, filter := range config.ExportFilters {
+		err := filter.Initialize()
+		if err != nil {
+			result = multierror.Append(result, err)
+		}
+	}
+
+	for _, filter := range config.TypeFilters {
+		err := filter.Initialize()
+		if err != nil {
+			result = multierror.Append(result, err)
+		}
+	}
+
 	for _, transformer := range config.TypeTransformers {
-		err := transformer.Init()
+		err := transformer.Initialize()
 		if err != nil {
 			result = multierror.Append(result, err)
 		}

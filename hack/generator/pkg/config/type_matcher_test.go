@@ -22,7 +22,9 @@ var tutor2019 = astmodel.NewTypeName(*astmodel.NewLocalPackageReference("role", 
 func Test_FilterByGroup_CorrectlySelectsStructs(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	filter := config.Filter{Group: "role"}
+	filter := config.TypeMatcher{Group: "role"}
+	err := filter.Initialize()
+	g.Expect(err).To(BeNil())
 
 	// Roles should be selected
 	g.Expect(filter.AppliesToType(student2019)).To(BeTrue())
@@ -36,7 +38,9 @@ func Test_FilterByGroup_CorrectlySelectsStructs(t *testing.T) {
 func Test_FilterByVersion_CorrectlySelectsStructs(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	filter := config.Filter{Version: "2019-*"}
+	filter := config.TypeMatcher{Version: "2019-*"}
+	err := filter.Initialize()
+	g.Expect(err).To(BeNil())
 
 	// Version from 2019 should be selected
 	g.Expect(filter.AppliesToType(post2019)).To(BeTrue())
@@ -49,7 +53,9 @@ func Test_FilterByVersion_CorrectlySelectsStructs(t *testing.T) {
 func Test_FilterByName_CorrectlySelectsStructs(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	filter := config.Filter{Name: "p*"}
+	filter := config.TypeMatcher{Name: "p*"}
+	err := filter.Initialize()
+	g.Expect(err).To(BeNil())
 
 	// Name starts with "p" should be selected
 	g.Expect(filter.AppliesToType(person2020)).To(BeTrue())
@@ -62,7 +68,9 @@ func Test_FilterByName_CorrectlySelectsStructs(t *testing.T) {
 func Test_FilterByMultipleConditions_CorrectlySelectsStructs(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	filter := config.Filter{Name: "p*", Version: "2019-*"}
+	filter := config.TypeMatcher{Name: "p*", Version: "2019-*"}
+	err := filter.Initialize()
+	g.Expect(err).To(BeNil())
 
 	// Version not selected by filter
 	g.Expect(filter.AppliesToType(person2020)).To(BeFalse())

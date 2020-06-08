@@ -20,6 +20,6 @@ const (
 
 // A ExportFilter is used to control which types should be exported by the generator
 type ExportFilter struct {
-	Action ExportFilterAction
-	Filter `yaml:",inline"`
+	Action      ExportFilterAction
+	TypeMatcher `yaml:",inline"`
 }
