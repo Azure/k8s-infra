@@ -22,6 +22,7 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v3"
 
+	"github.com/hashicorp/go-multierror"
 	"k8s.io/klog/v2"
 )
 
@@ -178,27 +179,29 @@ func deleteGeneratedCodeFromFolder(outputFolder string) error {
 		return fmt.Errorf("error globbing files with pattern '%s' (%w)", globPattern, err)
 	}
 
+	var result *multierror.Error
+
 	for _, file := range files {
 		isGenerated, err := isFileGenerated(file)
 
 		if err != nil {
-			return fmt.Errorf("error determining if file was generated (%w)", err)
+			result = multierror.Append(result, fmt.Errorf("error determining if file was generated (%w)", err))
 		}
 
 		if isGenerated {
 			err := os.Remove(file)
 			if err != nil {
-				return fmt.Errorf("error removing file '%v' (%w)", file, err)
+				result = multierror.Append(result, fmt.Errorf("error removing file '%v' (%w)", file, err))
 			}
 		}
 	}
 
 	err = deleteEmptyDirectories(outputFolder)
 	if err != nil {
-		return err
+		result = multierror.Append(result, err)
 	}
 
-	return nil
+	return result.ErrorOrNil()
 }
 
 func isFileGenerated(filename string) (bool, error) {
@@ -265,21 +268,23 @@ func deleteEmptyDirectories(path string) error {
 	}
 	sort.Slice(dirs, sortFunction)
 
+	var result *multierror.Error
+
 	// Now clean things up
 	for _, dir := range dirs {
 		files, err := ioutil.ReadDir(dir)
 		if err != nil {
-			return fmt.Errorf("error reading directory '%v' (%w)", dir, err)
+			result = multierror.Append(result, fmt.Errorf("error reading directory '%v' (%w)", dir, err))
 		}
 
 		if len(files) == 0 {
 			// Directory is empty now, we can delete it
 			err := os.Remove(dir)
 			if err != nil {
-				return fmt.Errorf("error removing dir '%v' (%w)", dir, err)
+				result = multierror.Append(result, fmt.Errorf("error removing dir '%v' (%w)", dir, err))
 			}
 		}
 	}
 
-	return nil
+	return result.ErrorOrNil()
 }

@@ -64,7 +64,7 @@ func (pkgDef *PackageDefinition) DefinitionCount() int {
 
 func emitFiles(filesToGenerate map[string][]TypeDefiner, outputDir string) error {
 	for fileName, defs := range filesToGenerate {
-		fullFileName := fileName + "_types" + CodeGeneratedFileSuffix + ".go"
+		fullFileName := fileName + "_types" + CodeGeneratedFileSuffix
 		genFile := NewFileDefinition(&defs[0].Name().PackageReference, defs...)
 		outputFile := filepath.Join(outputDir, fullFileName)
 
@@ -239,7 +239,7 @@ func emitGroupVersionFile(pkgDef *PackageDefinition, outputDir string) error {
 		return err
 	}
 
-	gvFile := filepath.Join(outputDir, "groupversion_info"+CodeGeneratedFileSuffix+".go")
+	gvFile := filepath.Join(outputDir, "groupversion_info"+CodeGeneratedFileSuffix)
 
 	err = ioutil.WriteFile(gvFile, buf.Bytes(), 0700)
 	if err != nil {
