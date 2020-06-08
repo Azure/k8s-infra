@@ -230,3 +230,21 @@ func (structType *StructType) generateMethodDecls(codeGenerationContext *CodeGen
 
 	return result
 }
+
+func defineField(fieldName string, typeName string, tag string) *ast.Field {
+
+	result := &ast.Field{
+		Type: ast.NewIdent(typeName),
+		Tag:  &ast.BasicLit{Kind: token.STRING, Value: tag},
+	}
+
+	if fieldName != "" {
+		result.Names = []*ast.Ident{ast.NewIdent(fieldName)}
+	}
+
+	return result
+}
+
+// TODO: metav1 import should be added via RequiredImports?
+var typeMetaField = defineField("", "metav1.TypeMeta", "`json:\",inline\"`")
+var objectMetaField = defineField("", "metav1.ObjectMeta", "`json:\"metadata,omitempty\"`")
