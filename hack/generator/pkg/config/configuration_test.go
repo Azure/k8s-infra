@@ -33,7 +33,8 @@ func Test_WithSingleFilter_FiltersExpectedTypes(t *testing.T) {
 	student := student2019
 
 	filter := ExportFilter{Action: ExportFilterActionInclude, Filter: Filter{Version: "2019*"}}
-	config := NewConfiguration(&filter)
+	config := NewConfiguration()
+	config = config.WithExportFilters(&filter)
 
 	g.Expect(config.ShouldExport(person)).To(Equal(Export))
 	g.Expect(config.ShouldExport(post)).To(Equal(Export))
@@ -55,7 +56,8 @@ func Test_WithMultipleFilters_FiltersExpectedTypes(t *testing.T) {
 		Action: ExportFilterActionInclude,
 		Filter: Filter{Name: "*ss"},
 	}
-	config := NewConfiguration(&versionFilter, &nameFilter)
+	config := NewConfiguration()
+	config = config.WithExportFilters(&versionFilter, &nameFilter)
 
 	g.Expect(config.ShouldExport(person)).To(Equal(Export))
 	g.Expect(config.ShouldExport(post)).To(Equal(Export))
@@ -72,7 +74,8 @@ func Test_WithMultipleFilters_GivesPrecedenceToEarlierFilters(t *testing.T) {
 	exclude2019 := ExportFilter{
 		Action: ExportFilterActionExclude,
 		Filter: Filter{Version: "2019-01-01"}}
-	config := NewConfiguration(&alwaysExportPerson, &exclude2019)
+	config := NewConfiguration()
+	config = config.WithExportFilters(&alwaysExportPerson, &exclude2019)
 
 	g.Expect(config.ShouldExport(person2019)).To(Equal(Export))
 	g.Expect(config.ShouldExport(student2019)).To(Equal(Skip))

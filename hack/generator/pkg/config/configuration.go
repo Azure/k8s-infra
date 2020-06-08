@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
+	"github.com/hashicorp/go-multierror" // TODO: Not sure what test I should be applying before importing a random package...
 )
 
 // Configuration is used to control which types get generated
@@ -45,10 +46,15 @@ const (
 )
 
 // NewConfiguration is a convenience factory for Configuration
-func NewConfiguration(filters ...*ExportFilter) *Configuration {
-	result := Configuration{
-		ExportFilters: filters,
-	}
+func NewConfiguration() *Configuration {
+	result := Configuration{}
+	return &result
+}
+
+/// WithExportFilters adds the provided ExportFilters to the configurations collection of ExportFilters
+func (config *Configuration) WithExportFilters(filters ...*ExportFilter) *Configuration {
+	result := *config
+	result.ExportFilters = append(result.ExportFilters, filters...)
 
 	return &result
 }
@@ -60,14 +66,15 @@ func (config *Configuration) Initialize() error {
 		return errors.New("SchemaURL missing")
 	}
 
+	var result *multierror.Error
 	for _, transformer := range config.TypeTransformers {
 		err := transformer.Init()
 		if err != nil {
-			return err
+			result = multierror.Append(result, err)
 		}
 	}
 
-	return nil
+	return result.ErrorOrNil()
 }
 
 // ShouldExport tests for whether a given type should be exported as Go code
