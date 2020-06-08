@@ -63,8 +63,8 @@ func (prim *PrimitiveType) CreateInternalDefinitions(_ *TypeName, _ IdentifierFa
 	return prim, nil
 }
 
-// CreateDefinitions defines a named type for this primitive
-func (prim *PrimitiveType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (*NamedType, []*NamedType) {
+// CreateNamedTypes defines a named type for this primitive
+func (prim *PrimitiveType) CreateNamedTypes(name *TypeName, _ IdentifierFactory, _ bool) (*NamedType, []*NamedType) {
 	return NewNamedType(name, prim), nil
 }
 

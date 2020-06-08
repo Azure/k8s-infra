@@ -25,11 +25,11 @@ type Type interface {
 	// Equals returns true if the passed type is the same as this one, false otherwise
 	Equals(t Type) bool
 
-	// CreateDefinitions gives a name to the type and might generate some asssociated definitions as well (the second result)
-	// that also must be included in the output.
+	// CreateNamedTypes gives a name to the type and might generate some associated definitions as well (the second result)
+	// that must also be included in the output.
 	//
-	// [isResource is only relevant to struct types and identifies if they are a root resource for Kubebuilder]
-	CreateDefinitions(name *TypeName, idFactory IdentifierFactory, isResource bool) (*NamedType, []*NamedType)
+	// isResource is only relevant to struct types and identifies if they are a root resource for Kubebuilder
+	CreateNamedTypes(name *TypeName, idFactory IdentifierFactory, isResource bool) (*NamedType, []*NamedType)
 
 	// CreateInternalDefinitions creates definitions for nested types where needed (e.g. nested anonymous enums, structs),
 	// and returns the new, updated type to use in this type’s place.

@@ -69,7 +69,7 @@ func (m *MapType) CreateInternalDefinitions(name *TypeName, idFactory Identifier
 	return NewMapType(newKeyType, newValueType), append(keyOtherTypes, valueOtherTypes...)
 }
 
-// CreateDefinitions defines a named type for this MapType
-func (m *MapType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (*NamedType, []*NamedType) {
+// CreateNamedTypes defines a named type for this MapType
+func (m *MapType) CreateNamedTypes(name *TypeName, _ IdentifierFactory, _ bool) (*NamedType, []*NamedType) {
 	return NewNamedType(name, m), nil
 }

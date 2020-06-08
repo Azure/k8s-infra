@@ -63,7 +63,7 @@ func (optional *OptionalType) CreateInternalDefinitions(name *TypeName, idFactor
 	return NewOptionalType(newElementType), otherTypes
 }
 
-// CreateDefinitions defines a named type for this OptionalType
-func (optional *OptionalType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (*NamedType, []*NamedType) {
+// CreateNamedTypes defines a named type for this OptionalType
+func (optional *OptionalType) CreateNamedTypes(name *TypeName, _ IdentifierFactory, _ bool) (*NamedType, []*NamedType) {
 	return NewNamedType(name, optional), nil
 }

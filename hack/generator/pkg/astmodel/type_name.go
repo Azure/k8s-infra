@@ -76,7 +76,7 @@ func (typeName *TypeName) CreateInternalDefinitions(_ *TypeName, _ IdentifierFac
 	return typeName, nil
 }
 
-// CreateDefinitions adds another name to this already-named type
-func (typeName *TypeName) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (*NamedType, []*NamedType) {
+// CreateNamedTypes adds another name to this already-named type
+func (typeName *TypeName) CreateNamedTypes(name *TypeName, _ IdentifierFactory, _ bool) (*NamedType, []*NamedType) {
 	return NewNamedType(name, typeName), nil
 }
