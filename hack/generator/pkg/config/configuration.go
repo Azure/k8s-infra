@@ -16,9 +16,9 @@ import (
 type Configuration struct {
 	// Base URL for the JSON schema to generate
 	SchemaURL string
-	// Filters used to control which types are included
+	// Filters used to control which types are exported
 	ExportFilters []*ExportFilter
-	// Filters used to control which types are included in the type graph during JSON schema parsing
+	// Filters used to control which types are created from the JSON schema
 	TypeFilters []*TypeFilter
 	// TypeTransformers used to remap types
 	TypeTransformers []*TypeTransformer
@@ -70,7 +70,7 @@ func (config *Configuration) Initialize() error {
 	return nil
 }
 
-// ShouldExport tests for whether a given struct should be exported
+// ShouldExport tests for whether a given type should be exported as Go code
 // Returns a result indicating whether export should occur as well as a reason for logging
 func (config *Configuration) ShouldExport(typeName *astmodel.TypeName) (result ShouldExportResult, because string) {
 	for _, f := range config.ExportFilters {
@@ -90,7 +90,7 @@ func (config *Configuration) ShouldExport(typeName *astmodel.TypeName) (result S
 	return Export, ""
 }
 
-// ShouldPrune tests for whether a given type should be processed or pruned
+// ShouldPrune tests for whether a given type should be extracted from the JSON schema or pruned
 func (config *Configuration) ShouldPrune(typeName *astmodel.TypeName) (result ShouldPruneResult, because string) {
 	for _, f := range config.TypeFilters {
 		if f.AppliesToType(typeName) {
@@ -105,7 +105,7 @@ func (config *Configuration) ShouldPrune(typeName *astmodel.TypeName) (result Sh
 		}
 	}
 
-	// By default we export all types
+	// By default we include all types
 	return Include, ""
 }
 
