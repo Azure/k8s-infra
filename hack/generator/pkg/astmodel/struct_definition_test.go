@@ -22,7 +22,7 @@ func Test_NewStructDefinition_GivenValues_InitializesFields(t *testing.T) {
 	knownAsField := createStringField("knownAs", "Commonly known as")
 
 	ref := NewTypeName(*NewLocalPackageReference(group, version), name)
-	definition := NewStructDefinition(ref, NewStructType(fullNameField, familyNameField, knownAsField), false)
+	definition := NewStructDefinition(ref, NewStructType().WithFields(fullNameField, familyNameField, knownAsField), false)
 
 	definitionGroup, definitionPackage, err := definition.Name().PackageReference.GroupAndPackage()
 	g.Expect(err).ShouldNot(HaveOccurred())
