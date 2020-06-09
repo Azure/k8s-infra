@@ -50,7 +50,6 @@ func NewCodeGenerator(configurationFile string) (*CodeGenerator, error) {
 
 // Generate produces the Go code corresponding to the configured JSON schema in the given output folder
 func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder string) error {
-
 	klog.V(0).Infof("Loading JSON schema %v", generator.configuration.SchemaURL)
 	schema, err := loadSchema(generator.configuration.SchemaURL)
 	if err != nil {
@@ -209,7 +208,9 @@ func groupResourcesByVersion(
 }
 
 // FilterDefinitions applies the configuration include/exclude filters to the generated definitions
-func (generator *CodeGenerator) FilterDefinitions(definitions []astmodel.TypeDefiner) ([]astmodel.TypeDefiner, error) {
+func (generator *CodeGenerator) FilterDefinitions(
+	definitions []astmodel.TypeDefiner) ([]astmodel.TypeDefiner, error) {
+
 	var newDefinitions []astmodel.TypeDefiner
 
 	for _, def := range definitions {
