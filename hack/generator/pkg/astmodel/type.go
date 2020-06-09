@@ -19,14 +19,15 @@ type Type interface {
 	// For example an Array of Persons references a Person
 	References(d *TypeName) bool
 
-	// AsType renders as a Go abstract syntax tree for a type
-	// (yes this says ast.Expr but that is what the Go 'ast' package uses for types)
-	AsType(codeGenerationContext *CodeGenerationContext) ast.Expr
-
 	// AsTypeReference renders a Go abstract syntax tree for referencing the type.
 	// For simple types this is just the type name. For named types, it's just the name of the type.
 	// For more complex types (e.g. maps) this is the appropriate declaration.
 	AsTypeReference(codeGenerationContext *CodeGenerationContext) ast.Expr
+
+	// AsTypeDeclarations renders as Go abstract syntax trees for each required declaration
+	// Returns the type declaration for this specific type, plus a slice of other supporting declarations
+	// (yes this says ast.Expr but that is what the Go 'ast' package uses for types)
+	AsTypeDeclarations(codeGenerationContext *CodeGenerationContext) (ast.Expr, []ast.Expr)
 
 	// Equals returns true if the passed type is the same as this one, false otherwise
 	Equals(t Type) bool

@@ -31,16 +31,20 @@ func (optional *OptionalType) AsTypeReference(codeGenerationContext *CodeGenerat
 	}
 }
 
-// AsType renders the Go abstract syntax tree for an optional type
-func (optional *OptionalType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
+// AsTypeDeclarations renders the Go abstract syntax tree for an optional type
+func (optional *OptionalType) AsTypeDeclarations(codeGenerationContext *CodeGenerationContext) (ast.Expr, []ast.Expr) {
+	elementType, otherElementTypes := optional.element.AsTypeDeclarations(codeGenerationContext)
+
 	// Special case interface{} as it shouldn't be a pointer
 	if optional.element == AnyType {
-		return optional.element.AsType(codeGenerationContext)
+		return elementType, otherElementTypes
 	}
 
-	return &ast.StarExpr{
-		X: optional.element.AsType(codeGenerationContext),
+	starType := &ast.StarExpr{
+		X: elementType,
 	}
+
+	return starType, otherElementTypes
 }
 
 // RequiredImports returns the imports required by the 'element' type

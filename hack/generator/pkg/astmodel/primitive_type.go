@@ -33,13 +33,13 @@ var AnyType = &PrimitiveType{"interface{}"}
 var _ Type = (*PrimitiveType)(nil)
 
 // AsTypeReference renders a Go abstract syntax tree for referencing the type.
-func (prim *PrimitiveType) AsTypeReference(codeGenerationContext *CodeGenerationContext) ast.Expr {
+func (prim *PrimitiveType) AsTypeReference(_ *CodeGenerationContext) ast.Expr {
 	return ast.NewIdent(prim.name)
 }
 
-// AsType implements Type for PrimitiveType returning an abstract syntax tree
-func (prim *PrimitiveType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
-	return ast.NewIdent(prim.name)
+// AsTypeDeclarations implements Type for PrimitiveType returning an abstract syntax tree
+func (prim *PrimitiveType) AsTypeDeclarations(_ *CodeGenerationContext) (ast.Expr, []ast.Expr) {
+	return ast.NewIdent(prim.name), nil
 }
 
 // RequiredImports returns a list of package required by this
@@ -48,7 +48,7 @@ func (prim *PrimitiveType) RequiredImports() []*PackageReference {
 }
 
 // References this type has to the given type
-func (prim *PrimitiveType) References(d *TypeName) bool {
+func (prim *PrimitiveType) References(_ *TypeName) bool {
 	// Primitive types dont have references
 	return false
 }

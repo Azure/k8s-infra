@@ -29,11 +29,13 @@ func (array *ArrayType) AsTypeReference(codeGenerationContext *CodeGenerationCon
 	}
 }
 
-// AsType renders the Go abstract syntax tree for an array type
-func (array *ArrayType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
-	return &ast.ArrayType{
-		Elt: array.element.AsType(codeGenerationContext),
+// AsTypeDeclarations renders the Go abstract syntax tree for an array type
+func (array *ArrayType) AsTypeDeclarations(codeGenerationContext *CodeGenerationContext) (ast.Expr, []ast.Expr) {
+	et, ot := array.element.AsTypeDeclarations(codeGenerationContext)
+	result := &ast.ArrayType{
+		Elt: et,
 	}
+	return result, ot
 }
 
 // RequiredImports returns a list of packages required by this

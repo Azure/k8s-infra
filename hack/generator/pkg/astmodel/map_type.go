@@ -28,7 +28,7 @@ func NewStringMapType(value Type) *MapType {
 // assert that we implemented Type correctly
 var _ Type = (*MapType)(nil)
 
-// AsTypeReference renders a Go abstract syntax tree for referencing the map
+// AsTypeReference renders a Go abstract syntax tree for referencing the map as an anonymous type
 func (m *MapType) AsTypeReference(codeGenerationContext *CodeGenerationContext) ast.Expr {
 	return &ast.MapType{
 		Key:   m.key.AsTypeReference(codeGenerationContext),
@@ -36,12 +36,17 @@ func (m *MapType) AsTypeReference(codeGenerationContext *CodeGenerationContext) 
 	}
 }
 
-// AsType implements Type for MapType to create the abstract syntax tree for a map
-func (m *MapType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
-	return &ast.MapType{
-		Key:   m.key.AsType(codeGenerationContext),
-		Value: m.value.AsType(codeGenerationContext),
+// AsTypeDeclarations implements Type for MapType to create the abstract syntax tree for a map
+func (m *MapType) AsTypeDeclarations(codeGenerationContext *CodeGenerationContext) (ast.Expr, []ast.Expr) {
+	keyType, otherKeyTypes := m.key.AsTypeDeclarations(codeGenerationContext)
+	valueType, otherValueTypes := m.value.AsTypeDeclarations(codeGenerationContext)
+
+	mapType := &ast.MapType{
+		Key:   keyType,
+		Value: valueType,
 	}
+
+	return mapType, append(otherKeyTypes, otherValueTypes...)
 }
 
 // RequiredImports returns a list of packages required by this
