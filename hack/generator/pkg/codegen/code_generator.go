@@ -26,10 +26,12 @@ import (
 	"k8s.io/klog/v2"
 )
 
+// CodeGenerator is a generator of code
 type CodeGenerator struct {
 	configuration *Configuration
 }
 
+// NewCodeGenerator produces a new Generator with the given configuration
 func NewCodeGenerator(configurationFile string) (*CodeGenerator, error) {
 	config, err := loadConfiguration(configurationFile)
 	if err != nil {
@@ -46,6 +48,7 @@ func NewCodeGenerator(configurationFile string) (*CodeGenerator, error) {
 	return result, nil
 }
 
+// Generate produces the Go code corresponding to the configured JSON schema in the given output folder
 func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder string) error {
 
 	klog.V(0).Infof("Loading JSON schema %v", generator.configuration.SchemaURL)
@@ -115,7 +118,9 @@ func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder strin
 	return nil
 }
 
-func (generator *CodeGenerator) MarkLatestResourceVersionsForStorage(pkgs []*astmodel.PackageDefinition) ([]*astmodel.PackageDefinition, error) {
+// MarkLatestResourceVersionsForStorage marks the latest version of each resource as the storage version
+func (generator *CodeGenerator) MarkLatestResourceVersionsForStorage(
+	pkgs []*astmodel.PackageDefinition) ([]*astmodel.PackageDefinition, error) {
 
 	var result []*astmodel.PackageDefinition
 
@@ -128,6 +133,7 @@ func (generator *CodeGenerator) MarkLatestResourceVersionsForStorage(pkgs []*ast
 
 		resultPkg := astmodel.NewPackageDefinition(pkg.GroupName, pkg.PackageName)
 		for _, def := range pkg.Definitions() {
+			// see if it is a resource (only struct definitions can be resources)
 			if structDef, ok := def.(*astmodel.StructDefinition); ok && structDef.IsResource() {
 
 				unversionedName, err := getUnversionedName(structDef.TypeName)
@@ -139,11 +145,16 @@ func (generator *CodeGenerator) MarkLatestResourceVersionsForStorage(pkgs []*ast
 				allVersionsOfResource := resourceLookup[unversionedName]
 				latestVersionOfResource := allVersionsOfResource[len(allVersionsOfResource)-1]
 
-				isLatestVersion := structDef.Name().PackageReference.PackagePath() == latestVersionOfResource.Name().PackageReference.PackagePath()
+				thisPackagePath := structDef.Name().PackageReference.PackagePath()
+				latestPackagePath := latestVersionOfResource.Name().PackageReference.PackagePath()
+
+				// mark as storage version if it's the latest version
+				isLatestVersion := thisPackagePath == latestPackagePath
 				structDef = structDef.WithIsStorageVersion(isLatestVersion)
 
 				resultPkg.AddDefinition(structDef)
 			} else {
+				// otherwise simply add it
 				resultPkg.AddDefinition(def)
 			}
 		}
@@ -155,7 +166,6 @@ func (generator *CodeGenerator) MarkLatestResourceVersionsForStorage(pkgs []*ast
 }
 
 func getUnversionedName(name *astmodel.TypeName) (unversionedName, error) {
-
 	group, _, err := name.PackageReference.GroupAndPackage()
 	if err != nil {
 		return unversionedName{}, err
@@ -169,7 +179,9 @@ type unversionedName struct {
 	name  string
 }
 
-func groupResourcesByVersion(pkgs []*astmodel.PackageDefinition) (map[unversionedName][]*astmodel.StructDefinition, error) {
+func groupResourcesByVersion(
+	pkgs []*astmodel.PackageDefinition) (map[unversionedName][]*astmodel.StructDefinition, error) {
+
 	result := make(map[unversionedName][]*astmodel.StructDefinition)
 
 	for _, pkg := range pkgs {
@@ -181,11 +193,7 @@ func groupResourcesByVersion(pkgs []*astmodel.PackageDefinition) (map[unversione
 					return nil, fmt.Errorf("Unable to extract unversioned name in groupResources: %w", err)
 				}
 
-				if list, ok := result[name]; ok {
-					result[name] = append(list, structDef)
-				} else {
-					result[name] = []*astmodel.StructDefinition{structDef}
-				}
+				result[name] = append(result[name], structDef)
 			}
 		}
 	}
@@ -200,6 +208,7 @@ func groupResourcesByVersion(pkgs []*astmodel.PackageDefinition) (map[unversione
 	return result, nil
 }
 
+// FilterDefinitions applies the configuration include/exclude filters to the generated definitions
 func (generator *CodeGenerator) FilterDefinitions(definitions []astmodel.TypeDefiner) ([]astmodel.TypeDefiner, error) {
 	var newDefinitions []astmodel.TypeDefiner
 
@@ -230,7 +239,10 @@ func (generator *CodeGenerator) FilterDefinitions(definitions []astmodel.TypeDef
 	return newDefinitions, nil
 }
 
-func (generator *CodeGenerator) CreatePackagesForDefinitions(definitions []astmodel.TypeDefiner) ([]*astmodel.PackageDefinition, error) {
+// CreatePackagesForDefinitions groups type definitions into packages
+func (generator *CodeGenerator) CreatePackagesForDefinitions(
+	definitions []astmodel.TypeDefiner) ([]*astmodel.PackageDefinition, error) {
+
 	packages := make(map[astmodel.PackageReference]*astmodel.PackageDefinition)
 	for _, def := range definitions {
 		defName := def.Name()
