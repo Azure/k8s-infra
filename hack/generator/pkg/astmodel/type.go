@@ -11,6 +11,7 @@ import (
 
 // Type represents something that is a Go type
 type Type interface {
+
 	// RequiredImports returns a list of packages required by this type
 	RequiredImports() []*PackageReference
 
@@ -39,4 +40,7 @@ type Type interface {
 	// CreateInternalDefinitions creates definitions for nested types where needed (e.g. nested anonymous enums, structs),
 	// and returns the new, updated type to use in this type’s place.
 	CreateInternalDefinitions(nameHint *TypeName, idFactory IdentifierFactory) (Type, []*NamedType)
+
+	// Visit allows a function to walk the tree of all the types nested within a type
+	Visit(visitor func(t Type))
 }

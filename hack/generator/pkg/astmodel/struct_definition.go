@@ -18,36 +18,6 @@ type StructDefinition struct {
 	description *string
 }
 
-// IsResource indicates if this is a ARM resource and should be a kubebuilder root
-func (definition *StructDefinition) IsResource() bool {
-	return definition.isResource
-}
-
-// Ensure StructDefinition implements NamedType interface correctly
-var _ NamedType = (*StructDefinition)(nil)
-
-// Name provides the struct name
-func (definition *StructDefinition) Name() *TypeName {
-	return definition.TypeName
-}
-
-// Type provides the type of the struct
-func (definition *StructDefinition) Type() Type {
-	return definition.StructType
-}
-
-// NewStructDefinition is a factory method for creating a new StructDefinition
-func NewStructDefinition(name *TypeName, structType *StructType, isResource bool) *StructDefinition {
-	return &StructDefinition{name, structType, isResource, nil}
-}
-
-// WithDescription adds a description (doc-comment) to the struct
-func (definition *StructDefinition) WithDescription(description *string) NamedType {
-	result := *definition
-	result.description = description
-	return &result
-}
-
 // AsDeclarations generates an AST node representing this struct definition
 func (definition *StructDefinition) AsDeclarations(codeGenerationContext *CodeGenerationContext) []ast.Decl {
 	var identifier *ast.Ident

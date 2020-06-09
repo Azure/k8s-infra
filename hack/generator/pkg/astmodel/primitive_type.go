@@ -77,3 +77,7 @@ func (prim *PrimitiveType) CreateNamedTypes(name *TypeName, _ IdentifierFactory,
 func (prim *PrimitiveType) Name() string {
 	return prim.name
 }
+
+func (prim *PrimitiveType) Visit(visitor func(t Type)) {
+	visitor(prim)
+}

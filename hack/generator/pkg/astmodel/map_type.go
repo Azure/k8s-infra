@@ -81,3 +81,10 @@ func (m *MapType) CreateInternalDefinitions(name *TypeName, idFactory Identifier
 func (m *MapType) CreateNamedTypes(name *TypeName, _ IdentifierFactory, _ bool) (*NamedType, []*NamedType) {
 	return NewNamedType(name, m), nil
 }
+
+// Visit the map type, our key type, and our value type
+func (m *MapType) Visit(visitor func(t Type)) {
+	visitor(m)
+	m.key.Visit(visitor)
+	m.value.Visit(visitor)
+}

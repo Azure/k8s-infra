@@ -50,7 +50,7 @@ func (namedType *NamedType) WithDescription(description *string) *NamedType {
 	}
 }
 
-// AsDeclarations generates the actual Go declarations
+// AsDeclarations generates the actual Go declaration for the type
 func (namedType *NamedType) AsDeclarations(codeGenerationContext *CodeGenerationContext) []ast.Decl {
 	var docComments *ast.CommentGroup
 	if namedType.description != nil {
@@ -92,7 +92,7 @@ func (namedType *NamedType) References(name *TypeName) bool {
 }
 
 // AsTypeReference renders a Go abstract syntax tree for referencing the type.
-func (namedType *NamedType) AsTypeReference(codeGenerationContext *CodeGenerationContext) ast.Expr {
+func (namedType *NamedType) AsTypeReference(_ *CodeGenerationContext) ast.Expr {
 	return ast.NewIdent(namedType.name.name)
 }
 
@@ -110,6 +110,11 @@ func (namedType *NamedType) CreateInternalDefinitions(nameHint *TypeName, idFact
 	return namedType.underlyingType.CreateInternalDefinitions(nameHint, idFactory)
 }
 
-func (namedType *NamedType) CreateDefinitions(name *TypeName, idFactory IdentifierFactory, isResource bool) (*NamedType, []*NamedType) {
-	return namedType.underlyingType.CreateDefinitions(name, idFactory, isResource)
+func (namedType *NamedType) CreateNamedTypes(name *TypeName, idFactory IdentifierFactory, isResource bool) (*NamedType, []*NamedType) {
+	return namedType.underlyingType.CreateNamedTypes(name, idFactory, isResource)
+}
+
+func (namedType *NamedType) Visit(visitor func(t Type)) {
+	visitor(namedType)
+	namedType.underlyingType.Visit(visitor)
 }

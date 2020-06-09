@@ -69,3 +69,9 @@ func (array *ArrayType) CreateInternalDefinitions(name *TypeName, idFactory Iden
 func (array *ArrayType) CreateNamedTypes(name *TypeName, _ IdentifierFactory, _ bool) (*NamedType, []*NamedType) {
 	return NewNamedType(name, array), nil
 }
+
+// Visit the array type and then our nested type
+func (array *ArrayType) Visit(visitor func(t Type)) {
+	visitor(array)
+	array.element.Visit(visitor)
+}

@@ -76,3 +76,8 @@ func (optional *OptionalType) CreateInternalDefinitions(name *TypeName, idFactor
 func (optional *OptionalType) CreateNamedTypes(name *TypeName, _ IdentifierFactory, _ bool) (*NamedType, []*NamedType) {
 	return NewNamedType(name, optional), nil
 }
+
+func (optional *OptionalType) Visit(visitor func(t Type)) {
+	visitor(optional)
+	optional.element.Visit(visitor)
+}

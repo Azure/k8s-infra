@@ -39,7 +39,7 @@ type (
 
 	// A SchemaScanner is used to scan a JSON Schema extracting and collecting type definitions
 	SchemaScanner struct {
-		definitions  map[astmodel.TypeName]astmodel.NamedType
+		definitions  map[astmodel.TypeName]*astmodel.NamedType
 		TypeHandlers map[SchemaType]TypeHandler
 		Filters      []string
 		idFactory    astmodel.IdentifierFactory
@@ -47,13 +47,13 @@ type (
 )
 
 // findTypeDefinition looks to see if we have seen the specified definition before, returning its definition if we have.
-func (scanner *SchemaScanner) findTypeDefinition(name *astmodel.TypeName) (astmodel.NamedType, bool) {
+func (scanner *SchemaScanner) findTypeDefinition(name *astmodel.TypeName) (*astmodel.NamedType, bool) {
 	result, ok := scanner.definitions[*name]
 	return result, ok
 }
 
 // addTypeDefinition adds a type definition to emit later
-func (scanner *SchemaScanner) addTypeDefinition(def astmodel.NamedType) {
+func (scanner *SchemaScanner) addTypeDefinition(def *astmodel.NamedType) {
 	scanner.definitions[*def.Name()] = def
 }
 
@@ -95,7 +95,7 @@ func (use *UnknownSchemaError) Error() string {
 // NewSchemaScanner constructs a new scanner, ready for use
 func NewSchemaScanner(idFactory astmodel.IdentifierFactory) *SchemaScanner {
 	return &SchemaScanner{
-		definitions:  make(map[astmodel.TypeName]astmodel.NamedType),
+		definitions:  make(map[astmodel.TypeName]*astmodel.NamedType),
 		TypeHandlers: DefaultTypeHandlers(),
 		idFactory:    idFactory,
 	}
@@ -152,7 +152,7 @@ func (scanner *SchemaScanner) AddFilters(filters []string) {
 // 							- ARM specific resources. I'm not 100% sure why...
 //
 // 		allOf acts like composition which composites each schema from the child oneOf with the base reference from allOf.
-func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema *gojsonschema.SubSchema, opts ...BuilderOption) ([]astmodel.NamedType, error) {
+func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema *gojsonschema.SubSchema, opts ...BuilderOption) ([]*astmodel.NamedType, error) {
 	ctx, span := tab.StartSpan(ctx, "GenerateDefinitions")
 	defer span.End()
 
@@ -163,21 +163,21 @@ func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema *g
 	}
 
 	// get initial topic from ID and Title:
-	url := schema.ID.GetUrl()
+	schemaUrl := schema.ID.GetUrl()
 	if schema.Title == nil {
-		return nil, fmt.Errorf("Given schema has no Title")
+		return nil, fmt.Errorf("given schema has no Title")
 	}
 
 	rootName := *schema.Title
 
-	rootGroup, err := groupOf(url)
+	rootGroup, err := groupOf(schemaUrl)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to extract group for schema: %w", err)
+		return nil, fmt.Errorf("unable to extract group for schema: %w", err)
 	}
 
-	rootVersion, err := versionOf(url)
+	rootVersion, err := versionOf(schemaUrl)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to extract version for schema: %w", err)
+		return nil, fmt.Errorf("unable to extract version for schema: %w", err)
 	}
 
 	rootPackage := astmodel.NewLocalPackageReference(
@@ -186,13 +186,13 @@ func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema *g
 
 	rootTypeName := astmodel.NewTypeName(*rootPackage, rootName)
 
-	_, err = generateDefinitionsFor(ctx, scanner, rootTypeName, false, url, schema)
+	_, err = generateDefinitionsFor(ctx, scanner, rootTypeName, false, schemaUrl, schema)
 	if err != nil {
 		return nil, err
 	}
 
 	// produce the results
-	var defs []astmodel.NamedType
+	var defs []*astmodel.NamedType
 	for _, def := range scanner.definitions {
 		defs = append(defs, def)
 	}
@@ -354,7 +354,7 @@ func getFields(ctx context.Context, scanner *SchemaScanner, schema *gojsonschema
 			return nil, err
 		}
 
-		additionalPropsField := astmodel.NewFieldDefinition(astmodel.FieldName("additionalProperties"), "additionalProperties", astmodel.NewStringMapType(additionalPropsType))
+		additionalPropsField := astmodel.NewFieldDefinition("additionalProperties", "additionalProperties", astmodel.NewStringMapType(additionalPropsType))
 		fields = append(fields, additionalPropsField)
 	}
 
@@ -365,30 +365,30 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 	ctx, span := tab.StartSpan(ctx, "refHandler")
 	defer span.End()
 
-	url := schema.Ref.GetUrl()
+	refUrl := schema.Ref.GetUrl()
 
-	if url.Fragment == expressionFragment {
+	if refUrl.Fragment == expressionFragment {
 		// skip expressions
 		return nil, nil
 	}
 
 	// make a new topic based on the ref URL
-	name, err := objectTypeOf(url)
+	name, err := objectTypeOf(refUrl)
 	if err != nil {
 		return nil, err
 	}
 
-	group, err := groupOf(url)
+	group, err := groupOf(refUrl)
 	if err != nil {
 		return nil, err
 	}
 
-	version, err := versionOf(url)
+	version, err := versionOf(refUrl)
 	if err != nil {
 		return nil, err
 	}
 
-	isResource := isResource(url)
+	isResource := isResource(refUrl)
 
 	// produce a usable name:
 	typeName := astmodel.NewTypeName(
@@ -397,7 +397,7 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 			scanner.idFactory.CreatePackageNameFromVersion(version)),
 		scanner.idFactory.CreateIdentifier(name, astmodel.Exported))
 
-	return generateDefinitionsFor(ctx, scanner, typeName, isResource, url, schema.RefSchema)
+	return generateDefinitionsFor(ctx, scanner, typeName, isResource, refUrl, schema.RefSchema)
 }
 
 func generateDefinitionsFor(ctx context.Context, scanner *SchemaScanner, typeName *astmodel.TypeName, isResource bool, url *url.URL, schema *gojsonschema.SubSchema) (astmodel.Type, error) {
@@ -423,7 +423,7 @@ func generateDefinitionsFor(ctx context.Context, scanner *SchemaScanner, typeNam
 	}
 
 	// Give the type a name:
-	definer, otherDefs := result.CreateDefinitions(typeName, scanner.idFactory, isResource)
+	definer, otherDefs := result.CreateNamedTypes(typeName, scanner.idFactory, isResource)
 
 	description := "Generated from: " + url.String()
 	definer = definer.WithDescription(&description)
@@ -705,7 +705,7 @@ func groupOf(url *url.URL) (string, error) {
 
 	file := pathParts[len(pathParts)-1]
 	if !strings.HasSuffix(file, ".json") {
-		return "", fmt.Errorf("Unexpected URL format (doesn't point to .json file)")
+		return "", fmt.Errorf("unexpected URL format (doesn't point to .json file)")
 	}
 
 	return strings.TrimSuffix(file, ".json"), nil
