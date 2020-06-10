@@ -21,7 +21,7 @@ type Configuration struct {
 	ExportFilters []*ExportFilter
 	// Filters used to control which types are created from the JSON schema
 	TypeFilters []*TypeFilter
-	// TypeTransformers used to remap types
+	// Transformers used to remap types
 	TypeTransformers []*TypeTransformer
 }
 

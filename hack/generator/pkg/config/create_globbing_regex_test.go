@@ -17,10 +17,10 @@ func Test_CreateGlobbingRegex_ReturnsExpectedRegex(t *testing.T) {
 		glob  string
 		regex string
 	}{
-		{"*preview", "^.*preview$"},
-		{"*.bak", "^.*\\.bak$"},
-		{"2014*", "^2014.*$"},
-		{"2014-??-??", "^2014-..-..$"},
+		{"*preview", "(?i)^.*preview$"},
+		{"*.bak", "(?i)^.*\\.bak$"},
+		{"2014*", "(?i)^2014.*$"},
+		{"2014-??-??", "(?i)^2014-..-..$"},
 	}
 
 	for _, c := range cases {

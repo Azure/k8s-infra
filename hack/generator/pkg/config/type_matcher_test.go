@@ -81,3 +81,19 @@ func Test_FilterByMultipleConditions_CorrectlySelectsStructs(t *testing.T) {
 	// Name not selected by filter
 	g.Expect(filter.AppliesToType(student2019)).To(BeFalse())
 }
+
+func Test_FiltersAreCaseInsensitive(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	filter := config.TypeMatcher{Group: "ROLE", Name: "TuToR"}
+	err := filter.Initialize()
+	g.Expect(err).To(BeNil())
+
+	// Tutor
+	g.Expect(filter.AppliesToType(tutor2019)).To(BeTrue())
+
+	// Others should not be selected
+	g.Expect(filter.AppliesToType(person2020)).To(BeFalse())
+	g.Expect(filter.AppliesToType(post2019)).To(BeFalse())
+	g.Expect(filter.AppliesToType(student2019)).To(BeFalse())
+}

@@ -85,6 +85,7 @@ func createGlobbingRegex(globbing string) *regexp.Regexp {
 	g := regexp.QuoteMeta(globbing)
 	g = strings.ReplaceAll(g, "\\*", ".*")
 	g = strings.ReplaceAll(g, "\\?", ".")
-	g = "^" + g + "$"
+	// (?i) forces case insensitive matches
+	g = "(?i)^" + g + "$"
 	return regexp.MustCompile(g)
 }

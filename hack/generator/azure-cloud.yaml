@@ -1,8 +1,8 @@
 schemaurl: https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json
 typefilters:
   - action: prune
-    group: definitions   # Note that this is case sensitive and should match the expected golang type's package case (lowercase)
-    name: Expression     # Note that this is case sensitive and should match the expected golang type's case (upper camel case)
+    group: definitions
+    name: Expression
     because: expression is an ARM template construct which doesn't belong in CRDs
 exportfilters:
   - action: include
@@ -23,8 +23,8 @@ exportfilters:
     name: ResourceBase
     because: this type is not used
 typetransformers:
-  - group: definitions        # Note that this is case sensitive and should match the expected golang type's package case (lowercase)
-    name: NumberOrExpression  # Note that this is case sensitive and should match the expected golang type's case (upper camel case)
+  - group: definitions
+    name: NumberOrExpression
     because: NumberOrExpression is an ARM template artifact that doesn't make sense in CRDs
     target:
       name: float
