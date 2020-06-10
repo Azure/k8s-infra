@@ -18,17 +18,18 @@ import (
 	"strings"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
+	"github.com/Azure/k8s-infra/hack/generator/pkg/config"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/jsonast"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v3"
 
-	"github.com/hashicorp/go-multierror"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
 )
 
 // CodeGenerator is a generator of code
 type CodeGenerator struct {
-	configuration *Configuration
+	configuration *config.Configuration
 }
 
 // NewCodeGenerator produces a new Generator with the given configuration
@@ -38,7 +39,7 @@ func NewCodeGenerator(configurationFile string) (*CodeGenerator, error) {
 		return nil, fmt.Errorf("failed to load configuration file '%v' (%w)", configurationFile, err)
 	}
 
-	err = config.Validate()
+	err = config.Initialize()
 	if err != nil {
 		return nil, fmt.Errorf("configuration loaded from '%v' is invalid (%w)", configurationFile, err)
 	}
@@ -62,7 +63,7 @@ func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder strin
 		return fmt.Errorf("error cleaning output folder '%v' (%w)", outputFolder, err)
 	}
 
-	scanner := jsonast.NewSchemaScanner(astmodel.NewIdentifierFactory())
+	scanner := jsonast.NewSchemaScanner(astmodel.NewIdentifierFactory(), generator.configuration)
 
 	klog.V(0).Infof("Walking JSON schema")
 
@@ -215,22 +216,23 @@ func (generator *CodeGenerator) FilterDefinitions(
 
 	for _, def := range definitions {
 
-		shouldExport, reason := generator.configuration.ShouldExport(def)
 		defName := def.Name()
+		shouldExport, reason := generator.configuration.ShouldExport(defName)
+
 		groupName, pkgName, err := defName.PackageReference.GroupAndPackage()
 		if err != nil {
 			return nil, err
 		}
 
 		switch shouldExport {
-		case Skip:
-			klog.V(2).Infof("Skipping %s/%s because %s", groupName, pkgName, reason)
+		case config.Skip:
+			klog.V(2).Infof("Skipping %s because %s", defName, reason)
 
-		case Export:
+		case config.Export:
 			if reason == "" {
-				klog.V(3).Infof("Exporting %s/%s", groupName, pkgName)
+				klog.V(3).Infof("Exporting %s", defName)
 			} else {
-				klog.V(2).Infof("Exporting %s/%s because %s", groupName, pkgName, reason)
+				klog.V(2).Infof("Exporting %s because %s", defName, reason)
 			}
 
 			newDefinitions = append(newDefinitions, def)
@@ -270,13 +272,13 @@ func (generator *CodeGenerator) CreatePackagesForDefinitions(
 	return pkgs, nil
 }
 
-func loadConfiguration(configurationFile string) (*Configuration, error) {
+func loadConfiguration(configurationFile string) (*config.Configuration, error) {
 	data, err := ioutil.ReadFile(configurationFile)
 	if err != nil {
 		return nil, err
 	}
 
-	result := NewConfiguration()
+	result := config.NewConfiguration()
 
 	err = yaml.Unmarshal(data, result)
 	if err != nil {
@@ -304,29 +306,29 @@ func deleteGeneratedCodeFromFolder(outputFolder string) error {
 		return fmt.Errorf("error globbing files with pattern '%s' (%w)", globPattern, err)
 	}
 
-	var result *multierror.Error
+	var errs []error
 
 	for _, file := range files {
 		isGenerated, err := isFileGenerated(file)
 
 		if err != nil {
-			result = multierror.Append(result, fmt.Errorf("error determining if file was generated (%w)", err))
+			errs = append(errs, fmt.Errorf("error determining if file was generated (%w)", err))
 		}
 
 		if isGenerated {
 			err := os.Remove(file)
 			if err != nil {
-				result = multierror.Append(result, fmt.Errorf("error removing file '%v' (%w)", file, err))
+				errs = append(errs, fmt.Errorf("error removing file '%v' (%w)", file, err))
 			}
 		}
 	}
 
 	err = deleteEmptyDirectories(outputFolder)
 	if err != nil {
-		result = multierror.Append(result, err)
+		errs = append(errs, err)
 	}
 
-	return result.ErrorOrNil()
+	return kerrors.NewAggregate(errs)
 }
 
 func isFileGenerated(filename string) (bool, error) {
@@ -393,23 +395,23 @@ func deleteEmptyDirectories(path string) error {
 	}
 	sort.Slice(dirs, sortFunction)
 
-	var result *multierror.Error
+	var errs []error
 
 	// Now clean things up
 	for _, dir := range dirs {
 		files, err := ioutil.ReadDir(dir)
 		if err != nil {
-			result = multierror.Append(result, fmt.Errorf("error reading directory '%v' (%w)", dir, err))
+			errs = append(errs, fmt.Errorf("error reading directory '%v' (%w)", dir, err))
 		}
 
 		if len(files) == 0 {
 			// Directory is empty now, we can delete it
 			err := os.Remove(dir)
 			if err != nil {
-				result = multierror.Append(result, fmt.Errorf("error removing dir '%v' (%w)", dir, err))
+				errs = append(errs, fmt.Errorf("error removing dir '%v' (%w)", dir, err))
 			}
 		}
 	}
 
-	return result.ErrorOrNil()
+	return kerrors.NewAggregate(errs)
 }
