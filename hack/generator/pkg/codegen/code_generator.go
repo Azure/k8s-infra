@@ -215,14 +215,8 @@ func (generator *CodeGenerator) FilterDefinitions(
 	var newDefinitions []astmodel.TypeDefiner
 
 	for _, def := range definitions {
-
 		defName := def.Name()
 		shouldExport, reason := generator.configuration.ShouldExport(defName)
-
-		groupName, pkgName, err := defName.PackageReference.GroupAndPackage()
-		if err != nil {
-			return nil, err
-		}
 
 		switch shouldExport {
 		case config.Skip:
