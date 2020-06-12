@@ -17,6 +17,10 @@ all: build test
 manifests: $(CONTROLLER_GEN)
 	$(Q) $(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./apis/..." output:crd:artifacts:config=config/crd/bases
 
+.PHONY: gen-arm
+gen-arm: build ; $(info $(M) running k8sinfra-gen gen…) @ ## Running gen
+	$(Q) ./bin/$(APP) gen azure-arm.yaml
+
 .PHONY: build
 build: tidy fmt vet lint ; $(info $(M) buiding ./bin/$(APP))
 	$(Q) $(GO)  build -ldflags "-X $(PACKAGE)/cmd.GitCommit=$(VERSION)" -o ./bin/$(APP)
