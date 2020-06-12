@@ -6,7 +6,11 @@ require (
 	github.com/bmatcuk/doublestar v1.3.1
 	github.com/devigned/tab v0.1.1
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/go-openapi/jsonpointer v0.19.3
+	github.com/go-openapi/jsonreference v0.19.3 // indirect
+	github.com/go-openapi/spec v0.19.3
 	github.com/gobuffalo/flect v0.2.1
+	github.com/mailru/easyjson v0.7.0 // indirect
 	github.com/onsi/gomega v1.10.1
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/pkg/errors v0.9.1
@@ -25,6 +29,7 @@ require (
 	gopkg.in/ini.v1 v1.51.1 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 	k8s.io/apimachinery v0.18.4
+	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.0.0
 )
 
