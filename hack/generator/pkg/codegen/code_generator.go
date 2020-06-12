@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -52,13 +53,13 @@ func NewCodeGenerator(configurationFile string) (*CodeGenerator, error) {
 // Generate produces the Go code corresponding to the configured JSON schema in the given output folder
 func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder string) error {
 	klog.V(0).Infof("Loading JSON schema %v", generator.configuration.SchemaURL)
-	schema, err := loadSchema(generator.configuration.SchemaURL)
+	schema, err := loadSchema(ctx, generator.configuration.SchemaURL)
 	if err != nil {
 		return fmt.Errorf("error loading schema from '%v' (%w)", generator.configuration.SchemaURL, err)
 	}
 
 	klog.V(0).Infof("Cleaning output folder '%v'", outputFolder)
-	err = deleteGeneratedCodeFromFolder(outputFolder)
+	err = deleteGeneratedCodeFromFolder(ctx, outputFolder)
 	if err != nil {
 		return fmt.Errorf("error cleaning output folder '%v' (%w)", outputFolder, err)
 	}
@@ -93,6 +94,9 @@ func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder strin
 	// emit each package
 	klog.V(0).Infof("Writing output files into %v", outputFolder)
 	for _, pkg := range packages {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 
 		// create directory if not already there
 		outputDir := filepath.Join(outputFolder, pkg.GroupName, pkg.PackageName)
@@ -282,9 +286,24 @@ func loadConfiguration(configurationFile string) (*config.Configuration, error) 
 	return result, nil
 }
 
-func loadSchema(source string) (*gojsonschema.Schema, error) {
+type cancellableFS struct {
+	ctx context.Context
+}
+
+func (fs *cancellableFS) Open(source string) (http.File, error) {
+	if fs.ctx.Err() != nil {
+		return nil, fs.ctx.Err()
+	}
+
+	return os.Open(source)
+}
+
+func loadSchema(ctx context.Context, source string) (*gojsonschema.Schema, error) {
 	sl := gojsonschema.NewSchemaLoader()
-	schema, err := sl.Compile(gojsonschema.NewReferenceLoader(source))
+	// note that we "configure" the DefaultClient in gen.go to cancel HTTP calls
+	// the cancellableFS here only handles actual FS calls
+	loader := gojsonschema.NewReferenceLoaderFileSystem(source, &cancellableFS{ctx})
+	schema, err := sl.Compile(loader)
 	if err != nil {
 		return nil, fmt.Errorf("error loading schema from '%v' (%w)", source, err)
 	}
@@ -292,7 +311,7 @@ func loadSchema(source string) (*gojsonschema.Schema, error) {
 	return schema, nil
 }
 
-func deleteGeneratedCodeFromFolder(outputFolder string) error {
+func deleteGeneratedCodeFromFolder(ctx context.Context, outputFolder string) error {
 	globPattern := path.Join(outputFolder, "**", "*", "*"+astmodel.CodeGeneratedFileSuffix) + "*"
 
 	files, err := filepath.Glob(globPattern)
@@ -303,6 +322,10 @@ func deleteGeneratedCodeFromFolder(outputFolder string) error {
 	var errs []error
 
 	for _, file := range files {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		isGenerated, err := isFileGenerated(file)
 
 		if err != nil {
@@ -317,7 +340,7 @@ func deleteGeneratedCodeFromFolder(outputFolder string) error {
 		}
 	}
 
-	err = deleteEmptyDirectories(outputFolder)
+	err = deleteEmptyDirectories(ctx, outputFolder)
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -355,7 +378,7 @@ func isFileGenerated(filename string) (bool, error) {
 	return false, nil
 }
 
-func deleteEmptyDirectories(path string) error {
+func deleteEmptyDirectories(ctx context.Context, path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return nil
 	}
@@ -367,6 +390,10 @@ func deleteEmptyDirectories(path string) error {
 	walkFunction := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
+		}
+
+		if ctx.Err() != nil {
+			return ctx.Err()
 		}
 
 		if info.IsDir() {
@@ -393,6 +420,10 @@ func deleteEmptyDirectories(path string) error {
 
 	// Now clean things up
 	for _, dir := range dirs {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		files, err := ioutil.ReadDir(dir)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("error reading directory '%v' (%w)", dir, err))
