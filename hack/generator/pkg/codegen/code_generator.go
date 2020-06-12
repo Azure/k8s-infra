@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/k8s-infra/hack/generator/pkg/config"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/jsonast"
 	"github.com/xeipuuv/gojsonreference"
+	"github.com/bmatcuk/doublestar"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v3"
 
@@ -359,9 +360,10 @@ func loadSchema(ctx context.Context, source string) (*gojsonschema.Schema, error
 }
 
 func deleteGeneratedCodeFromFolder(ctx context.Context, outputFolder string) error {
-	globPattern := path.Join(outputFolder, "**", "*", "*"+astmodel.CodeGeneratedFileSuffix) + "*"
+	// We use doublestar here rather than filepath.Glob because filepath.Glob doesn't support **
+	globPattern := path.Join(outputFolder, "**", "*", "*"+astmodel.CodeGeneratedFileSuffix)
 
-	files, err := filepath.Glob(globPattern)
+	files, err := doublestar.Glob(globPattern)
 	if err != nil {
 		return fmt.Errorf("error globbing files with pattern '%s' (%w)", globPattern, err)
 	}
