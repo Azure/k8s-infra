@@ -286,11 +286,13 @@ func loadConfiguration(configurationFile string) (*config.Configuration, error) 
 	return result, nil
 }
 
-type cancellableFilesystem struct {
+type cancellableFileSystem struct {
 	ctx context.Context
 }
 
-func (fs *cancellableFilesystem) Open(source string) (http.File, error) {
+var _ http.FileSystem = &cancellableFileSystem{} // interface assertion
+
+func (fs *cancellableFileSystem) Open(source string) (http.File, error) {
 	if fs.ctx.Err() != nil { // check for cancellation
 		return nil, fs.ctx.Err()
 	}
@@ -302,7 +304,7 @@ func loadSchema(ctx context.Context, source string) (*gojsonschema.Schema, error
 	sl := gojsonschema.NewSchemaLoader()
 	// note that we "configure" the DefaultClient in gen.go to cancel HTTP calls
 	// the cancellableFS here only handles actual FS calls
-	loader := gojsonschema.NewReferenceLoaderFileSystem(source, &cancellableFilesystem{ctx})
+	loader := gojsonschema.NewReferenceLoaderFileSystem(source, &cancellableFileSystem{ctx})
 	schema, err := sl.Compile(loader)
 	if err != nil {
 		return nil, fmt.Errorf("error loading schema from '%v' (%w)", source, err)
