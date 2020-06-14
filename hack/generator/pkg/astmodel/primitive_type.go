@@ -37,9 +37,10 @@ func (prim *PrimitiveType) AsTypeAst(_ *CodeGenerationContext) ast.Expr {
 	return ast.NewIdent(prim.name)
 }
 
-// AsTypeDeclarations implements Type for PrimitiveType returning an abstract syntax tree
-func (prim *PrimitiveType) AsTypeDeclarations(_ *CodeGenerationContext) (ast.Expr, []ast.Expr) {
-	return ast.NewIdent(prim.name), nil
+// AsDeclarationAsts implements Type for PrimitiveType returning an abstract syntax tree
+// Primitive types don't need any separate type declarations
+func (prim *PrimitiveType) AsDeclarationAsts(_ string, _ *CodeGenerationContext) []ast.Decl {
+	return nil
 }
 
 // RequiredImports returns a list of package required by this

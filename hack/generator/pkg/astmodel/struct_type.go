@@ -66,6 +66,18 @@ func (structType *StructType) AsTypeAst(codeGenerationContext *CodeGenerationCon
 	}
 }
 
+// AsDeclarationAsts returns any declarations required to support this type
+// For a struct type, this is the aggregate of supporting definitions required by all the fields
+func (structType *StructType) AsDeclarationAsts(_ string, codeGenerationContext *CodeGenerationContext) []ast.Decl {
+
+	var result []ast.Decl
+	for _, f := range structType.fields {
+		result = append(result, f.fieldType.AsDeclarationAsts(string(f.fieldName), codeGenerationContext)...)
+	}
+
+	return result
+}
+
 // RequiredImports returns a list of packages required by this
 func (structType *StructType) RequiredImports() []*PackageReference {
 	var result []*PackageReference

@@ -26,20 +26,20 @@ var _ Type = (*OptionalType)(nil)
 func (optional *OptionalType) AsTypeAst(codeGenerationContext *CodeGenerationContext) ast.Expr {
 	elementType := optional.element.AsTypeAst(codeGenerationContext)
 
-// AsTypeDeclarations renders the Go abstract syntax tree for an optional type
-func (optional *OptionalType) AsTypeDeclarations(codeGenerationContext *CodeGenerationContext) (ast.Expr, []ast.Expr) {
-	elementType, otherElementTypes := optional.element.AsTypeDeclarations(codeGenerationContext)
-
 	// Special case interface{} as it shouldn't be a pointer
 	if optional.element == AnyType {
-		return elementType, otherElementTypes
+		return elementType
 	}
 
-	starType := &ast.StarExpr{
+	return &ast.StarExpr{
 		X: elementType,
 	}
+}
 
-	return starType, otherElementTypes
+// AsDeclarationAsts renders the Go abstract syntax tree for an optional type
+// Optional types don't have any declarations of their own (but their underlying type might)
+func (optional *OptionalType) AsDeclarationAsts(nameHint string, codeGenerationContext *CodeGenerationContext) []ast.Decl {
+	return optional.element.AsDeclarationAsts(nameHint, codeGenerationContext)
 }
 
 // RequiredImports returns the imports required by the 'element' type

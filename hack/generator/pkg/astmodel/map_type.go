@@ -36,17 +36,12 @@ func (m *MapType) AsTypeAst(codeGenerationContext *CodeGenerationContext) ast.Ex
 	}
 }
 
-// AsTypeDeclarations implements Type for MapType to create the abstract syntax tree for a map
-func (m *MapType) AsTypeDeclarations(codeGenerationContext *CodeGenerationContext) (ast.Expr, []ast.Expr) {
-	keyType, otherKeyTypes := m.key.AsTypeDeclarations(codeGenerationContext)
-	valueType, otherValueTypes := m.value.AsTypeDeclarations(codeGenerationContext)
-
-	mapType := &ast.MapType{
-		Key:   keyType,
-		Value: valueType,
-	}
-
-	return mapType, append(otherKeyTypes, otherValueTypes...)
+// AsDeclarationAsts implements Type for MapType to create the abstract syntax tree for a map
+// Maps don't need declarations of their own, but their key and value types might
+func (m *MapType) AsDeclarationAsts(nameHint string, codeGenerationContext *CodeGenerationContext) []ast.Decl {
+	result := m.key.AsDeclarationAsts(nameHint, codeGenerationContext)
+	result = append(result, m.value.AsDeclarationAsts(nameHint, codeGenerationContext)...)
+	return result
 }
 
 // RequiredImports returns a list of packages required by this

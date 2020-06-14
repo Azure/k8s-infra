@@ -82,15 +82,19 @@ func (namedType *NamedType) AsDeclarationAsts(_ string, codeGenerationContext *C
 	otherTypeDecl := namedType.underlyingType.AsDeclarationAsts(nameHint, codeGenerationContext)
 
 	decl := &ast.GenDecl{
-		Doc: docComments,
-		Tok: token.TYPE,
-		Specs: []ast.Spec{
-			&ast.TypeSpec{
+			Doc: docComments,
+			Tok: token.TYPE,
+			Specs: []ast.Spec{
+				&ast.TypeSpec{
 				Name: ast.NewIdent(nameHint),
 				Type: namedType.underlyingType.AsTypeAst(codeGenerationContext),
+				},
 			},
-		},
 	}
+
+	result := []ast.Decl{decl}
+	result = append(result, otherTypeDecl...)
+	return result
 }
 
 // FileNameHint returns what a file that contains this definition (if any) should be called

@@ -24,10 +24,9 @@ type Type interface {
 	// For more complex types (e.g. maps) this is the appropriate declaration.
 	AsTypeAst(codeGenerationContext *CodeGenerationContext) ast.Expr
 
-	// AsTypeDeclarations renders as Go abstract syntax trees for each required declaration
-	// Returns the type declaration for this specific type, plus a slice of other supporting declarations
-	// (yes this says ast.Expr but that is what the Go 'ast' package uses for types)
-	AsTypeDeclarations(codeGenerationContext *CodeGenerationContext) (ast.Expr, []ast.Expr)
+	// AsDeclarationAsts renders as Go abstract syntax trees for each required declaration
+	// Returns one or more type declarations for this specific type
+	AsDeclarationAsts(nameHint string, codeGenerationContext *CodeGenerationContext) []ast.Decl
 
 	// Equals returns true if the passed type is the same as this one, false otherwise
 	Equals(t Type) bool

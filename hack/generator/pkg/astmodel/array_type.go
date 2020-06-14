@@ -29,13 +29,10 @@ func (array *ArrayType) AsTypeAst(codeGenerationContext *CodeGenerationContext) 
 	}
 }
 
-// AsTypeDeclarations renders the Go abstract syntax tree for an array type
-func (array *ArrayType) AsTypeDeclarations(codeGenerationContext *CodeGenerationContext) (ast.Expr, []ast.Expr) {
-	et, ot := array.element.AsTypeDeclarations(codeGenerationContext)
-	result := &ast.ArrayType{
-		Elt: et,
-	}
-	return result, ot
+// AsDeclarationAsts returns nothing for the array (because arrays don't need separate declaration) but might return other
+// declarations from the element type within the array
+func (array *ArrayType) AsDeclarationAsts(nameHint string, codeGenerationContext *CodeGenerationContext) []ast.Decl {
+	return array.element.AsDeclarationAsts(nameHint, codeGenerationContext)
 }
 
 // RequiredImports returns a list of packages required by this
