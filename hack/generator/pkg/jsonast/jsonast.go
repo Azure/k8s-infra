@@ -110,7 +110,7 @@ func (scanner *SchemaScanner) AddTypeHandler(schemaType SchemaType, handler Type
 
 // RunHandler triggers the appropriate handler for the specified schemaType
 func (scanner *SchemaScanner) RunHandler(ctx context.Context, schemaType SchemaType, schema *gojsonschema.SubSchema) (astmodel.Type, error) {
-	if ctx.Err() != nil {
+	if ctx.Err() != nil { // check for cancellation
 		return nil, ctx.Err()
 	}
 

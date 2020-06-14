@@ -94,7 +94,7 @@ func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder strin
 	// emit each package
 	klog.V(0).Infof("Writing output files into %v", outputFolder)
 	for _, pkg := range packages {
-		if ctx.Err() != nil {
+		if ctx.Err() != nil { // check for cancellation
 			return ctx.Err()
 		}
 
@@ -286,12 +286,12 @@ func loadConfiguration(configurationFile string) (*config.Configuration, error) 
 	return result, nil
 }
 
-type cancellableFS struct {
+type cancellableFilesystem struct {
 	ctx context.Context
 }
 
-func (fs *cancellableFS) Open(source string) (http.File, error) {
-	if fs.ctx.Err() != nil {
+func (fs *cancellableFilesystem) Open(source string) (http.File, error) {
+	if fs.ctx.Err() != nil { // check for cancellation
 		return nil, fs.ctx.Err()
 	}
 
@@ -302,7 +302,7 @@ func loadSchema(ctx context.Context, source string) (*gojsonschema.Schema, error
 	sl := gojsonschema.NewSchemaLoader()
 	// note that we "configure" the DefaultClient in gen.go to cancel HTTP calls
 	// the cancellableFS here only handles actual FS calls
-	loader := gojsonschema.NewReferenceLoaderFileSystem(source, &cancellableFS{ctx})
+	loader := gojsonschema.NewReferenceLoaderFileSystem(source, &cancellableFilesystem{ctx})
 	schema, err := sl.Compile(loader)
 	if err != nil {
 		return nil, fmt.Errorf("error loading schema from '%v' (%w)", source, err)
@@ -322,7 +322,7 @@ func deleteGeneratedCodeFromFolder(ctx context.Context, outputFolder string) err
 	var errs []error
 
 	for _, file := range files {
-		if ctx.Err() != nil {
+		if ctx.Err() != nil { // check for cancellation
 			return ctx.Err()
 		}
 
@@ -392,7 +392,7 @@ func deleteEmptyDirectories(ctx context.Context, path string) error {
 			return err
 		}
 
-		if ctx.Err() != nil {
+		if ctx.Err() != nil { // check for cancellation
 			return ctx.Err()
 		}
 
@@ -420,7 +420,7 @@ func deleteEmptyDirectories(ctx context.Context, path string) error {
 
 	// Now clean things up
 	for _, dir := range dirs {
-		if ctx.Err() != nil {
+		if ctx.Err() != nil { // check for cancellation
 			return ctx.Err()
 		}
 
