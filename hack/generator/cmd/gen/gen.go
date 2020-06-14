@@ -21,6 +21,8 @@ type cancellableTransport struct {
 	inner http.RoundTripper
 }
 
+var _ http.RoundTripper = &cancellableTransport{} // interface assertion
+
 func (transport *cancellableTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	if transport.ctx.Err() != nil {
 		return nil, transport.ctx.Err()
