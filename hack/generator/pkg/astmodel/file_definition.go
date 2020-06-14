@@ -106,15 +106,29 @@ func (file *FileDefinition) AsAst() ast.Node {
 		decls = append(decls, s.AsDeclarations(codeGenContext)...)
 	}
 
+	// Find all named resource structs; uses a map for uniquing
+	resources := make(map[TypeName]*NamedType)
+	collectNamedResourceStructs := func(t Type) {
+		if nt, isNamedType := t.(*NamedType); isNamedType {
+			if st, isStruct := nt.Type().(*StructType); isStruct {
+				if st.IsResource() {
+					resources[*nt.name] = nt
+				}
+			}
+		}
+	}
+
+	for _, t := range file.definitions {
+		t.Visit(collectNamedResourceStructs)
+	}
+
 	// Emit struct registration for each resource:
 	var exprs []ast.Expr
-	for _, defn := range file.definitions {
-		if structDefn, ok := defn.(*StructDefinition); ok && structDefn.IsResource() {
-			exprs = append(exprs, &ast.UnaryExpr{
-				Op: token.AND,
-				X:  &ast.CompositeLit{Type: structDefn.Name().AsType(codeGenContext)},
-			})
-		}
+	for _, nt := range resources {
+		exprs = append(exprs, &ast.UnaryExpr{
+			Op: token.AND,
+			X:  &ast.CompositeLit{Type: nt.AsTypeAst(codeGenContext)},
+		})
 	}
 
 	if len(exprs) > 0 {
