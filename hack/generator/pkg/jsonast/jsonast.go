@@ -12,11 +12,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Azure/k8s-infra/hack/generator/pkg/config"
-
 	"k8s.io/klog/v2"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
+	"github.com/Azure/k8s-infra/hack/generator/pkg/config"
 	"github.com/devigned/tab"
 	"github.com/xeipuuv/gojsonschema"
 )
