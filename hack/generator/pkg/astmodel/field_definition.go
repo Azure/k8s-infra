@@ -100,7 +100,7 @@ func (field *FieldDefinition) AsField(codeGenerationContext *CodeGenerationConte
 	result := &ast.Field{
 		Doc:   &ast.CommentGroup{},
 		Names: []*ast.Ident{ast.NewIdent(string(field.fieldName))},
-		Type:  field.FieldType().AsTypeReference(codeGenerationContext),
+		Type:  field.FieldType().AsTypeAst(codeGenerationContext),
 		Tag: &ast.BasicLit{
 			Kind:  token.STRING,
 			Value: fmt.Sprintf("`json:%q`", field.jsonName),

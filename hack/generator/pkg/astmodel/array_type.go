@@ -22,10 +22,10 @@ func NewArrayType(element Type) *ArrayType {
 // assert we implemented Type correctly
 var _ Type = (*ArrayType)(nil)
 
-// AsTypeReference renders a Go abstract syntax tree for a slice
-func (array *ArrayType) AsTypeReference(codeGenerationContext *CodeGenerationContext) ast.Expr {
+// AsTypeAst renders a Go abstract syntax tree for a slice
+func (array *ArrayType) AsTypeAst(codeGenerationContext *CodeGenerationContext) ast.Expr {
 	return &ast.ArrayType{
-		Elt: array.element.AsTypeReference(codeGenerationContext),
+		Elt: array.element.AsTypeAst(codeGenerationContext),
 	}
 }
 

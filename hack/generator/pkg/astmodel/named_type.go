@@ -50,8 +50,24 @@ func (namedType *NamedType) WithDescription(description *string) *NamedType {
 	}
 }
 
-// AsDeclarations generates the actual Go declaration for the type
-func (namedType *NamedType) AsDeclarations(codeGenerationContext *CodeGenerationContext) []ast.Decl {
+// AsTypeAst renders a Go abstract syntax tree for referencing the type.
+// For named types, that reference is just the identifier
+// TODO: Do we need to take the CodeGenerationContext into account?
+func (namedType *NamedType) AsTypeAst(_ *CodeGenerationContext) ast.Expr {
+	return ast.NewIdent(namedType.name.name)
+}
+
+// AsDeclarationAsts renders as Go abstract syntax trees for each required declaration
+// Returns one or more type declarations for this specific type
+func (namedType *NamedType) AsDeclaration(codeGenerationContext *CodeGenerationContext) []ast.Decl {
+	return namedType.AsDeclarationAsts(namedType.name.name, codeGenerationContext)
+}
+
+// AsDeclarationAsts generates a declaration for our type
+func (namedType *NamedType) AsDeclarationAsts(_ string, codeGenerationContext *CodeGenerationContext) []ast.Decl {
+
+	nameHint := namedType.name.name
+
 	var docComments *ast.CommentGroup
 	if namedType.description != nil {
 		docComments = &ast.CommentGroup{
@@ -63,15 +79,15 @@ func (namedType *NamedType) AsDeclarations(codeGenerationContext *CodeGeneration
 		}
 	}
 
-	return []ast.Decl{
-		&ast.GenDecl{
-			Doc: docComments,
-			Tok: token.TYPE,
-			Specs: []ast.Spec{
-				&ast.TypeSpec{
-					Name: ast.NewIdent(namedType.name.name),
-					Type: namedType.underlyingType.AsType(codeGenerationContext),
-				},
+	otherTypeDecl := namedType.underlyingType.AsDeclarationAsts(nameHint, codeGenerationContext)
+
+	decl := &ast.GenDecl{
+		Doc: docComments,
+		Tok: token.TYPE,
+		Specs: []ast.Spec{
+			&ast.TypeSpec{
+				Name: ast.NewIdent(nameHint),
+				Type: namedType.underlyingType.AsTypeAst(codeGenerationContext),
 			},
 		},
 	}
@@ -89,16 +105,6 @@ func (namedType *NamedType) RequiredImports() []*PackageReference {
 
 func (namedType *NamedType) References(name *TypeName) bool {
 	return namedType.name.References(name) || namedType.underlyingType.References(name)
-}
-
-// AsTypeReference renders a Go abstract syntax tree for referencing the type.
-func (namedType *NamedType) AsTypeReference(_ *CodeGenerationContext) ast.Expr {
-	return ast.NewIdent(namedType.name.name)
-}
-
-// AsType generates a reference to our type as an identifier
-func (namedType *NamedType) AsType(_ *CodeGenerationContext) ast.Expr {
-	return ast.NewIdent(namedType.name.name)
 }
 
 func (namedType *NamedType) Equals(t Type) bool {

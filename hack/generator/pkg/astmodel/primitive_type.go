@@ -32,8 +32,8 @@ var AnyType = &PrimitiveType{"interface{}"}
 // assert that we implemented Type correctly
 var _ Type = (*PrimitiveType)(nil)
 
-// AsTypeReference renders a Go abstract syntax tree for referencing the type.
-func (prim *PrimitiveType) AsTypeReference(_ *CodeGenerationContext) ast.Expr {
+// AsTypeAst renders a Go abstract syntax tree for referencing the type.
+func (prim *PrimitiveType) AsTypeAst(_ *CodeGenerationContext) ast.Expr {
 	return ast.NewIdent(prim.name)
 }
 

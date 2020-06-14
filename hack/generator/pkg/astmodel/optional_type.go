@@ -22,14 +22,9 @@ func NewOptionalType(element Type) *OptionalType {
 // assert we implemented Type correctly
 var _ Type = (*OptionalType)(nil)
 
-// AsTypeReference renders a Go abstract syntax tree for referencing the type.
-// For simple types this is just the type name. For named types, it's just the name of the type.
-// For more complex types (e.g. maps) this is the appropriate declaration.
-func (optional *OptionalType) AsTypeReference(codeGenerationContext *CodeGenerationContext) ast.Expr {
-	return &ast.StarExpr{
-		X: optional.element.AsTypeReference(codeGenerationContext),
-	}
-}
+// AsTypeAst renders a Go abstract syntax tree for referencing the type.
+func (optional *OptionalType) AsTypeAst(codeGenerationContext *CodeGenerationContext) ast.Expr {
+	elementType := optional.element.AsTypeAst(codeGenerationContext)
 
 // AsTypeDeclarations renders the Go abstract syntax tree for an optional type
 func (optional *OptionalType) AsTypeDeclarations(codeGenerationContext *CodeGenerationContext) (ast.Expr, []ast.Expr) {

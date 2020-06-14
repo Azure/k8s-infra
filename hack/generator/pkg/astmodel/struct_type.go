@@ -45,10 +45,10 @@ func (structType *StructType) Fields() []*FieldDefinition {
 	return result
 }
 
-// AsType implements Type for StructType
-func (structType *StructType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
-
-	// Copy the slice of fields and sort it
+// AsTypeAst renders a Go abstract syntax tree for referencing the type.
+// For a struct without a name (the only case where this gets called), we want the actual type structure
+func (structType *StructType) AsTypeAst(codeGenerationContext *CodeGenerationContext) ast.Expr {
+	// Get a sorted slice containing the fields to emit
 	fields := structType.Fields()
 	sort.Slice(fields, func(i int, j int) bool {
 		return fields[i].fieldName < fields[j].fieldName
