@@ -7,15 +7,14 @@ package astmodel
 
 import (
 	"go/ast"
+	"go/token"
 	"sort"
-
-	"k8s.io/klog/v2"
 )
 
 // EnumType represents a set of mutually exclusive predefined options
 type EnumType struct {
-	// BaseType is the underlying type used to define the values
-	BaseType *PrimitiveType
+	// baseType is the underlying type used to define the values
+	baseType *PrimitiveType
 	// Options is the set of all unique values
 	options []EnumValue
 }
@@ -29,25 +28,50 @@ func NewEnumType(baseType *PrimitiveType, options []EnumValue) *EnumType {
 		return options[left].Identifier < options[right].Identifier
 	})
 
-	return &EnumType{BaseType: baseType, options: options}
+	return &EnumType{baseType: baseType, options: options}
 }
 
-// AsType implements Type for EnumType
-func (enum *EnumType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
-	// this should "never" happen as we name all enums; warn about it if it does
-	klog.Warning("Emitting unnamed enum, something’s awry")
-	return enum.BaseType.AsType(codeGenerationContext)
+// AsTypeAst renders a Go abstract syntax tree for referencing the type.
+// As all enums are named, this will only be called when the parent NamedType is generating a declaration
+func (enum *EnumType) AsTypeAst(codeGenerationContext *CodeGenerationContext) ast.Expr {
+
+	//TODO: Need to include validation comments the declaration of the enumeration type
+	/*
+		validationComment := GenerateKubebuilderComment(enum.baseType.CreateValidation())
+		declaration.Doc.List = append(
+			declaration.Doc.List,
+			&ast.Comment{Text: "\n" + validationComment})
+	*/
+
+	return enum.baseType.AsTypeAst(codeGenerationContext)
+}
+
+// AsDeclarationAsts implements Type for EnumType
+func (enum *EnumType) AsDeclarationAsts(nameHint string, _ *CodeGenerationContext) []ast.Decl {
+	var specs []ast.Spec
+	for _, v := range enum.Options() {
+		s := enum.createValueDeclaration(nameHint, v)
+		specs = append(specs, s)
+	}
+
+	valuesDeclaration := &ast.GenDecl{
+		Tok:   token.CONST,
+		Doc:   &ast.CommentGroup{},
+		Specs: specs,
+	}
+
+	return []ast.Decl{valuesDeclaration}
 }
 
 // References indicates whether this Type includes any direct references to the given Type
 func (enum *EnumType) References(tn *TypeName) bool {
-	return enum.BaseType.References(tn)
+	return enum.baseType.References(tn)
 }
 
 // Equals will return true if the supplied type has the same base type and options
 func (enum *EnumType) Equals(t Type) bool {
 	if e, ok := t.(*EnumType); ok {
-		if !enum.BaseType.Equals(e.BaseType) {
+		if !enum.baseType.Equals(e.baseType) {
 			return false
 		}
 
@@ -79,7 +103,7 @@ func (enum *EnumType) RequiredImports() []*PackageReference {
 func (enum *EnumType) CreateInternalDefinitions(nameHint *TypeName, idFactory IdentifierFactory) (Type, []*NamedType) {
 	// an internal enum must always be named:
 	definedEnum, otherTypes := enum.CreateNamedTypes(nameHint, idFactory, false)
-	return definedEnum.Name(), append(otherTypes, definedEnum)
+	return definedEnum, append(otherTypes, definedEnum)
 }
 
 // CreateNamedTypes defines a named type for this "raw" enum type
@@ -92,6 +116,7 @@ func (enum *EnumType) CreateNamedTypes(name *TypeName, idFactory IdentifierFacto
 // Options returns all the enum options
 // A copy of the slice is returned to preserve immutability
 func (enum *EnumType) Options() []EnumValue {
+	//TODO: Do we need to sort these to guarantee determinism?
 	return append(enum.options[:0:0], enum.options...)
 }
 
@@ -103,4 +128,30 @@ func (enum *EnumType) CreateValidation() Validation {
 	}
 
 	return ValidateEnum(values)
+}
+
+func (enum *EnumType) Visit(visitor func(t Type)) {
+	visitor(enum)
+	enum.baseType.Visit(visitor)
+}
+
+func (enum *EnumType) createValueDeclaration(enumName string, value EnumValue) ast.Spec {
+	enumIdentifier := ast.NewIdent(enumName)
+	valueIdentifier := ast.NewIdent(enumName + value.Identifier)
+	valueLiteral := ast.BasicLit{
+		Kind:  token.STRING,
+		Value: value.Value,
+	}
+
+	valueSpec := &ast.ValueSpec{
+		Names: []*ast.Ident{valueIdentifier},
+		Values: []ast.Expr{
+			&ast.CallExpr{
+				Fun:  enumIdentifier,
+				Args: []ast.Expr{&valueLiteral},
+			},
+		},
+	}
+
+	return valueSpec
 }
