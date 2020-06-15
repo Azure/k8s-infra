@@ -26,10 +26,6 @@ func (typeName *TypeName) Name() string {
 	return typeName.name
 }
 
-// A TypeName can be used as a Type,
-// it is simply a reference to the name.
-var _ Type = (*TypeName)(nil)
-
 // AsType implements Type for TypeName
 func (typeName *TypeName) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
 	// If our package is being referenced, we need to ensure we include a selector for that reference
@@ -62,21 +58,7 @@ func (typeName *TypeName) RequiredImports() []*PackageReference {
 }
 
 // Equals returns true if the passed type is the same TypeName, false otherwise
-func (typeName *TypeName) Equals(t Type) bool {
-	if d, ok := t.(*TypeName); ok {
-		return typeName.name == d.name && typeName.PackageReference.Equals(&d.PackageReference)
-	}
-
-	return false
-}
-
-// CreateInternalDefinitions does nothing
-func (typeName *TypeName) CreateInternalDefinitions(_ *TypeName, _ IdentifierFactory) (Type, []*NamedType) {
-	// there is nothing internal to a TypeName, return it unchanged
-	return typeName, nil
-}
-
-// CreateNamedTypes adds another name to this already-named type
-func (typeName *TypeName) CreateNamedTypes(name *TypeName, _ IdentifierFactory, _ bool) (*NamedType, []*NamedType) {
-	return NewNamedType(name, typeName), nil
+func (typeName *TypeName) Equals(t *TypeName) bool {
+	return typeName.name == t.name &&
+		typeName.PackageReference.Equals(&t.PackageReference)
 }
