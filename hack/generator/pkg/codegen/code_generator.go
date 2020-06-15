@@ -104,11 +104,11 @@ func (generator *CodeGenerator) Generate(ctx context.Context, outputFolder strin
 	return nil
 }
 
-func (generator *CodeGenerator) CreatePackagesForDefinitions(definitions []astmodel.NamedType) ([]*astmodel.PackageDefinition, error) {
+func (generator *CodeGenerator) CreatePackagesForDefinitions(namedTypes []*astmodel.NamedType) ([]*astmodel.PackageDefinition, error) {
 	packages := make(map[astmodel.PackageReference]*astmodel.PackageDefinition)
-	for _, def := range definitions {
+	for _, def := range namedTypes {
 
-		shouldExport, reason := generator.configuration.ShouldExport(def)
+		shouldExport, reason := generator.configuration.ShouldExport(*def)
 		defName := def.Name()
 		groupName, pkgName, err := defName.PackageReference.GroupAndPackage()
 		if err != nil {
