@@ -59,7 +59,7 @@ func (namedType *NamedType) AsTypeAst(_ *CodeGenerationContext) ast.Expr {
 
 // AsDeclarationAsts renders as Go abstract syntax trees for each required declaration
 // Returns one or more type declarations for this specific type
-func (namedType *NamedType) AsDeclaration(codeGenerationContext *CodeGenerationContext) []ast.Decl {
+func (namedType *NamedType) AsDeclarations(codeGenerationContext *CodeGenerationContext) []ast.Decl {
 	return namedType.AsDeclarationAsts(namedType.name.name, codeGenerationContext)
 }
 
@@ -82,14 +82,14 @@ func (namedType *NamedType) AsDeclarationAsts(_ string, codeGenerationContext *C
 	otherTypeDecl := namedType.underlyingType.AsDeclarationAsts(nameHint, codeGenerationContext)
 
 	decl := &ast.GenDecl{
-			Doc: docComments,
-			Tok: token.TYPE,
-			Specs: []ast.Spec{
-				&ast.TypeSpec{
+		Doc: docComments,
+		Tok: token.TYPE,
+		Specs: []ast.Spec{
+			&ast.TypeSpec{
 				Name: ast.NewIdent(nameHint),
 				Type: namedType.underlyingType.AsTypeAst(codeGenerationContext),
-				},
 			},
+		},
 	}
 
 	result := []ast.Decl{decl}
