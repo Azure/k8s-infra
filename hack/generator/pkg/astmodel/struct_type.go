@@ -7,13 +7,15 @@ package astmodel
 
 import (
 	"go/ast"
+	"go/token"
 	"sort"
 )
 
 // StructType represents an (unnamed) struct type
 type StructType struct {
-	fields    map[FieldName]*FieldDefinition
-	functions map[string]Function
+	fields     map[FieldName]*FieldDefinition
+	functions  map[string]Function
+	isResource bool
 }
 
 // EmptyStructType is an empty struct
@@ -50,9 +52,6 @@ func (structType *StructType) Fields() []*FieldDefinition {
 func (structType *StructType) AsTypeAst(codeGenerationContext *CodeGenerationContext) ast.Expr {
 	// Get a sorted slice containing the fields to emit
 	fields := structType.Fields()
-	sort.Slice(fields, func(i int, j int) bool {
-		return fields[i].fieldName < fields[j].fieldName
-	})
 
 	fieldDefinitions := make([]*ast.Field, len(fields))
 	for i, f := range fields {
@@ -161,7 +160,7 @@ func (structType *StructType) Equals(t Type) bool {
 func (structType *StructType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []*NamedType) {
 	// an internal struct must always be named:
 	definedStruct, otherTypes := structType.CreateNamedTypes(name, idFactory, false /* internal structs are never resources */)
-	return definedStruct.Name(), append(otherTypes, definedStruct)
+	return definedStruct, append(otherTypes, definedStruct)
 }
 
 // CreateNamedTypes defines a named type for this struct and invokes CreateInternalDefinitions for each field type
@@ -182,16 +181,21 @@ func (structType *StructType) CreateNamedTypes(name *TypeName, idFactory Identif
 		newFields = append(newFields, field.WithType(newFieldType))
 	}
 
-	newStructType := NewStructType().WithFields(newFields...)
+	resultType := NewStructType().WithFields(newFields...)
 	for functionName, function := range structType.functions {
-		newStructType.functions[functionName] = function
+		resultType = resultType.WithFunction(functionName, function)
 	}
 
 	if isResource {
-		return NewNamedRootType(name, newStructType), otherTypes
+		specName := NewTypeName(name.PackageReference, name.name+"Spec")
+		specType := NewNamedType(specName, resultType)
+		otherTypes = append(otherTypes, specType)
+
+		specField := NewFieldDefinition("Spec", "spec", specType).MakeOptional()
+		resultType = NewStructType().WithFields(typeMetaField, objectMetaField, specField)
 	}
 
-	return NewNamedType(name, newStructType), otherTypes
+	return NewNamedType(name, resultType), otherTypes
 }
 
 // WithField creates a new StructType with another field attached to it
@@ -221,6 +225,24 @@ func (structType *StructType) WithFunction(name string, function Function) *Stru
 	result.functions[name] = function
 
 	return result
+}
+
+func (structType *StructType) MarkAsResource() *StructType {
+	// Create a copy of structType to preserve immutability
+	result := structType.copy()
+	result.isResource = true
+	return result
+}
+
+func (structType *StructType) IsResource() bool {
+	return structType.isResource
+}
+
+func (structType *StructType) Visit(visitor func(t Type)) {
+	visitor(structType)
+	for _, f := range structType.fields {
+		f.FieldType().Visit(visitor)
+	}
 }
 
 func (structType *StructType) copy() *StructType {
@@ -262,5 +284,8 @@ func defineField(fieldName string, typeName string, tag string) *ast.Field {
 }
 
 // TODO: metav1 import should be added via RequiredImports?
-var typeMetaField = defineField("", "metav1.TypeMeta", "`json:\",inline\"`")
-var objectMetaField = defineField("", "metav1.ObjectMeta", "`json:\"metadata,omitempty\"`")
+//var typeMetaField = defineField("", "metav1.TypeMeta", "`json:\",inline\"`")
+//var objectMetaField = defineField("", "metav1.ObjectMeta", "`json:\"metadata,omitempty\"`")
+
+var typeMetaField = NewFieldDefinition("", ",inline", &PrimitiveType{"metav1.TypeMeta"})
+var objectMetaField = NewFieldDefinition("", "metadata", &PrimitiveType{"metav1.ObjectMeta"}).MakeOptional()
