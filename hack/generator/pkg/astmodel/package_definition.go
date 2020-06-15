@@ -95,8 +95,8 @@ func partitionDefinitions(definitions []*NamedType) (resourceStructs []*NamedTyp
 	var notResources []*NamedType
 
 	for _, def := range definitions {
-		if structDef, ok := def.(*StructDefinition); ok && structDef.IsResource() {
-			resources = append(resources, structDef)
+		if structDef, ok := def.underlyingType.(*StructType); ok && structDef.IsResource() {
+			resources = append(resources, def)
 		} else {
 			notResources = append(notResources, def)
 		}
@@ -148,7 +148,7 @@ func allocateFileName(filesReferencingType []string, typeToAllocate *NamedType, 
 	}
 
 	if len(filesReferencingType) == 1 && !pendingReferences {
-		// Type is only referenced from one file, and is not refeferenced anywhere else, put it in that file
+		// Type is only referenced from one file, and is not referenced anywhere else, put it in that file
 		return filesReferencingType[0]
 	}
 
@@ -165,7 +165,7 @@ func allocateFilenameWhenStalled(typesToAllocate []*NamedType, filesToGenerate m
 	// We've processed the entire queue without allocating any files, so we have a cycle of related types to allocate
 	// None of these types are referenced by multiple files (they would already be allocated, per rule above)
 	// So either they're referenced by one file, or none at all
-	// Breaking the cycle requires allocating one of these types; we need to do this deterministicly
+	// Breaking the cycle requires allocating one of these types; we need to do this deterministically
 	// So we prefer allocating to an existing file if we can, and we prefer names earlier in the alphabet
 
 	for _, t := range typesToAllocate {
