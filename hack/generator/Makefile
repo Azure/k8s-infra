@@ -18,8 +18,12 @@ manifests: $(CONTROLLER_GEN)
 	$(Q) $(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./apis/..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: gen-arm
-gen-arm: build ; $(info $(M) running k8sinfra-gen gen…) @ ## Running gen
+gen-arm: rm-apis build ; $(info $(M) running k8sinfra-gen gen…) @ ## Running gen
 	$(Q) ./bin/$(APP) gen azure-arm.yaml
+
+.PHONY: rm-apis
+rm-apis: ; $(info $(M) removing previously generated apis…)
+	$(Q) rm -rf apis
 
 .PHONY: build
 build: tidy fmt vet lint ; $(info $(M) buiding ./bin/$(APP))
