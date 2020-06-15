@@ -112,8 +112,15 @@ func (namedType *NamedType) References(name *TypeName) bool {
 }
 
 func (namedType *NamedType) Equals(t Type) bool {
-	// TODO: This feels dodgy
-	return namedType.name.Equals(t)
+	if nt, ok := t.(*NamedType); ok {
+		if !namedType.name.Equals(nt.name) {
+			return false
+		}
+
+		return namedType.underlyingType.Equals(nt.underlyingType)
+	}
+
+	return false
 }
 
 func (namedType *NamedType) CreateInternalDefinitions(nameHint *TypeName, idFactory IdentifierFactory) (Type, []*NamedType) {
