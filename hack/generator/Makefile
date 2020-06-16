@@ -21,6 +21,9 @@ manifests: $(CONTROLLER_GEN)
 gen-arm: rm-apis build ; $(info $(M) running k8sinfra-gen gen…) @ ## Running gen
 	$(Q) ./bin/$(APP) gen azure-arm.yaml
 
+# TODO: We should remove this target once we place the generated code outside of the generator.
+# TODO: The generator already cleans up the APIs directory but since right now the generated code
+# TODO: doesn't build we need to rm-apis before build.
 .PHONY: rm-apis
 rm-apis: ; $(info $(M) removing previously generated apis…)
 	$(Q) rm -rf apis
