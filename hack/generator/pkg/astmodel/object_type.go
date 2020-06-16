@@ -15,6 +15,7 @@ import (
 type ObjectType struct {
 	properties map[PropertyName]*PropertyDefinition
 	functions  map[string]Function
+	interfaces map[TypeName]*Interface
 }
 
 // EmptyObjectType is an empty object
@@ -28,6 +29,7 @@ func NewObjectType() *ObjectType {
 	return &ObjectType{
 		properties: make(map[PropertyName]*PropertyDefinition),
 		functions:  make(map[string]Function),
+		interfaces: make(map[TypeName]*Interface),
 	}
 }
 
@@ -47,6 +49,7 @@ func (objectType *ObjectType) AsDeclarations(codeGenerationContext *CodeGenerati
 	addDocComments(&declaration.Doc.List, description, 200)
 
 	result := []ast.Decl{declaration}
+	result = append(result, objectType.generateInterfaceDecls(codeGenerationContext, name)...)
 	result = append(result, objectType.generateMethodDecls(codeGenerationContext, name)...)
 	return result
 }
@@ -59,6 +62,75 @@ func (objectType *ObjectType) generateMethodDecls(codeGenerationContext *CodeGen
 	}
 
 	return result
+}
+
+func (objectType *ObjectType) generateInterfaceDecls(codeGenerationContext *CodeGenerationContext, typeName TypeName) []ast.Decl {
+	var result []ast.Decl
+
+	// First interfaces must be ordered by name for deterministic output
+	var ifaceNames []TypeName
+	for ifaceName := range objectType.interfaces {
+		ifaceNames = append(ifaceNames, ifaceName)
+	}
+
+	sort.Slice(ifaceNames, func(i int, j int) bool {
+		return ifaceNames[i].name < ifaceNames[j].name
+	})
+
+	for _, ifaceName := range ifaceNames {
+		iface := objectType.interfaces[ifaceName]
+
+		result = append(result, objectType.generateInterfaceImplAssertion(codeGenerationContext, iface, typeName))
+
+		var funcNames []string
+		for funcName := range iface.functions {
+			funcNames = append(funcNames, funcName)
+		}
+
+		sort.Slice(funcNames, func(i int, j int) bool {
+			return funcNames[i] < funcNames[j]
+		})
+
+		for _, methodName := range funcNames {
+			function := iface.functions[methodName]
+			result = append(result, function.AsFunc(codeGenerationContext, typeName, methodName))
+		}
+	}
+
+	return result
+}
+
+func (objectType *ObjectType) generateInterfaceImplAssertion(codeGenerationContext *CodeGenerationContext, iface *Interface, typeName TypeName) ast.Decl {
+
+	ifacePackageName, err := codeGenerationContext.GetImportedPackageName(iface.name.PackageReference)
+	if err != nil {
+		panic(err)
+	}
+
+	typeAssertion := &ast.GenDecl{
+		Tok: token.VAR,
+		Specs: []ast.Spec{
+			&ast.ValueSpec{
+				Type: &ast.SelectorExpr{
+					X:   ast.NewIdent(ifacePackageName),
+					Sel: ast.NewIdent(iface.name.name),
+				},
+				Names: []*ast.Ident{
+					ast.NewIdent("_"),
+				},
+				Values: []ast.Expr{
+					&ast.UnaryExpr{
+						Op: token.AND,
+						X: &ast.CompositeLit{
+							Type: ast.NewIdent(typeName.name),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return typeAssertion
 }
 
 func defineField(fieldName string, fieldType ast.Expr, tag string) *ast.Field {
@@ -88,6 +160,22 @@ func (objectType *ObjectType) Properties() []*PropertyDefinition {
 	})
 
 	return result
+}
+
+func (objectType *ObjectType) Property(name PropertyName) (*PropertyDefinition, bool) {
+	prop, ok := objectType.properties[name]
+	return prop, ok
+}
+
+// HasFunctionWithName determines if this object has a function with the given name
+func (objectType *ObjectType) HasFunctionWithName(name string) bool {
+	for n := range objectType.functions {
+		if n == name {
+			return true
+		}
+	}
+
+	return false
 }
 
 // AsType implements Type for ObjectType
@@ -120,6 +208,10 @@ func (objectType *ObjectType) RequiredImports() []PackageReference {
 
 	for _, function := range objectType.functions {
 		result = append(result, function.RequiredImports()...)
+	}
+
+	for _, i := range objectType.interfaces {
+		result = append(result, i.RequiredImports()...)
 	}
 
 	return result
@@ -210,6 +302,15 @@ func (objectType *ObjectType) WithProperties(properties ...*PropertyDefinition) 
 	return result
 }
 
+// WithoutProperty creates a new ObjectType without the specified field
+func (objectType *ObjectType) WithoutProperty(name PropertyName) *ObjectType {
+	// Create a copy of objectType to preserve immutability
+	result := objectType.copy()
+	delete(result.properties, name)
+
+	return result
+}
+
 // WithFunction creates a new ObjectType with a function (method) attached to it
 func (objectType *ObjectType) WithFunction(name string, function Function) *ObjectType {
 	// Create a copy of objectType to preserve immutability
@@ -217,6 +318,22 @@ func (objectType *ObjectType) WithFunction(name string, function Function) *Obje
 	result.functions[name] = function
 
 	return result
+}
+
+// WithInterface creates a new ObjectType with a function (method) attached to it
+func (objectType *ObjectType) WithInterface(iface *Interface) *ObjectType {
+	// Create a copy of objectType to preserve immutability
+	result := *objectType
+
+	// Copy contents of old map into new map
+	result.interfaces = make(map[TypeName]*Interface)
+	for key, value := range objectType.interfaces {
+		result.interfaces[key] = value
+	}
+
+	result.interfaces[iface.Name()] = iface
+
+	return &result
 }
 
 func (objectType *ObjectType) copy() *ObjectType {

@@ -19,11 +19,12 @@ type ResourceType struct {
 	spec             Type
 	status           Type
 	isStorageVersion bool
+	owner            *TypeName
 }
 
 // NewResourceType defines a new resource type
 func NewResourceType(specType Type, statusType Type) *ResourceType {
-	return &ResourceType{specType, statusType, false}
+	return &ResourceType{specType, statusType, false, nil}
 }
 
 // assert that ResourceType implements Type
@@ -78,10 +79,22 @@ func (definition *ResourceType) References() TypeNameSet {
 	return SetUnion(spec, status)
 }
 
+// Owner returns the name of the owner type
+func (definition *ResourceType) Owner() *TypeName {
+	return definition.owner
+}
+
 // MarkAsStorageVersion marks the resource as the Kubebuilder storage version
 func (definition *ResourceType) MarkAsStorageVersion() *ResourceType {
 	result := *definition
 	result.isStorageVersion = true
+	return &result
+}
+
+// WithOwner updates the owner of the resource and returns a copy of the resource
+func (definition *ResourceType) WithOwner(owner *TypeName) *ResourceType {
+	result := *definition
+	result.owner = owner
 	return &result
 }
 
@@ -94,6 +107,8 @@ func (definition *ResourceType) RequiredImports() []PackageReference {
 	}
 
 	typeImports = append(typeImports, MetaV1PackageReference)
+	typeImports = append(typeImports, MakeGenRuntimePackageReference())
+	typeImports = append(typeImports, MakePackageReference("fmt"))
 
 	return typeImports
 }
@@ -149,11 +164,14 @@ func (definition *ResourceType) AsDeclarations(codeGenerationContext *CodeGenera
 
 	addDocComments(&comments, description, 200)
 
-	return []ast.Decl{
-		&ast.GenDecl{
-			Tok:   token.TYPE,
-			Specs: []ast.Spec{resourceTypeSpec},
-			Doc:   &ast.CommentGroup{List: comments},
-		},
+	var declarations []ast.Decl
+	resourceDeclaration := &ast.GenDecl{
+		Tok:   token.TYPE,
+		Specs: []ast.Spec{resourceTypeSpec},
+		Doc:   &ast.CommentGroup{List: comments},
 	}
+
+	declarations = append(declarations, resourceDeclaration)
+
+	return declarations
 }

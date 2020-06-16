@@ -453,6 +453,82 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (ast
 	return generateDefinitionsFor(ctx, scanner, typeName, schema.refSchema())
 }
 
+// TODO: Delete this -- at least if pipeline phase can do this instead?
+func newResource(t astmodel.Type, typeName astmodel.TypeName) *astmodel.ResourceType {
+	if objectType, ok := t.(*astmodel.ObjectType); ok {
+		// We have certain expectations about structure for resources
+		var nameProperty *astmodel.PropertyDefinition
+		var typeProperty *astmodel.PropertyDefinition
+		isNameOptional := false
+		isTypeOptional := false
+		for _, property := range objectType.Properties() {
+			// TODO: Addition of Name property isn't required if we fix https://github.com/Azure/k8s-infra/issues/211
+			if property.PropertyName() == "Name" {
+				nameProperty = property
+				if _, ok := property.PropertyType().(*astmodel.OptionalType); ok {
+					isNameOptional = true
+				}
+			}
+
+			if property.PropertyName() == "Type" {
+				typeProperty = property
+				if _, ok := property.PropertyType().(*astmodel.OptionalType); ok {
+					isTypeOptional = true
+				}
+			}
+		}
+
+		if typeProperty == nil {
+			// TODO: This is a hack... remove it
+			if typeName.Name() != "EnvironmentsEventSources" &&
+				typeName.Name() != "SitesConfig" &&
+				typeName.Name() != "SitesSlotsConfig" &&
+				typeName.Name() != "ServersAdministrators" {
+				panic(fmt.Sprintf("Resource %s is missing type property", typeName))
+			}
+		}
+
+		if nameProperty == nil {
+			klog.V(1).Infof("resource %s is missing name field, fabricating one...", typeName)
+
+			nameProperty = astmodel.NewPropertyDefinition(astmodel.PropertyName("Name"), "name", astmodel.StringType)
+			nameProperty.WithDescription("The name of the resource")
+			isNameOptional = true
+		}
+
+		if isNameOptional {
+			// Fix name to be required -- again this is an artifact of bad spec more than anything
+			nameProperty = nameProperty.MakeRequired()
+			objectType = objectType.WithProperty(nameProperty)
+		}
+
+		// If the name is not a string, force it to be -- there are a good number
+		// of resources which define name as an enum with a limited set of values.
+		// That is actually incorrect because it forbids nested naming from being used
+		// (i.e. myresource/mysubresource/enumvalue) and that's the style of naming
+		// that we're always using because we deploy each resource standalone.
+		if !nameProperty.PropertyType().Equals(astmodel.StringType) {
+			klog.V(4).Infof(
+				"Forcing resource %s name property with type %T to be string instead",
+				typeName,
+				nameProperty.PropertyType())
+			nameProperty = nameProperty.WithType(astmodel.StringType)
+			objectType = objectType.WithProperty(nameProperty)
+		}
+
+		if isTypeOptional {
+			typeProperty = typeProperty.MakeRequired()
+			objectType = objectType.WithProperty(typeProperty)
+		}
+		t = objectType
+	} else {
+		klog.Warningf("expected a struct type for resource: %v", typeName)
+		// TODO: handle this better, only Kusto does it
+	}
+
+	return astmodel.NewResourceType(t, nil)
+}
+
 func generateDefinitionsFor(
 	ctx context.Context,
 	scanner *SchemaScanner,
@@ -476,15 +552,15 @@ func generateDefinitionsFor(
 	// Add a placeholder to avoid recursive calls
 	// we will overwrite this later (this is checked below)
 	scanner.addEmptyTypeDefinition(typeName)
-
 	result, err := scanner.RunHandler(ctx, schemaType, schema)
+
 	if err != nil {
 		scanner.removeTypeDefinition(typeName) // we weren't able to generate it, remove placeholder
 		return nil, err
 	}
 
 	if isResource {
-		result = astmodel.NewResourceType(result, nil)
+		result = newResource(result, typeName)
 	}
 
 	description := []string{
@@ -684,7 +760,7 @@ func generateOneOfUnionType(ctx context.Context, subschemas []Schema, scanner *S
 
 	objectType := astmodel.NewObjectType().WithProperties(properties...)
 	objectType = objectType.WithFunction(
-		"MarshalJSON",
+		astmodel.JSONMarshalFunctionName,
 		astmodel.NewOneOfJSONMarshalFunction(objectType, scanner.idFactory))
 
 	return objectType, nil

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"sort"
 )
 
 // PropertyName is a semantic type
@@ -21,6 +22,7 @@ type PropertyDefinition struct {
 	jsonName     string
 	description  string
 	validations  []Validation
+	tags         map[string]string
 }
 
 // NewPropertyDefinition is a factory method for creating a new PropertyDefinition
@@ -32,6 +34,7 @@ func NewPropertyDefinition(propertyName PropertyName, jsonName string, propertyT
 		propertyType: propertyType,
 		jsonName:     jsonName,
 		description:  "",
+		tags:         make(map[string]string),
 	}
 }
 
@@ -71,6 +74,27 @@ func (property *PropertyDefinition) WithType(newType Type) *PropertyDefinition {
 func (property *PropertyDefinition) WithValidation(validation Validation) *PropertyDefinition {
 	result := *property
 	result.validations = append(result.validations, validation)
+	return &result
+}
+
+// WithoutValidation removes all validations from the field
+func (property *PropertyDefinition) WithoutValidation() *PropertyDefinition {
+	result := *property
+	result.validations = nil
+	return &result
+}
+
+// WithTag adds the given tag to the field
+func (property *PropertyDefinition) WithTag(key string, value string) *PropertyDefinition {
+	result := *property
+	// TODO: Should we have a copy function here to make this a bit safer? Right now both this function
+	// TODO: and the above WithValidations technically leave the reference the same.
+	// Have to copy the map here
+	result.tags = make(map[string]string)
+	for k, v := range property.tags {
+		result.tags[k] = v
+	}
+	result.tags[key] = value
 	return &result
 }
 
@@ -147,8 +171,27 @@ func (property *PropertyDefinition) hasOptionalType() bool {
 	return ok
 }
 
+func (property *PropertyDefinition) renderedTags() string {
+	var orderedKeys []string
+	for key := range property.tags {
+		orderedKeys = append(orderedKeys, key)
+	}
+
+	sort.Slice(orderedKeys, func(i, j int) bool {
+		return orderedKeys[i] < orderedKeys[j]
+	})
+
+	tags := fmt.Sprintf("json:%q", property.jsonName)
+	for _, key := range orderedKeys {
+		tags = tags + fmt.Sprintf(" %s:%q", key, property.tags[key])
+	}
+
+	return tags
+}
+
 // AsField generates a Go AST field node representing this property definition
 func (property *PropertyDefinition) AsField(codeGenerationContext *CodeGenerationContext) *ast.Field {
+	tags := property.renderedTags()
 
 	result := &ast.Field{
 		Doc:   &ast.CommentGroup{},
@@ -156,7 +199,7 @@ func (property *PropertyDefinition) AsField(codeGenerationContext *CodeGeneratio
 		Type:  property.PropertyType().AsType(codeGenerationContext),
 		Tag: &ast.BasicLit{
 			Kind:  token.STRING,
-			Value: fmt.Sprintf("`json:%q`", property.jsonName),
+			Value: fmt.Sprintf("`%s`", tags),
 		},
 	}
 
