@@ -184,6 +184,10 @@ Every property is marked as optional. Optionality doesn't matter at this point, 
 
 The `PropertyBag` type provides storage for other properties, plus helper methods. It is always included in storage versions, but in this case will be unused. The method `Hub()` marks this version as the storage schema.
 
+With only two classes, this doesn't look much like the traditional hub and spoke model, but this will change as we work through this case study:
+
+![](versioning-hub-spoke-2011-01-01.dot.png)
+
 Our original version now needs to implement the [Convertible](https://book.kubebuilder.io/multiversion-tutorial/conversion.html) interface to allow conversion each way:
 
 ``` go
@@ -243,6 +247,12 @@ type Person struct {
 
 Conversions to and from the storage version will be identical (except for the import statements for referenced types) to those generated for the prior version. 
 
+Our hub and spoke diagram is becoming useful for seeing the relationship between versions:
+
+![](versioning-hub-spoke-2012-02-02.dot.png)
+
+Note particularly that we still show the prior storage version, with a one way conversion to the current storage version. This will be generated in the same way, and with the same structure, as all our other conversions.
+
 ### Version 2013-03-03 - New Property
 
 In response to customer feedback, this release of the CRM adds a new property to `Person` to allow a persons middle name to be stored:
@@ -274,6 +284,11 @@ type Person struct {
 // Hub marks this type as a conversion hub.
 func (*Person) Hub() {}
 ```
+
+A graph of our conversions now starts to show the expected hub and spoke structure, with conversions from earlier versions of storage allowing easy upgrades for users.
+
+![](versioning-hub-spoke-2013-03-03.dot.png)
+
 
 Conversions to and from earlier versions of Person are unchanged, as those versions do not support `MiddleName`. For the new version of `Person`, the new property will be included in the generated methods:
 
@@ -307,7 +322,7 @@ The new property is shown at the end of the list not because it is new, but beca
 
 Conversion methods for earlier API versions of `Person` are essentially unchanged. The import statement at the top of the file will be updated to the new storage version; no other changes are necessary.
 
-*Statistics:* At the time of writing, there were 381 version-to-version changes where the only change between versions was the addition of new properties. Of those, 249 were adding just a single property, and 71 added two properties. 
+**Statistics:** At the time of writing, there were 381 version-to-version changes where the only change between versions was the addition of new properties. Of those, 249 were adding just a single property, and 71 added two properties. 
 
 ### Version 2014-04-04 Preview - Schema Change
 
@@ -325,6 +340,8 @@ type Person struct {
 ```
 
 This is a preview version, so the storage version is _left unchanged_, based on the latest non-preview release (version 2011-03-03). We don't want to make changes to our storage versions based on speculative changes.
+
+![](versioning-hub-spoke-2014-04-04-preview.dot.png)
 
 The new properties don't exist on the storage version of `Person`, so the generated `ConvertToStorage()` and `ConvertFromStorage()` methods use the `PropertyBag` to carry the properties:
 
@@ -444,6 +461,8 @@ type Person struct {
 // Hub marks this type as a conversion hub.
 func (*Person) Hub() {}
 ```
+
+![](versioning-hub-spoke-2014-04-04.dot.png)
 
 The `ConvertToStorage()` and `ConvertFromStorage()` methods for the new version of `Person` are generated as expected, copying across values and invoking the `AssignableWithPersonStorage` interface if present:
 
@@ -645,7 +664,7 @@ func (person *Person) ConvertFromStorage(source storage.Person) error {
 }
 ```
 
-*Statistics:* At the time of writing, there were nearly 60 cases of fields being renamed between versions; 17 of these involved changes to letter case alone. (Count is inexact because renaming was inferred from the similarity of names.)
+**Statistics:** At the time of writing, there were nearly 60 cases of fields being renamed between versions; 17 of these involved changes to letter case alone. (Count is inexact because renaming was inferred from the similarity of names.)
 
 ### Version 2016-06-06 - Complex Properties
 
@@ -748,7 +767,7 @@ func (person *Person) ConvertFromStorage(source storage.Person) error {
     person.AlphaKey = source.SortKey // *** Rename is automatically handled ***
     person.FamilyName = source.FamilyName
     person.Id = source.Id
-    person.KnownAs = source.KnownAs"
+    person.KnownAs = source.KnownAs
     person.LegalName = source.LegalName
 
     // *** Copy the mailing address over too ***
@@ -789,35 +808,192 @@ We're recursively applying the same conversion pattern to `Address` as we have a
 
 ### Version 2017-07-07 - Optionality changes
 
-TODO: Illustrate the changes if address is no longer mandatory and discuss what happens the other way around
+In the 2016-06-06 version of the API, the `MailingAddress` property was mandatory. Since not everyone has a mailing address (some people receive no physical mail), this is now being made optional.
 
+The change to the API declarations is simple:
 
+``` go
+package v20170707
 
-Properties are always optional on the storage version, so the code in `ConvertFromStorage()` needs to handle **nil**. In this example, `MailingAddress` is required in the API version of `Person`, so we don't need such a check. However, if it became optional, we would then need to generate the check.
+type Address struct {
+    Street string
+    City   string
+}
 
+type Person struct {
+    Id             Guid
+    LegalName      string
+    FamilyName     string
+    KnownAs        string
+    SortKey        string
+    MailingAddress *Address // *** Was mandatory, now optional ***
+}
+```
 
-Field became optional: 100 times
-Field becamse required: 99 times
+The storage versions are identical to those used previously and are not shown here.
 
+What does change is the `ConvertToStorage()` method, which now needs to handle the case where the `MailingAddress` has not been included:
+
+``` go
+package v20170707
+
+import storage "v20170707storage"
+
+// ConvertTo converts this Person to the Hub version.
+func (person *Person) ConvertToStorage(dest storage.Person) error {
+    dest.SortKey = person.AlphaKey
+    dest.FamilyName = person.FamilyName
+    dest.Id = person.Id
+    dest.KnownAs = person.KnownAs
+    dest.LegalName = person.LegalName
+
+    // *** Need to check whether we have a mailing address to copy ***
+    if person.MailingAddress != nil {
+        address := &storage.Address{}
+        err := person.MailingAddress.ConvertToStorage(address)
+        if err != nil {
+            return err
+        }
+
+        dest.MailingAddress = address
+    }
+
+    if assignable, ok := person.(AssignableWithPersonStorage); ok {
+        err := assignable.AssignTo(dest)
+        if err != nill {
+            return err
+        }
+    }
+
+    return nil
+}
+```
+
+If we instead had an _optional_ field that became _required_ in a later version of the API, the generated code for `ConvertToStorage()` would become simpler as the check for **nil** would not be needed.
+
+**Statistics**: At the time of writing, there are 100 version-to-version changes where fields became **optional** in the later version of the API, and 99 version-to-version changes where fields became **required**.
 
 ### Version 2018-08-08 - Extending nested properties
 
-TODO: Illustrate how additional properties get added to Address
+Defining an address simply as `Street` and `City` has been found to be overly simplistic, so this release makes changes to allow a more flexible approach.
+
+``` go
+package v20180808
+
+type Address struct {
+    // FullAddress shows the entire address as should be used on postage
+    FullAddress  string
+    City         string
+    Country      string
+    PostCode     string
+}
+```
+
+As before, the storage version changes to match, with prior conversions using the property bag to store additional properties:
+
+``` go
+package v20180808storage 
+
+type Address struct {
+    PropertyBag
+    FullAddress  *string
+    City         *string
+    Country      *string
+    PostCode     *string
+}
+```
+
+These changes are entirely similar to those previously covered in version 2014-04-04, above.
 
 ### Version 2019-09-09 - Changing types
 
-TODO: Illustrate how we handle the case when the property type changes
+Realizing that some people get deliveries to places that don't appear in any formal database of addresses, in this release the name of the type changes to `Location`.
 
-Field type changed: 160 times
+``` go
+package v20190909
+
+type Location struct {
+    FullAddress  string
+    City         string
+    Country      string
+    PostCode     string
+    Lattitude    double
+    Longitide    double
+}
+```
+
+The storage version gets changed in a straightforward way:
+
+``` go
+package v20190909storage 
+
+type Location struct {
+    PropertyBag
+    FullAddress  *string
+    City         *string
+    Country      *string
+    PostCode     *string
+}
+```
+
+The conversion methods need to change as well. If we configure metadata detailing the rename (as we did for properties in version 2015-05-05), we can generate the required conversions automatically:
+
+``` go
+package v20170707
+
+// *** Updated storage version ***
+import storage "v20190909storage"
+
+// ConvertTo converts this Person to the Hub version.
+func (person *Person) ConvertToStorage(dest storage.Person) error {
+    // ... elided properties ...
+
+    // *** Need to check whether we have a mailing address to copy ***
+    if person.MailingAddress != nil {
+        address := &storage.Location{}
+        err := person.MailingAddress.ConvertToStorage(address)
+        if err != nil {
+            return err
+        }
+
+        dest.MailingAddress = address
+    }
+
+    if assignable, ok := person.(AssignableWithPersonStorage); ok {
+        err := assignable.AssignTo(dest)
+        if err != nill {
+            return err
+        }
+    }
+
+    return nil
+}
+
+// ConvertToStorage converts this Address to the hub storage version
+// ** Different parameter type for dest *** 
+func (address *Address) ConvertToStorage(dest storage.Location) error {
+    dest.Street = address.Street
+    dest.City = address.City
+
+    // *** Interface has been renamed too **
+    if assignable, ok := person.(AssignableWithLocationStorage); ok {
+        err := assignable.AssignTo(dest)
+        if err != nill {
+            return err
+        }
+    }
+
+    return nil
+}
+
+```
+
+If we don't include metadata to capture type renames, the conversion can be manually injected by implementing the `AssignableWithLocationStorage` interface.
+
+Statistics: At the time of writing, there are 160 version-to-version changes where the type of the property changes. This count excludes cases where change involved an optional property becoming mandatory, or vice versa.
 
 
 
-### TODO
-
-Scenarios still to add to the case study
-
-
-https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/
 
 
 
@@ -874,7 +1050,12 @@ TODO: Verify this assumption
 
 ## See Also
 
-[Hubs, spokes, and other wheel metaphors](https://book.kubebuilder.io/multiversion-tutorial/conversion-concepts.html)
+* [Hubs, spokes, and other wheel metaphors](https://book.kubebuilder.io/multiversion-tutorial/conversion-concepts.html)
+
+* [Falsehoods programmers believe about addresses](https://www.mjt.me.uk/posts/falsehoods-programmers-believe-about-addresses/)
+
+https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/
+
 
 ## Glossary
 
