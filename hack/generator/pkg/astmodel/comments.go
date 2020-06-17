@@ -7,20 +7,15 @@ import (
 
 // Utility methods for adding comments
 
-func addDocComment(commentList *[]*ast.Comment, comment string) {
-	if *commentList == nil {
-		// if first comment, add a blank comment prior
-		*commentList = []*ast.Comment{
-			&ast.Comment{
-				Text: "\n//",
-			},
-		}
-	}
-
-	for _, c := range formatDocComment(comment) {
-		line := c
+func addDocComment(commentList *[]*ast.Comment, comment string, width int) {
+	for _, c := range formatDocComment(comment, width) {
+		line := strings.TrimSpace(c)
 		if !strings.HasPrefix(line, "//") {
 			line = "//"+line
+		}
+
+		if *commentList==nil {
+			line = "\n"+line
 		}
 
 		*commentList = append(*commentList, &ast.Comment{
@@ -30,9 +25,78 @@ func addDocComment(commentList *[]*ast.Comment, comment string) {
 }
 
 // formatDocComment splits the supplied comment string up ready for use as a documentation comment
-func formatDocComment(comment string) []string {
-	var results []string
+func formatDocComment(comment string, width int) []string {
+	// Remove markdown bolding,
+	text := strings.ReplaceAll(comment, "**", "")
 
-	results = append(results, comment)
-	return results
+	// Turn <br> and <br/> into \n
+	text = strings.ReplaceAll(text, "<br/>", "\n")
+	text = strings.ReplaceAll(text, "<br />", "\n")
+	text = strings.ReplaceAll(text, "<br>", "\n")
+	text = strings.ReplaceAll(text, "<br >", "\n")
+
+	// Split into individual lines
+	lines := strings.Split(text, "\n")
+
+	// Trim whitespace
+	for i, l := range lines {
+		lines[i] = strings.TrimSpace(l)
+	}
+
+	// Wordwrap and return
+	return docCommentWrap(lines, width)
+}
+
+func docCommentWrap(lines []string, width int) []string {
+	var result []string
+	for _, l := range lines {
+		result = append(result, wordWrap(l, width)...)
+	}
+
+	return result
+}
+
+func wordWrap(text string, width int) []string {
+	var result []string
+
+	start := 0
+	for start < len(text) {
+		finish := findBreakPoint(text, start, width)
+		result = append(result, text[start:finish+1])
+		start = finish+1
+	}
+
+	return result
+}
+
+// findBreakPoint finds the character at which to break two lines
+// Returned index points the last character that should be included on the line
+// If breaking at a space, this will give a trailing space, but allows for
+// breaking at other points too as no characters will be omitted.
+func findBreakPoint(line string, start int, width int) int {
+	index := start + width
+	if index >= len(line) {
+		return len(line)-1
+	}
+
+	// Look for a word break within the line
+	for index > start {
+		if line[index] == ' ' {
+			return index
+		}
+
+		index--
+	}
+
+	// Line contains continuous text, we don't want to break it in two, so find the end of it
+	index = start + width
+	for index < len(line) {
+		if line[index] == ' ' {
+			return index
+		}
+
+		index++
+	}
+
+	return len(line)-1
 }
