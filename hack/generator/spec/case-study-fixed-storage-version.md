@@ -1020,7 +1020,7 @@ type Person struct {
 
 Needing to do this is a wart, but one with a nasty sting in the tail:
 
-When the original `MailingAddress` property ages out of the system (type amnesia), we'll no longer have a collision, and the storage struct will be generated with this structure:
+When the original `MailingAddress` property ages out of the system (see **property amnesia**, above), we'll no longer have a collision, and the storage struct will be generated with this structure:
 
 ``` go
 package v1
@@ -1041,10 +1041,9 @@ type Person struct {
 
 Not only will this break older users who have serialized resources using `Address`, but it will _**also**_ break newer users who have serialized resources using `Location`.   
 
-
 ## Storage Conversion
 
-The conversion methods need to change as well. If we configure metadata detailing the rename (as we did for properties in version 2015-05-05), we can generate the required conversions automatically:
+The conversion methods need to change as well. If we configure metadata detailing the rename (as we did for properties in version `2015-05-05`), we can generate the required conversions automatically:
 
 ``` go
 package v20170707
