@@ -57,7 +57,7 @@ func TestStructType_Equals_WhenGivenType_ReturnsExpectedResult(t *testing.T) {
 			t.Parallel()
 			g := NewGomegaWithT(t)
 
-			areEqual := c.thisType.Equals(c.otherType)
+			areEqual := c.thisType.Equal(c.otherType)
 
 			g.Expect(areEqual).To(Equal(c.expected))
 		})

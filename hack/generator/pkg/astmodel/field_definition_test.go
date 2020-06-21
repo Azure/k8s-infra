@@ -89,7 +89,7 @@ func TestFieldDefinition_Equals_WhenGivenFieldDefinition_ReturnsExpectedResult(t
 			t.Parallel()
 			g := NewGomegaWithT(t)
 
-			areEqual := c.thisField.Equals(c.otherField)
+			areEqual := c.thisField.Equal(c.otherField)
 
 			g.Expect(areEqual).To(Equal(c.expected))
 		})

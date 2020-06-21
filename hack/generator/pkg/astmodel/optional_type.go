@@ -45,13 +45,13 @@ func (optional *OptionalType) References(d *TypeName) bool {
 }
 
 // Equals returns true if this type is equal to the other type
-func (optional *OptionalType) Equals(t Type) bool {
+func (optional *OptionalType) Equal(t Type) bool {
 	if optional == t {
 		return true // reference equality short-cut
 	}
 
 	if otherOptional, ok := t.(*OptionalType); ok {
-		return optional.element.Equals(otherOptional.element)
+		return optional.element.Equal(otherOptional.element)
 	}
 
 	return false

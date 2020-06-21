@@ -49,7 +49,7 @@ func (prim *PrimitiveType) References(d *TypeName) bool {
 }
 
 // Equals returns true if the passed type is another primitive type the same name, false otherwise
-func (prim *PrimitiveType) Equals(t Type) bool {
+func (prim *PrimitiveType) Equal(t Type) bool {
 	if p, ok := t.(*PrimitiveType); ok {
 		return prim.name == p.name
 	}

@@ -14,7 +14,7 @@ type EnumValue struct {
 }
 
 // Equals tests to see if the passed EnumValue has the same name and value
-func (value *EnumValue) Equals(v *EnumValue) bool {
+func (value *EnumValue) Equal(v *EnumValue) bool {
 	if value == v {
 		return true
 	}

@@ -67,7 +67,7 @@ func (pr *PackageReference) PackageName() string {
 }
 
 // Equals returns true if the passed package reference references the same package, false otherwise
-func (pr *PackageReference) Equals(ref *PackageReference) bool {
+func (pr *PackageReference) Equal(ref *PackageReference) bool {
 	return pr.packagePath == ref.packagePath
 }
 

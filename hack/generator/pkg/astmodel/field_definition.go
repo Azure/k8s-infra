@@ -134,6 +134,6 @@ func (field *FieldDefinition) AsField(codeGenerationContext *CodeGenerationConte
 }
 
 // Equals tests to see if the specified FieldDefinition specifies the same field
-func (field *FieldDefinition) Equals(f *FieldDefinition) bool {
-	return field == f || (field.fieldName == f.fieldName && field.fieldType.Equals(f.fieldType))
+func (field *FieldDefinition) Equal(f *FieldDefinition) bool {
+	return field == f || (field.fieldName == f.fieldName && field.fieldType.Equal(f.fieldType))
 }

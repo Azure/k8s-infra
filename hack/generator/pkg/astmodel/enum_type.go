@@ -45,9 +45,9 @@ func (enum *EnumType) References(tn *TypeName) bool {
 }
 
 // Equals will return true if the supplied type has the same base type and options
-func (enum *EnumType) Equals(t Type) bool {
+func (enum *EnumType) Equal(t Type) bool {
 	if e, ok := t.(*EnumType); ok {
-		if !enum.BaseType.Equals(e.BaseType) {
+		if !enum.BaseType.Equal(e.BaseType) {
 			return false
 		}
 
@@ -57,7 +57,7 @@ func (enum *EnumType) Equals(t Type) bool {
 		}
 
 		for i := range enum.options {
-			if !enum.options[i].Equals(&e.options[i]) {
+			if !enum.options[i].Equal(&e.options[i]) {
 				return false
 			}
 		}

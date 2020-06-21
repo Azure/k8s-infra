@@ -19,5 +19,5 @@ type Function interface {
 	AsFunc(codeGenerationContext *CodeGenerationContext, receiver *TypeName, methodName string) *ast.FuncDecl
 
 	// Equals determines if this Function is equal to another one
-	Equals(f Function) bool
+	Equal(f Function) bool
 }

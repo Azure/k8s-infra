@@ -41,7 +41,7 @@ func (typeName *TypeName) AsType(codeGenerationContext *CodeGenerationContext) a
 	}
 
 	// Sanity assertion that the type we're generating is in the same package that the context is for
-	if !codeGenerationContext.currentPackage.Equals(&typeName.PackageReference) {
+	if !codeGenerationContext.currentPackage.Equal(&typeName.PackageReference) {
 		panic(fmt.Sprintf(
 			"no reference for %v included in package %v",
 			typeName.name,
@@ -53,7 +53,7 @@ func (typeName *TypeName) AsType(codeGenerationContext *CodeGenerationContext) a
 
 // References indicates whether this Type includes any direct references to the given Type
 func (typeName *TypeName) References(d *TypeName) bool {
-	return typeName.Equals(d)
+	return typeName.Equal(d)
 }
 
 // RequiredImports returns all the imports required for this definition
@@ -62,9 +62,9 @@ func (typeName *TypeName) RequiredImports() []*PackageReference {
 }
 
 // Equals returns true if the passed type is the same TypeName, false otherwise
-func (typeName *TypeName) Equals(t Type) bool {
+func (typeName *TypeName) Equal(t Type) bool {
 	if d, ok := t.(*TypeName); ok {
-		return typeName.name == d.name && typeName.PackageReference.Equals(&d.PackageReference)
+		return typeName.name == d.name && typeName.PackageReference.Equal(&d.PackageReference)
 	}
 
 	return false
