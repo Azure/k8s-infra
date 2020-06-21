@@ -26,8 +26,8 @@ We're not reusing the API version directly as our storage version. Instead, we d
 package v1
 
 type Person struct {
-    Id        *Guid
     FirstName *string
+    Id        *Guid
     LastName  *string
 }
 
@@ -42,7 +42,7 @@ Every property is marked as optional. Optionality doesn't matter at this point, 
 
 ## Storage Conversion
 
-Our original API version now needs to implement the [Convertible](https://book.kubebuilder.io/multiversion-tutorial/conversion.html) interface to allow conversion to and from the storage version:
+We need to implement the [Convertible](https://book.kubebuilder.io/multiversion-tutorial/conversion.html) interface to allow conversion to and from the storage version:
 
 ``` go
 package v20110101
@@ -58,8 +58,8 @@ func (person *Person) ConvertTo(raw conversion.Hub) error {
 // ConvertToStorage converts this Person to a storage version
 func (person *Person) ConvertToStorage(dest v1.Person) error {
     // Copy simple properties across
-    dest.Id = person.Id
     dest.FirstName = person.FirstName
+    dest.Id = person.Id
     dest.LastName = person.LastName
 
     return nil
@@ -74,8 +74,8 @@ func (person *Person) ConvertFrom(raw conversion.Hub) error {
 // ConvertFrom converts from a storage version to this version.
 func (person *Person) ConvertFromStorage(source v1.Person) error {
     // Copy simple properties across
-    person.Id = source.Id
     person.FirstName = source.FirstName
+    person.Id = source.Id
     person.LastName = source.LastName
 
     return nil
@@ -83,9 +83,11 @@ func (person *Person) ConvertFromStorage(source v1.Person) error {
 
 ```
 
-Conversion is separated into two methods (e.g. `ConvertFrom()` and `ConvertFromStorage()`) to allow for reuse of the `ConvertFromStorage()` methods for conversion of nested complex properties, as we'll see later on.
+These four methods will be automatically generated in order to handle much of the boilerplate required for conversion. 
 
-These methods will be automatically generated in order to handle the majority of the required conversions. Since they never change, the `ConvertTo()` and `ConvertFrom()` methods are omitted from the following discussion.
+Conversion in each direction is separated into two methods (e.g. `ConvertFrom()` and `ConvertFromStorage()`) to allow for reuse of the `ConvertFromStorage()` methods for conversion of nested complex properties, as we'll see later on.
+
+Since they never change, the `ConvertTo()` and `ConvertFrom()` methods are omitted from the following discussion.
 
 ## Version Map
 
@@ -95,7 +97,7 @@ With only two classes, our version map doesn't look much like the traditional hu
 
 # Version 2012-02-02 - No Change
 
-In this release of the CRM service, there are no changes made to the structure of `Person`:
+In this release of the CRM service, despite changes elsewhere in the service, there are no changes made to the structure of `Person`:
 
 ``` go
 package v20120202
@@ -109,7 +111,7 @@ type Person struct {
 
 ## Storage Conversion
 
-Conversions to and from the storage version will be identical to those generated for the prior version. 
+Conversions between version `v20120202` and the `v1` storage version will be identical to those generated for the earlier `v20110101` version. 
 
 ## Version Map
 
@@ -127,21 +129,21 @@ package v20130303
 type Person struct {
     Id         Guid
     FirstName  string
-    MiddleName string // *** New in this version ***
+    MiddleName string // *** New ***
     LastName   string
 }
 ```
 
-The storage version updates accordingly:
+The storage version is updated with the addition of the new property:
 
 ``` go
 package v1
 
 type Person struct {
-    Id         *Guid
     FirstName  *string
-    MiddleName *string // *** New storage for new property ***
+    Id         *Guid
     LastName   *string
+    MiddleName *string // *** New ***
 }
 
 // Hub marks this type as a conversion hub.
@@ -159,8 +161,8 @@ import "v1"
 
 // ConvertTo converts this Person to the Hub version.
 func (person *Person) ConvertToStorage(dest v1.Person) error {
-    dest.Id = person.Id
     dest.FirstName = person.FirstName
+    dest.Id = person.Id
     dest.LastName = person.LastName
     dest.MiddleName = person.MiddleName // *** New property copied too ***
 
@@ -169,8 +171,8 @@ func (person *Person) ConvertToStorage(dest v1.Person) error {
 
 // ConvertFrom converts from the Hub version to this version.
 func (person *Person) ConvertFromStorage(source v1.Person) error {
-    person.Id = source.Id
     person.FirstName = source.FirstName
+    person.Id = source.Id
     person.LastName = source.LastName
     person.MiddleName = source.MiddleName // *** New property copied too ***
 
@@ -184,7 +186,7 @@ Conversion methods for earlier API versions of `Person` are essentially unchange
 
 ## Version Map
 
-A graph of our conversions now starts to show the expected hub and spoke structure, with conversions from earlier versions of storage allowing easy upgrades for users.
+A graph of our conversions now starts to show the expected hub and spoke structure:
 
 ![](case-study-fixed-storage-2013-03-03.png)
 
@@ -207,19 +209,19 @@ type Person struct {
 }
 ```
 
-The storage version gets modified to include these new properties:
+The storage version gets modified to add these new properties:
 
 ``` go
 package v1
 
 type Person struct {
-    Id         *Guid
-    FamilyName *string // *** New Property ***
+    FamilyName *string // *** New ***
     FirstName  *string
-    FullName   *string // *** New Property ***
-    KnownAs    *string // *** New Property ***
-    MiddleName *string
+    FullName   *string // *** New ***
+    Id         *Guid
+    KnownAs    *string // *** New ***
     LastName   *string
+    MiddleName *string
 }
 
 // Hub marks this type as a conversion hub.
@@ -237,9 +239,9 @@ import storage "v20130303storage"
 
 // ConvertTo converts this Person to the Hub version.
 func (person *Person) ConvertToStorage(dest storage.Person) error {
-    dest.Id = person.Id
     dest.FamilyName = person.FamilyName
     dest.FullName = person.FullName
+    dest.Id = person.Id
     dest.KnownAs = person.KnownAs
 
     return nil
@@ -247,9 +249,9 @@ func (person *Person) ConvertToStorage(dest storage.Person) error {
 
 // ConvertFrom converts from the Hub version to this version.
 func (person *Person) ConvertFromStorage(source storage.Person) error {
-    person.Id = source.Id
     person.FamilyName = source.FamilyName
     person.FullName = source.FullName
+    person.Id = source.Id
     person.KnownAs = source.KnownAs
 
     return nil
@@ -260,22 +262,29 @@ This provides round-trip support for the preview release, but does not provide b
 
 The storage version of `Person` written by the preview release will have no values for `FirstName`, `LastName`, and `MiddleName`.
 
+Similarly, the storage version of `Person` written by an eariler release will have no values for `KnownAs`, `FamilyName`, or `FullName`.
+
 These kinds of cross-version conversions cannot be automatically generated as they require more understanding the semantic changes between versions. 
 
-To allow injection of manual conversion steps, an interface will be generated as follows:
+To allow injection of manual conversion steps, two interfaces will be generated as follows:
 
 ``` go
 package v1
 
-// AssignableWithPersonStorage provides methods to
-// augment conversion to/from the storage version
-type AssignableWithPersonStorage interface {
+// AssignableToPerson is implemented on an API version 
+// of `Person` to update the storage version
+type AssignableToPerson interface {
     AssignTo(person Person) error
+}
+
+// AssignableFromPerson is implemented on an API version 
+// of `Person` to populate it from the storage version
+type AssignableFromPerson interface {
     AssignFrom(person Person) error
 }
 ```
 
-This interface can be optionally implemented by API versions (spoke types) to augment the generated conversion.
+This interface can be optionally implemented by API versions (spoke types) to *augment* (not replace) the generated conversion. 
 
 The generated `ConvertToStorage()` and `ConvertFromStorage()` methods will test for the presence of this interface and will call it if available:
 
@@ -289,7 +298,7 @@ func (person *Person) ConvertToStorage(dest v1.Person) error {
     // … elided …
 
     // *** Check for the interface and use it if found ***
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
+    if assignable, ok := person.(AssignableToPerson); ok {
         assignable.AssignTo(dest)
     }
 
@@ -301,13 +310,15 @@ func (person *Person) ConvertFromStorage(source v1.Person) error {
     // … elided …
 
     // *** Check for the interface and use it if found ***
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
+    if assignable, ok := person.(AssignableFromPerson); ok {
         assignable.AssignFrom(source)
     }
 
     return nil
 }
 ```
+
+Implementations of these interfaces are called *after* the generated boilerplate conversion has completed. This gives developers freedom to make any changes required as they won't be overwritted by the effects of generated code.
 
 ## Version Map
 
@@ -325,39 +336,43 @@ package v20140404
 
 type Person struct {
     Id         Guid
-    LegalName  string // Was FullName in preview
+    LegalName  string // *** Was FullName in preview ***
     FamilyName string
     KnownAs    string
-    AlphaKey   string // Added after preview
+    AlphaKey   string // *** Added after preview ***
 }
 ```
 
-More changes to the storage version are required to allow this to be stored:
+The two new properties need to be added to the storage version to allow this to be stored:
 
 ``` go
 package v1
 
 type Person struct {
     Id         *Guid
-    AlphaKey   *string
+    AlphaKey   *string // *** New ***
     FamilyName *string
     FirstName  *string
     FullName   *string
     KnownAs    *string
-    LegalName  *string
-    MiddleName *string
     LastName   *string
+    LegalName  *string // *** New ***
+    MiddleName *string
 }
 
 // Hub marks this type as a conversion hub.
 func (*Person) Hub() {}
 ```
 
-## Issue: Field Bloat
+## Issue: Property Bloat
 
-As our API evolves over time, our storage version is accumulating all the fields that have ever existed, bloating the storage version with fields that are seldom (if ever) used. 
+As our API evolves over time, our storage version is accumulating all the properties that have ever existed, bloating the storage version with obsolete properties that are seldom (if ever) used. 
 
-For example, only preview users would ever have used `FullName` as it became `LegalName` in the general release, but our storage type has to have both fields in order to correctly deserialize from storage.
+For example, only preview users would ever have used `FullName` as it became `LegalName` in the general release; most users will never use `FullName`.
+
+We have a problem, however. We can't remove the `FullName` property as that is a breaking change that will negatively impact users who *have* used the preview version. Both properties will need to be retained permanently.
+
+This violates the *pay for play* principle - even users who adopt the operator after the 2014-04-04 release will have to deal with the complexity even though they've never used the preview version.
 
 ## Storage Conversion
 
@@ -377,7 +392,7 @@ func (person *Person) ConvertToStorage(dest v1.Person) error {
     dest.LegalName = person.LegalName
 
     // *** Check for the interface and use it if found ***
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
+    if assignable, ok := person.(AssignableToPerson); ok {
         assignable.AssignTo(dest)
     }
 
@@ -393,7 +408,7 @@ func (person *Person) ConvertFromStorage(source v1.Person) error {
     person.LegalName = source.LegalName
 
     // *** Check for the interface and use it if found ***
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
+    if assignable, ok := person.(AssignableFromPerson); ok {
         assignable.AssignFrom(source)
     }
 
@@ -419,14 +434,16 @@ func (person *Person) PopulateFromFirstMiddleLastName(firstName string, middleNa
     person.AlphaKey = lastName
 }
 
-func (person *Person) PopulateLegacyFields() {
+func (person *Person) PopulateLegacyProperties() {
     person.FirstName = person.KnownAs
     person.FamilyName = person.FamilyName
     person.MiddleName = // ... elided ...
 }
 ```
 
-With these methods available, implementing the interface `AssignableWithPersonStorage` becomes straightforward. For the first release of `Person`:
+These methods are manually authored, so the names are arbitary. However, we will provide some guidance for implementers to encouarage consistency as the operator is updated and improved.
+
+With these methods available, implementing the interface `AssignableToPerson` becomes straightforward. For the `2011-01-01` release of `Person`:
 
 ``` go
 package v20110101
@@ -434,14 +451,13 @@ package v20110101
 import v1
 
 func (person *Person) AssignTo(dest v1.Person) error {
-    dest.PopulateFromFirstMiddleLastName(person.FirstName, "", person.LastName)
-}
-
-func (person *Person) AssignFrom(source storage.Person) error {
+    dest.PopulateFromFirstMiddleLastName(
+        person.FirstName, "", person.LastName)
+    return nil
 }
 ```
 
-For the later release that introduced `MiddleName` the code is very similar:
+For the `2013-03-3` release that introduced `MiddleName` the code is very similar:
 
 ``` go
 package v20130303
@@ -453,15 +469,11 @@ func (person *Person) AssignTo(dest v1.Person) error {
         person.FirstName, person.MiddleName, person.LastName)
     return nil
 }
-
-func (person *Person) AssignFrom(source v1.Person) error {
-    return nil
-}
 ```
 
 ## Version Map
 
-We can see in our version map that the preview release is still supported, but is now backed by the GA release of the version:
+We can see in our version map that the preview release is still supported:
 
 ![](case-study-fixed-storage-2014-04-04.png)
 
@@ -488,26 +500,26 @@ package v1
 
 type Person struct {
     Id         *Guid
-    AlphaKey   *string
+    AlphaKey   *string // ** Debris ***
     FamilyName *string
     FirstName  *string
     FullName   *string
     KnownAs    *string
+    LastName   *string
     LegalName  *string
     MiddleName *string
-    LastName   *string
-    SortKey    *string
+    SortKey    *string // ** New ***
 }
 
 // Hub marks this type as a conversion hub.
 func (*Person) Hub() {}
 ```
 
-Again, we see the issue of *field bloat* where the storage type needs to have both `AlphaKey` and `SortKey` for backward compatibility.
+Again, we see the issue of **property bloat** where the storage type needs to have both `AlphaKey` and `SortKey` for backward compatibility.
 
 ## Storage Conversion
 
-By documenting the renames in the configuration of our code generator, this rename will be automatically handled within the `ConvertTo()` and `ConvertFrom()` methods, as shown here for the prior version of `Person`:
+By documenting the renames in the configuration of our code generator, this rename will be automatically handled within the `ConvertTo()` and `ConvertFrom()` methods, as shown here for the `2014-04-04` version of `Person`:
 
 ``` go
 package v20140404
@@ -523,7 +535,7 @@ func (person *Person) ConvertToStorage(dest v1.Person) error {
     dest.LegalName = person.LegalName
     dest.SortKey = person.AlphaKey // *** Rename is automatically handled ***
 
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
+    if assignable, ok := person.(AssignableToPerson); ok {
         assignable.AssignTo(dest)
     }
 
@@ -535,16 +547,59 @@ func (person *Person) ConvertFromStorage(source v1.Person) error {
     person.AlphaKey = source.SortKey // *** Rename is automatically handled ***
     person.FamilyName = source.FamilyName
     person.Id = source.Id
-    person.KnownAs = source.KnownAs"
+    person.KnownAs = source.KnownAs
     person.LegalName = source.LegalName
 
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
+    if assignable, ok := person.(AssignableFromPerson); ok {
         assignable.AssignFrom(source)
     }
 
     return nil
 }
 ```
+
+For forward compatibility, the `ConvertToStorage()` method for version `2014-04-04` populates **both** `AlphaKey` and `SortKey`.
+
+For the `2015-05-05` release of `Person`, the methods are similar:
+
+``` go
+package v20150505
+
+import v1
+
+// ConvertTo converts this Person to the Hub version.
+func (person *Person) ConvertToStorage(dest v1.Person) error {
+    dest.AlphaKey = person.SortKey // *** Back compatibility ***
+    dest.FamilyName = person.FamilyName
+    dest.Id = person.Id
+    dest.KnownAs = person.KnownAs
+    dest.LegalName = person.LegalName
+    dest.SortKey = person.SortKey // *** New ***
+
+    if assignable, ok := person.(AssignableToPerson); ok {
+        assignable.AssignTo(dest)
+    }
+
+    return nil
+}
+
+// ConvertFrom converts from the Hub version to this version.
+func (person *Person) ConvertFromStorage(source v1.Person) error {
+    person.FamilyName = source.FamilyName
+    person.Id = source.Id
+    person.KnownAs = source.KnownAs
+    person.LegalName = source.LegalName
+    person.SortKey = source.SortKey // *** New ***
+
+    if assignable, ok := person.(AssignableFromPerson); ok {
+        assignable.AssignFrom(source)
+    }
+
+    return nil
+}
+```
+
+Here we can see the `2015-05-05` version of `ConvertToStorage()` populates `AlphaKey` for backwards compatiblity.
 
 ## Version Map
 
@@ -554,11 +609,13 @@ Here we see our horizon policy coming into effect, with support for version 2011
 
 ## How often do property renames happen?
 
-At the time of writing, there were nearly **60** cases of properties being renamed between versions; **17** of these involved changes to letter case alone. (Count is somewhat inexact because renaming was manually inferred from the similarity of names.)
+At the time of writing, there were nearly **60** cases of properties being renamed between versions. (Count is somewhat inexact because renaming was manually inferred from the similarity of names.)
+
+Of these **17** of these involved changes to letter case alone. 
 
 # Version 2016-06-06 - Complex Properties
 
-With some customers expressing a desire to send physical mail to their customers, this release extends the API with mailing address for each person.
+With some customers expressing a desire to send physical mail to their customers, this release extends the API with a mailing address for each person.
 
 ``` go
 package v20160606
@@ -578,7 +635,7 @@ type Person struct {
 }
 ```
 
-We now have two structs that make up our storage version:
+We now have two structs used in storage:
 
 ``` go
 package v1
@@ -590,17 +647,17 @@ type Person struct {
     FirstName      *string
     FullName       *string
     KnownAs        *string
-    LegalName      *string
-    MailingAddress *Address
-    MiddleName     *string
     LastName       *string
+    LegalName      *string
+    MailingAddress *Address // *** New ***
+    MiddleName     *string
     SortKey        *string
 }
 
 type Address struct {
     PropertyBag
-    Street *string
-    City   *string
+    City        *string
+    Street      *string
 }
 
 // Hub marks this type as a conversion hub.
@@ -633,7 +690,7 @@ func (person *Person) ConvertToStorage(dest v1.Person) error {
 
     dest.MailingAddress = address
 
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
+    if assignable, ok := person.(AssignableToPerson); ok {
         err := assignable.AssignTo(dest)
         if err != nill {
             return err
@@ -648,7 +705,7 @@ func (address *Address) ConvertToStorage(dest v1.Address) error {
     dest.Street = address.Street
     dest.City = address.City
 
-    if assignable, ok := person.(AssignableWithAddressStorage); ok {
+    if assignable, ok := person.(AssignableToAddress); ok {
         err := assignable.AssignTo(dest)
         if err != nill {
             return err
@@ -660,7 +717,7 @@ func (address *Address) ConvertToStorage(dest v1.Address) error {
 
 // ConvertFrom converts from the Hub version to this version.
 func (person *Person) ConvertFromStorage(source v1.Person) error {
-    person.AlphaKey = source.SortKey // *** Rename is automatically handled ***
+    person.AlphaKey = source.SortKey // *** Rename still is automatically handled ***
     person.FamilyName = source.FamilyName
     person.Id = source.Id
     person.KnownAs = source.KnownAs
@@ -673,7 +730,7 @@ func (person *Person) ConvertFromStorage(source v1.Person) error {
         person.MailingAddress = address
     }
 
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
+    if assignable, ok := person.(AssignableFromPerson); ok {
         err := assignable.AssignFrom(source)
         if err != nill {
             return err
@@ -688,7 +745,7 @@ func (address *Address) ConvertFromStorage(source v1.Address) error {
     address.Street = source.Street
     address.City = source.City
 
-    if assignable, ok := person.(AssignableWithAddressStorage); ok {
+    if assignable, ok := person.(AssignableFromAddress); ok {
         err := assignable.AssignFrom(source)
         if err != nill {
             return err
@@ -703,7 +760,7 @@ We're recursively applying the same conversion pattern to `Address` as we have a
 
 ## Version Map
 
-Again we see the oldest version drop out:
+Again we see the oldest version (`2012-02-02`) drop out:
 
 ![](case-study-fixed-storage-2016-06-06.png)
 
@@ -745,11 +802,11 @@ import v1
 
 // ConvertTo converts this Person to the Hub version.
 func (person *Person) ConvertToStorage(dest v1.Person) error {
-    dest.SortKey = person.AlphaKey
     dest.FamilyName = person.FamilyName
     dest.Id = person.Id
     dest.KnownAs = person.KnownAs
     dest.LegalName = person.LegalName
+    dest.SortKey = person.AlphaKey
 
     // *** Need to check whether we have a mailing address to copy ***
     if person.MailingAddress != nil {
@@ -762,7 +819,7 @@ func (person *Person) ConvertToStorage(dest v1.Person) error {
         dest.MailingAddress = address
     }
 
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
+    if assignable, ok := person.(AssignableToPerson); ok {
         err := assignable.AssignTo(dest)
         if err != nill {
             return err
@@ -773,7 +830,7 @@ func (person *Person) ConvertToStorage(dest v1.Person) error {
 }
 ```
 
-If we instead had an _optional_ field that became _required_ in a later version of the API, the generated code for `ConvertToStorage()` would become simpler as the check for **nil** would not be needed.
+If we instead had an _optional_ property that became _required_ in a later version of the API, the generated code for `ConvertToStorage()` would become simpler as the check for **nil** would not be needed.
 
 ## Version Map
 
@@ -783,7 +840,7 @@ Note that the 2013-03-03 version has now dropped out:
 
 ## How often do optionality changes happen?
 
-At the time of writing, there are 100 version-to-version changes where properties became **optional** in the later version of the API, and 99 version-to-version changes where properties became **required**.
+At the time of writing, there are **100** version-to-version changes where properties became **optional** in the later version of the API, and **99** version-to-version changes where properties became **required**.
 
 ## Issue: Property Amnesia
 
@@ -799,10 +856,10 @@ As a consequence, the storage version generated for this release will be this:
 package v1
 
 type Person struct {
-    Id             *Guid
     AlphaKey       *string
     FamilyName     *string
     FullName       *string
+    Id             *Guid
     KnownAs        *string
     LegalName      *string
     MailingAddress *Address
@@ -811,28 +868,30 @@ type Person struct {
 
 type Address struct {
     PropertyBag
-    Street *string
-    City   *string
+    City        *string
+    Street      *string
 }
 
 // Hub marks this type as a conversion hub.
 func (*Person) Hub() {}
 ```
 
-Similar changes to remove references to `FirstName`, `MiddleName` and `LastName`  will happen across all the generated `ConvertFromStorage()` and `ConvertToStorage()` methods.
+References to `FirstName`, `MiddleName` and `LastName` will disappear across all the generated `ConvertFromStorage()` and `ConvertToStorage()` methods as well.
 
 **This is a breaking change.** Existing long time users of the service operator, with CRDs serialized containing any of the properties `FirstName`, `MiddleName` and `LastName` will find that their clusters break when this version of the service operator is deployed.
 
+Without explicit intervention in the operator, their only mitigation would be to revert back to the earlier version of the service operator and *never upgrade it ever again.*
+
 The root cause of the problem is that the CRD has never been modified (upgraded) - once first deployed the resource is never modified, only loaded and reconciled.
 
-To migigate this issue, we would need manually merge the generated code with prior versions to retain both the field definitions and the conversion support previously generated. 
+To retain backward compatibility we would need manually merge the generated code with prior versions to retain both the property definitions and the conversion support previously generated. 
 
-There are many problems with this mitigation:
+There are many problems with this approach:
 
-* This would violate the goal of avoiding changes to generated files.
-* Making these changes would be tedious and error prone.
-* Changes would need to be re-merged for every release of the service operator.
-* Manual conversions would need to be written for newer API version.
+* Violates the goal of avoiding changes to generated files.
+* Merging these changes would be tedious and error prone.
+* Changes would need to be re-merged for every subsequent release of the service operator.
+* Manual conversions would need to be written for newer API versions.
 * Over time, the number of classes requiring manual attention would grow.
 
 # Version 2018-08-08 - Extending nested properties
@@ -851,16 +910,16 @@ type Address struct {
 }
 ```
 
-As before, the storage version changes to match to store the additional properties:
+As before, the storage version is updated with the additional properties:
 
 ``` go
 package v1
 
 type Address struct {
     City        *string
-    Country     *string
-    FullAddress *string
-    PostCode    *string
+    Country     *string // *** New ***
+    FullAddress *string // *** New ***
+    PostCode    *string // *** New ***
     Street      *string
 }
 ```
@@ -917,7 +976,7 @@ type Address struct {
 }
 ```
 
-Issue: Type collision
+## Issue: Type collision
 
 We run into a problem with the storage version of the `Person` type:
 
