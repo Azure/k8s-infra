@@ -68,7 +68,7 @@ func wordWrap(text string, width int) []string {
 }
 
 // findBreakPoint finds the character at which to break two lines
-// Returned index points the last character that should be included on the line
+// Returned index points to the last character that should be included on the line
 // If breaking at a space, this will give a trailing space, but allows for
 // breaking at other points too as no characters will be omitted.
 func findBreakPoint(line string, start int, width int) int {
