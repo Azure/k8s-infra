@@ -27,7 +27,7 @@ func addDocComment(commentList *[]*ast.Comment, comment string, width int) {
 
 // formatDocComment splits the supplied comment string up ready for use as a documentation comment
 func formatDocComment(comment string, width int) []string {
-	// Remove markdown bolding,
+	// Remove markdown bolding
 	text := strings.ReplaceAll(comment, "**", "")
 
 	// Turn <br> and <br/> into \n
