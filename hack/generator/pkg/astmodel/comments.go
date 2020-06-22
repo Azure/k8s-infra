@@ -12,11 +12,11 @@ func addDocComment(commentList *[]*ast.Comment, comment string, width int) {
 	for _, c := range formatDocComment(comment, width) {
 		line := strings.TrimSpace(c)
 		if !strings.HasPrefix(line, "//") {
-			line = "//"+line
+			line = "//" + line
 		}
 
-		if *commentList==nil {
-			line = "\n"+line
+		if *commentList == nil {
+			line = "\n" + line
 		}
 
 		*commentList = append(*commentList, &ast.Comment{
@@ -45,6 +45,8 @@ func formatDocComment(comment string, width int) []string {
 	return docCommentWrap(lines, width)
 }
 
+var brRegex = regexp.MustCompile("<br[^/>]*/?>")
+
 func docCommentWrap(lines []string, width int) []string {
 	var result []string
 	for _, l := range lines {
@@ -61,7 +63,7 @@ func wordWrap(text string, width int) []string {
 	for start < len(text) {
 		finish := findBreakPoint(text, start, width)
 		result = append(result, text[start:finish+1])
-		start = finish+1
+		start = finish + 1
 	}
 
 	return result
@@ -74,7 +76,7 @@ func wordWrap(text string, width int) []string {
 func findBreakPoint(line string, start int, width int) int {
 	limit := start + width + 1
 	if limit >= len(line) {
-		return len(line)-1
+		return len(line) - 1
 	}
 
 	// Look for a word break within the line
@@ -89,7 +91,5 @@ func findBreakPoint(line string, start int, width int) int {
 		return limit + index
 	}
 
-	return len(line)-1
+	return len(line) - 1
 }
-
-var brRegex = regexp.MustCompile("<br[^/>]*/?>")
