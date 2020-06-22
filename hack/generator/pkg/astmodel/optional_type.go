@@ -7,6 +7,8 @@ package astmodel
 
 import (
 	"go/ast"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // OptionalType is used for items that may or may not be present
@@ -51,7 +53,7 @@ func (optional *OptionalType) Equal(t Type) bool {
 	}
 
 	if otherOptional, ok := t.(*OptionalType); ok {
-		return optional.element.Equal(otherOptional.element)
+		return cmp.Equal(optional.element, otherOptional.element)
 	}
 
 	return false

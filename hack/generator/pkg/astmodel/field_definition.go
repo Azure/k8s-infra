@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // FieldName is a semantic type
@@ -135,5 +137,5 @@ func (field *FieldDefinition) AsField(codeGenerationContext *CodeGenerationConte
 
 // Equals tests to see if the specified FieldDefinition specifies the same field
 func (field *FieldDefinition) Equal(f *FieldDefinition) bool {
-	return field == f || (field.fieldName == f.fieldName && field.fieldType.Equal(f.fieldType))
+	return field == f || (field.fieldName == f.fieldName && cmp.Equal(field.fieldType, f.fieldType))
 }

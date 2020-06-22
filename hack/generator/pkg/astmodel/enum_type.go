@@ -9,6 +9,7 @@ import (
 	"go/ast"
 	"sort"
 
+	"github.com/google/go-cmp/cmp"
 	"k8s.io/klog/v2"
 )
 
@@ -47,7 +48,7 @@ func (enum *EnumType) References(tn *TypeName) bool {
 // Equals will return true if the supplied type has the same base type and options
 func (enum *EnumType) Equal(t Type) bool {
 	if e, ok := t.(*EnumType); ok {
-		if !enum.BaseType.Equal(e.BaseType) {
+		if !cmp.Equal(enum.BaseType, e.BaseType) {
 			return false
 		}
 
@@ -57,7 +58,7 @@ func (enum *EnumType) Equal(t Type) bool {
 		}
 
 		for i := range enum.options {
-			if !enum.options[i].Equal(&e.options[i]) {
+			if !cmp.Equal(enum.options[i], &e.options[i]) {
 				return false
 			}
 		}

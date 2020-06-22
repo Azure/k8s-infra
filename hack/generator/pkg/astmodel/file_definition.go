@@ -15,6 +15,7 @@ import (
 	"os"
 	"sort"
 
+	"github.com/google/go-cmp/cmp"
 	"k8s.io/klog/v2"
 )
 
@@ -50,7 +51,7 @@ func (file *FileDefinition) generateImports() map[PackageImport]struct{} {
 	for _, s := range file.definitions {
 		for _, requiredImport := range s.Type().RequiredImports() {
 			// no need to import the current package
-			if !requiredImport.Equal(file.packageReference) {
+			if !cmp.Equal(requiredImport, file.packageReference) {
 				newImport := NewPackageImport(*requiredImport)
 				requiredImports[*newImport] = struct{}{}
 			}
@@ -63,7 +64,7 @@ func (file *FileDefinition) generateImports() map[PackageImport]struct{} {
 	// but a different package path
 	for imp := range requiredImports {
 		for otherImp := range requiredImports {
-			if !imp.Equal(&otherImp) && imp.PackageName() == otherImp.PackageName() {
+			if !cmp.Equal(imp, &otherImp) && imp.PackageName() == otherImp.PackageName() {
 				klog.Warningf(
 					"File %v: import %v (named %v) and import %v (named %v) conflict",
 					file.packageReference.PackagePath(),

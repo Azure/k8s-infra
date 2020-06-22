@@ -8,6 +8,8 @@ package astmodel
 import (
 	"go/ast"
 	"sort"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // StructType represents an (unnamed) struct type
@@ -113,7 +115,7 @@ func (structType *StructType) Equal(t Type) bool {
 				return false
 			}
 
-			if !ourField.Equal(f) {
+			if !cmp.Equal(ourField, f) {
 				// Different field, even though same name; not-equal
 				return false
 			}
@@ -131,7 +133,7 @@ func (structType *StructType) Equal(t Type) bool {
 				return false
 			}
 
-			if !ourFunction.Equal(function) {
+			if !cmp.Equal(ourFunction, function) {
 				// Different function, even though same name; not-equal
 				return false
 			}

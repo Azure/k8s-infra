@@ -7,6 +7,8 @@ package astmodel
 
 import (
 	"go/ast"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // MapType is used to define fields that contain additional property values
@@ -56,7 +58,7 @@ func (m *MapType) Equal(t Type) bool {
 	}
 
 	if mt, ok := t.(*MapType); ok {
-		return (m.key.Equal(mt.key) && m.value.Equal(mt.value))
+		return cmp.Equal(m.key, mt.key) && cmp.Equal(m.value, mt.value)
 	}
 
 	return false

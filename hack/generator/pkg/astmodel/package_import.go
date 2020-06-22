@@ -8,6 +8,8 @@ package astmodel
 import (
 	"go/ast"
 	"go/token"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // PackageReference indicates which package
@@ -58,5 +60,5 @@ func (pi *PackageImport) PackageName() string {
 
 // Equals returns true if the passed package reference references the same package, false otherwise
 func (pi *PackageImport) Equal(ref *PackageImport) bool {
-	return pi.PackageReference.Equal(&ref.PackageReference) && pi.name == ref.name
+	return cmp.Equal(pi.PackageReference, &ref.PackageReference) && pi.name == ref.name
 }

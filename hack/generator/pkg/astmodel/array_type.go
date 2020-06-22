@@ -7,6 +7,8 @@ package astmodel
 
 import (
 	"go/ast"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // ArrayType is used for fields that contain an array of values
@@ -46,7 +48,7 @@ func (array *ArrayType) Equal(t Type) bool {
 	}
 
 	if et, ok := t.(*ArrayType); ok {
-		return array.element.Equal(et.element)
+		return cmp.Equal(array.element, et.element)
 	}
 
 	return false
