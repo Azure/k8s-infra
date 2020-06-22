@@ -72,28 +72,21 @@ func wordWrap(text string, width int) []string {
 // If breaking at a space, this will give a trailing space, but allows for
 // breaking at other points too as no characters will be omitted.
 func findBreakPoint(line string, start int, width int) int {
-	index := start + width
-	if index >= len(line) {
+	limit := start + width + 1
+	if limit >= len(line) {
 		return len(line)-1
 	}
 
 	// Look for a word break within the line
-	for index > start {
-		if line[index] == ' ' {
-			return index
-		}
-
-		index--
+	index := strings.LastIndex(line[start:limit], " ")
+	if index >= 0 {
+		return start + index
 	}
 
 	// Line contains continuous text, we don't want to break it in two, so find the end of it
-	index = start + width
-	for index < len(line) {
-		if line[index] == ' ' {
-			return index
-		}
-
-		index++
+	index = strings.Index(line[limit:], " ")
+	if index >= 0 {
+		return limit + index
 	}
 
 	return len(line)-1
