@@ -173,7 +173,7 @@ func createComments(lines ...string) ([]*ast.Comment, int) {
 func (file FileDefinition) SaveToWriter(filename string, dst io.Writer) error {
 	original := file.AsAst()
 
-	// Write generated source into a memory unformattedBuffer
+	// Write generated source into a memory buffer
 	fset := token.NewFileSet()
 	fset.AddFile(filename, 1, 102400)
 
@@ -186,6 +186,7 @@ func (file FileDefinition) SaveToWriter(filename string, dst io.Writer) error {
 	// This is a nasty technique with only one redeeming characteristic: It works
 	reformattedBuffer := file.addBlankLinesBeforeComments(unformattedBuffer)
 
+	// Read the source from the memory buffer (has the effect similar to 'go fmt')
 	var cleanAst ast.Node
 	cleanAst, err = parser.ParseFile(fset, filename, &reformattedBuffer, parser.ParseComments)
 	if err != nil {
