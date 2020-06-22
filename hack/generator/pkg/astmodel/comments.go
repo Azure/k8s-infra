@@ -2,6 +2,7 @@ package astmodel
 
 import (
 	"go/ast"
+	"regexp"
 	"strings"
 )
 
@@ -30,10 +31,7 @@ func formatDocComment(comment string, width int) []string {
 	text := strings.ReplaceAll(comment, "**", "")
 
 	// Turn <br> and <br/> into \n
-	text = strings.ReplaceAll(text, "<br/>", "\n")
-	text = strings.ReplaceAll(text, "<br />", "\n")
-	text = strings.ReplaceAll(text, "<br>", "\n")
-	text = strings.ReplaceAll(text, "<br >", "\n")
+	text = brRegex.ReplaceAllLiteralString(text, "\n")
 
 	// Split into individual lines
 	lines := strings.Split(text, "\n")
@@ -100,3 +98,5 @@ func findBreakPoint(line string, start int, width int) int {
 
 	return len(line)-1
 }
+
+var brRegex = regexp.MustCompile("<br[^/>]*/?>")
