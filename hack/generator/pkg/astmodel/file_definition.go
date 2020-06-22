@@ -184,7 +184,7 @@ func (file FileDefinition) SaveToWriter(filename string, dst io.Writer) error {
 	}
 
 	// This is a nasty technique with only one redeeming characteristic: It works
-	reformattedBuffer := file.AddBlankLinesBeforeComments(unformattedBuffer)
+	reformattedBuffer := file.addBlankLinesBeforeComments(unformattedBuffer)
 
 	var cleanAst ast.Node
 	cleanAst, err = parser.ParseFile(fset, filename, &reformattedBuffer, parser.ParseComments)
@@ -209,7 +209,9 @@ func (file FileDefinition) SaveToFile(filePath string) error {
 	return file.SaveToWriter(filePath, f)
 }
 
-func (file FileDefinition) AddBlankLinesBeforeComments(buffer bytes.Buffer) bytes.Buffer {
+// addBlankLinesBeforeComments reads the source in the passed buffer and injects a blank line just
+// before each '//' style comment so that the comments are nicely spaced out in the generated code.
+func (file FileDefinition) addBlankLinesBeforeComments(buffer bytes.Buffer) bytes.Buffer {
 	// Read all the lines from the buffer
 	var lines []string
 	reader := bufio.NewReader(&buffer)
