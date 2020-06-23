@@ -8,7 +8,6 @@ package astmodel
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/gomega"
 )
 
@@ -58,7 +57,7 @@ func TestStructType_Equals_WhenGivenType_ReturnsExpectedResult(t *testing.T) {
 			t.Parallel()
 			g := NewGomegaWithT(t)
 
-			areEqual := cmp.Equal(c.thisType, c.otherType)
+			areEqual := NodesEqual(c.thisType, c.otherType)
 
 			g.Expect(areEqual).To(Equal(c.expected))
 		})

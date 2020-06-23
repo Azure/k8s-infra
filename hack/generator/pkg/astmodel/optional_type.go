@@ -7,8 +7,6 @@ package astmodel
 
 import (
 	"go/ast"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 // OptionalType is used for items that may or may not be present
@@ -44,19 +42,6 @@ func (optional *OptionalType) RequiredImports() []*PackageReference {
 // References is true if it is this type or the 'element' type references it
 func (optional *OptionalType) References(d *TypeName) bool {
 	return optional.element.References(d)
-}
-
-// Equals returns true if this type is equal to the other type
-func (optional *OptionalType) Equal(t Type) bool {
-	if optional == t {
-		return true // reference equality short-cut
-	}
-
-	if otherOptional, ok := t.(*OptionalType); ok {
-		return cmp.Equal(optional.element, otherOptional.element)
-	}
-
-	return false
 }
 
 // CreateInternalDefinitions invokes CreateInternalDefinitions on the inner type

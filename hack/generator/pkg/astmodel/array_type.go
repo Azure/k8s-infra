@@ -7,8 +7,6 @@ package astmodel
 
 import (
 	"go/ast"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 // ArrayType is used for fields that contain an array of values
@@ -39,19 +37,6 @@ func (array *ArrayType) RequiredImports() []*PackageReference {
 // References this type has to the given type
 func (array *ArrayType) References(d *TypeName) bool {
 	return array.element.References(d)
-}
-
-// Equals returns true if the passed type is an array type with the same kind of elements, false otherwise
-func (array *ArrayType) Equal(t Type) bool {
-	if array == t {
-		return true
-	}
-
-	if et, ok := t.(*ArrayType); ok {
-		return cmp.Equal(array.element, et.element)
-	}
-
-	return false
 }
 
 // CreateInternalDefinitions invokes CreateInternalDefinitions on the inner 'element' type

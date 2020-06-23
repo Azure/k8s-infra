@@ -48,15 +48,6 @@ func (prim *PrimitiveType) References(d *TypeName) bool {
 	return false
 }
 
-// Equals returns true if the passed type is another primitive type the same name, false otherwise
-func (prim *PrimitiveType) Equal(t Type) bool {
-	if p, ok := t.(*PrimitiveType); ok {
-		return prim.name == p.name
-	}
-
-	return false
-}
-
 // CreateInternalDefinitions does nothing as there are no inner types
 func (prim *PrimitiveType) CreateInternalDefinitions(_ *TypeName, _ IdentifierFactory) (Type, []TypeDefiner) {
 	// a primitive type has no internal types that require definition

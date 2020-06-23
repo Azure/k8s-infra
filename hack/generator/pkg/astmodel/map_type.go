@@ -7,8 +7,6 @@ package astmodel
 
 import (
 	"go/ast"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 // MapType is used to define fields that contain additional property values
@@ -49,19 +47,6 @@ func (m *MapType) RequiredImports() []*PackageReference {
 // References this type has to the given type
 func (m *MapType) References(d *TypeName) bool {
 	return m.key.References(d) || m.value.References(d)
-}
-
-// Equals returns true if the passed type is a map type with the same kinds of keys and elements, false otherwise
-func (m *MapType) Equal(t Type) bool {
-	if m == t {
-		return true
-	}
-
-	if mt, ok := t.(*MapType); ok {
-		return cmp.Equal(m.key, mt.key) && cmp.Equal(m.value, mt.value)
-	}
-
-	return false
 }
 
 // CreateInternalDefinitions invokes CreateInCreateInternalDefinitions on both key and map types

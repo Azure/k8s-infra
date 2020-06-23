@@ -8,8 +8,6 @@ package astmodel
 import (
 	"go/ast"
 	"sort"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 // StructType represents an (unnamed) struct type
@@ -91,57 +89,6 @@ func (structType *StructType) References(d *TypeName) bool {
 	}
 
 	// For now, not considering functions in references on purpose
-
-	return false
-}
-
-// Equals returns true if the passed type is a struct type with the same fields, false otherwise
-// The order of the fields is not relevant
-func (structType *StructType) Equal(t Type) bool {
-	if structType == t {
-		return true
-	}
-
-	if st, ok := t.(*StructType); ok {
-		if len(structType.fields) != len(st.fields) {
-			// Different number of fields, not equal
-			return false
-		}
-
-		for n, f := range st.fields {
-			ourField, ok := structType.fields[n]
-			if !ok {
-				// Didn't find the field, not equal
-				return false
-			}
-
-			if !cmp.Equal(ourField, f) {
-				// Different field, even though same name; not-equal
-				return false
-			}
-		}
-
-		if len(structType.functions) != len(st.functions) {
-			// Different number of functions, not equal
-			return false
-		}
-
-		for functionName, function := range st.functions {
-			ourFunction, ok := structType.functions[functionName]
-			if !ok {
-				// Didn't find the func, not equal
-				return false
-			}
-
-			if !cmp.Equal(ourFunction, function) {
-				// Different function, even though same name; not-equal
-				return false
-			}
-		}
-
-		// All fields match, equal
-		return true
-	}
 
 	return false
 }

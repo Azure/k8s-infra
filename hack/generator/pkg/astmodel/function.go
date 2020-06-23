@@ -17,7 +17,4 @@ type Function interface {
 
 	// AsFunc renders the current instance as a Go abstract syntax tree
 	AsFunc(codeGenerationContext *CodeGenerationContext, receiver *TypeName, methodName string) *ast.FuncDecl
-
-	// Equals determines if this Function is equal to another one
-	Equal(f Function) bool
 }

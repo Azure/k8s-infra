@@ -9,7 +9,6 @@ import (
 	"go/ast"
 	"sort"
 
-	"github.com/google/go-cmp/cmp"
 	"k8s.io/klog/v2"
 )
 
@@ -43,31 +42,6 @@ func (enum *EnumType) AsType(codeGenerationContext *CodeGenerationContext) ast.E
 // References indicates whether this Type includes any direct references to the given Type
 func (enum *EnumType) References(tn *TypeName) bool {
 	return enum.BaseType.References(tn)
-}
-
-// Equals will return true if the supplied type has the same base type and options
-func (enum *EnumType) Equal(t Type) bool {
-	if e, ok := t.(*EnumType); ok {
-		if !cmp.Equal(enum.BaseType, e.BaseType) {
-			return false
-		}
-
-		if len(enum.options) != len(e.options) {
-			// Different number of fields, not equal
-			return false
-		}
-
-		for i := range enum.options {
-			if !cmp.Equal(enum.options[i], &e.options[i]) {
-				return false
-			}
-		}
-
-		// All options match, equal
-		return true
-	}
-
-	return false
 }
 
 // RequiredImports indicates that Enums never need additional imports

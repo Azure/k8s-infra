@@ -17,7 +17,6 @@ import (
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/config"
 	"github.com/devigned/tab"
-	"github.com/google/go-cmp/cmp"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -794,7 +793,7 @@ func versionOf(url *url.URL) (string, error) {
 func appendIfUniqueType(slice []astmodel.Type, item astmodel.Type) []astmodel.Type {
 	found := false
 	for _, r := range slice {
-		if cmp.Equal(r, item) {
+		if astmodel.NodesEqual(r, item) {
 			found = true
 			break
 		}

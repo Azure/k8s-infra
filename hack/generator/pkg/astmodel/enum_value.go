@@ -12,12 +12,3 @@ type EnumValue struct {
 	// Value is the actual value expected by ARM
 	Value string
 }
-
-// Equals tests to see if the passed EnumValue has the same name and value
-func (value *EnumValue) Equal(v *EnumValue) bool {
-	if value == v {
-		return true
-	}
-
-	return value.Identifier == v.Identifier && value.Value == v.Value
-}

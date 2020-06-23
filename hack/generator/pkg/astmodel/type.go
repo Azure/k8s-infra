@@ -22,9 +22,6 @@ type Type interface {
 	// (yes this says ast.Expr but that is what the Go 'ast' package uses for types)
 	AsType(codeGenerationContext *CodeGenerationContext) ast.Expr
 
-	// Equals returns true if the passed type is the same as this one, false otherwise
-	Equal(t Type) bool
-
 	// CreateDefinitions gives a name to the type and might generate some asssociated definitions as well (the second result)
 	// that also must be included in the output.
 	//

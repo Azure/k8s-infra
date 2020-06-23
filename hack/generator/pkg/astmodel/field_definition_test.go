@@ -8,7 +8,6 @@ package astmodel
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/gomega"
 )
 
@@ -90,7 +89,7 @@ func TestFieldDefinition_Equals_WhenGivenFieldDefinition_ReturnsExpectedResult(t
 			t.Parallel()
 			g := NewGomegaWithT(t)
 
-			areEqual := cmp.Equal(c.thisField, c.otherField)
+			areEqual := NodesEqual(c.thisField, c.otherField)
 
 			g.Expect(areEqual).To(Equal(c.expected))
 		})

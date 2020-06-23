@@ -66,11 +66,6 @@ func (pr *PackageReference) PackageName() string {
 	return l[len(l)-1]
 }
 
-// Equals returns true if the passed package reference references the same package, false otherwise
-func (pr PackageReference) Equal(ref PackageReference) bool {
-	return pr.packagePath == ref.packagePath
-}
-
 // String returns the string representation of the package reference
 func (pr *PackageReference) String() string {
 	return pr.packagePath

@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 // OneOfJSONMarshalFunction is a function for marshalling discriminated unions
@@ -28,10 +26,10 @@ func NewOneOfJSONMarshalFunction(oneOfStruct *StructType, idFactory IdentifierFa
 // Ensure OneOfJSONMarshalFunction implements Function interface correctly
 var _ Function = (*OneOfJSONMarshalFunction)(nil)
 
-// Equals determines if this function is equal to the passed in function
+// Equal determines if this function is equal to the passed in function
 func (f *OneOfJSONMarshalFunction) Equal(other Function) bool {
 	if o, ok := other.(*OneOfJSONMarshalFunction); ok {
-		return cmp.Equal(f.oneOfStruct, o.oneOfStruct)
+		return NodesEqual(f.oneOfStruct, o.oneOfStruct)
 	}
 
 	return false

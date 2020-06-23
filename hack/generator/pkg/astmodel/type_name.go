@@ -8,8 +8,6 @@ package astmodel
 import (
 	"fmt"
 	"go/ast"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 // TypeName is a name associated with another Type (it also is usable as a Type)
@@ -43,7 +41,7 @@ func (typeName *TypeName) AsType(codeGenerationContext *CodeGenerationContext) a
 	}
 
 	// Sanity assertion that the type we're generating is in the same package that the context is for
-	if !cmp.Equal(codeGenerationContext.currentPackage, &typeName.PackageReference) {
+	if !NodesEqual(codeGenerationContext.currentPackage, &typeName.PackageReference) {
 		panic(fmt.Sprintf(
 			"no reference for %v included in package %v",
 			typeName.name,
@@ -55,21 +53,12 @@ func (typeName *TypeName) AsType(codeGenerationContext *CodeGenerationContext) a
 
 // References indicates whether this Type includes any direct references to the given Type
 func (typeName *TypeName) References(d *TypeName) bool {
-	return cmp.Equal(typeName, d)
+	return NodesEqual(typeName, d)
 }
 
 // RequiredImports returns all the imports required for this definition
 func (typeName *TypeName) RequiredImports() []*PackageReference {
 	return []*PackageReference{&typeName.PackageReference}
-}
-
-// Equals returns true if the passed type is the same TypeName, false otherwise
-func (typeName *TypeName) Equal(t Type) bool {
-	if d, ok := t.(*TypeName); ok {
-		return typeName.name == d.name && cmp.Equal(typeName.PackageReference, d.PackageReference)
-	}
-
-	return false
 }
 
 // CreateInternalDefinitions does nothing

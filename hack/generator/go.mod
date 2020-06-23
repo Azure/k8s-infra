@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/bmatcuk/doublestar v1.3.1
 	github.com/devigned/tab v0.1.1
-	github.com/google/go-cmp v0.3.0
+	github.com/google/go-cmp v0.5.0
 	github.com/onsi/gomega v1.8.1
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/sebdah/goldie/v2 v2.3.0
@@ -20,7 +20,6 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553 // indirect
 	golang.org/x/sys v0.0.0-20191228213918-04cbcbbfeed8 // indirect
-	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/ini.v1 v1.51.1 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
