@@ -2,11 +2,15 @@
 
 Specification for how storage versioning will operate for code generated CRD definitions.
 
+We're generating a large volume of CRD definitions based on the JSON schema definitions available for Azure Resource Manager use.
+
 ## Goals
 
-**Auto-generated conversions:** As far as practical, we want to autogenerate the schema for each hub version along with the conversions to and from the actual ARM API versions. Hand coding all the required conversions doesn't scale across all the different Azure sevices, especially with the ongoing rate of change. 
+**Principle of Least Surprise:** The goal of the service operator is to allow users to consumer Azure resources without having to leave the tooling they are familiar with. We therefore want to do things in the idiomatic Kubernetes fashion, so that they don't experience any nasty surprises.
 
-**Allow for hand coded conversions:** While we expect to use code generation to handle the vast majority of needed conversions, we anticipate that some breaking API changes will require some of the conversion to be hand coded. We need to make it simple for these conversions to be introduced while still automatically generating the majority of the conversion.
+**Auto-generated conversions:** As far as practical, we want to autogenerate the schema for storage use along with the conversions to and from the actual ARM API versions. Hand coding all the required conversions doesn't scale across all the different Azure sevices, especially with the ongoing rate of change. 
+
+**Allow for hand coded conversions:** While we expect to use code generation to handle the vast majority of needed conversions, we anticipate that some breaking API changes will require *part* of the conversion to be hand coded. We need to make it simple for these conversions to be introduced while still automatically generating the majority of the conversion.
 
 **No modification of generated files.** Manual modification of generated files is a known antipattern that greatly increases the complexity and burden of updates. If some files have been manually changed, every difference showing after code generation needs to be manually reviewed before being committed. This is tedious and error prone because the vast majority of auto generated changes will be perfectly fine. 
 
@@ -14,145 +18,53 @@ Specification for how storage versioning will operate for code generated CRD def
 
 > In Kubernetes, all versions must be safely round-tripable through each other. This means that if we convert from version 1 to version 2, and then back to version 1, we must not lose information. Thus, any change we make to our API must be compatible with whatever we supported in v1, and also need to make sure anything we add in v2 is supported in v1.
 
+**Consistency of experience:** Early adopters should have a similar experience with the latest release of the service operator as new users who are adopting it for the first time. We don't want early adopters to be penalized for their enthusiasm. 
+
 ## Non-Goals
 
 **Coverage of every case by code generation:** While it's likely that very high coverage will be achievable with code generation, we don't believe that it will be practical to handle every possible situation automatically. It's therefore necessary for the solution to have some form of extensibility allowing for the injection of hand written code.
 
+## Requirements
+
+***TBC***
+
+## Case Studies
+
+There are two case studies that accompany this specification, each one walking through one possible solution and showing how it will perform over time.
+
+The [Rolling Versions](case-study-rolling-storage-versions.md) case study shows how the preferred solution adapts to changes as the Azure Resources evolve over time.
+
+The [Fixed Version](case-study-rolling-storage-versions.md) case study shows how the primary alternative would fare, calling out some specific problems that will occur.
+
+**TL;DR:** Using a *fixed storage version* appears simpler at first, and works well as long as the changes from version to version are simple. However, when the changes become complex (as they are bound to do over time), this approach starts to break down. While there is up front complexity to address with a *rolling storage version*, the approach doesn't break down over time.
+
+Examples shown in this document are drawn from the case studies.
+
 ## Proposed Solution
 
-In summary (details below):
+In summary:
 
-* Base the storage version on the latest available API version for each resource type
-* Augment the storage version with a name/value property bag for storing additional information
-* Generate the required `ConvertTo()` and `ConvertFrom()` methods automatically
-* Allow configuration to support common changes from version to version
-* Define extension points for hand written conversions
+* For each supported Azure Resource Type, we will define a synthetic central hub type that will be used for storage/serialization across all versions of the API.
 
-### Use the latest available API Version
+* Automatically generated conversions will allow for lossless conversions between the externally exposed API versions of resources and the central (hub) storage version.
 
-As a starting point for defining the storage schema for each resource type, we will use the latest available version of the matching ARM API. This ensures maximum compatibility with that API when it is used, giving a good starting point for new adoption of the service operator.
+* External metadata that we bundle with the code generator will document common changes that occur over time (including property and type name changes), extending the coverage of our automatically generated conversions.
 
-If a resource type has been dropped from the ARM API, we will still generate a storage schema for it based on the last ARM API version where it existed; this ensures backward compatibility with existing service operator deployments.
+* For cases where automatically generated conversion is not sufficient, standard extension points for each resource type will allow hand-coded conversion steps to be injected into the process at key points.
 
-### Augment storage with a name/value property bag
+Each of these four points is expanded upon in detail below.
 
-To facilitate easy and safe storage of additional configuration in storage, we'll include a name/value property bag for storage, along with helper methods that allow for strongly typed access to values stored within.
+### Defining a central hub type
 
-Sequestering the information away within the storage schema is more robust than using separate annotations as they are less subject to arbitary modification by users. This allows us to largely avoid situations where well meaning (but uninformed) consumers of the service operator innocently make changes that result in the operator becoming failing. We particularly want to avoid this failure mode because recovery will be difficult - restoration of the modified/deleted information may be impractical or impossible.
+We'll base the schema of the central hub type on the latest GA release of the API for each resource, with the following modifications:
 
----
+**All properties will be defined as optional** allowing for back compatibility with prior versions of the API that might not have included specific properties.
 
-****Outstanding issue:** Where do the helper functions for the name/value property bag reside?**
+**Inclusion of a property bag** to provide for storage for properties present in older versions of the API that are no longer present.
 
-We could generate those anew for each type, making them conveniently available and avoiding the need for our generated types to depend on anything more than the standard Go library Alternatively, we could define the property bag as a new struct, wrapping up storage & helper methods into a reusable form.
+Using a purpose designed hub type for storage avoids a number of version-to-version compatibility issues that can arise if the API version itself is used directly for storage.
 
----
-
-### Generate conversion methods
-
-Each of the structs generated for ARM API will have the normal `ConvertTo()` and `ConvertFrom()` methods generated automatically, mapping like-for-like properties between the hub version and the current type.
-
-* When the name and type of properties match exactly, conversion in both directions will be simple assignments.
-* Where the name matches but the type does not, the property will be skipped by default.
-* If missing on the hub version, the name/value property bag will also be used.
-
-### Configuration for common changes
-
-We'll facilitate common types of changes between versions by providing explicit configuration options.
-
-**Property rename** - if a property is simply renamed between versions (say for a spelling correction), we can generate the required assignment for compatiblity between spoke and hub versions.
-
-**Type rename** - if a subtype is renamed between versions, maintaining largely the same structure, we can automatically map between those two types.
-
-
----
-
-***Outstanding Issue:** What do we do for other kinds of version-to-version change?*
-
-Are there other cases of changes between versions that we may be able to handle automatically. 
-Can we find examples? Do we want to support these cases?
-
----
-
-
-### Define extension points
-
-Optional interfaces will be generated to allow injection of additional steps to the generated conversions. If implemented on the spoke versions (not the hub version), they will be automatically invoked as required.
-
-For each actual API version, an interface will be generated containing strongly typed `AssignTo()` and `AssignFrom()` methods:
-
-``` go
-type ClusterPropertiesv20160301Converter {
-    AssignTo(clusterProperties *ClusterPropertiesvStorage)
-    AssignFrom(clusterProperties *ClusterPropertiesvStorage)
-}
-```
-
-If implemented on the v20160301 version of ClusterProperties, it will be automatically invoked at the end of the standard `ConvertTo()` and `ConvertFrom()` methods, allowing for their behaviour to be modified/augmented.
-
-When the type of a property is changed between versions, we'll generate an interface allowing for conversion between those two types.
-
-``` go
-type ClusterPropertiesv20160301ReliabilityLevelConverter {
-    ConvertLevelToClusterPropertiesReliabilityLevel(level Level) *ClusterPropertiesReliabilityLevel
-    ConvertClusterPropertiesReliabilityLevelToLevel(clusterPropertiesReliabilityLevel *ClusterPropertiesReliabilityLevel) Level
-}
-```
-
-Again, if implemented on the v20160301 version of ClusterProperties, these will be automaticaly invoked by `ConvertTo()` and `ConvertFrom()`.
-
-***Issue:** Should these be invoked before or after the main interface? We need to define the sequence for predictability.*
-
-## Illustration of Conversion
-
-To illustrate the way conversions will work using `ClusterProperties` from Microsoft.ServiceFabric. This explores conversion between version v20160301 and the hub storage version, based on a later version:
-
-| Fields                 | v20160301                        | vStorage (Hub)                     | Change           | Handler      |
-| --------------------------------- | -------------------------------- | ---------------------------------- | ---------------- | ------------ |
-| AzureActiveDirectory              | *AzureActiveDirectory            | *AzureActiveDirectory              | None             | Copy value   |
-| Certificate                       | *CertificateDescription          | *CertificateDescription            | None             | Copy value   |
-| ClientCertificateCommonNames      | *[]ClientCertificateCommonName   | *[]ClientCertificateCommonName     | None             | Copy value   |
-| ClientCertificateThumbprints      | *[]ClientCertificateThumbprint   | *[]ClientCertificateThumbprint     | None             | Copy value   |
-| ClusterCodeVersion                |                                  | *string                            | New Property     | Skip         |
-| DiagnosticsStorageAccountConfig   | *DiagnosticsStorageAccountConfig | *DiagnosticsStorageAccountConfig   | None             | Copy value   |
-| FabricSettings                    | *[]SettingsSectionDescription    | *[]SettingsSectionDescription      | None             | Copy value   |
-| HttpApplicationGatewayCertificate | *CertificateDescription          |                                    | Property Removed | Property Bag |
-| ManagementEndpoint                | string                           | string                             | None             | Copy value   |
-| NodeTypes                         | []NodeTypes                      | []NodeTypeDescription              | Change of Type   | Property Bag |
-| ReliabilityLevel                  | *Level                           | *ClusterPropertiesReliabilityLevel | Change of Type   | Property Bag |
-| ReverseProxyCertificate           |                                  | *CertificateDescription            | New Property     | Skip         |
-| UpgradeDescription                | *PaasClusterUpgradePolicy        | *ClusterUpgradePolicy              | Change of Type   | Property Bag |
-| UpgradeMode                       |                                  | *ClusterPropertiesUpgradeMode      | New Property     | Skip         |
-| VmImage                           | *string                          | *string                            | None             | Copy value   |
-
-Of the 15 properties listed:
-
-* 8 are unchanged (same name and type); these values are simply copied across.  
-  (AzureActiveDirectory, Certificate, ClientCertificateCommonNames, ClientCertificateThumbprints, DiagnosticsStorageAccountConfig, FabricSettings, ManagementEndpoint, and VmImage)
-* 3 new properties are introduced; these are ignored by the conversion.  
-  (ClusterCodeVersion, ReverseProxyCertificate, and UpgradeMode)
-* 1 property was dropped; it will be stored in the name/value property bag.  
-  (HttpApplicationGatewayCertificate)
-* 3 properties had their types changed; these will also be serialized into the name/value property bag.  
-  (NodeTypes, ReliabilityLevel, and UpgradeDescription)
-
-
-## Testing
-
-It's vital that we are able to correctly round trip every spoke version to the hub version and back again, so we will generate unit tests to ensure that this works properly. This will help to enusre a base level of compliance, that information is not lost through serialization.
-
-
-## Case Study - Rolling Storage Versions
-
-In this section, we'll explore a case study showing the evolution of a hypothetical ARM resource over time and show how this will be handled with rolling storage versions. Synthetic examples are used to allow them to focus on specific cases one by one, providing motivation for specific features as defined elsewhere.
-
-Examples shown in this section are deliberately simplified in order to focus on specific details, and therefore details here should not be considered binding. Reference the formal specification sections of this document for precise details.
-
-For the case study, we'll be following the version by version evolution of a theoretical ARM service that provides customer resource management (CRM) services. 
-
-### Version 2011-01-01 - Initial Release
-
-The initial release of the CRM includes a simple definition to capture information about a particular person
+To illustrate, if the API version defined the following `Person` type:
 
 ``` go
 package v20110101
@@ -164,51 +76,34 @@ type Person struct {
 }
 ```
 
-Our storage version is always independent from the API version (independent types), but with a structure based on the latest (in this case the _only_) version of the resource. It therefore has a very similar definition:
+Then the generated storage (hub) version will look like this:
 
 ``` go
 package v20110101storage
 
 type Person struct {
     PropertyBag
-    Id        *Guid
-    FirstName *string
-    LastName  *string
+    FirstName   *string
+    Id          *Guid
+    LastName    *string
 }
-
-// Hub marks this type as a conversion hub.
-func (*Person) Hub() {}
 ```
 
-Every property is marked as optional. Optionality doesn't matter at this point, as we are only concerned with a single version of the API. However, as we'll see with later versions, forward and backward compatibility issues would arise if they were not optional.
+Using the latest version of the API as the basis for our storage version gives us maximum compatibility for the usual case, where a user defines their custom resource using the latest available version.
 
-The `PropertyBag` type provides storage for other properties, plus helper methods. It is always included in storage versions, but in this case will be unused. The method `Hub()` marks this version as the storage schema.
+If a resource type has been dropped from the ARM API, we will still generate a storage schema for it based on the last ARM API version where it existed; this helps to ensure backward compatibility with existing service operator deployments.
 
-With only two classes, this doesn't look much like the traditional hub and spoke model, but this will change as we work through this case study:
+Sequestering additional properties away within a property bag in the storage schema is more robust than using separate annotations as they are less subject to arbitary modification by users. This allows us to largely avoid situations where well meaning (but uninformed) consumers of the service operator innocently make changes that result in the operator becoming failing. We particularly want to avoid this failure mode because recovery will be difficult - restoration of the modified/deleted information may be impractical or impossible.
 
-![](versioning-hub-spoke-2011-01-01.dot.png)
+### Generated conversion methods
 
-Our original version now needs to implement the [Convertible](https://book.kubebuilder.io/multiversion-tutorial/conversion.html) interface to allow conversion each way:
+Each of the structs generated for ARM API will have the normal `ConvertTo()` and `ConvertFrom()` methods generated automatically, implementing the required [Convertible](https://book.kubebuilder.io/multiversion-tutorial/conversion.html) interface:
 
 ``` go
-package v20110101
-
-import storage "v20110101storage"
-
 // ConvertTo converts this Person to the Hub storage version.
 func (person *Person) ConvertTo(raw conversion.Hub) error {
     p := raw.(*storage.Person)
     return ConvertToStorage(p)
-}
-
-// ConvertToStorage converts this Person to a storage version
-func (person *Person) ConvertToStorage(dest storage.Person) error {
-    // Copy simple properties across
-    dest.Id = person.Id
-    dest.FirstName = person.FirstName
-    dest.LastName = person.LastName
-
-    return nil
 }
 
 // ConvertFrom converts from the Hub storage version
@@ -216,800 +111,114 @@ func (person *Person) ConvertFrom(raw conversion.Hub) error {
     p := raw.(*storage.Person)
     return ConvertFromStorage(p)
 }
-
-// ConvertFrom converts from a storage version to this version.
-func (person *Person) ConvertFromStorage(source storage.Person) error {
-    // Copy simple properties across
-    person.Id = source.Id
-    person.FirstName = source.FirstName
-    person.LastName = source.LastName
-
-    return nil
-}
-
 ```
 
-These methods will be automatically generated in order to handle the majority of the required conversions. Since they never change, the `ConvertTo()` and `ConvertFrom()` methods are omitted from the following discussion.
+As shown, these methods will delegate to two helper methods (`ConvertToStorage()` and `ConvertFromStorage()`) that are generated to handle the process of copying information across between instances.
 
-### Version 2012-02-02 - No Change
+Properties defined in the API type will be handled by the following rules:
 
-In this release of the CRM service, there are no changes made to the structure of `Person`:
+1. For properties with a primitive type (**string**, **int**, **float**, or **bool**):
+
+   * If the storage type has a matching property with the same name and type, the value will be directly copied across.
+   * If the storage type does not have a matching property, the value will be stored/recalled using the property bag.
+
+1. For properties with an enumeration type:
+
+   * If the storage type has a matching property with the same name and a compatible type, the value will be directly copied across (with a cast if necessary).
+   * If the storage type does not have a matching property, the value will be stored/recalled using the property bag.
+
+1. For properties with a complex type (a type defined by the JSON schema)
+
+   * If the storage type has a matching property with the same name and a compatible type, the `ConvertToStorage()` and `ConvertFromStorage()` methods defined on the API version of the type will be used to copy information across.
+   * If the storage type does not have a matching property, the value will stored/recalled in JSON format using the property bag
+
+Notes
+* Property name comparisons are case-insensitive. See also the section below on property renaming.
+
+* Enumeration types defined in two different versions are considered compatible if they have the same underlying base type and their names are the same (by case-insensitive comparison)
+
+* Complex types defined in two different versions are considered compatible if they have the same name (by case-insensitive comparison).
+
+> ***TODO: Show an example that includes all the cases***
+
+
+### External Metadata for common changes
+
+We'll capture common changes between versions in metadata that we bundle with the code generator, allowing it to handle a wider range of scenarios.
+
+**If a property is renamed** in a particular API version, conversion of API versions *prior* to that point of change will instead match based on the new name of the property on the storage type.
+
+> ***Outstanding issue***: Do we want to support **property** renaming in this way? How much will it help reduce manual boilerplate?
+
+> ***TODO: Show an example***
+
+**If a type has been renamed** in a particular API version, conversion of API versions *prior* to that point of change will instead match based on the new type of the property on the storage type.
+
+> ***Outstanding issue***: Do we want to support **type** renaming in this way? How much will it help reduce manual boilerplate?
+
+> ***TODO: Show an example***
+
+> ***Outstanding Issue:*** Are there other kinds of common change we want to support?  
+Are there other cases of changes between versions that we may be able to handle automatically. 
+Can we find examples? Do we want to support these cases?
+
+### Standard extension points
+
+Code generation will include interfaces to allow easy injection of manual conversion steps. 
+
+For each storage type, two interfaces will be generated, one to be called by `ConvertToStorage()` and one to be called by `ConvertFromStorage()`:
 
 ``` go
-package v20120202
+type AssignableToPerson interface {
+    AssignToPerson(person Person) error
+}
 
-type Person struct {
-    Id        Guid
-    FirstName string
-    LastName  string
+type AssignableFromPerson interface {
+    AssignFromPerson(person Person) error
 }
 ```
+If an API type implements one (or both) of these interfaces, they will be automatically invoked *after* the standard conversion code has completed.
 
-Conversions to and from the storage version will be identical (except for the import statements for referenced types) to those generated for the prior version. 
+## Testing
 
-Our hub and spoke diagram is becoming useful for seeing the relationship between versions:
+It's vital that we are able to correctly convert between versions. We will therefore generate a set of unit tests to help ensure that the conversions work correctly. Coverage won't be perfect (as there are conversion steps we can't automatically verify) but these tests will help ensure correctness.
 
-![](versioning-hub-spoke-2012-02-02.dot.png)
+### Round Trip Testing
 
-Note particularly that we still show the prior storage version, with a one way conversion to the current storage version. This will be generated in the same way, and with the same structure, as all our other conversions.
+We will generate a unit test to ensure that every spoke version can round trip to the hub version and back again with no loss of information.
 
-### Version 2013-03-03 - New Property
+This will help to ensure a base level of compliance, that information is not lost through serialization.
 
-In response to customer feedback, this release of the CRM adds a new property to `Person` to allow a persons middle name to be stored:
+> TODO: Flesh this out
+* Use of fuzz testing to generate instances
+* ConvertToStorage() followed by ConvertFromStorage() and then compare that all properties match
 
-``` go
-package v20130303
+* **string**, **int**, **bool** much match exactly
+* **Float64** match within tollerance
+* What else?
 
-type Person struct {
-    Id         Guid
-    FirstName  string
-    MiddleName string // *** New in this version ***
-    LastName   string
-}
-```
+### Forward Testing
 
-The new storage version, based on this version, updates accordingly:
 
-``` go
-package v20130303storage
-
-type Person struct {
-    PropertyBag
-    Id         *Guid
-    FirstName  *string
-    MiddleName *string // *** New storage for new property ***
-    LastName   *string
-}
-
-// Hub marks this type as a conversion hub.
-func (*Person) Hub() {}
-```
-
-A graph of our conversions now starts to show the expected hub and spoke structure, with conversions from earlier versions of storage allowing easy upgrades for users.
-
-![](versioning-hub-spoke-2013-03-03.dot.png)
-
-
-Conversions to and from earlier versions of Person are unchanged, as those versions do not support `MiddleName`. For the new version of `Person`, the new property will be included in the generated methods:
-
-``` go
-package v20130303
-
-import storage "v20130303storage"
-
-// ConvertTo converts this Person to the Hub version.
-func (person *Person) ConvertToStorage(dest storage.Person) error {
-    dest.Id = person.Id
-    dest.FirstName = person.FirstName
-    dest.LastName = person.LastName
-    dest.MiddleName = person.MiddleName // *** New property copied too ***
-
-    return nil
-}
-
-// ConvertFrom converts from the Hub version to this version.
-func (person *Person) ConvertFromStorage(source storage.Person) error {
-    person.Id = source.Id
-    person.FirstName = source.FirstName
-    person.LastName = source.LastName
-    person.MiddleName = source.MiddleName // *** New property copied too ***
-
-    return nil
-}
-```
-
-The new property is shown at the end of the list not because it is new, but because values are copied across in alphabetical order to guarantee that code generation is deterministic and generates the same result each time.
-
-Conversion methods for earlier API versions of `Person` are essentially unchanged. The import statement at the top of the file will be updated to the new storage version; no other changes are necessary.
-
-**Statistics:** At the time of writing, there were 381 version-to-version changes where the only change between versions was the addition of new properties. Of those, 249 were adding just a single property, and 71 added two properties. 
-
-### Version 2014-04-04 Preview - Schema Change
-
-To allow the CRM to better support cultures that have differing ideas about how names are written, a preview release of the service modifies the schema considerably:
-
-``` go
-package v20140404preview
-
-type Person struct {
-    Id         Guid   // ** Only Id is unchanged from the prior version ***
-    FullName   string
-    FamilyName string
-    KnownAs    string
-}
-```
-
-This is a preview version, so the storage version is _left unchanged_, based on the latest non-preview release (version 2011-03-03). We don't want to make changes to our storage versions based on speculative changes.
-
-![](versioning-hub-spoke-2014-04-04-preview.dot.png)
-
-The new properties don't exist on the storage version of `Person`, so the generated `ConvertToStorage()` and `ConvertFromStorage()` methods use the `PropertyBag` to carry the properties:
-
-``` go
-package v20140404preview
-
-import storage "v20130303storage"
-
-// ConvertTo converts this Person to the Hub version.
-func (person *Person) ConvertToStorage(dest storage.Person) error {
-    dest.Id = person.Id
-
-    // *** Store in the property bag ***
-    dest.WriteString("FamilyName", person.FamilyName)
-    dest.WriteString("FullName", person.FullName)
-    dest.WriteString("KnownAs", person.KnownAs)
-
-    return nil
-}
-
-// ConvertFrom converts from the Hub version to this version.
-func (person *Person) ConvertFromStorage(source storage.Person) error {
-    person.Id = source.Id
-
-    // *** Read from the property bag ***
-    person.FamilyName = source.ReadString("FamilyName")
-    person.FullName = source.ReadString("FullName")
-    person.KnownAs = source.ReadString("KnownAs")
-
-    return nil
-}
-```
-
-This provides round-trip support for the preview release, but does not provide backward compatibility with prior official releases. 
-
-The storage version of `Person` written by the preview release will have no values for `FirstName`, `LastName`, and `MiddleName`.
-
-These kinds of cross-version conversions cannot be automatically generated as they require more understanding the semantic changes between versions. 
-
-To allow injection of manual conversion steps, an interface will be generated as follows:
-
-``` go
-package v20130303storage
-
-// AssignableWithPersonStorage provides methods to
-// augment conversion to/from the storage version
-type AssignableWithPersonStorage interface {
-    AssignTo(person Person) error
-    AssignFrom(person Person) error
-}
-```
-
-This interface can be optionally implemented by API versions (spoke types) to augment the generated conversion.
-
-The generated `ConvertToStorage()` and `ConvertFromStorage()` methods will test for the presence of this interface and will call it if available:
-
-``` go
-package v20140404preview
-
-import storage "v20130303storage"
-
-// ConvertTo converts this Person to the Hub version.
-func (person *Person) ConvertToStorage(dest storage.Person) error {
-    // … elided …
-
-    // *** Check for the interface and use it if found ***
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
-        assignable.AssignTo(dest)
-    }
-
-    return nil
-}
-
-// ConvertFrom converts from the Hub version to this version.
-func (person *Person) ConvertFromStorage(source storage.Person) error {
-    // … elided …
-
-    // *** Check for the interface and use it if found ***
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
-        assignable.AssignFrom(source)
-    }
-
-    return nil
-}
-```
-
-### Version 2014-04-04 - Schema Change
-
-Based on feedback generated by the preview release, the CRM schema changes have gone ahead with a few minor changes:
-
-``` go
-package v20140404
-
-type Person struct {
-    Id         Guid
-    LegalName  string // Was FullName in preview
-    FamilyName string
-    KnownAs    string
-    AlphaKey   string // Added after preview
-}
-```
-
-No longer being a preview release, the storage version is also regenerated:
-
-``` go
-package v20140404storage
-
-type Person struct {
-    PropertyBag
-    Id         *Guid
-    LegalName  *string
-    FamilyName *string
-    KnownAs    *string
-    AlphaKey   *string
-}
-
-// Hub marks this type as a conversion hub.
-func (*Person) Hub() {}
-```
-
-![](versioning-hub-spoke-2014-04-04.dot.png)
-
-The `ConvertToStorage()` and `ConvertFromStorage()` methods for the new version of `Person` are generated as expected, copying across values and invoking the `AssignableWithPersonStorage` interface if present:
-
-``` go
-package v20140404
-
-import storage "v20140404storage"
-
-// ConvertTo converts this Person to the Hub version.
-func (person *Person) ConvertToStorage(dest storage.Person) error {
-    dest.AlphaKey = person.AlphaKey
-    dest.FamilyName = person.FamilyName
-    dest.Id = person.Id
-    dest.KnownAs = person.KnownAs
-    dest.LegalName = person.LegalName
-
-    // *** Check for the interface and use it if found ***
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
-        assignable.AssignTo(dest)
-    }
-
-    return nil
-}
-
-// ConvertFrom converts from the Hub version to this version.
-func (person *Person) ConvertFromStorage(source storage.Person) error {
-    person.AlphaKey = source.AlphaKey
-    person.FamilyName = source.FamilyName
-    person.Id = source.Id
-    person.KnownAs = source.KnownAs"
-    person.LegalName = source.LegalName
-
-    // *** Check for the interface and use it if found ***
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
-        assignable.AssignFrom(source)
-    }
-
-    return nil
-}
-```
-
-For older versions of `Person`, the conversion methods change considerably when regenerated. The properties they used to use are no longer present on the storage version, so instead of direct assignment, they now use the `PropertyBag` to stash the required values away:
-
-``` go
-package v20110101
-
-import storage "v20140404storage"
-
-// ConvertTo converts this Person to the Hub version.
-func (person *Person) ConvertToStorage(dest storage.Person) error {
-    dest.Id = person.Id
-    dest.WriteString("FirstName", person.FirstName)
-    dest.WriteString("LastName",  person.LastName)
-
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
-        assignable.AssignTo(dest)
-    }
-
-    return nil
-}
-
-// ConvertFrom converts from the Hub version to this version.
-func (person *Person) ConvertFromStorage(source storage.Person) error {
-    person.Id = source.Id
-    person.FirstName = source.ReadString("FirstName")
-    person.LastName = source.ReadString("LastName")
-
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
-        assignable.AssignFrom(source)
-    }
-
-    return nil
-}
-```
-
-To interoperate between different versions of `Person`, we need to add some manual conversions.
-
-When a newer version of `Person` is written to storage, we need to also populate `FirstName`, `LastName` and `MiddleName` within the `PropertyBag` to allow older versions to be requested. Similarly, when an older version of `Person` is written, we need to populate `AlphaKey`, `FamilyName`, `KnownAs` and `LegalName` so that newer versions can be requested.
-
-To avoid repetition of code across multiple implementations of `AssignTo()` and `AssignFrom()`, we write some helper methods on the storage version:
-
-``` go
-package v20140404storage
-
-func (person *Person) PopulateFromFirstMiddleLastName(firstName string, middleName string, lastName string) {
-    person.KnownAs = firstName
-    person.FamilyName = lastName
-    person.LegalName = firstName +" "+ middleName + " " + lastName
-    person.AlphaKey = lastName
-}
-
-func (person *Person) PopulateLegacyFields() {
-    person.WriteString("FirstName", person.KnownAs)
-    person.WriteString("LastName",  person.FamilyName)
-    person.WriteString("MiddleName", ... elided ...)
-}
-```
-
-With these methods available, implementing the interface `AssignableWithPersonStorage` becomes straightforward. For the first release of `Person`:
-
-``` go
-package v20110101
-
-import storage "v20140404storage"
-
-func (person *Person) AssignTo(dest storage.Person) error {
-    dest.PopulateFromFirstMiddleLastName(person.FirstName, "", person.LastName)
-}
-
-func (person *Person) AssignFrom(source storage.Person) error {
-}
-```
-
-For the later release that introduced `MiddleName` the code is very similar:
-
-``` go
-package v20130303
-
-
-import storage "v20140404storage"
-
-func (person *Person) AssignTo(dest storage.Person) error {
-    dest.PopulateFromFirstMiddleLastName(person.FirstName, person.MiddleName, person.LastName)
-}
-
-func (person *Person) AssignFrom(source storage.Person) error {
-}
-```
-
-### Version 2015-05-05 - Property Rename
-
-The term `AlphaKey` was found to be confusing to users, so in this release of the API it is renamed to `SortKey` to better reflect its purpose of sorting names together (e.g. *McDonald* gets sorted as though spelt *MacDonald*).
-
-``` go
-package v20150505
-
-type Person struct {
-    Id         Guid
-    LegalName  string
-    FamilyName string
-    KnownAs    string
-    SortKey    string // *** Used to be AlphaKey ***
-}
-```
-
-As expected the storage version is also regenerated:
-
-``` go
-package v20150505storage
-
-type Person struct {
-    PropertyBag
-    Id         *Guid
-    LegalName  *string
-    FamilyName *string
-    KnownAs    *string
-    SortKey    *string // *** Used to be AlphaKey ***
-}
-
-// Hub marks this type as a conversion hub.
-func (*Person) Hub() {}
-```
-
-By documenting the renames in the configuration of our code generator, this rename will be automatically handled within the `ConvertTo()` and `ConvertFrom()` methods, as shown here for the prior version of `Person`:
-
-``` go
-package v20140404
-
-import storage "v20150505storage"
-
-// ConvertTo converts this Person to the Hub version.
-func (person *Person) ConvertToStorage(dest storage.Person) error {
-    dest.SortKey = person.AlphaKey // *** Rename is automatically handled ***
-    dest.FamilyName = person.FamilyName
-    dest.Id = person.Id
-    dest.KnownAs = person.KnownAs
-    dest.LegalName = person.LegalName
-
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
-        assignable.AssignTo(dest)
-    }
-
-    return nil
-}
-
-// ConvertFrom converts from the Hub version to this version.
-func (person *Person) ConvertFromStorage(source storage.Person) error {
-    person.AlphaKey = source.SortKey // *** Rename is automatically handled ***
-    person.FamilyName = source.FamilyName
-    person.Id = source.Id
-    person.KnownAs = source.KnownAs"
-    person.LegalName = source.LegalName
-
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
-        assignable.AssignFrom(source)
-    }
-
-    return nil
-}
-```
-
-**Statistics:** At the time of writing, there were nearly 60 cases of fields being renamed between versions; 17 of these involved changes to letter case alone. (Count is inexact because renaming was inferred from the similarity of names.)
-
-### Version 2016-06-06 - Complex Properties
-
-With some customers expressing a desire to send physical mail to their customers, this release extends the API to allow a mailing address to be optionally specified for each person.
-
-``` go
-package v20160606
-
-type Address struct {
-    Street string
-    City   string
-}
-
-type Person struct {
-    Id             Guid
-    LegalName      string
-    FamilyName     string
-    KnownAs        string
-    SortKey        string
-    MailingAddress Address
-}
-```
-
-We now have two structs that make up our storage version:
-
-``` go
-package v20160606storage
-
-type Person struct {
-    PropertyBag
-    Id             *Guid
-    LegalName      *string
-    FamilyName     *string
-    KnownAs        *string
-    SortKey        *string
-    MailingAddress *Address
-}
-
-type Address struct {
-    PropertyBag
-    Street *string
-    City   *string
-}
-
-// Hub marks this type of Person as a conversion hub.
-func (*Person) Hub() {}
-```
-
-The required `ConvertToStorage()` and `ConvertFromStorage()` methods get generated in the expected way:
-
-``` go
-package v20160606
-
-import storage "v20160606storage"
-
-// ConvertTo converts this Person to the Hub version.
-func (person *Person) ConvertToStorage(dest storage.Person) error {
-    dest.SortKey = person.AlphaKey
-    dest.FamilyName = person.FamilyName
-    dest.Id = person.Id
-    dest.KnownAs = person.KnownAs
-    dest.LegalName = person.LegalName
-
-    // *** Copy the mailing address over too ***
-    address := &storage.Address{}
-    err := person.MailingAddress.ConvertToStorage(address)
-    if err != nil {
-        return err
-    }
-
-    dest.MailingAddress = address
-
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
-        err := assignable.AssignTo(dest)
-        if err != nill {
-            return err
-        }
-    }
-
-    return nil
-}
-
-// ConvertToStorage converts this Address to the hub storage version
-func (address *Address) ConvertToStorage(dest storage.Address) error {
-    dest.Street = address.Street
-    dest.City = address.City
-
-    if assignable, ok := person.(AssignableWithAddressStorage); ok {
-        err := assignable.AssignTo(dest)
-        if err != nill {
-            return err
-        }
-    }
-
-    return nil
-}
-
-// ConvertFrom converts from the Hub version to this version.
-func (person *Person) ConvertFromStorage(source storage.Person) error {
-    person.AlphaKey = source.SortKey // *** Rename is automatically handled ***
-    person.FamilyName = source.FamilyName
-    person.Id = source.Id
-    person.KnownAs = source.KnownAs
-    person.LegalName = source.LegalName
-
-    // *** Copy the mailing address over too ***
-    if storage.MailingAddress != nil {
-        address := &Address{}
-        err := address.ConvertFromStorage(storage.Address)
-        person.MailingAddress = address
-    }
-
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
-        err := assignable.AssignFrom(source)
-        if err != nill {
-            return err
-        }
-    }
-
-    return nil
-}
-
-// ConvertFromStorage converts from the hub storage version to this version
-func (address *Address) ConvertFromStorage(source storage.Address) error {
-    address.Street = source.Street
-    address.City = source.City
-
-    if assignable, ok := person.(AssignableWithAddressStorage); ok {
-        err := assignable.AssignFrom(source)
-        if err != nill {
-            return err
-        }
-    }
-
-    return nil
-}
-```
-
-
-We're recursively applying the same conversion pattern to `Address` as we have already been using for `Person`. This scales to any level of nesting without the code becoming unweildy.
-
-### Version 2017-07-07 - Optionality changes
-
-In the 2016-06-06 version of the API, the `MailingAddress` property was mandatory. Since not everyone has a mailing address (some people receive no physical mail), this is now being made optional.
-
-The change to the API declarations is simple:
-
-``` go
-package v20170707
-
-type Address struct {
-    Street string
-    City   string
-}
-
-type Person struct {
-    Id             Guid
-    LegalName      string
-    FamilyName     string
-    KnownAs        string
-    SortKey        string
-    MailingAddress *Address // *** Was mandatory, now optional ***
-}
-```
-
-The storage versions are identical to those used previously and are not shown here.
-
-What does change is the `ConvertToStorage()` method, which now needs to handle the case where the `MailingAddress` has not been included:
-
-``` go
-package v20170707
-
-import storage "v20170707storage"
-
-// ConvertTo converts this Person to the Hub version.
-func (person *Person) ConvertToStorage(dest storage.Person) error {
-    dest.SortKey = person.AlphaKey
-    dest.FamilyName = person.FamilyName
-    dest.Id = person.Id
-    dest.KnownAs = person.KnownAs
-    dest.LegalName = person.LegalName
-
-    // *** Need to check whether we have a mailing address to copy ***
-    if person.MailingAddress != nil {
-        address := &storage.Address{}
-        err := person.MailingAddress.ConvertToStorage(address)
-        if err != nil {
-            return err
-        }
-
-        dest.MailingAddress = address
-    }
-
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
-        err := assignable.AssignTo(dest)
-        if err != nill {
-            return err
-        }
-    }
-
-    return nil
-}
-```
-
-If we instead had an _optional_ field that became _required_ in a later version of the API, the generated code for `ConvertToStorage()` would become simpler as the check for **nil** would not be needed.
-
-**Statistics**: At the time of writing, there are 100 version-to-version changes where fields became **optional** in the later version of the API, and 99 version-to-version changes where fields became **required**.
-
-### Version 2018-08-08 - Extending nested properties
-
-Defining an address simply as `Street` and `City` has been found to be overly simplistic, so this release makes changes to allow a more flexible approach.
-
-``` go
-package v20180808
-
-type Address struct {
-    // FullAddress shows the entire address as should be used on postage
-    FullAddress  string
-    City         string
-    Country      string
-    PostCode     string
-}
-```
-
-As before, the storage version changes to match, with prior conversions using the property bag to store additional properties:
-
-``` go
-package v20180808storage 
-
-type Address struct {
-    PropertyBag
-    FullAddress  *string
-    City         *string
-    Country      *string
-    PostCode     *string
-}
-```
-
-These changes are entirely similar to those previously covered in version 2014-04-04, above.
-
-### Version 2019-09-09 - Changing types
-
-Realizing that some people get deliveries to places that don't appear in any formal database of addresses, in this release the name of the type changes to `Location`.
-
-``` go
-package v20190909
-
-type Location struct {
-    FullAddress  string
-    City         string
-    Country      string
-    PostCode     string
-    Lattitude    double
-    Longitide    double
-}
-```
-
-The storage version gets changed in a straightforward way:
-
-``` go
-package v20190909storage 
-
-type Location struct {
-    PropertyBag
-    FullAddress  *string
-    City         *string
-    Country      *string
-    PostCode     *string
-}
-```
-
-The conversion methods need to change as well. If we configure metadata detailing the rename (as we did for properties in version 2015-05-05), we can generate the required conversions automatically:
-
-``` go
-package v20170707
-
-// *** Updated storage version ***
-import storage "v20190909storage"
-
-// ConvertTo converts this Person to the Hub version.
-func (person *Person) ConvertToStorage(dest storage.Person) error {
-    // ... elided properties ...
-
-    // *** Need to check whether we have a mailing address to copy ***
-    if person.MailingAddress != nil {
-        address := &storage.Location{}
-        err := person.MailingAddress.ConvertToStorage(address)
-        if err != nil {
-            return err
-        }
-
-        dest.MailingAddress = address
-    }
-
-    if assignable, ok := person.(AssignableWithPersonStorage); ok {
-        err := assignable.AssignTo(dest)
-        if err != nill {
-            return err
-        }
-    }
-
-    return nil
-}
-
-// ConvertToStorage converts this Address to the hub storage version
-// ** Different parameter type for dest *** 
-func (address *Address) ConvertToStorage(dest storage.Location) error {
-    dest.Street = address.Street
-    dest.City = address.City
-
-    // *** Interface has been renamed too **
-    if assignable, ok := person.(AssignableWithLocationStorage); ok {
-        err := assignable.AssignTo(dest)
-        if err != nill {
-            return err
-        }
-    }
-
-    return nil
-}
-
-```
-
-If we don't include metadata to capture type renames, the conversion can be manually injected by implementing the `AssignableWithLocationStorage` interface.
-
-Statistics: At the time of writing, there are 160 version-to-version changes where the type of the property changes. This count excludes cases where change involved an optional property becoming mandatory, or vice versa.
-
-
-
-
-
-
-
-
+### Testing extensibility
 
 
 ## Alternative Solutions
 
 AKA the road not travelled
 
-### Alternative: Superset storage schema
+### Alternative: Fixed storage version
 
 The "v1" storage version of each supported resource type will be created by merging all of the fields of all the distinct versions of the resource type, creating a *superset* type that includes every property declared across every version of the API.
 
 To maintain backward compatibility as Azure APIs evolve over time, we will include properties across all versions of the API, even for versions we are not currently generating as output. This ensures that properties in use by older APIs are still present and available for forward conversion to newer APIs, even as those older APIs age out of use.
+
+> ***TODO***: Reference the case study
+
+> ***TODO***: Copy in to here the limitations described in the case study
+
+----
+----
 
 #### Limitation: Old properties aging out
 
@@ -1035,6 +244,8 @@ To illustrate the sorts of changes we need to support, consider these changes ma
 | ReliabilityLevel   | Level                    | ClusterPropertiesReliabilityLevel |
 | UpgradeDescription | PaasClusterUpgradePolicy | ClusterUpgradePolicy              |
 
+----
+----
 
 ### Alternative: Use the latest API version
 
