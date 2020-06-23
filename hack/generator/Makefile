@@ -80,7 +80,7 @@ gox: install-tools
 ci: build test-cover
 
 .PHONY: diagrams
-diagrams: $(patsubst %.dot,%.png,$(wildcard spec/*.dot))
+diagrams: $(patsubst %.dot,%.png,$(wildcard spec/images/*.dot))
 
 %.png: %.dot 
 	$(info $(M) Generating diagram $@ from $< …)
