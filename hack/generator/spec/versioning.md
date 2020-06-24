@@ -32,9 +32,9 @@ We're generating a large volume of CRD definitions based on the JSON schema defi
 
 There are two case studies that accompany this specification, each one walking through one possible solution and showing how it will perform over time.
 
-The [Rolling Versions](case-study-rolling-storage-versions.md) case study shows how the preferred solution adapts to changes as the Azure Resources evolve over time.
+The [**Rolling Versions**](case-study-rolling-storage-versions.md) case study shows how the preferred solution adapts to changes as the Azure Resources evolve over time.
 
-The [Fixed Version](case-study-rolling-storage-versions.md) case study shows how the primary alternative would fare, calling out some specific problems that will occur.
+The [**Fixed Version**](case-study-rolling-storage-versions.md) case study shows how the primary alternative would fare, calling out some specific problems that will occur.
 
 **TL;DR:** Using a *fixed storage version* appears simpler at first, and works well as long as the changes from version to version are simple. However, when the changes become complex (as they are bound to do over time), this approach starts to break down. While there is up front complexity to address with a *rolling storage version*, the approach doesn't break down over time.
 
@@ -83,8 +83,8 @@ package v20110101storage
 
 type Person struct {
     PropertyBag
-    FirstName   *string
     Id          *Guid
+    FirstName   *string
     LastName    *string
 }
 ```
@@ -113,50 +113,48 @@ func (person *Person) ConvertFrom(raw conversion.Hub) error {
 }
 ```
 
-As shown, these methods will delegate to two helper methods (`ConvertToStorage()` and `ConvertFromStorage()`) that are generated to handle the process of copying information across between instances.
+As shown, these methods will delegate to two strongly typed helper methods (`ConvertToStorage()` and `ConvertFromStorage()`) that are generated to handle the process of copying information across between instances.
 
-Properties defined in the API type will be handled by the following rules:
+The `ConvertToStorage()` method is responsible for copying all of the properties from the API type onto the storage type. The `ConvertFromStorage()` method is its mirror, responsible for populating all of the properties on the API type from the storage type.
 
-1. For properties with a primitive type (**string**, **int**, **float**, or **bool**):
+Each property defined in the API type is considered in turn, and will require different handling based on its type and whether a suitable match is found on the storage type:
 
-   * If the storage type has a matching property with the same name and type, the value will be directly copied across.
-   * If the storage type does not have a matching property, the value will be stored/recalled using the property bag.
+![](images/versioning-property-mapping-flowchart.png)
 
-1. For properties with an enumeration type:
+**For properties with a primitive type** a matching property must have the same name and the identical type. If found, a simple assignment will copy the value over. If not found, the value will be stashed-in/recalled-from the property bag present on the storage type.
 
-   * If the storage type has a matching property with the same name and a compatible type, the value will be directly copied across (with a cast if necessary).
-   * If the storage type does not have a matching property, the value will be stored/recalled using the property bag.
+* Primitive types are **string**, **int**, **float64**, and **bool**
+* Name comparisons are case-insensitive
 
-1. For properties with a complex type (a type defined by the JSON schema)
+**For properties with an enumeration type** a matching property must have the same property name and an enumeration type with the same type name. If found, a simple assignment will copy the value over. If not found, the value will be stashed-in/recalled-from the property bag present on the storage type using the underlying type of the enumeration.
 
-   * If the storage type has a matching property with the same name and a compatible type, the `ConvertToStorage()` and `ConvertFromStorage()` methods defined on the API version of the type will be used to copy information across.
-   * If the storage type does not have a matching property, the value will stored/recalled in JSON format using the property bag
+* Name comparisons are case-insensitive for both property names and enumeration type names
+* Enumeration types are generated independently for each version, so they will never be identical types
 
-Notes
-* Property name comparisons are case-insensitive. See also the section below on property renaming.
+**For properties with a custom type** a matching property must have the same name and a custom type with same type name. If found, a new instance will be created and the appropriate `ConvertToStorage()` or `ConvertFromStorage()` method for the custom type will be used. If not found, JSON serialization will be used with the property bag for storage.
 
-* Enumeration types defined in two different versions are considered compatible if they have the same underlying base type and their names are the same (by case-insensitive comparison)
-
-* Complex types defined in two different versions are considered compatible if they have the same name (by case-insensitive comparison).
+* Name comparisons are case-insensitive for both property names and custom type names
+* Custom types are generated independently for each version, so they will never be identical types
 
 > ***TODO: Show an example that includes all the cases***
 
-
 ### External Metadata for common changes
 
-We'll capture common changes between versions in metadata that we bundle with the code generator, allowing it to handle a wider range of scenarios.
+We'll capture common changes between versions in metadata (likely a YAML file) that we bundle with the code generator, allowing it to handle a wider range of scenarios.
 
-**If a property is renamed** in a particular API version, conversion of API versions *prior* to that point of change will instead match based on the new name of the property on the storage type.
+**If a property is renamed** in a particular API version, conversion of API versions *prior* to that point of change will instead match based on the new name of the property on the storage type. 
 
-> ***Outstanding issue***: Do we want to support **property** renaming in this way? How much will it help reduce manual boilerplate?
+There are more than 40 cases of properties being renamed across versions of the ARM API.
 
 > ***TODO: Show an example***
 
 **If a type has been renamed** in a particular API version, conversion of API versions *prior* to that point of change will instead match based on the new type of the property on the storage type.
 
-> ***Outstanding issue***: Do we want to support **type** renaming in this way? How much will it help reduce manual boilerplate?
+Therea are 160 cases of properties changing type acdross versions of the ARM API. Many of these can be handled automatically by capturing type renames in metadata.
 
 > ***TODO: Show an example***
+
+
 
 > ***Outstanding Issue:*** Are there other kinds of common change we want to support?  
 Are there other cases of changes between versions that we may be able to handle automatically. 
@@ -185,7 +183,7 @@ It's vital that we are able to correctly convert between versions. We will there
 
 ### Round Trip Testing
 
-We will generate a unit test to ensure that every spoke version can round trip to the hub version and back again with no loss of information.
+We will generate a unit test to ensure that every spoke version can round trip to the hub version and back again to the same type with no loss of information.
 
 This will help to ensure a base level of compliance, that information is not lost through serialization.
 
@@ -194,14 +192,48 @@ This will help to ensure a base level of compliance, that information is not los
 * ConvertToStorage() followed by ConvertFromStorage() and then compare that all properties match
 
 * **string**, **int**, **bool** much match exactly
-* **Float64** match within tollerance
+* **Float64** match within tolerance
 * What else?
 
-### Forward Testing
+### Golden Tests
 
+For API (spoke) types where the optional interfaces `AssignableTo...()` and `AssignableFrom...()` have been implemented, we'll generate golden tests to verify that they are generating the expected results.
 
-### Testing extensibility
+These tests will be particularly useful when a new version of the ARM api is released for a given service as they will help to catch any changes that now need to be handled.
 
+We'll generate two golden tests for each type in each API type, one to test verify conversion _**to**_ the latest version, and one to test conversion _**from**_ the latest version.
+
+**Testing conversion to the latest version** will check that an instance of a older version of the API can be correctly upconverted to the latest version:
+
+![](images/versioning-golden-tests-to-latest.png)
+
+The test will involve these steps:
+
+* Create an exemplar instance of the older API type 
+* Convert it to the storage type using `ConvertToStorage()`
+* Convert it to the latest API type using `ConvertFromStorage()`
+* Check that it matches the golden file from a previous run
+
+Testing will only occur if one (or both) types implements one of the optional interfaces. That is, one or both of the following must be true:
+* The older API type implements `AssignableTo...()`
+* The latest API type implements `AssignableFrom...()`
+
+If neither rule is satisfied, the test will silently null out.
+
+**Testing conversion from the latest version** will check that an instance of the latest version of the API can be correctly downconverted to an older version.
+
+![](images/versioning-golden-tests-from-latest.png)
+
+* Create an exemplar instance of the latest API type 
+* Convert it to the storage type using `ConvertToStorage()`
+* Convert it to the older API type using `ConvertFromStorage()`
+* Check that it matches the golden file from a previous run
+
+Testing will only occur if one (or both) types implements one of the optional interfaces. That is, one or both of the following must be true:
+* The older API type implements `AssignableFrom...()`
+* The latest API type implements `AssignableTo...()`
+
+If neither rule is satisfied, the test will silently null out.
 
 ## Alternative Solutions
 
@@ -213,51 +245,21 @@ The "v1" storage version of each supported resource type will be created by merg
 
 To maintain backward compatibility as Azure APIs evolve over time, we will include properties across all versions of the API, even for versions we are not currently generating as output. This ensures that properties in use by older APIs are still present and available for forward conversion to newer APIs, even as those older APIs age out of use.
 
-> ***TODO***: Reference the case study
+This approach has a number of issues that are called out in detail in the [fixed storage version case study](case-study-fixed-storage-version.md).
 
-> ***TODO***: Copy in to here the limitations described in the case study
+**Property Bloat**: As our API evolves over time, our storage version is accumulating all the properties that have ever existed, bloating the storage version with obsolete properties that are seldom (if ever) used. Even properties that only ever existed on a single preview release of an ARM API need to be correctly managed for the lifetime of the service operator.
 
-----
-----
+**Property Amnesia**: Our code generator only knows about properties defined in current versions of the API. Once an API version has been excluded (or if the JSON schema definition is no longer available), the generator completely forgets about older properties. This would cause compatibility issues for established users who would find upgrading the service operator breaks their cluster.
 
-#### Limitation: Old properties aging out
-
-When a changed property ages out and the schema is no longer available, the code generator will be unaware of its existence. Therefore, it will be omitted from our generated storage schema resulting in a breaking change for any resource already persisted.
-
-* This problem becomes worse if we include only the latest two (or latest ***n***) versions of the schema when generating the storage version as old properties will drop out much more quickly.
-
-* Mitigating the issue by merging the schema version to ensure old properties are not lost over time is possible, but will require educated manual intervention each time the code generator is run to update the generated types from ARM. This will be fragile and prone to error.
-
-#### Limitation: Property type changes
-
-If the type of a property changes, we don't have any good way to define a concrete Go type that easily permits both values. 
-
-* Changing the name of the deprecated property would be a breaking change as we wouldn't be able to rehydrate resources already persisted by an older version of the operator.
-
-* Using a different name for the *new* version of the property would be possible, but runs the risk a naming collision with other properties. It also creates a wart that would persist for the life of the tool. This wart would be encountered even for users who never used the older version of the operator.
-
-To illustrate the sorts of changes we need to support, consider these changes made by **Microsoft.ServiceFabric**:
-
-| ClusterProperties  | v20160301                | v20160901                         |
-| ------------------ | ------------------------ | --------------------------------- |
-| NodeTypes          | []NodeTypes              | []NodeTypeDescription             |
-| ReliabilityLevel   | Level                    | ClusterPropertiesReliabilityLevel |
-| UpgradeDescription | PaasClusterUpgradePolicy | ClusterUpgradePolicy              |
-
-----
-----
+**Type Collision**: Identically named properties with different types can't be stored in the same property; mitigation is possible for a limited time, though eventually *property amnesia* will cause a breaking change.
 
 ### Alternative: Use the latest API version
 
 The supported storage version of each resource type will simply be the latest version of the API supported by ARM. Any additional information not supported on that version will be persisted via annotations on the resource.
 
-**Limitation**: This is a known antipattern that we should avoid.
+**This is a known antipattern that we should avoid.**
 
-TODO: Include references from DavidJ
-
-**Limitation**: Annotations are publicly visible on the cluster and can easily modified. This makes it spectacularly easy for a user to make an innocent change that would break the functionality of the operator. 
-
-TODO: Verify this assumption
+Annotations are publicly visible on the cluster and can easily modified. This makes it spectacularly easy for a user to make an innocent change that would break the functionality of the operator. 
 
 ## See Also
 
@@ -267,7 +269,3 @@ TODO: Verify this assumption
 
 https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/
 
-
-## Glossary
-
-**ARM:** Azure Resource Manager
