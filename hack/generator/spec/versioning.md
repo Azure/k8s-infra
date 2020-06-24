@@ -62,6 +62,8 @@ We'll base the schema of the central hub type on the latest GA release of the AP
 
 **Inclusion of a property bag** to provide for storage for properties present in older versions of the API that are no longer present.
 
+If a resource type is dropped from later releases of the ARM API, we will still generate a storage type based on the latest available release of that type. We need to do this in order to maintain backward compatibility with existing installations of the service operator.
+
 Using a purpose designed hub type for storage avoids a number of version-to-version compatibility issues that can arise if the API version itself is used directly for storage.
 
 To illustrate, if the API version defined the following `Person` type:
