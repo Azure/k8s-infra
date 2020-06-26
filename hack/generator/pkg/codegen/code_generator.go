@@ -157,7 +157,9 @@ func (generator *CodeGenerator) MarkLatestResourceVersionsForStorage(
 
 				// mark as storage version if it's the latest version
 				isLatestVersion := thisPackagePath == latestPackagePath
-				resourceDef = resourceDef.WithIsStorageVersion(isLatestVersion)
+				if isLatestVersion {
+					resourceDef = resourceDef.MarkAsStorageVersion()
+				}
 
 				resultPkg.AddDefinition(resourceDef)
 			} else {

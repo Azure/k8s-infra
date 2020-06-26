@@ -58,9 +58,9 @@ func (definition *ResourceDefinition) Type() Type {
 	return definition.spec // TODO?????
 }
 
-func (definition *ResourceDefinition) WithIsStorageVersion(isStorageVersion bool) *ResourceDefinition {
+func (definition *ResourceDefinition) MarkAsStorageVersion() *ResourceDefinition {
 	result := *definition
-	result.isStorageVersion = isStorageVersion
+	result.isStorageVersion = true
 	return &result
 }
 
