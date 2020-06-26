@@ -12,18 +12,17 @@
 - Provide automatic ownership and garbage collection (using [Kubernetes garbage collection](https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/)) 
   where appropriate (e.g. ResourceGroup as an owner of all the resources inside of it)
   - Ideally ResourceGroup is handled the same as other owners and isn't special cased. 
-- Define how Kubernetes interacts with Azure resources not created/managed by Kubernetes, for example resources which were created prior to the 
+- Define how Kubernetes interacts with Azure resources _not_ created/managed by Kubernetes, for example resources which were created prior to the 
   customer onboarding to the Azure Service Operator.
-- References should be extensible to work across multiple subscriptions, although
+- References should be extensible to work across multiple Azure subscriptions, although
   initially we may not support that.
  
 ## Non-goals
-- Managing ownership for resources/resource hierarchies that are not managed (were not created)
+- Managing ownership for resources/resource hierarchies that were not created
   by the service operator.
-  While this proposal allows references to point to resources not managed by the service operator,
-  the consequence of that is that the operator is not watching/monitoring the resource in question
-  and as such cannot propagate deletes. Put another way: The entire resource hierarchy must exist
-  _in Kubernetes_ for us to manage ownership/object lifecycles. If only part of the resource hierarchy
+  While this proposal allows references to point to external resources not managed by the service operator,
+  the operator is not watching/monitoring the resource in question
+  and as such cannot propagate deletes. Put another way: for the operator to manage ownership/object lifecycles, the entire resource hierarchy must exist _within Kubernetes_. If only part of the resource hierarchy
   is managed by the service operator, only those parts can have their lifecycles managed.  
 
 ## Different kinds of resource relationships in Azure
@@ -37,19 +36,19 @@ This relationship is stereotypically one-way (a VMSS refers to a Subnet, but a S
 Two resources have a relationship where one is owned by the other.
 
 Examples:
-- [RouteTable -> Route](https://github.com/Azure/k8s-infra/blob/master/apis/microsoft.network/v1/routetable_types.go#L18) ([json schema](https://schema.management.azure.com/schemas/2020-03-01/Microsoft.Network.json))
-- BatchAccount -> Pool ([json schema](https://schema.management.azure.com/schemas/2017-09-01/Microsoft.Batch.json))
-- ResourceGroup -> Any resource
+- a [RouteTable owns many Routes](https://github.com/Azure/k8s-infra/blob/master/apis/microsoft.network/v1/routetable_types.go#L18) ([json schema](https://schema.management.azure.com/schemas/2020-03-01/Microsoft.Network.json))
+- a BatchAccount owns many Pools ([json schema](https://schema.management.azure.com/schemas/2017-09-01/Microsoft.Batch.json))
+- a ResourceGroup owns any resource
 
-This relationship tells us two things:
-- Where to create/manage the dependent resource (this `Route` goes in this particular `RouteTable`, this `RouteTable` has this `Route`)
+A relationship like those shown here tells us two things:
+- Where to create/manage the dependent resource (this `Route` goes in that particular `RouteTable`, this `RouteTable` has that `Route`)
 - That the dependent resource should be deleted when the parent resource is deleted. TODO: Race conditions here
     - There are theoretically two cases here:
         - The dependent resource must be deleted before the parent can be deleted.
         - Deletion of the parent automatically cascades to all dependent resources. To the best of my knowledge all
          owning resource relationships in Azure are this kind.
 
-Note that sometimes an owning type has its dependent type embedded as a property 
+Note that sometimes an owning resource has its dependent resources embedded directly
 (for example: `RouteTable` has the property [RouteTablePropertiesFormat](https://schema.management.azure.com/schemas/2020-03-01/Microsoft.Network.json)).
 Most types do not embed the dependent resource directly in the owning resource. We need to cater to both scenarios.
 
@@ -57,7 +56,7 @@ Most types do not embed the dependent resource directly in the owning resource. 
 
 This section examines how other operator solutions have tackled these problems. We look at:
 - ARM templates
-- AzureServiceOperator (ASO)
+- Azure Service Operator (ASO)
 - k8s-infra
 
 ### Related/Linked resources
@@ -75,7 +74,7 @@ These are just properties (often but not always called `id`) which refer to the 
 ```
 
 #### What ASO does
-Similar to what ARM templates do, ASO uses the decomposition of fully qualified resource id to reference another resource, as seen [here for VMSS -> VNet](https://github.com/Azure/azure-service-operator/blob/92240406aff3863f3a267d8a1dc1e28aa3e841ae/api/v1alpha1/azurevmscaleset_types.go#L25)
+Similar to how ARM templates behave, ASO uses the decomposition of fully qualified resource id to reference another resource, as seen [here for VMSS -> VNet](https://github.com/Azure/azure-service-operator/blob/92240406aff3863f3a267d8a1dc1e28aa3e841ae/api/v1alpha1/azurevmscaleset_types.go#L25)
 
 ```go
 type AzureVMScaleSetSpec struct {
@@ -102,11 +101,11 @@ subnetIDInput := helpers.MakeResourceID(
 )
 ```
 
-Currently ASO does not support cross-subscription references (and some of the resources such as VMSS above don't even support cross-resource group references), but it in theory could by adding some more parameters.
+Currently ASO does not support cross-subscription references (and some of the resources such as VMSS don't allow cross-resource group references), but it in theory could by adding parameters.
 
 #### What k8s-infra does
-k8s-infra is a bit different in that resource references are in Kubernetes language (namespace + name) and not Azure language (resource group + resource name).
-All resource references are done using a special type `KnownTypeReference` which contains the fully qualified Kubernetes name for the resource.
+k8s-infra is a bit different in that resource references are in Kubernetes style (namespace + name) and not Azure style (resource-group + resource-name).
+All resource references are done using the special type `KnownTypeReference` which contains the fully qualified Kubernetes name for the resource.
 
 ### Dependent Resources
 #### What ARM does
@@ -264,14 +263,14 @@ This is what [CAPZ does](https://github.com/kubernetes-sigs/cluster-api-provider
   `KnownTypeReference` does today in k8s-infra.
 
 #### Disadvantages compared to the proposal above
-- It means that you can only reference other resources which are being tracked by Kubernetes,
-  which means we likely need to introduce the notion of unmanaged 
-  resources (which the operator watches but doesn't own) for the purpose of 
+- Only able to reference other resources which are being tracked by Kubernetes. 
+  We would likely need to introduce the notion of unmanaged 
+  resources (which the operator _watches_ but does not _own_) for the purpose of 
   allowing references to those resources. This puts some additional burden on the customers mental model
   as in order to know what an action will do on a resource they need to know if it's managed or unmanaged.
 
 ### Implementation
-There are three key pillars required for implementing the proposal as discussed
+There are three key pillars required for implementing the proposal as described
 
 #### Identify resource relationships
 
@@ -397,7 +396,7 @@ func ExampleGet() error {
 }
 ```
 
-### A note on the differences between owner references and arbitrary resource references
+### Owner references vs Arbitrary references
 Because we are code-generating all of the `ownerRef` fields, we can always supply the annotations for group and kind automatically, using the information
 provided to us by the ARM json specification. **This is not the case for abitrary references (`id`'s) to other resources**. We do not actually know
 programmatically what type that reference is, and it some cases it may actually be allowed to point to multiple different types 
@@ -410,7 +409,7 @@ failure modes for resources if they actually got it wrong (which will cause thei
 
 #### What happens when a dependent resource specifies an `ownerRef` that doesn't exist?
 The dependent resource will be stuck in an unprovisioned state with an error stating that the owner doesn't exist.
-If the owner is created, the dependent resource will also be created automatically by the reconciliation loop.
+If the owner is created, the dependent resource will then be created by the reconciliation loop automatically.
 
 #### What happens when a resource contains a link to another resource which doesn't exist?
 The resource with the link will be stuck in an unprovisioned state with an error stating that the linked resource doesn't exist.
