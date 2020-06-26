@@ -51,22 +51,26 @@ type ResourceDefinition struct {
 // assert that ResourceDefinition implements TypeDefiner
 var _ TypeDefiner = &ResourceDefinition{}
 
+// Name returns the name of the type being defined
 func (definition *ResourceDefinition) Name() *TypeName {
 	return definition.typeName
 }
 
+// Type returns the type to be associated with the name
 func (definition *ResourceDefinition) Type() Type {
 	return definition.spec // TODO BUG: the status is not considered here
 	// TO FIX: consider lifting up the two methods used on the result of this method
 	// (which are References/RequiredImports) into the TypeDefiner interface
 }
 
+// MarkAsStorageVersion marks the resource as the Kubebuilder storage version
 func (definition *ResourceDefinition) MarkAsStorageVersion() *ResourceDefinition {
 	result := *definition
 	result.isStorageVersion = true
 	return &result
 }
 
+// WithDescription replaces the description of the resource
 func (definition *ResourceDefinition) WithDescription(description *string) TypeDefiner {
 	result := *definition
 	result.description = description
