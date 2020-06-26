@@ -56,7 +56,9 @@ func (definition *ResourceDefinition) Name() *TypeName {
 }
 
 func (definition *ResourceDefinition) Type() Type {
-	return definition.spec // TODO?????
+	return definition.spec // TODO BUG: the status is not considered here
+	// TO FIX: consider lifting up the two methods used on the result of this method
+	// (which are References/RequiredImports) into the TypeDefiner interface
 }
 
 func (definition *ResourceDefinition) MarkAsStorageVersion() *ResourceDefinition {
