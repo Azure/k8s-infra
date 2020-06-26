@@ -15,22 +15,23 @@ func CreateResourceDefinitions(name *TypeName, specType *StructType, statusType 
 
 	var others []TypeDefiner
 
-	var specName *TypeName
-	if specType != nil {
-		specName = NewTypeName(name.PackageReference, name.Name()+"Spec")
-		specDef, specOthers := specType.CreateDefinitions(specName, idFactory)
+	defineStruct := func(suffix string, structType *StructType) *TypeName {
+		definedName := NewTypeName(name.PackageReference, name.Name()+suffix)
+		defined, definedOthers := structType.CreateDefinitions(definedName, idFactory)
+		others = append(append(others, defined), definedOthers...)
+		return definedName
+	}
 
-		others = append(append(others, specDef), specOthers...)
-	} else {
+	var specName *TypeName
+	if specType == nil {
 		panic("spec must always be provided")
+	} else {
+		specName = defineStruct("Spec", specType)
 	}
 
 	var statusName *TypeName
 	if statusType != nil {
-		statusName = NewTypeName(name.PackageReference, name.Name()+"Status")
-		statusDef, statusOthers := statusType.CreateDefinitions(statusName, idFactory)
-
-		others = append(append(others, statusDef), statusOthers...)
+		statusName = defineStruct("Status", statusType)
 	}
 
 	this := &ResourceDefinition{typeName: name, spec: specName, status: statusName, isStorageVersion: false}
