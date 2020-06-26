@@ -2,13 +2,14 @@
 
 ## Related reading
 - [Kubernetes garbage collection](https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/).
+- [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 
-## Terminology
+## Related Projects
 - ASO: [Azure Service Operator](https://github.com/Azure/azure-service-operator)
 - k8s-infra: The handcrafted precurser to the code generation tool being designed.
 
 ## Goals
-- Provide a way for customers to express relationships between Azure resources in Kubernetes in an idiomatic way.
+- Provide a way for customers to express relationships between Azure resources in an idiomatic Kubernetes way.
 - Provide automatic ownership and garbage collection (using [Kubernetes garbage collection](https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/)) 
   where appropriate (e.g. ResourceGroup as an owner of all the resources inside of it)
   - Ideally ResourceGroup is handled the same as other owners and isn't special cased. 
@@ -42,15 +43,15 @@ Examples:
 
 A relationship like those shown here tells us two things:
 - Where to create/manage the dependent resource (this `Route` goes in that particular `RouteTable`, this `RouteTable` has that `Route`)
-- That the dependent resource should be deleted when the parent resource is deleted. TODO: Race conditions here
-    - There are theoretically two cases here:
-        - The dependent resource must be deleted before the parent can be deleted.
-        - Deletion of the parent automatically cascades to all dependent resources. To the best of my knowledge all
-         owning resource relationships in Azure are this kind.
+- That the dependent resource should be deleted when the parent resource is deleted. There are theoretically two cases here:
+    - The dependent resource must be deleted before the parent can be deleted.
+    - Deletion of the parent automatically cascades to all dependent resources. Due to how Azure ARM
+      resources express ownership (via `id` which is part of the URL, with dependent resources being a subdirectory under the
+      owning resources URL) all ARM resources _should_ fall into this case.
 
 Note that sometimes an owning resource has its dependent resources embedded directly
 (for example: `RouteTable` has the property [RouteTablePropertiesFormat](https://schema.management.azure.com/schemas/2020-03-01/Microsoft.Network.json)).
-Most types do not embed the dependent resource directly in the owning resource. We need to cater to both scenarios.
+Most types do not embed the dependent resource directly in the owning resource. We will need to cater for both the embedded and non-embedded cases.
 
 ## What do these relationships look like in existing solutions?
 
@@ -61,7 +62,7 @@ This section examines how other operator solutions have tackled these problems. 
 
 ### Related/Linked resources
 
-#### What ARM does
+#### What does ARM do?
 These are just properties (often but not always called `id`) which refer to the fully qualified ARM ID of another resource. For example see a
 [sample deployment template for a VMSS refering to an existing vnet](https://github.com/Azure/azure-quickstart-templates/blob/master/201-vmss-existing-vnet/azuredeploy.json#L136).
 
@@ -73,7 +74,7 @@ These are just properties (often but not always called `id`) which refer to the 
 }
 ```
 
-#### What ASO does
+#### What does ASO do?
 Similar to how ARM templates behave, ASO uses the decomposition of fully qualified resource id to reference another resource, as seen [here for VMSS -> VNet](https://github.com/Azure/azure-service-operator/blob/92240406aff3863f3a267d8a1dc1e28aa3e841ae/api/v1alpha1/azurevmscaleset_types.go#L25)
 
 ```go
@@ -101,25 +102,29 @@ subnetIDInput := helpers.MakeResourceID(
 )
 ```
 
+This produces a resource ID: `/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/Microsoft.Network/virtualNetworks/{vnetName}/subnets/{subnetName}`.
+
 Currently ASO does not support cross-subscription references (and some of the resources such as VMSS don't allow cross-resource group references), but it in theory could by adding parameters.
 
-#### What k8s-infra does
+#### What does k8s-infra do?
 k8s-infra is a bit different in that resource references are in Kubernetes style (namespace + name) and not Azure style (resource-group + resource-name).
 All resource references are done using the special type `KnownTypeReference` which contains the fully qualified Kubernetes name for the resource.
 
 ### Dependent Resources
-#### What ARM does
+#### What does ARM do?
 ARM template deployments support [two different ways of deploying dependent resources](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/child-resource-name-type):
 
-- Embed the dependent resource directly in the same ARM template in which the owning resource is created, using the `resources` property.
-    - This requires that the owning resource and the dependent resource are created at the same time.
-- Deploy the dependent resource separately.
-    - When doing this, you should specify `dependsOn` stating that your new dependent resource depends on its owner. This is not strictly required in cases where
-      the owner already exists, but is required when it is still being created (possibly in parallel).
-    - The `name` field of the dependent resource in this mode serves a dual purpose - to name the dependent resource and to identify the parent resources.
-      Each segment of the name corresponds to an owning resource, so creating a Batch Pool `foo` in Batch account `account` would have `name` = `account/foo`.
+- Deploy the resources in the same ARM template with dependent resources embedded inside owning resources using the `resources` property.
+    - The dependent resource need not specify which resource is its owner, because it is implied by embedded structure.
+    - The owning resource and the dependent resource must be created at the same time.
+- Deploy the resources separately.
+    - The dependent resource must specify which resource is its owner by including in its `name` field both the owning resource name and the dependent
+      resource name separated by a `/`. Each segment of the name corresponds to an owning resource. For example creating a Batch Pool `foo` in Batch account `account`
+      would have `name` = `account/foo`.
+    - The dependent resource can be created after the owning resource has already been created, or can be created at the same time as the owning resource. If
+      created at the same time, the `dependsOn` field must be used to inform ARM of the order to perform resource creation.
 
-#### What ASO does
+#### What does ASO do?
 Dependent resources in ASO have properties which map to the name/path to their owner. For example 
 [MySQLFirewallRuleSpec](https://github.com/Azure/azure-service-operator/blob/92240406aff3863f3a267d8a1dc1e28aa3e841ae/api/v1alpha1/mysqlfirewallrule_types.go#L15) looks like this:
 
@@ -134,7 +139,7 @@ type MySQLFirewallRuleSpec struct {
 
 The `ResourceGroup` and `Server` are references to the owners of this type.
 
-#### What k8s-infra does
+#### What does k8s-infra do?
 k8s-infra uses the same `KnownTypeReference` type mentioned above for ownership references too.
 There are two patterns for ownership in k8s-infra today.
 
@@ -163,64 +168,71 @@ If the dependent resources aren't there, the status of the owning resource refle
 ## Proposal
 
 ### How to represent references
-We construct a new type which is our reference holder. I am calling this approach `AugmentedKnownTypeReference` (real type name TBD), because
-it's similar to the current approach that `k8s-infra` is taking but with a few changes.
+There are two kinds of references we need to represent: References to a resource whose type we know statically at compile time,
+and references to a resource whose type we do not know at compile time.
+
+We could use the same type for both kinds of references, but that has the downside of allowing a situation where
+we know the group and version statically at compile time, but the customer has also provided it and it doesn't match.
+Two types allows us to clearly express what we're expecting for each reference.
 
 ```go
-type AugmentedKnownTypeReference struct {
-    Kubernetes KubernetesReference
-    Azure      AzureReference
+// KnownResourceReference is a resource reference to a known type.
+type KnownResourceReference struct {
+	Kubernetes KnownKubernetesReference `json:"kubernetes"`
+	Azure      AzureReference           `json:"azure"`
+}
+
+type ResourceReference struct {
+	Kubernetes KubernetesReference `json:"kubernetes"`
+	Azure      AzureReference      `json:"azure"`
+}
+
+type KnownKubernetesReference struct {
+	// This is the name of the Kubernetes resource to reference.
+	Name string `json:"name"`
+
+	// References across namespaces are not supported.
+
+	// Note that ownership across namespaces in Kubernetes is not allowed, but technically resource
+	// references are. There are RBAC considerations here though so probably easier to just start by
+	// disallowing cross-namespace references for now
 }
 
 type KubernetesReference struct {
-    // The "Group" of the owning resources GVK. There may be an annotation on the property 
-    // that specifies Group, in which case this is optional (if supplied it must match the group
-    // on the annotation). For resources which do not have a group annotation, this is required.
-    // TODO: It's possibly going to be confusing to customers when they have to specify this and when they don't...
-    Group string
+	// The group of the referenced resource.
+	Group string `json:"group"`
+	// The kind of the referenced resource.
+	Kind string `json:"kind"`
+	// The name of the referenced resource.
+	Name string `json:"name"`
 
-    // The "Kind" of the owning resources GVK. There may be an annotation on the property 
-    // that specifies Kind, in which case this is optional (if supplied it must match the kind
-    // on the annotation). For resources which do not have a kind annotation, this is required.
-    // TODO: It's possibly going to be confusing to customers when they have to specify this and when they don't... 
-    Kind string
-    
-    // Note that no Version is required here because the objective is to link to a single Kubernetes
-    // object, and in Kubernetes versions are all just views on the same entity. The assumption (which I believe Azure honors
-    // is that every version of the Foo type has the same ID shape (it's fundamentally not the same kind of resource
-    // if the ID has changed). Since all we need to do is look that entity up in etcd and get its name details so that
-    // we can build a fully qualified name, we don't actually need version here.
-
-    // This is the name of the kubernetes resource to reference. 
-    // References across namespaces are not supported.
-    Name string
-
-    // Note that ownership across namespaces in Kubernetes is not allowed, but technically resource
-    // references are. There are RBAC considerations here though so probably easier to just start by 
-    // disallowing cross-namespace references
+	// Note: Version is not required here because references are all about linking one Kubernetes
+	// resource to another, and Kubernetes resources are uniquely identified by group, kind, (optionally namespace) and
+	// name - the versions are just giving a different view on the same resource
 }
 
+// TODO: Should this go away? In favor of a single string? In favor of a notion of untracked resources?
 type AzureReference struct {
-    // The subscription the Azure resource is in. If empty, this defaults to the subscription the resource 
-    // holding the reference is in. 
-    // TODO: If we're worried about this we could also remove it initially, ASO currently doesn't support cross sub references anyway
-    Subscription string
-
-    // The resource group the Azure resource is in. If empty, this defaults to the resource group the resource 
-    // holding the reference is in.
-    ResourceGroup string
-
-    // The name of the resource. This is a subset of a fully qualified ARM ID - if you're 
-    // referencing a top level resource (for example a virtual network): Microsoft.Network/virtualNetworks/{network}
-    // If you're referencing a subnet: Microsoft.Network/virtualNetworks/{network}/subnets/{subnet}
-    // TODO: There are a ton of options for how we do this... some of the requiring more manual work than others... we should discuss this
-    Name string
+	// The subscription the Azure resource is in. If empty, this defaults to the subscription the resource
+	// holding the reference is in.
+	// TODO: If we're worried about this we could also remove it initially, ASO currently doesn't support cross sub references anyway
+	Subscription string `json:"subscription"`
+	// The resource group the Azure resource is in. If empty, this defaults to the resource group the resource
+	// holding the reference is in.
+	ResourceGroup string `json:"resourceGroup"`
+	// The name of the resource. This is a subset of a fully qualified ARM ID - if you're
+	// referencing a top level resource (for example a virtual network): Microsoft.Network/virtualNetworks/{network}
+	// If you're referencing a subnet: Microsoft.Network/virtualNetworks/{network}/subnets/{subnet}
+	// TODO: There are a ton of options for how we do this... some of the requiring more manual work than others... we should discuss this
+	Name string `json:"name"`
 }
 ```
 
 This approach seems to have the most flexibility and power. It allows easy reference to static Azure resources
 not managed by Kubernetes but also allows users to stay entirely within the Kubernetes ecosystem and refer to everything by
 its Kubernetes name.
+
+
 
 The primary downside of this approach is complexity - references aren't just a single string they're a complex
 object and the customer will need to choose which flavor they want each time they use a reference.
@@ -234,7 +246,7 @@ about the expected type of the resource.
 
 ```go
 type SubnetSpec struct {
-    Owner AugmentedKnownTypeReference `json:"ownerRef" group:"microsoft.network.infra.azure.com" kind:"VirtualNetwork"`
+    Owner KnownResourceReference `json:"ownerRef" group:"microsoft.network.infra.azure.com" kind:"VirtualNetwork"`
     ...
 }
 ```
@@ -244,7 +256,7 @@ This can be accomplished by making the property required in the CRD.
 
 One major advantage of this approach is that the customer cannot really get the owning type wrong, because we've autogenerated the expected
 group/kind information all names they supply must point to the right kind of resource. If they are using the `AzureReference` portion
-of `AugmentedKnownTypeReference` we can look up the expected format of the ARM ID for the resource type corresponding to the referenced GVK
+of `KnownResourceReference` we can look up the expected format of the ARM ID for the resource type corresponding to the referenced GVK
 and validate that the customer has provided the correct one.
 
 ### Open Design Question - shape of Azure References
@@ -274,18 +286,16 @@ There are three key pillars required for implementing the proposal as described
 
 #### Identify resource relationships
 
-##### Resource references (for related resources)
-We must identify all resource references in the JSON schema and transform their type to `AugmentedKnownTypeReference`.
+**For related (not owned) resources** we must each field that represents a resource reference and transform its type to `KnownResourceReference`.
 There is no specific marker which means: "This field is a reference" - most are called `id` but that's not a guarantee.
 For example on the [VirtualMachineScaleSetIPConfigurationProperties](https://schema.management.azure.com/schemas/2019-07-01/Microsoft.Compute.json) 
 the `subnet` field is of custom type `ApiEntityReference`, which has an `id` field where you put the ARM ID for a subnet.
 This may require some manual work. One thing we can investigate doing long term
 is see if there's a way to get teams to annotate "links" in their Swagger somehow...
 
-##### Resource ownership (for dependent resources)
-We must also identify all of the owner -> dependent relationships between resources.
-As discussed in [what ARM does](#What-ARM-does), this is the `resources` property in the ARM deployment templates.
-These are much easier to automatically detect, as the dependent types are called out in the `resources` property of the owning resource.
+**For dependent resources** we must identify all of the owner to dependent relationships between resources.
+As discussed in [what ARM does](#What-ARM-does), this can be done using the `resources` property in the ARM deployment templates.
+These are much easier to automatically detect than related resources as the dependent types are called out in the `resources` property explicitly.
 
 #### Build the fully qualified ARM ID
 We have to be able to build the fully qualified ARM ID for any referenced resource when submitting to ARM.
