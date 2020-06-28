@@ -228,5 +228,7 @@ func createWholeRenames() map[string]string {
 func createPartRenames() map[string]string {
 	return map[string]string{
 		"batchAccounts": "batchAccount",
+		"virtualMachineScaleSets": "virtualMachineScaleSet",
+		"virtualMachines": "virtualMachine",
 	}
 }
