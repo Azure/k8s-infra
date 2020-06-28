@@ -33,6 +33,15 @@ func Test_CreateIdentifier_GivenName_ReturnsExpectedIdentifier(t *testing.T) {
 		{"XMLDocument", NotExported, "xmlDocument"},
 		{"this id has spaces", NotExported, "thisIdHasSpaces"},
 		{"this, id, has, spaces", NotExported, "thisIdHasSpaces"},
+		{"this 7 part id has 2 numbers", Exported, "This7PartIdHas2Numbers"},
+		// Underscores don't trip it up, not even multiple ones
+		{"foo_bar_baz", Exported, "FooBarBaz"},
+		{"__internal__", Exported, "Internal"},
+		// A single change can trigger in the midst of a longer_separated_identifier
+		{"batchAccounts_properties", Exported, "BatchAccountProperties"},
+		{"batchAccounts_certificates", NotExported, "batchAccountCertificates"},
+		// But only if it's in one piece
+		{"batch_accounts_properties", Exported, "BatchAccountsProperties"},
 	}
 
 	idfactory := NewIdentifierFactory()

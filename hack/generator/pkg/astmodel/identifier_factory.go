@@ -33,7 +33,10 @@ type IdentifierFactory interface {
 
 // identifierFactory is an implementation of the IdentifierFactory interface
 type identifierFactory struct {
-	renames map[string]string
+	// wholeRenames is a map of custom transformations to apply to entire identifiers
+	wholeRenames map[string]string
+	// partRenames is a map of custom transformations to apply to parts of identifiers
+	partRenames map[string]string
 }
 
 // assert the implementation exists
@@ -42,29 +45,38 @@ var _ IdentifierFactory = (*identifierFactory)(nil)
 // NewIdentifierFactory creates an IdentifierFactory ready for use
 func NewIdentifierFactory() IdentifierFactory {
 	return &identifierFactory{
-		renames: createRenames(),
+		wholeRenames: createWholeRenames(),
+		partRenames:  createPartRenames(),
 	}
 }
 
-// CreateIdentifier returns a valid Go public identifier
+// CreateIdentifier returns a valid Go identifier with the specified visibility
 func (factory *identifierFactory) CreateIdentifier(name string, visibility Visibility) string {
-	if identifier, ok := factory.renames[name]; ok {
-		// Just lowercase the first character according to visibility
-		r := []rune(identifier)
-		if visibility == NotExported {
-			r[0] = unicode.ToLower(r[0])
-		} else {
-			r[0] = unicode.ToUpper(r[0])
-		}
-		return string(r)
+	// Apply a whole rename if we have one defined
+	if identifier, ok := factory.wholeRenames[name]; ok {
+		return factory.adjustVisibility(identifier, visibility)
 	}
 
-	// replace with spaces so titlecasing works nicely
-	clean := filterRegex.ReplaceAllLiteralString(name, " ")
+	// Apply part renaming
+	var parts []string
+	for _, w := range factory.sliceIntoParts(name) {
+		if id, ok := factory.partRenames[w]; ok {
+			parts = append(parts, id)
+		} else {
+			parts = append(parts, w)
+		}
+	}
 
-	cleanWords := sliceIntoWords(clean)
+	// Divide parts further into words (thisOrThat => this, Or, That)
+	var cleanWords []string
+	for _, w := range parts {
+		cleanWords = append(cleanWords, sliceIntoWords(w)...)
+	}
+
+	// Correct the letter case for each word
 	var caseCorrectedWords []string
 	for i, word := range cleanWords {
+
 		if visibility == NotExported && i == 0 {
 			caseCorrectedWords = append(caseCorrectedWords, strings.ToLower(word))
 		} else {
@@ -72,19 +84,34 @@ func (factory *identifierFactory) CreateIdentifier(name string, visibility Visib
 		}
 	}
 
-	result := strings.Join(caseCorrectedWords, "")
+	return strings.Join(caseCorrectedWords, "")
+}
+
+// sliceIntoParts divides the name into parts based on punctuation and other symbols
+func (factory *identifierFactory) sliceIntoParts(name string) []string {
+	// replace with spaces so title-casing works nicely
+	clean := filterRegex.ReplaceAllLiteralString(name, " ")
+
+	// Split into parts and check each one for a rename
+	result := strings.Split(clean, " ")
 	return result
+}
+
+func (factory *identifierFactory) adjustVisibility(identifier string, visibility Visibility) string {
+	// Just lowercase the first character according to visibility
+	r := []rune(identifier)
+	if visibility == NotExported {
+		r[0] = unicode.ToLower(r[0])
+	} else {
+		r[0] = unicode.ToUpper(r[0])
+	}
+
+	return string(r)
 }
 
 func (factory *identifierFactory) CreateFieldName(fieldName string, visibility Visibility) FieldName {
 	id := factory.CreateIdentifier(fieldName, visibility)
 	return FieldName(id)
-}
-
-func createRenames() map[string]string {
-	return map[string]string{
-		"$schema": "Schema",
-	}
 }
 
 func (factory *identifierFactory) CreatePackageNameFromVersion(version string) string {
@@ -105,7 +132,7 @@ func sanitizePackageName(input string) string {
 
 	for _, r := range input {
 		if unicode.IsLetter(r) || unicode.IsNumber(r) {
-			builder = append(builder, unicode.ToLower(rune(r)))
+			builder = append(builder, unicode.ToLower(r))
 		}
 	}
 
@@ -182,4 +209,24 @@ func sliceIntoWords(identifier string) []string {
 	}
 
 	return result
+}
+
+// createWholeRenames returns a map used to customize the transformation of entire identifiers
+// Keys should be the identifier exactly as it appears in the JSON schema
+// Values should be the Go Identifier to use
+// Method positioned at end of file so it's easy to find and amend with new renames as required
+func createWholeRenames() map[string]string {
+	return map[string]string{
+		"$schema": "Schema",
+	}
+}
+
+// createPartRenames returns a map used to customize the transformation of the parts of identifiers between underscores ('_')
+// Keys should be an identifier part that's used in multiple underscore_separated_identifiers.
+// Values should be the replacement to substitute
+// Method positioned at end of file so it's easy to find and amend with new renames as required
+func createPartRenames() map[string]string {
+	return map[string]string{
+		"batchAccounts": "batchAccount",
+	}
 }
