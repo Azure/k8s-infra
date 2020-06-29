@@ -34,7 +34,7 @@ There are two case studies that accompany this specification, each one walking t
 
 The [**Rolling Versions**](case-study-rolling-storage-versions.md) case study shows how the preferred solution adapts to changes as the Azure Resources evolve over time.
 
-The [**Fixed Version**](case-study-rolling-storage-versions.md) case study shows how the primary alternative would fare, calling out some specific problems that will occur.
+The [**Fixed Version**](case-study-fixed-storage-versions.md) case study shows how the primary alternative would fare, calling out some specific problems that will occur.
 
 **TL;DR:** Using a *fixed storage version* appears simpler at first, and works well as long as the changes from version to version are simple. However, when the changes become complex (as they are bound to do over time), this approach starts to break down. While there is up front complexity to address with a *rolling storage version*, the approach doesn't break down over time.
 

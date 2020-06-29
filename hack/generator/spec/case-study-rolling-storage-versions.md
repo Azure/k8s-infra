@@ -4,7 +4,7 @@ This case study explores the recommended solution of using a *rolling storage ve
 
 For the purposes of discussion, we'll be following the version by version evolution of a theoretical ARM service that provides customer resource management (CRM) services. Synthetic examples are used to allow focus on specific scenarios one by one, providing motivation for specific features.
 
-Examples shown are deliberately simplified in order to focus, and therefore minutate should be considered motivational, not binding. Reference the formal specification for precise details.
+Examples shown are deliberately simplified in order to focus, and therefore minutiae should be considered motivational, not binding. Reference the formal specification for precise details.
 
 # Version 2011-01-01 - Initial Release
 
@@ -119,7 +119,7 @@ Our hub and spoke diagram is becoming useful for seeing the relationship between
 
 ![](images/case-study-rolling-storage-2012-02-02.png)
 
-Observe that the prior storage version is still shown, with a one way conversion to the current storage version. Existing users who upgrade their service operator will have their storage upgraded using this conversion. The conversion between storege versions will be generated with the same approach, and with the same structure, as all our other conversions.
+Observe that the prior storage version is still shown, with a one way conversion to the current storage version. Existing users who upgrade their service operator will have their storage upgraded using this conversion. The conversion between storage versions will be generated with the same approach, and with the same structure, as all our other conversions.
 
 # Version 2013-03-03 - New Property
 
@@ -380,7 +380,7 @@ func (person *Person) ConvertFromStorage(source storage.Person) error {
     person.AlphaKey = source.AlphaKey
     person.FamilyName = source.FamilyName
     person.Id = source.Id
-    person.KnownAs = source.KnownAs"
+    person.KnownAs = source.KnownAs
     person.LegalName = source.LegalName
 
     // *** Check for the interface and use it if found ***
@@ -550,7 +550,7 @@ func (person *Person) ConvertFromStorage(source storage.Person) error {
     person.AlphaKey = source.SortKey // *** Rename is automatically handled ***
     person.FamilyName = source.FamilyName
     person.Id = source.Id
-    person.KnownAs = source.KnownAs"
+    person.KnownAs = source.KnownAs
     person.LegalName = source.LegalName
 
     if assignable, ok := person.(AssignableFromPerson); ok {
@@ -847,12 +847,12 @@ Realizing that some people get deliveries to places that don't appear in any for
 package v20190909
 
 type Location struct {
-    FullAddress  string
-    City         string
-    Country      string
-    PostCode     string
-    Lattitude    double
-    Longitide    double
+    FullAddress string
+    City        string
+    Country     string
+    PostCode    string
+    Latitude    double
+    Longitude   double
 }
 ```
 
@@ -863,10 +863,12 @@ package v20190909storage
 
 type Location struct {
     PropertyBag
-    FullAddress  *string
-    City         *string
-    Country      *string
-    PostCode     *string
+    City        *string
+    Country     *string
+    FullAddress *string
+    Latitude    *double
+    Longitude   *double
+    PostCode    *string
 }
 ```
 

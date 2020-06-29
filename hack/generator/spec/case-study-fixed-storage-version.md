@@ -4,7 +4,7 @@ This case study explores the alternative solution of using a *fixed storage vers
 
 For the purposes of discussion, we'll be following the version by version evolution of a theoretical ARM service that provides customer resource management (CRM) services. Synthetic examples are used to allow focus on specific scenarios one by one, providing motivation for specific features.
 
-Examples shown are deliberately simplified in order to focus on specific details, and therefore minutate should be considered motivational, not binding. Reference the formal specification for precise details.
+Examples shown are deliberately simplified in order to focus on specific details, and therefore minutiae should be considered motivational, not binding. Reference the formal specification for precise details.
 
 # Version 2011-01-01 - Initial Release
 
@@ -262,9 +262,9 @@ This provides round-trip support for the preview release, but does not provide b
 
 The storage version of `Person` written by the preview release will have no values for `FirstName`, `LastName`, and `MiddleName`.
 
-Similarly, the storage version of `Person` written by an eariler release will have no values for `KnownAs`, `FamilyName`, or `FullName`.
+Similarly, the storage version of `Person` written by an earlier release will have no values for `KnownAs`, `FamilyName`, or `FullName`.
 
-These kinds of cross-version conversions cannot be automatically generated as they require more understanding the semantic changes between versions. 
+These kinds of cross-version conversions cannot be automatically generated as they require more understanding of the semantic changes between versions. 
 
 To allow injection of manual conversion steps, two interfaces will be generated as follows:
 
@@ -884,7 +884,7 @@ Without explicit intervention in the operator, their only mitigation would be to
 
 The root cause of the problem is that the CRD has never been modified (upgraded) - once first deployed the resource is never modified, only loaded and reconciled.
 
-To retain backward compatibility we would need manually merge the generated code with prior versions to retain both the property definitions and the conversion support previously generated. 
+To retain backward compatibility we would need to manually merge the generated code with prior versions to retain both the property definitions and the conversion support previously generated. 
 
 There are many problems with this approach:
 
