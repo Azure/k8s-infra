@@ -167,27 +167,34 @@ If the dependent resources aren't there, the status of the owning resource refle
 
 ## Proposal
 
+### Overview
+
+We propose the following high-level solution:
+- All references will be via Kubernetes group, kind, and name.
+- If a resource not managed by Kubernetes must be referenced, that resource must be imported into Kubernetes as an `Unmanaged` resource.
+- Dependent resources will refer to their parent via an `Owner` property.
+- The `Owner` property will automatically detect `group` and `kind`, making specifying an owner as simple as providing the Kubernetes resource name.
+- Dependent resources with the `Owner` property set will automatically have their `ownerReferences` configured so that Kubernetes garbage collection will 
+  delete the dependent resources when the owner is deleted.
+- References to related resources will be automatically detected by the code generator and transformed into the correct reference type.
+- At serialization time, the controller will transform the Kubernetes types (including related resource references and owner references) into the correct Azure
+  resource definitions (including fully qualified ARM IDs).
+
+More specific details about how this will be achieved are in the following sections.
+
 ### How to represent references
 There are two kinds of references we need to represent: References to a resource whose type we know statically at compile time,
 and references to a resource whose type we do not know at compile time.
 
 We could use the same type for both kinds of references, but that has the downside of allowing a situation where
 we know the group and version statically at compile time, but the customer has also provided it and it doesn't match.
-Two types allows us to clearly express what we're expecting for each reference.
+Two types allows us to clearly express what we're expecting for each reference. The resulting YAMLs look basically the same
+to the customer, and the required-ness of the fields will give push-back when customers need to specify a group or kind and
+have not.
 
 ```go
 // KnownResourceReference is a resource reference to a known type.
 type KnownResourceReference struct {
-	Kubernetes KnownKubernetesReference `json:"kubernetes"`
-	Azure      AzureReference           `json:"azure"`
-}
-
-type ResourceReference struct {
-	Kubernetes KubernetesReference `json:"kubernetes"`
-	Azure      AzureReference      `json:"azure"`
-}
-
-type KnownKubernetesReference struct {
 	// This is the name of the Kubernetes resource to reference.
 	Name string `json:"name"`
 
@@ -198,55 +205,30 @@ type KnownKubernetesReference struct {
 	// disallowing cross-namespace references for now
 }
 
-type KubernetesReference struct {
+type ResourceReference struct {
 	// The group of the referenced resource.
-	Group string `json:"group"`
-	// The kind of the referenced resource.
-	Kind string `json:"kind"`
-	// The name of the referenced resource.
-	Name string `json:"name"`
+    Group string `json:"group"`
+    // The kind of the referenced resource.
+    Kind string `json:"kind"`
+    // The name of the referenced resource.
+    Name string `json:"name"`
 
-	// Note: Version is not required here because references are all about linking one Kubernetes
-	// resource to another, and Kubernetes resources are uniquely identified by group, kind, (optionally namespace) and
-	// name - the versions are just giving a different view on the same resource
-}
-
-// TODO: Should this go away? In favor of a single string? In favor of a notion of untracked resources?
-type AzureReference struct {
-	// The subscription the Azure resource is in. If empty, this defaults to the subscription the resource
-	// holding the reference is in.
-	// TODO: If we're worried about this we could also remove it initially, ASO currently doesn't support cross sub references anyway
-	Subscription string `json:"subscription"`
-	// The resource group the Azure resource is in. If empty, this defaults to the resource group the resource
-	// holding the reference is in.
-	ResourceGroup string `json:"resourceGroup"`
-	// The name of the resource. This is a subset of a fully qualified ARM ID - if you're
-	// referencing a top level resource (for example a virtual network): Microsoft.Network/virtualNetworks/{network}
-	// If you're referencing a subnet: Microsoft.Network/virtualNetworks/{network}/subnets/{subnet}
-	// TODO: There are a ton of options for how we do this... some of the requiring more manual work than others... we should discuss this
-	Name string `json:"name"`
+    // Note: Version is not required here because references are all about linking one Kubernetes
+    // resource to another, and Kubernetes resources are uniquely identified by group, kind, (optionally namespace) and
+    // name - the versions are just giving a different view on the same resource
 }
 ```
 
-This approach seems to have the most flexibility and power. It allows easy reference to static Azure resources
-not managed by Kubernetes but also allows users to stay entirely within the Kubernetes ecosystem and refer to everything by
-its Kubernetes name.
-
-
-
-The primary downside of this approach is complexity - references aren't just a single string they're a complex
-object and the customer will need to choose which flavor they want each time they use a reference.
-
 ### How to represent ownership and dependent resources
-We will use the same `AugmentedTypeReference` type as an additional `Owner` field on dependent resource specifications.
+We will use the same `KnownResourceReference` type as an additional `Owner` field on dependent resource specifications.
 
 When we determine that a resource is a dependent resource of another resource kind, we will code-generate
-an `Owner` (actual name TBD) property in the dependent resource `Spec`. This will also include an annotation 
-about the expected type of the resource.
+an `Owner` property in the dependent resource `Spec`. This will also include an annotation 
+about the expected type of the resource (group and kind) so that the customer doesn't have to specify that in the YAML. 
 
 ```go
 type SubnetSpec struct {
-    Owner KnownResourceReference `json:"ownerRef" group:"microsoft.network.infra.azure.com" kind:"VirtualNetwork"`
+    Owner KnownResourceReference `json:"owner" group:"microsoft.network.infra.azure.com" kind:"VirtualNetwork"`
     ...
 }
 ```
@@ -254,191 +236,252 @@ type SubnetSpec struct {
 When users submit a dependent object we will validate that the provided owner reference is present.
 This can be accomplished by making the property required in the CRD.
 
+A YAML snippet showing how this will look from the customer's perspective:
+```yaml
+...
+  spec:
+    owner:
+      name: my-vnet
+...
+```
+
 One major advantage of this approach is that the customer cannot really get the owning type wrong, because we've autogenerated the expected
-group/kind information all names they supply must point to the right kind of resource. If they are using the `AzureReference` portion
-of `KnownResourceReference` we can look up the expected format of the ARM ID for the resource type corresponding to the referenced GVK
-and validate that the customer has provided the correct one.
+group/kind information all names they supply must point to the right kind of resource.
 
-### Open Design Question - shape of Azure References
-Instead of having an `AzureReference` as proposed above, we could instead just have the Kubernetes shaped
-reference, and a way where customers of the operator could import external Azure resources into Kubernetes in
-an unmanaged mode. Resources in this unmanaged mode couldn't be updated/modified through Kubernetes, and 
-if deleted it would just delete the k8s representation of the object, not the actual backing object in ARM.
+### How to represent a resource generically
+In addition to representing references generically, we will need the ability to reference ARM resources generically,
+so that the generic controller can act on them without needing to cast to their specific type.
 
-This is what [CAPZ does](https://github.com/kubernetes-sigs/cluster-api-provider-azure/blob/d93e75deff2be3c7647c2ddfd387ce0ef022e1cd/api/v1alpha2/tags.go#L78) today.
+```go
+// TODO: There may be more in this interface, or it may get rolled into MetaObject depending on yet to be determined implementation details
+type ArmResource interface {
+	// Name returns the ARM resource name
+	Name() string
 
-#### Advantages compared the proposal above
-- References always look very Kubernetes native. This has an advantage especially when a customer is referring to a single
-  shared resource (Storage Account or the like) across many YAMLs. The more usages they have of it the more awkward it
-  gets to refer to it by fully qualified ARM ID all the time.
-- The structure of the reference type would be simpler because it's not `Azure` or `Kubernetes`, it could just look like
-  `KnownTypeReference` does today in k8s-infra.
+    // Owner returns the ResourceReference so that we can extract the Group/Kind for easier lookups
+    Owner() *ResourceReference
+}
+```
 
-#### Disadvantages compared to the proposal above
-- Only able to reference other resources which are being tracked by Kubernetes. 
-  We would likely need to introduce the notion of unmanaged 
-  resources (which the operator _watches_ but does not _own_) for the purpose of 
-  allowing references to those resources. This puts some additional burden on the customers mental model
-  as in order to know what an action will do on a resource they need to know if it's managed or unmanaged.
+### How to identify resource relationships
 
-### Implementation
-There are three key pillars required for implementing the proposal as described
-
-#### Identify resource relationships
-
-**For related (not owned) resources** we must each field that represents a resource reference and transform its type to `KnownResourceReference`.
+**For related (not owned) resources** we must find each field that represents a resource reference and transform its type to `ResourceReference`.
 There is no specific marker which means: "This field is a reference" - most are called `id` but that's not a guarantee.
 For example on the [VirtualMachineScaleSetIPConfigurationProperties](https://schema.management.azure.com/schemas/2019-07-01/Microsoft.Compute.json) 
 the `subnet` field is of custom type `ApiEntityReference`, which has an `id` field where you put the ARM ID for a subnet.
 This may require some manual work. One thing we can investigate doing long term
-is see if there's a way to get teams to annotate "links" in their Swagger somehow...
+is see if there's a way to get teams to annotate "links" in their Swagger somehow.
 
 **For dependent resources** we must identify all of the owner to dependent relationships between resources.
 As discussed in [what ARM does](#What-ARM-does), this can be done using the `resources` property in the ARM deployment templates.
 These are much easier to automatically detect than related resources as the dependent types are called out in the `resources` property explicitly.
 
-#### Build the fully qualified ARM ID
-We have to be able to build the fully qualified ARM ID for any referenced resource when submitting to ARM.
+### How to choose the right reference type (ResourceReference vs KnownResourceReference) at generation time
+Because we are code-generating all of the `Owner` fields based on the `resources` property in the JSON schema, and each ARM resource can be owned by 
+at most 1 other resource, we can always supply the annotations for group and kind automatically for the `Owner` field.
+**This is not the case for abitrary references (`id`'s) to other resources**. We do not actually know
+programmatically what type those references are. In some cases it may actually be allowed to point to multiple different types 
+(for example: custom image vs shared image gallery).
 
-#### Use the correct object shape for Kubernetes vs ARM
-This new type of reference property replaces the corresponding `id` property, or adds a new `owner` property in the case of dependent resources.
-This is a problem because now we have a single go type that has two representations - one for Kubernetes users/CRDs, where the 
-`AugmentedTypeReference` is used, and one for submitting to ARM (where the `AugmentedTypeReference` must be transformed into a `name` or `id`
-prior to submission). This duality means we cannot just override the JSON serialization for these types (which format would we choose?).
+In the `KnownResourceReference` case, we know the type we're looking for and can fail fast if the customer specifies the wrong type.
+In the `ResourceReference` case, we cannot know the type we're looking for, so we must accept what the customer has provided and ensure that we have good error messages
+if they have provided a link to an invalid resource (usually the error from Azure should suffice).
 
-The proposed solution for this is that the code generator intelligently generates 2 types for cases where we know the CRD shape differs from ARM.
+### ResourceLifeCycle and unmanaged resources
+In order to keep references Kubernetes-native, allow a "single pane of glass" for customers looking at their Azure resources through Kubernetes, and 
+allow references to resources that were created before the customer onboarded to the operator, we introduce a new mode to each resource: `ResourceLifeCycle`.
+
+`ResourceLifeCycle` can be either `Managed` or `Unmanaged`.
+
+`ResourceLifeCycle` is not specified by the customer explicitly in the `Spec`, instead 
+
+This is what [CAPZ does](https://github.com/kubernetes-sigs/cluster-api-provider-azure/blob/d93e75deff2be3c7647c2ddfd387ce0ef022e1cd/api/v1alpha2/tags.go#L78) today.
+Actually after speaking with Cecile it's not...
+
+TODO
+
+### How to transform Kubernetes objects to ARM objects (and back)
+In the case of resource ownership, the proposed `Owner` property exists on dependent resources in the CRD but must not go to Azure as Azure doesn't understand it.
+In the case of a generic resource reference, the `ResourceReference` in the CRD must become an `id` (with fully-qualified ARM ID) when serialized to ARM.
+In both cases, we need two representations of the entity: one to Kubernetes as the CRD, and one to Azure. These two types are structurally similar but not identical.
+We cannot just override JSON serialization to solve this problem due to the fact that there are actually two distinct JSON representations we need.
+
+The proposed solution is that the code generator intelligently generates 2 types for cases where we know the CRD shape differs from ARM.
 We will add an interface which types can optionally implement which allows them to transform themselves to
 another type prior to serialization to/from ARM. This is also a useful hook for any manual customization for serialization we may need.
 
-Here's an example of what that might look like:
+The interface will look something like this:
+```go
+type ARMTransformer interface {
+	ToArm(owningName string) (interface{}, error)
+	FromArm(owner KnownResourceReference, input interface{}) error
+}
+```
+
+Here's an example of how it will be implemented:
 
 ```go
-// TODO: This is unfortunately not well typed...?
-type ARMTransformer interface {
-    // TODO: Does this take an interface ArmResource which as a method ArmId() or something instead?
-    // TODO: Could also have stuff like Type() and a few other things as well
-    ToArm(parentArmId string) (interface{}, error)    
-    FromArm(input interface{}) error
+func CreateArmResourceNameForDeployment(owningName string, name string) string {
+	result := owningName + "/" + name
+	return result
+}
+
+// +kubebuilder:object:root=true
+// +kubebuilder:storageversion
+type VirtualNetworksSubnets struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              VirtualNetworksSubnetsSpec `json:"spec,omitempty"`
+}
+
+var _ ArmResource = &VirtualNetworksSubnets{}
+
+func (resource *VirtualNetworksSubnets) Owner() *ResourceReference {
+    r := reflect.TypeOf(resource.Spec)
+	ownerField, found := r.FieldByName("Owner")
+    if !found {
+        return nil
+    }
+    
+    group := ownerField.Tag.Get("group")
+    kind := ownerField.Tag.Get("kind")
+
+    return &ResourceReference {
+        group: group,
+        kind: kind,
+        name: resource.Spec.Owner.Name
+    }
+}
+func (resource *VirtualNetworksSubnets) Name() string {
+	return resource.Spec.Name
 }
 
 type VirtualNetworksSubnetsSpec struct {
-    // This name is just the name of the subnet (not the fully qualified ARM name)
-    // +kubebuilder:validation:Required
-    Name string
+
 	// +kubebuilder:validation:Required
-	Owner genruntime.KnownTypeReference `json:"owner" kind:"VirtualNetworks" group:"microsoft.network"`
+	ApiVersion VirtualNetworksSubnetsSpecApiVersion `json:"apiVersion"`
+
 	// +kubebuilder:validation:Required
-	/*Properties: Properties of the subnet.*/
+	Name string `json:"name"`
+
+	// +kubebuilder:validation:Required
+	Owner genruntime.KnownResourceReference `json:"owner" group:"microsoft.network" kind:"VirtualNetworks"`
+
+	// +kubebuilder:validation:Required
+	//Properties: Properties of the subnet.
 	Properties SubnetPropertiesFormat `json:"properties"`
+
 	// +kubebuilder:validation:Required
-	Type VirtualNetworksSubnetsType `json:"type"`
+	Type VirtualNetworksSubnetsSpecType `json:"type"`
 }
 
-// TODO: No KubeBuilder comments required here because not ever used to generate CRD
+// No KubeBuilder comments required here because not ever used to generate CRD
 type VirtualNetworksSubnetsSpecArm struct {
-	Name string
-	/*Properties: Properties of the subnet.*/
-	Properties SubnetPropertiesFormat `json:"properties"`
-	Type VirtualNetworksSubnetsType `json:"type"`
+	ApiVersion VirtualNetworksSubnetsSpecApiVersion `json:"apiVersion"`
+	Name       string                               `json:"name"`
+
+	//Properties: Properties of the subnet.
+	Properties SubnetPropertiesFormat         `json:"properties"`
+	Type       VirtualNetworksSubnetsSpecType `json:"type"`
 }
 
-// This would be autogenerated for ARM resources with references
-func (o *VirtualNetworksSubnetsSpec) ToArm(parentArmId string) (interface{}, error) {
-    result := VirtualNetworksSubnetsSpecArm{}
-    
-    // Copy properties
-    result.Properties = o.Properties
-    result.Type = o.Type
-    
-    // Name is special
-    result.Name = CreateFullyQualifiedArmName(parentArmId, o.Name)
-    return result, nil
+// This interface implementation would be autogenerated for ARM resources with references
+var _ genruntime.ArmTransformer = &VirtualNetworksSubnetsSpec{}
+
+func (transformer *VirtualNetworksSubnetsSpec) ToArm(owningName string) (interface{}, error) {
+	result = VirtualNetworksSubnetsSpecArm{}
+	result.ApiVersion = transformer.ApiVersion
+	result.Name = CreateArmResourceNameForDeployment(owningName, transformer.Name)
+	result.Properties = transformer.Properties
+	result.Type = transformer.Type
+	return result, nil
 }
 
-// This would be autogenerated for ARM resources with references
-func (o *VirtualNetworksSubnetsSpec) FromArm(input interface{}) (interface{}, error) {
-    result := VirtualNetworksSubnetsSpecArm{}
-    
-    // Copy properties
-    result.Properties = o.Properties
-    result.Type = o.Type
-    
-    // Name is special
-    result.Name = CreateFullyQualifiedArmName(parentArmId, o.Name)
-    return result, nil
+func (transformer *VirtualNetworksSubnetsSpec) FromArm(owner genruntime.KnownResourceReference, input interface{}) error {
+	typedInput, ok := input.(VirtualNetworksSubnetsSpecArm)
+	if !ok {
+		return fmt.Errorf("unexepected type supplied for FromArm function. Expected VirtualNetworksSubnetsSpecArm, got %T", input)
+	}
+	transformer.ApiVersion = typedInput.ApiVersion
+	transformer.Name = ExtractKubernetesResourceNameFromArmName(typedInput.Name)
+	transformer.Owner = owner
+	transformer.Properties = typedInput.Properties
+	transformer.Type = typedInput.Type
+	return nil
 }
+```
 
-// Example usage
-func ExamplePut() error {
-    etcdObject := MagicallyGetStateFromEtcd()
+### Controller example
+Putting it all together, here's what a generic controller reconciliation loop would look like using the interfaces discussed previously.
+
+```go
+// Example usage -- error handling elided for brevity
+func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+    scheme := ...
+    gvk := ...
+    client := ...
     
-    // Somehow we determine that this particular object has an owner - possibly we need to impl an interface?
-    ownerArmId = etcdObject.FQArmId()
+    // Load the object from etcd
+    obj := scheme.New(gvk)
+    resource := client.Get(req.NamespacedName, obj)
+
+    // Get the owner details
+    armResource := obj.(ARMResource)
+    ownerRef := armResource.Owner()
+
+    // Perform a get from Azure to see current resource state    
+    armId := helpers.GetArmId(resource)
+    objFromAzure := scheme.new(gvk) // We need to provide the empty type to deserialize into
+
+    // Somehow construct a new object of type etcdObject
+    if armTransformer, ok := objFromAzure.(ARMTransformer); ok {
+        result := armTransformer.ToArm("") // This just converts from an empty kube shape to an empty arm shape
+        armClient.GetIt(armId, result)
+    
+        armTransformer.FromArm(ownerRef, result)
+    }
+
+    // Perform a put to update resource state
+    // Walk the owner hierarchy (assuming owner has no owner here for simplicity) to build owner name
+    ownerGvk := ownerRef.ToGvk()
+    owner := scheme.New(ownerGvk)
+    ownerArmResource := owner.(ARMResource)
+    ownerId := owner.Name()
 
     var toSerialize interface{}
-    toSerialize = etcdObject
-    if armTransformer, ok := etcdObject.(ARMTransformer); ok {
+    toSerialize = resource
+    if armTransformer, ok := toSerialize.(ARMTransformer); ok {
         toSerialize = armTransformer.ToArm(ownerArmId)
     }
     json := json.Marshal(toSerialize)
     armClient.SendIt(json)
-
-}
-
-func ExampleGet() error {
-    etcdObject := MagicallyGetStateFromEtcd()
-    
-    // TODO: Complete this
-
-    // Somehow we determine that this particular object has an owner - possibly we need to impl an interface?
-    ownerArmId = etcdObject.Owner.FQArmId()
-    
-    armId := etcdObject.FQArmId()
-
-    // We need to provide the empty type to deserialize into
-    // Somehow construct a new object of type etcdObject
-    if armTransformer, ok := newEtcdObject.(ARMTransformer); ok {
-        toGet = armTransformer.ToArm(ownerArmId) // This just converts from an empty etcdObject shape to an empty arm object shape
-        armClient.GetIt(armId, toGet)
-    
-        armTransformer.FromArm(toGet)
-    }
 }
 ```
 
-### Owner references vs Arbitrary references
-Because we are code-generating all of the `ownerRef` fields, we can always supply the annotations for group and kind automatically, using the information
-provided to us by the ARM json specification. **This is not the case for abitrary references (`id`'s) to other resources**. We do not actually know
-programmatically what type that reference is, and it some cases it may actually be allowed to point to multiple different types 
-(think custom image vs shared image gallery).
-
-Currently, the plan is to trust the customer gets it right and ensure we have good
-failure modes for resources if they actually got it wrong (which will cause their resource to move to an unhealthy state). 
-
 ## FAQ
 
-#### What happens when a dependent resource specifies an `ownerRef` that doesn't exist?
+### What happens when a dependent resource specifies an `Owner` that doesn't exist?
 The dependent resource will be stuck in an unprovisioned state with an error stating that the owner doesn't exist.
 If the owner is created, the dependent resource will then be created by the reconciliation loop automatically.
 
-#### What happens when a resource contains a link to another resource which doesn't exist?
+### What happens when a resource contains a link to another resource which doesn't exist?
 The resource with the link will be stuck in an unprovisioned state with an error stating that the linked resource doesn't exist.
 This behavior is the same as for a dependent resource with a non-existant owner.
 
-#### How are the CRD entities going to be rendered as ARM deployments?
+### How are the CRD entities going to be rendered as ARM deployments?
 There are a few different ways to perform ARM deployments as [discussed in Dependent Resources](#dependent-resources).
 Due to the nature of Kubernetes CRDs, each resource is managed separately and has its own reconcilation loop. It doesn't make sense to try to 
 deploy a single ARM template with the entire resource graph. Each resource will be done in its own deployment (with
 a `dependsOn` specified if required).
 
-#### Aren't there going to be races in resource creation?
+### Aren't there going to be races in resource creation?
 Yes. If you have a complex hierarchy of resources (where resources have involved relationships between one another) and submit 
 all of their YAMLs to the operator at the same time it is likely that some requests when sent to ARM will fail because of missing dependencies.
 Those resources that failed to deploy initially will be in an unprovisioned state in Kubernetes, and eventually
 all the resources will be created through multiple iterations of the reconciliation loop. 
 
-#### Aren't there going to be races in resource deletion?
-Yes. `OwnerRef` as discussed in this specification is informing Kubernetes _how Azure behaves_. The fact that 
+### Aren't there going to be races in resource deletion?
+Yes. `Owner` as discussed in this specification is informing Kubernetes _how Azure behaves_. The fact that 
 a `ResourceGroup` is the owner of a `VirtualMachineScaleSet` means that when the `ResourceGroup` is deleted in 
 Azure, the `VirtualMachineScaleSet` will be too. 
 
@@ -449,7 +492,7 @@ to easily maintain sync with Azure.
 As far as implementation goes this just means that when we are performing deletes in the generic controller and the 
 resource is already deleted in Azure we just swallow that error and allow the Kubernetes object to be deleted.
 
-#### What exactly happens when a resource with an `OwnerRef` is created?
+### What exactly happens when a resource with an `Owner` is created?
 Once the resource has been accepted by the various admissions controllers and has been cofirmed to match 
 the structural schema defined in the CRD, the generic controller will attempt to look up
 the owning resource in etcd (or in ARM if it's an `AzureReference`).
@@ -459,7 +502,7 @@ to include the `uid` of the owning resource and then submits an ARM template to 
 name of the owner and the name of the resource to build the name specified in the ARM template. It will
 include the name of the owner in the `dependsOn` field. 
 
-#### What happens if an owning resource is deleted and immediately recreated?
+### What happens if an owning resource is deleted and immediately recreated?
 Kubernetes garbage collection is based on object `uid`'s. As discussed above we bind to that `uid` on 
 dependent resource creation. If a resource is deleted and then recreated Kubernetes will still understand
 that the new resource is fundamentally different than the old resource and garbage collection will happen
@@ -468,6 +511,7 @@ deleted (in Azure and in k8s).
 
 ## TODOs
 - How can we allow customers to easily find all dependents for a particular owner (i.e. all subnets of a vnet) using `kubectl`?
+- Cross subscription refs?
 
 ## Questions
 These are questions I am posing to the group - I don't expect to have an answer without input from the group.
@@ -481,6 +525,59 @@ These are questions I am posing to the group - I don't expect to have an answer 
   one behavior which is best for our case?
 
 # The road not travelled
+
+## Shape of Azure References
+We considered avoiding the complexity of `ResourceLifecycle` (`Managed` vs `Unmanaged`), instead allowing references to Azure resources directly by ARM ID.
+
+References would look like this:
+```go
+type KnownResourceReference struct {
+	Kubernetes KnownKubernetesReference `json:"kubernetes"`
+	Azure      string                   `json:"azure"`
+}
+
+type ResourceReference struct {
+	Kubernetes KubernetesReference `json:"kubernetes"`
+	Azure      string              `json:"azure"`
+}
+
+type KnownKubernetesReference struct {
+	// This is the name of the Kubernetes resource to reference.
+	Name string `json:"name"`
+	// References across namespaces are not supported.
+	// Note that ownership across namespaces in Kubernetes is not allowed, but technically resource
+	// references are. There are RBAC considerations here though so probably easier to just start by
+	// disallowing cross-namespace references for now
+}
+
+type KubernetesReference struct {
+	// The group of the referenced resource.
+	Group string `json:"group"`
+	// The kind of the referenced resource.
+	Kind string `json:"kind"`
+	// The name of the referenced resource.
+	Name string `json:"name"`
+	// Note: Version is not required here because references are all about linking one Kubernetes
+	// resource to another, and Kubernetes resources are uniquely identified by group, kind, (optionally namespace) and
+	// name - the versions are just giving a different view on the same resource
+}
+```
+
+### Advantages compared to what we chose
+- Can track resources which are not tracked by Kubernetes.
+- Doesn't need to introduce `ResourceLifeCycle`. `ResourceLifeCycle` complicates the mental model of individual resources
+  as now apply on a resource can fail due to `ResourceLifeCycle` being `Unmanaged`.
+- Can support references to resource types which the operator doesn't yet support. It's likely that we can work around
+  this in the chosen architecture if it becomes a big problem though.
+
+### Disadvantages compared to what we chose
+- References are not always Kubernetes-native looking.
+- The reference structure is a more complex nested type, which makes references (which are common) more complicated.
+- Moving from a resource link being to Azure directly to that same resource being managed/tracked by Kubernetes requires
+  sweeping updates across all types referencing the migrated resource.
+- Doesn't allow for a "single pane of glass" experience where customers can easily view all of their resources in a 
+  Kubernetes native way.
+
 ## How to represent references
 ### Use fully qualified ARM ID (a single string) for all references
 #### Pros
