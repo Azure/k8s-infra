@@ -255,7 +255,7 @@ This provides round-trip support for the preview release, but does not provide b
 
 The storage version of `Person` written by the preview release will have no values for `FirstName`, `LastName`, and `MiddleName`.
 
-These kinds of cross-version conversions cannot be automatically generated as they require more understanding the semantic changes between versions. 
+These kinds of cross-version conversions cannot be automatically generated as they require more understanding of the semantic changes between versions. 
 
 To allow injection of manual conversion steps, interfaces will be generated as follows:
 

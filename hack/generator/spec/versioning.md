@@ -152,7 +152,7 @@ There are more than 40 cases of properties being renamed across versions of the 
 
 **If a type has been renamed** in a particular API version, conversion of API versions *prior* to that point of change will instead match based on the new type of the property on the storage type.
 
-Therea are 160 cases of properties changing type acdross versions of the ARM API. Many of these can be handled automatically by capturing type renames in metadata.
+There are 160 cases of properties changing type across versions of the ARM API. Many of these can be handled automatically by capturing type renames in metadata.
 
 > ***TODO: Show an example***
 
@@ -201,7 +201,7 @@ This will help to ensure a base level of compliance, that information is not los
 
 For API (spoke) types where the optional interfaces `AssignableTo...()` and `AssignableFrom...()` have been implemented, we'll generate golden tests to verify that they are generating the expected results.
 
-These tests will be particularly useful when a new version of the ARM api is released for a given service as they will help to catch any changes that now need to be handled.
+These tests will be particularly useful when a new version of the ARM API is released for a given service as they will help to catch any changes that now need to be handled.
 
 We'll generate two golden tests for each type in each API type, one to test verify conversion _**to**_ the latest version, and one to test conversion _**from**_ the latest version.
 
@@ -270,4 +270,3 @@ Annotations are publicly visible on the cluster and can easily modified. This ma
 * [Falsehoods programmers believe about addresses](https://www.mjt.me.uk/posts/falsehoods-programmers-believe-about-addresses/)
 
 https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/
-
