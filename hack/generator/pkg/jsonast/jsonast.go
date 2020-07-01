@@ -679,7 +679,7 @@ func anyOfHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsch
 	defer span.End()
 
 	// See https://github.com/Azure/k8s-infra/issues/111 for details about why this is treated as oneOf
-	klog.Warningf("Handling anyOf type as if it were oneOf: %v\n", schema.Ref.GetUrl())
+	klog.V(2).Infof("Handling anyOf type as if it were oneOf: %v\n", schema.Ref.GetUrl())
 	return generateOneOfUnionType(ctx, schema.AnyOf, scanner)
 }
 
