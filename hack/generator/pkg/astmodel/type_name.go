@@ -58,6 +58,12 @@ func (typeName *TypeName) References(d *TypeName) bool {
 	return typeName.Equals(d)
 }
 
+// Referees returns any type names this type refers to directly, so it's always
+// empty for a type name.
+func (typeName *TypeName) Referees() []*TypeName {
+	return nil
+}
+
 // RequiredImports returns all the imports required for this definition
 func (typeName *TypeName) RequiredImports() []*PackageReference {
 	return []*PackageReference{&typeName.PackageReference}

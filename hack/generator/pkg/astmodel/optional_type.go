@@ -44,6 +44,11 @@ func (optional *OptionalType) References(d *TypeName) bool {
 	return optional.element.References(d)
 }
 
+// Referees is the type that this type refers to directly.
+func (optional *OptionalType) Referees() []*TypeName {
+	return optional.element.Referees()
+}
+
 // Equals returns true if this type is equal to the other type
 func (optional *OptionalType) Equals(t Type) bool {
 	if optional == t {

@@ -44,6 +44,11 @@ func (enum *EnumType) References(tn *TypeName) bool {
 	return enum.BaseType.References(tn)
 }
 
+// Referees returns any types the underlying type refers to.
+func (enum *EnumType) Referees() []*TypeName {
+	return enum.BaseType.Referees()
+}
+
 // Equals will return true if the supplied type has the same base type and options
 func (enum *EnumType) Equals(t Type) bool {
 	if e, ok := t.(*EnumType); ok {

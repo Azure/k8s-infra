@@ -39,6 +39,11 @@ func (array *ArrayType) References(d *TypeName) bool {
 	return array.element.References(d)
 }
 
+// Referees returns the type this array contains.
+func (array *ArrayType) Referees() []*TypeName {
+	return array.element.Referees()
+}
+
 // Equals returns true if the passed type is an array type with the same kind of elements, false otherwise
 func (array *ArrayType) Equals(t Type) bool {
 	if array == t {

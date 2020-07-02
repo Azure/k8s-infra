@@ -18,6 +18,11 @@ type Type interface {
 	// For example an Array of Persons references a Person
 	References(d *TypeName) bool
 
+	// Referees returns a slice of all the type names this type references
+	// directly.
+	// TODO(babbageclunk): maybe this should be a set.
+	Referees() []*TypeName
+
 	// AsType renders as a Go abstract syntax tree for a type
 	// (yes this says ast.Expr but that is what the Go 'ast' package uses for types)
 	AsType(codeGenerationContext *CodeGenerationContext) ast.Expr

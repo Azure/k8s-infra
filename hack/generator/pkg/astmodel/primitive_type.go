@@ -48,6 +48,12 @@ func (prim *PrimitiveType) References(d *TypeName) bool {
 	return false
 }
 
+// Referees always returns nil because primitive types don't refer to
+// any other types.
+func (prim *PrimitiveType) Referees() []*TypeName {
+	return nil
+}
+
 // Equals returns true if the passed type is another primitive type the same name, false otherwise
 func (prim *PrimitiveType) Equals(t Type) bool {
 	if p, ok := t.(*PrimitiveType); ok {

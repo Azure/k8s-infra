@@ -49,6 +49,11 @@ func (m *MapType) References(d *TypeName) bool {
 	return m.key.References(d) || m.value.References(d)
 }
 
+// Referees returns all of the types the key and value types refer to.
+func (m *MapType) Referees() []*TypeName {
+	return append(m.key.Referees(), m.value.Referees()...)
+}
+
 // Equals returns true if the passed type is a map type with the same kinds of keys and elements, false otherwise
 func (m *MapType) Equals(t Type) bool {
 	if m == t {
