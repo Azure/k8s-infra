@@ -81,7 +81,7 @@ func (generator *CodeGenerator) Generate(ctx context.Context) error {
 		return errors.Wrapf(err, "failed to filter generated definitions")
 	}
 
-	defs, err = generator.StripUnusedDefinitions(defs)
+	defs, err = StripUnusedDefinitions(defs)
 	if err != nil {
 		return fmt.Errorf("failed to strip unused definitions (%w)", err)
 	}
@@ -248,25 +248,6 @@ func (generator *CodeGenerator) FilterDefinitions(
 	}
 
 	return newDefinitions, nil
-}
-
-// StripUnusedDefinitions removes all types that aren't top-level or
-// referred to by fields in other types, for example types that are
-// generated as a byproduct of an allOf element.
-func (generator *CodeGenerator) StripUnusedDefinitions(
-	definitions []astmodel.TypeDefiner,
-) ([]astmodel.TypeDefiner, error) {
-	var newDefinitions []astmodel.TypeDefiner
-	for _, def := range definitions {
-		// Always include ResourceDefinitions.
-		if _, ok := def.(*astmodel.ResourceDefinition); ok {
-			newDefinitions = append(newDefinitions, def)
-			continue
-		}
-		// Otherwise only include this definition if it's referenced
-		// by some other field.
-	}
-	return definitions, nil
 }
 
 // CreatePackagesForDefinitions groups type definitions into packages
