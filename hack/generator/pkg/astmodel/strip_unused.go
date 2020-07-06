@@ -3,21 +3,17 @@
  * Licensed under the MIT license.
  */
 
-package codegen
+package astmodel
 
-import (
-	"fmt"
-
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
-)
+import "github.com/pkg/errors"
 
 // TypeNameSet stores type names in no particular order without
 // duplicates.
-type TypeNameSet map[astmodel.TypeName]bool
+type TypeNameSet map[TypeName]bool
 
 // NewTypeNameSet makes a TypeNameSet containing the specified
 // names. If no elements are passed it might be nil.
-func NewTypeNameSet(initial ...*astmodel.TypeName) TypeNameSet {
+func NewTypeNameSet(initial ...*TypeName) TypeNameSet {
 	var result TypeNameSet
 	for _, name := range initial {
 		result = result.Add(name)
@@ -32,7 +28,7 @@ func NewTypeNameSet(initial ...*astmodel.TypeName) TypeNameSet {
 // TODO(babbageclunk): I like the idea of making the zero element
 // useful so a map works nicely, and the analogue with appending to a
 // slice, but the mutating and returning behaviour might be too weird.
-func (ts TypeNameSet) Add(val *astmodel.TypeName) TypeNameSet {
+func (ts TypeNameSet) Add(val *TypeName) TypeNameSet {
 	if val == nil {
 		return ts
 	}
@@ -46,7 +42,7 @@ func (ts TypeNameSet) Add(val *astmodel.TypeName) TypeNameSet {
 // Remove gets rid of the element from the set. If the element was
 // already not in the set, nothing changes. Returns the set for
 // symmetry with Add.
-func (ts TypeNameSet) Remove(val *astmodel.TypeName) TypeNameSet {
+func (ts TypeNameSet) Remove(val *TypeName) TypeNameSet {
 	if ts == nil {
 		return nil
 	}
@@ -59,7 +55,7 @@ func (ts TypeNameSet) Remove(val *astmodel.TypeName) TypeNameSet {
 
 // Contains returns whether this name is in the set. Works for nil
 // sets too.
-func (ts TypeNameSet) Contains(val *astmodel.TypeName) bool {
+func (ts TypeNameSet) Contains(val *TypeName) bool {
 	if ts == nil || val == nil {
 		return false
 	}
@@ -67,23 +63,20 @@ func (ts TypeNameSet) Contains(val *astmodel.TypeName) bool {
 	return found
 }
 
-// StripUnusedDefinitions removes all types that aren't top-level or
-// referred to by fields in other types, for example types that are
+// StripUnusedDefinitions removes all types that aren't in roots or
+// referred to by the types in roots, for example types that are
 // generated as a byproduct of an allOf element.
 func StripUnusedDefinitions(
-	definitions []astmodel.TypeDefiner,
-) ([]astmodel.TypeDefiner, error) {
+	roots TypeNameSet,
+	definitions []TypeDefiner,
+) ([]TypeDefiner, error) {
 	// Build a referrers map for each type.
-	referrers := make(map[astmodel.TypeName]TypeNameSet)
-	roots := make(TypeNameSet)
+	referrers := make(map[TypeName]TypeNameSet)
 
 	for _, def := range definitions {
-		if _, ok := def.(*astmodel.ResourceDefinition); ok {
-			roots.Add(def.Name())
-		}
 		for _, referee := range def.Type().Referees() {
 			if referee == nil {
-				return nil, fmt.Errorf("nil referee for %s", def.Name())
+				return nil, errors.Errorf("nil referee for %s", def.Name())
 			}
 			refereeVal := *referee
 			referrers[refereeVal] = referrers[refereeVal].Add(def.Name())
@@ -91,7 +84,7 @@ func StripUnusedDefinitions(
 	}
 
 	checker := newConnectionChecker(roots, referrers)
-	var newDefinitions []astmodel.TypeDefiner
+	var newDefinitions []TypeDefiner
 	for _, def := range definitions {
 		if checker.connected(def.Name()) {
 			newDefinitions = append(newDefinitions, def)
@@ -100,30 +93,42 @@ func StripUnusedDefinitions(
 	return newDefinitions, nil
 }
 
-func newConnectionChecker(roots TypeNameSet, referrers map[astmodel.TypeName]TypeNameSet) *connectionChecker {
+// CollectResourceDefinitions returns a TypeNameSet of all of the
+// resource definitions in the definitions passed in.
+func CollectResourceDefinitions(definitions []TypeDefiner) TypeNameSet {
+	resources := make(TypeNameSet)
+	for _, def := range definitions {
+		if _, ok := def.(*ResourceDefinition); ok {
+			resources.Add(def.Name())
+		}
+	}
+	return resources
+}
+
+func newConnectionChecker(roots TypeNameSet, referrers map[TypeName]TypeNameSet) *connectionChecker {
 	return &connectionChecker{
 		roots:     roots,
 		referrers: referrers,
-		memo:      make(map[astmodel.TypeName]bool),
+		memo:      make(map[TypeName]bool),
 	}
 }
 
 type connectionChecker struct {
 	roots     TypeNameSet
-	referrers map[astmodel.TypeName]TypeNameSet
+	referrers map[TypeName]TypeNameSet
 
 	// memo tracks results for typenames we've already seen - both
 	// positive and negative, which is why it's not a TypeNameSet.
 	// TODO(babbageclunk): see how much of a difference this
 	// makes. Maybe the chains are all pretty shallow?
-	memo map[astmodel.TypeName]bool
+	memo map[TypeName]bool
 }
 
-func (c *connectionChecker) connected(name *astmodel.TypeName) bool {
+func (c *connectionChecker) connected(name *TypeName) bool {
 	return c.checkWithPath(name, nil)
 }
 
-func (c *connectionChecker) checkWithPath(name *astmodel.TypeName, path TypeNameSet) bool {
+func (c *connectionChecker) checkWithPath(name *TypeName, path TypeNameSet) bool {
 	if name == nil {
 		return false
 	}
