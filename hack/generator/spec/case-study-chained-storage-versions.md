@@ -89,7 +89,7 @@ These methods will be automatically generated in order to handle the majority of
 
 ## Version Map
 
-With only two classes, our version map doesn't look much like the traditional hub and spoke model, but this will change as we work through this case study:
+With only two classes, our version map is simple and straightforward.
 
 ![](images/case-study-chained-storage-2011-01-01.png)
 
@@ -112,7 +112,9 @@ type Person struct {
 
 The existing conversion between the `v20110101` API version and `v20110101storage` version is retained, preserving in-place a conversion that's already known to be reliable.
 
-The new API version `20120202` has a matching storage version `v20120202storage` which becomes the authoratative storage version for the CRD. An addition two-way conversion between the new and old storage versions is introduced..
+The new API version `20120202` has a matching storage version `v20120202storage` which becomes the authoratative storage version for the CRD. This conversion is identical to the earlier version.
+
+An additional bidirectional conversion between `v20110101storage` and `v20120202storage` is also generated. Since both versions have the same structure, this is also trivial.
 
 ## Version Map
 
@@ -137,7 +139,7 @@ type Person struct {
 }
 ```
 
-The new storage version, based on this version, updates accordingly:
+The new storage version, based on this version, is what you'd expect:
 
 ``` go
 package v20130303storage
@@ -186,11 +188,43 @@ func (person *Person) ConvertFromStorage(source storage.Person) error {
 
 The new property is shown at the end of the list not because it is new, but because values are copied across in alphabetical order. This is to guarantee that code generation is deterministic and generates the same result each time.
 
-Conversion methods for earlier API versions of `Person` are unchanged, as they still convert to the same storage versions. A new bidirectional conversion between the prior and new storage versions is introduced.
+Conversion methods for earlier API versions of `Person` are unchanged, as they still convert to the same storage versions. 
+
+A new bidirectional conversion between `v20120202storage` and `v20130303storage` versions is introduced. When down-converting to `v20120202storage`, the `MiddleName` property is stashed in the property bag; when up-converting to `v20130303storage`, the PropertyBag is checked to see if it contains `MiddleName`:
+
+``` go
+package v20120202storage
+
+import vnext "v20130303storage"
+
+// ConvertTo converts this Person to the storage Hub version.
+func (person *Person) ConvertToStorage(dest vnext.Person) error {
+    dest.FirstName = person.FirstName
+    dest.Id = person.Id
+    dest.LastName = person.LastName
+
+    if middleName, ok := PropertyBag.ReadString("MiddleName"); ok {
+        dest.MiddleName = middleName // *** New property copied too ***
+    }
+
+    return nil
+}
+
+// ConvertFrom converts from the Hub version to this version.
+func (person *Person) ConvertFromStorage(vnext storage.Person) error {
+    person.FirstName = source.FirstName
+    person.Id = source.Id
+    person.LastName = source.LastName
+
+    person.WriteString("MiddleName", source.MiddleName)
+
+    return nil
+}
+```
 
 ## Version Map
 
-A graph of our conversions now starts to show the chaining between storage versions that gives the name to this approach. Conversions to and from earlier versions of storage allow conversion between any pairs of API versions.
+A graph of our conversions now starts to show the chaining between storage versions that gives the name to this approach. Bidirectional conversions to and from earlier versions of storage allow conversion between any pairs of API versions.
 
 ![](images/case-study-chained-storage-2013-03-03.png)
 
@@ -213,19 +247,19 @@ type Person struct {
 }
 ```
 
-This is a preview version, but it still gets a dedicated storage version. *The official hub version is left unchanged*.
+This is a preview version, but it still gets a dedicated storage version, `v20140404previewStorage`. **The official hub version is left unchanged as `v20130303storage`**.
 
 ## Storage Conversion
 
-The new properties don't exist on prior storage versions, so the generated `ConvertToStorage()` and `ConvertFromStorage()` methods use the `PropertyBag` to carry the properties:
+The new properties don't exist on prior storage versions, so the generated `ConvertToStorage()` and `ConvertFromStorage()` methods used to convert between `v20130303storage` and `v20140404previewStorage` must use the `PropertyBag` to carry the properties:
 
 ``` go
 package v20140404previewStorage
 
-import storage "v20130303storage"
+import vprior "v20130303storage"
 
 // ConvertTo converts this Person to the Hub version.
-func (person *Person) ConvertToStorage(dest storage.Person) error {
+func (person *Person) ConvertToStorage(dest vprior.Person) error {
     dest.Id = person.Id
 
     // *** Store in the property bag ***
@@ -237,23 +271,34 @@ func (person *Person) ConvertToStorage(dest storage.Person) error {
 }
 
 // ConvertFrom converts from the Hub version to this version.
-func (person *Person) ConvertFromStorage(source storage.Person) error {
+func (person *Person) ConvertFromStorage(source vprior.Person) error {
     person.Id = source.Id
 
     // *** Read from the property bag ***
-    person.FamilyName = source.ReadString("FamilyName")
-    person.FullName = source.ReadString("FullName")
-    person.KnownAs = source.ReadString("KnownAs")
+
+    if familyName, ok := source.ReadString("FamilyName");ok {
+        person.FamilyName = familyName
+    }
+
+    if fullName, ok := source.ReadString("FullName"); ok {
+        person.FullName = fullName
+    }
+
+    if knownAs, ok := source.ReadString("KnownAs"); ok {
+        person.KnownAs = knownAs
+    }
 
     return nil
 }
 ```
 
-In the example above, we show first copying all the directly supported properties, then using the property bag. We may not separate these steps in the generated code. These methods are always generated on the storage versions furthest from the hub version, converting towards that version.
+In the example above, we show first copying all the directly supported properties, then using the property bag. We may not separate these steps in the generated code.
 
-This provides round-trip support for the preview release, but does not provide backward compatibility with prior official releases. 
+These methods are always generated on the storage versions furthest from the hub version, converting towards that version. In the usual case we'll use the import name `vnext` (or equivalent) but in this case, given we have a preview version, we'll use `vprior` to emphasize the direction of conversion.
 
-The storage version of `Person` written by the preview release will have no values for `FirstName`, `LastName`, and `MiddleName`.
+This provides round-trip support for the preview release, but does not provide backward compatibility with prior official releases.
+
+The storage version of a `Person` written by the preview release will have no values for `FirstName`, `LastName`, and `MiddleName`. Similarly, an older version won't have `FamilyName`, `FullName` nor `KnownAs`.
 
 These kinds of cross-version conversions cannot be automatically generated as they require more understanding the semantic changes between versions. 
 
@@ -262,18 +307,26 @@ To allow injection of manual conversion steps, interfaces will be generated as f
 ``` go
 package v20130303storage
 
-// AssignableToPerson provides methods to augment conversion to storage
-type AssignableToPerson interface {
-    AssignTo(person Person) error
+// AssignableToPersonV20130303 provides methods to augment conversion to storage
+type AssignableToPersonV20130303 interface {
+    AssignToV20130303(person Person) error
 }
 
-// AssignableFromPerson provides methods to augment conversion from storage
-type AssignableFromPerson interface {
-    AssignFrom(person Person) error
+// AssignableFromPersonV20130303 provides methods to augment conversion from storage
+type AssignableFromPersonV20130303 interface {
+    AssignFromV20130303(person Person) error
 }
 ```
 
 This interface can be optionally implemented by API versions (spoke types) to augment the generated conversion.
+
+----
+
+**Outstanding Issue**: The interfaces and methods shown above include the version number of the target in order to disambiguate between versions. This is necessitated by having multiple storage versions in flight at the same time, and needing to avoid name collisions. Contrast this with the *rolling storage version* case study where there's only one active storage version at a time. 
+
+Is there a way we could structure this approach to avoid the need for version numbers in method names?
+
+----
 
 The generated `ConvertToStorage()` and `ConvertFromStorage()` methods will test for the presence of this interface and will call it if available:
 
@@ -287,8 +340,8 @@ func (person *Person) ConvertToStorage(dest storage.Person) error {
     // … property copying and property bag use elided …
 
     // *** Check for the interface and use it if found ***
-    if assignable, ok := person.(AssignableTo); ok {
-        assignable.AssignTo(dest)
+    if assignable, ok := person.(AssignableToPersonV20130303); ok {
+        assignable.AssignToV20130303(dest)
     }
 
     return nil
@@ -299,8 +352,8 @@ func (person *Person) ConvertFromStorage(source storage.Person) error {
     // … property copying and property bag use elided …
 
     // *** Check for the interface and use it if found ***
-    if assignable, ok := person.(AssignableFrom); ok {
-        assignable.AssignFrom(source)
+    if assignable, ok := person.(AssignableFromPersonV20130303); ok {
+        assignable.AssignFromV20130303(source)
     }
 
     return nil
@@ -311,7 +364,7 @@ func (person *Person) ConvertFromStorage(source storage.Person) error {
  
 Preview releases, by definition, include unstable changes that may differ once the feature reaches general availability.
 
-We don't want to make changes to our storage versions based on these speculative changes, so we handle persistence of the preview release with the existing storage version:
+We don't want to make changes to our storage versions based on these speculative changes, so we handle persistence of the preview release with the existing storage version, by way of a down-conversion to `v20130303storage`:
 
 ![](images/case-study-chained-storage-2014-04-04-preview.png)
 
@@ -352,61 +405,24 @@ func (*Person) Hub() {}
 
 ## Storage Conversion
 
-The `ConvertToStorage()` and `ConvertFromStorage()` methods for the new version of `Person` are generated as expected, copying across values and invoking the `AssignableToPerson` and `AssignableFromPerson` interfaces if present:
+The `ConvertToStorage()` and `ConvertFromStorage()` methods between the API version `v20140404` and the storage version `v20140404storage` are trivial and not shown.
+
+For conversions between storage versions, the preview storage version is not considered - it's out of the main line of processing. Instead, we have a bidirectional conversion between `v20130303storage` and `v20140404storage`. As usual, the conversion is implemented further away from the (new) hub version, on `v20130303storage`.
+
+With a large difference in structure between the two versions, the PropertyBag gets a workout:
 
 ``` go
-package v20140404
+package v20130303storage
 
-import storage "v20140404storage"
-
-// ConvertTo converts this Person to the Hub version.
-func (person *Person) ConvertToStorage(dest storage.Person) error {
-    dest.AlphaKey = person.AlphaKey
-    dest.FamilyName = person.FamilyName
-    dest.Id = person.Id
-    dest.KnownAs = person.KnownAs
-    dest.LegalName = person.LegalName
-
-    // *** Check for the interface and use it if found ***
-    if assignable, ok := person.(AssignableToPerson); ok {
-        assignable.AssignTo(dest)
-    }
-
-    return nil
-}
-
-// ConvertFrom converts from the Hub version to this version.
-func (person *Person) ConvertFromStorage(source storage.Person) error {
-    person.AlphaKey = source.AlphaKey
-    person.FamilyName = source.FamilyName
-    person.Id = source.Id
-    person.KnownAs = source.KnownAs
-    person.LegalName = source.LegalName
-
-    // *** Check for the interface and use it if found ***
-    if assignable, ok := person.(AssignableFromPerson); ok {
-        assignable.AssignFrom(source)
-    }
-
-    return nil
-}
-```
-
-The changes to the structure of `Person` mean that our prior conversion methods need to change too. For properties that are no longer present on the storage version, they now need to use the `PropertyBag` to stash the required values.
-
-For example, the `2011-01-01` version of `Person` now has these conversion methods:
-
-``` go
-package v20110101
-
-import storage "v20140404storage"
+import vnext "v20140404storage"
 
 // ConvertTo converts this Person to the Hub version.
-func (person *Person) ConvertToStorage(dest storage.Person) error {
+func (person *Person) ConvertToStorage(dest vnext.Person) error {
     dest.Id = person.Id
 
     dest.WriteString("FirstName", person.FirstName)
     dest.WriteString("LastName",  person.LastName)
+    dest.WriteString("MiddleName",  person.MiddleName)
 
     if assignable, ok := person.(AssignableToPerson); ok {
         assignable.AssignTo(dest)
@@ -416,13 +432,24 @@ func (person *Person) ConvertToStorage(dest storage.Person) error {
 }
 
 // ConvertFrom converts from the Hub version to this version.
-func (person *Person) ConvertFromStorage(source storage.Person) error {
+func (person *Person) ConvertFromStorage(source vnext.Person) error {
     person.Id = source.Id
-    person.FirstName = source.ReadString("FirstName")
-    person.LastName = source.ReadString("LastName")
 
-    if assignable, ok := person.(AssignableFromPerson); ok {
-        assignable.AssignFrom(source)
+    if firstName, ok := source.ReadString("FirstName"); ok {
+        person.FirstName = firstName
+    }
+
+    if middleName, ok := source.ReadString("MiddleName"); ok {
+        person.MiddleName = middleName
+    }
+
+    if lastName, ok := source.ReadString("LastName"); ok {
+        person.LastName = lastName
+    }
+
+    // *** Check for the interface and use it if found ***
+    if assignable, ok := person.(AssignableFromPersonV20140404); ok {
+        assignable.AssignFromV20140404(source)
     }
 
     return nil
@@ -440,9 +467,9 @@ These conversions occur *in addition* to use of the PropertyBag to store those s
 ``` go
 package v20130303storage
 
-import vNext "v20140404storage"
+import vnext "v20140404storage"
 
-func (person *Person) AssignTo(dest vNext.Person) error {
+func (person *Person) AssignToV20140404(dest vnext.Person) error {
     if dest.KnownAs == "" {
         dest.KnownAs = person.FirstName
     }
@@ -475,7 +502,7 @@ func (person *Person) AssignFrom(source vNext.Person) error {
 }
 ```
 
-For each property, it might have already been populated with a more accurate value from the PropertyBag, so we only synthesize values when needed.
+For each property we need to consider that it might have already been populated with a more accurate value from the PropertyBag, so we only synthesize values when needed.
 
 ## Version Map
 
@@ -557,7 +584,7 @@ func (person *Person) ConvertFromStorage(source vNext.Person) error {
 }
 ```
 
-While `SortKey` appears at the end of the list of assignments in the first method, the mirror assignment of `AlphaKey` appears at the start of the list in the second method.
+While `SortKey` appears at the end of the list of assignments in the first method, the mirror assignment of `AlphaKey` appears at the start of the list in the second method. In both cases the properties are shown in alphabetical order.
 
 ## Version Map
 
@@ -567,7 +594,11 @@ Here we see our horizon policy coming into effect, with support for version 2011
 
 For users staying up to date with releases of the service operator, this will likely have no effect - but users still using the original release (storage version `v2011-01-01storage`) will need to update to an intermediate release before adopting this version.
 
-An alternative approach would be to always support conversion from every storage version, even if the related API version has been dropped. This would allow users to upgrade from almost any older version of the service operator.
+An alternative approach would be to always support conversion from every storage version, even if the related API version has been dropped:
+
+![](images/case-study-chained-storage-2015-05-05-alternate.png)
+
+This would allow users to upgrade from almost any older version of the service operator. ("Almost" because we would still have older versions drop off when they are retired by ARM.)
 
 ## How often do property renames happen?
 
@@ -622,14 +653,14 @@ func (*Person) Hub() {}
 
 ## Storage Conversion
 
-The required `ConvertToStorage()` and `ConvertFromStorage()` methods get generated in the expected way:
+The required `ConvertToStorage()` and `ConvertFromStorage()` methods between the API version `v20160606` and the storage version `v201606061` get generated in the expected way:
 
 ``` go
 package v20160606
 
 import storage "v20160606storage"
 
-// ConvertTo converts this Person to the Hub version.
+// ConvertTo converts this Person to the Storage version.
 func (person *Person) ConvertToStorage(dest storage.Person) error {
     dest.FamilyName = person.FamilyName
     dest.Id = person.Id
@@ -870,7 +901,7 @@ type Location struct {
 
 ## Storage Conversion
 
-The conversion methods need to change as well. If we configure metadata detailing the rename (as we did for properties in version 2015-05-05), we can generate the required conversions automatically:
+The conversion methods need to change as well. If we configure metadata detailing the rename of the type (as we did for properties in version 2015-05-05), we can generate the required conversions automatically:
 
 ``` go
 package v20180808storage
