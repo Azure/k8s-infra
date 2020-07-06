@@ -7,11 +7,11 @@ package astmodel
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"text/template"
 
+	"github.com/pkg/errors"
 	"k8s.io/klog/v2"
 )
 
@@ -77,7 +77,7 @@ func emitFiles(filesToGenerate map[string][]TypeDefiner, outputDir string) error
 
 		err := genFile.SaveToFile(outputFile)
 		if err != nil {
-			return fmt.Errorf("error saving definitions to file '%v'(%w)", outputFile, err)
+			return errors.Wrapf(err, "error saving definitions to file %q", outputFile)
 		}
 	}
 
@@ -250,7 +250,7 @@ func emitGroupVersionFile(pkgDef *PackageDefinition, outputDir string) error {
 
 	err = ioutil.WriteFile(gvFile, buf.Bytes(), 0700)
 	if err != nil {
-		return fmt.Errorf("error writing group version file '%v'(%w)", gvFile, err)
+		return errors.Wrapf(err, "error writing group version file %q", gvFile)
 	}
 
 	return nil
