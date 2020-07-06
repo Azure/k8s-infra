@@ -40,7 +40,7 @@ func NewGenCommand() (*cobra.Command, error) {
 				klog.Errorf("Error during code generation:\n%v\n", err)
 				stackTrace := findDeepestTrace(err)
 				if stackTrace != nil {
-					klog.Errorf("%+v", stackTrace)
+					klog.V(4).Infof("%+v", stackTrace)
 				}
 				return err
 			}
