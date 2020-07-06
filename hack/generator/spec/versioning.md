@@ -8,9 +8,9 @@ We're generating a large volume of CRD definitions based on the JSON schema defi
 
 **Principle of Least Surprise:** The goal of the service operator is to allow users to consumer Azure resources without having to leave the tooling they are familiar with. We therefore want to do things in the idiomatic Kubernetes fashion, so that they don't experience any nasty surprises.
 
-**Auto-generated conversions:** As far as practical, we want to autogenerate the schema for storage use along with the conversions to and from the actual ARM API versions. Hand coding all the required conversions doesn't scale across all the different Azure sevices, especially with the ongoing rate of change. 
+**Auto-generated conversions:** As far as practical, we want to autogenerating the schema for storage use along with the conversions to and from the actual ARM API versions. Hand coding all the required conversions doesn't scale across all the different Azure sevices, especially with the ongoing rate of change. 
 
-**Allow for hand coded conversions:** While we expect to use code generation to handle the vast majority of needed conversions, we anticipate that some breaking API changes will require *part* of the conversion to be hand coded. We need to make it simple for these conversions to be introduced while still automatically generating the majority of the conversion.
+**Allow for hand coded conversions:** While we expect to use code generation to handle the vast majority of needed conversions, we anticipate that some breaking API changes will require *part* of the conversion to be hand coded. We need to make it simple for these conversions to be introduced while still autogenerating the majority of the conversion.
 
 **No modification of generated files.** Manual modification of generated files is a known antipattern that greatly increases the complexity and burden of updates. If some files have been manually changed, every difference showing after code generation needs to be manually reviewed before being committed. This is tedious and error prone because the vast majority of auto generated changes will be perfectly fine. 
 
@@ -30,13 +30,15 @@ We're generating a large volume of CRD definitions based on the JSON schema defi
 
 ## Case Studies
 
-There are two case studies that accompany this specification, each one walking through one possible solution and showing how it will perform over time.
+There are three case studies that accompany this specification, each one walking through one possible solution and showing how it will perform over time.
 
 The [**Rolling Versions**](case-study-rolling-storage-versions.md) case study shows how the preferred solution adapts to changes as the Azure Resources evolve over time.
 
 The [**Fixed Version**](case-study-fixed-storage-versions.md) case study shows how the primary alternative would fare, calling out some specific problems that will occur.
 
-**TL;DR:** Using a *fixed storage version* appears simpler at first, and works well as long as the changes from version to version are simple. However, when the changes become complex (as they are bound to do over time), this approach starts to break down. While there is up front complexity to address with a *rolling storage version*, the approach doesn't break down over time.
+The [**Chained Versions**](case-study-chained-storage-versions.md) case study shows another alternative that maximizes code reuse between versions of the service operator.
+
+**TL;DR:** Using a *fixed storage version* appears simpler at first, and works well as long as the changes from version to version are simple. However, when the changes become complex (as they are bound to do over time), this approach starts to break down. The *chained versions* approach is viable, with some nice code-reuse characteristics that go along with its complexity. While there is up front complexity to address with a *rolling storage version*, the approach doesn't break down over time and we can generate useful automated tests for verification.
 
 Examples shown in this document are drawn from the case studies.
 
@@ -93,9 +95,9 @@ type Person struct {
 
 Using the latest version of the API as the basis for our storage version gives us maximum compatibility for the usual case, where a user defines their custom resource using the latest available version.
 
-If a resource type has been dropped from the ARM API, we will still generate a storage schema for it based on the last ARM API version where it existed; this helps to ensure backward compatibility with existing service operator deployments.
+If a type has been dropped from the ARM API, we will still generate a storage schema for it based on the last ARM API version where it existed; this helps to ensure backward compatibility with existing service operator deployments. For example, if `Person` was dropped in favour of `Party` type (that can capture companies and organizations as well), we will still continue to generate a storage version of `Person` to allow deserialization by existing service operator installations as a part of their upgrade process.
 
-Sequestering additional properties away within a property bag in the storage schema is more robust than using separate annotations as they are less subject to arbitary modification by users. This allows us to largely avoid situations where well meaning (but uninformed) consumers of the service operator innocently make changes that result in the operator becoming failing. We particularly want to avoid this failure mode because recovery will be difficult - restoration of the modified/deleted information may be impractical or impossible.
+Sequestering additional properties away within a property bag in the storage schema is more robust than using separate annotations as they are less subject to arbitrary modification by users. This allows us to largely avoid situations where well meaning (but uninformed) consumers of the service operator innocently make changes that result in the operator becoming failing. We particularly want to avoid this failure mode because recovery will be difficult - restoration of the modified/deleted information may be impractical or impossible.
 
 ### Generated conversion methods
 
@@ -185,27 +187,46 @@ It's vital that we are able to correctly convert between versions. We will there
 
 ### Round Trip Testing
 
-We will generate a unit test to ensure that every spoke version can round trip to the hub version and back again to the same type with no loss of information.
+We will generate a unit test to ensure that every spoke version can round trip to the hub version and back again to the same version with no loss of information. This will help to ensure a base level of compliance, that information is not lost through serialization.
 
-This will help to ensure a base level of compliance, that information is not lost through serialization.
+This test targets the following failure modes:
 
-> TODO: Flesh this out
-* Use of fuzz testing to generate instances
-* ConvertToStorage() followed by ConvertFromStorage() and then compare that all properties match
+* Edge cases not correctly handled by the generated conversion code.
+* Manually implemented conversions that don't handle some cases correctly.
 
-* **string**, **int**, **bool** much match exactly
-* **Float64** match within tolerance
-* What else?
+Each test will work as follows:
+
+* Create an instance of the required type and API version
+  * This will likely be done by using one of the available fuzzing libraries for Go testing
+* Convert this to the current storage version
+* Convert back from the storage version to a new instance of the original type and API version
+* Verify that all properties are equal
+  * **string**, **int**, **bool** much match exactly
+  * **Float64** match within tolerance
+  * Complex types are recursively matched using the same rules
+
+### Relibility Testing
+
+We will generate a unit test to ensure that every spoke version can be converted to every other spoke version via the hub version without crashing. We lack the semantic context to verify that the conversion is correct, but we can at least verify that it doesn't crash.
+
+This test targets the following failure modes:
+
+* Conversions that fail when information is missing (as will happen when converting from earlier versions)
 
 ### Golden Tests
 
 For API (spoke) types where the optional interfaces `AssignableTo...()` and `AssignableFrom...()` have been implemented, we'll generate golden tests to verify that they are generating the expected results.
 
-These tests will be particularly useful when a new version of the ARM API is released for a given service as they will help to catch any changes that now need to be handled.
+This test targets the following failure modes:
+
+* Manually implemented conversions that don't handle all the expected edge cases.
+* Manually implemented conversions that fail when given newer (or older) starting versions than expected.
+
+These tests will be particularly useful when a new version of the ARM API is released for a given service as they will help to catch any new changes that now require support.
 
 We'll generate two golden tests for each type in each API type, one to test verify conversion _**to**_ the latest version, and one to test conversion _**from**_ the latest version.
 
-**Testing conversion to the latest version** will check that an instance of a older version of the API can be correctly upconverted to the latest version:
+**Testing conversion to the latest version** will check that an instance of a older version of the API can be correctly up-converted to the latest version:
 
 ![](images/versioning-golden-tests-to-latest.png)
 
@@ -222,7 +243,7 @@ Testing will only occur if one (or both) types implements one of the optional in
 
 If neither rule is satisfied, the test will silently null out.
 
-**Testing conversion from the latest version** will check that an instance of the latest version of the API can be correctly downconverted to an older version.
+**Testing conversion from the latest version** will check that an instance of the latest version of the API can be correctly down-converted to an older version.
 
 ![](images/versioning-golden-tests-from-latest.png)
 
@@ -262,6 +283,20 @@ The supported storage version of each resource type will simply be the latest ve
 **This is a known antipattern that we should avoid.**
 
 Annotations are publicly visible on the cluster and can easily modified. This makes it spectacularly easy for a user to make an innocent change that would break the functionality of the operator. 
+
+## Metadata Design
+
+To support property and type renaming, we will include metadata describing the known changes. This will be added to the existing configuration file we already have that includes filtering information on the types we exclude/include in the output.
+
+As identification of renames requires manual inspection, any case of a property not appearing in a later version of the API needs to be checked. We'll therefore also capture metadata for property removal so that we know which properties have been assessed and which have not.
+
+
+
+
+## Outstanding Issues
+
+
+
 
 ## See Also
 
