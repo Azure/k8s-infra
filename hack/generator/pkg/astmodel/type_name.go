@@ -61,7 +61,7 @@ func (typeName *TypeName) References(d *TypeName) bool {
 // Referees returns any type names this type refers to directly, so it's always
 // empty for a type name.
 func (typeName *TypeName) Referees() []*TypeName {
-	return nil
+	return []*TypeName{typeName}
 }
 
 // RequiredImports returns all the imports required for this definition
