@@ -73,7 +73,7 @@ func emitFiles(filesToGenerate map[string][]TypeDefiner, outputDir string) error
 		genFile := NewFileDefinition(&defs[0].Name().PackageReference, defs...)
 		outputFile := filepath.Join(outputDir, fullFileName)
 
-		klog.V(5).Infof("Writing '%s'\n", outputFile)
+		klog.V(5).Infof("Writing %q\n", outputFile)
 
 		err := genFile.SaveToFile(outputFile)
 		if err != nil {

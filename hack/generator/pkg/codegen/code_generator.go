@@ -39,12 +39,12 @@ type CodeGenerator struct {
 func NewCodeGenerator(configurationFile string) (*CodeGenerator, error) {
 	config, err := loadConfiguration(configurationFile)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to load configuration file '%v'", configurationFile)
+		return nil, errors.Wrapf(err, "failed to load configuration file %q", configurationFile)
 	}
 
 	err = config.Initialize()
 	if err != nil {
-		return nil, errors.Wrapf(err, "configuration loaded from '%v' is invalid", configurationFile)
+		return nil, errors.Wrapf(err, "configuration loaded from %q is invalid", configurationFile)
 	}
 
 	result := &CodeGenerator{configuration: config}
@@ -58,13 +58,13 @@ func (generator *CodeGenerator) Generate(ctx context.Context) error {
 	klog.V(0).Infof("Loading JSON schema %v", generator.configuration.SchemaURL)
 	schema, err := loadSchema(ctx, generator.configuration.SchemaURL)
 	if err != nil {
-		return errors.Wrapf(err, "error loading schema from '%v'", generator.configuration.SchemaURL)
+		return errors.Wrapf(err, "error loading schema from %q", generator.configuration.SchemaURL)
 	}
 
-	klog.V(0).Infof("Cleaning output folder '%v'", generator.configuration.OutputPath)
+	klog.V(0).Infof("Cleaning output folder %q", generator.configuration.OutputPath)
 	err = deleteGeneratedCodeFromFolder(ctx, generator.configuration.OutputPath)
 	if err != nil {
-		return errors.Wrapf(err, "error cleaning output folder '%v'", generator.configuration.OutputPath)
+		return errors.Wrapf(err, "error cleaning output folder %q", generator.configuration.OutputPath)
 	}
 
 	scanner := jsonast.NewSchemaScanner(astmodel.NewIdentifierFactory(), generator.configuration)
@@ -104,10 +104,10 @@ func (generator *CodeGenerator) Generate(ctx context.Context) error {
 		// create directory if not already there
 		outputDir := filepath.Join(generator.configuration.OutputPath, pkg.GroupName, pkg.PackageName)
 		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-			klog.V(5).Infof("Creating directory '%s'\n", outputDir)
+			klog.V(5).Infof("Creating directory %q\n", outputDir)
 			err = os.MkdirAll(outputDir, 0700)
 			if err != nil {
-				klog.Fatalf("Unable to create directory '%s'", outputDir)
+				klog.Fatalf("Unable to create directory %q", outputDir)
 			}
 		}
 
