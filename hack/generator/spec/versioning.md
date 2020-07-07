@@ -24,9 +24,10 @@ We're generating a large volume of CRD definitions based on the JSON schema defi
 
 **Coverage of every case by code generation:** While it's likely that very high coverage will be achievable with code generation, we don't believe that it will be practical to handle every possible situation automatically. It's therefore necessary for the solution to have some form of extensibility allowing for the injection of hand written code.
 
-## Requirements
+## Other Constraints
 
-***TBC***
+Unlike the typical situation with a hand written service operator, we don't have complete control over the schema we are publishing for custom resources - we're deriving the CRD schema from the ARM JSON schema published online. This somewhat paints us into a corner where some issues that would be easily avoided with a hand-coded schema have to be faced head on.
+
 
 ## Case Studies
 
