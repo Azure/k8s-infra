@@ -44,14 +44,9 @@ func (m *MapType) RequiredImports() []*PackageReference {
 	return result
 }
 
-// References this type has to the given type
-func (m *MapType) References(d *TypeName) bool {
-	return m.key.References(d) || m.value.References(d)
-}
-
-// Referees returns all of the types the key and value types refer to.
-func (m *MapType) Referees() []*TypeName {
-	return append(m.key.Referees(), m.value.Referees()...)
+// References returns all of the types the key and value types refer to.
+func (m *MapType) References() TypeNameSet {
+	return SetUnion(m.key.References(), m.value.References())
 }
 
 // Equals returns true if the passed type is a map type with the same kinds of keys and elements, false otherwise

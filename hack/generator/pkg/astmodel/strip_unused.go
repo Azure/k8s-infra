@@ -5,8 +5,6 @@
 
 package astmodel
 
-import "github.com/pkg/errors"
-
 // TypeNameSet stores type names in no particular order without
 // duplicates.
 type TypeNameSet map[TypeName]bool
@@ -63,6 +61,18 @@ func (ts TypeNameSet) Contains(val *TypeName) bool {
 	return found
 }
 
+// SetUnion returns a new set with all of the names in s1 or s2.
+func SetUnion(s1, s2 TypeNameSet) TypeNameSet {
+	var result TypeNameSet
+	for val := range s1 {
+		result = result.Add(&val)
+	}
+	for val := range s2 {
+		result = result.Add(&val)
+	}
+	return result
+}
+
 // StripUnusedDefinitions removes all types that aren't in roots or
 // referred to by the types in roots, for example types that are
 // generated as a byproduct of an allOf element.
@@ -74,12 +84,8 @@ func StripUnusedDefinitions(
 	referrers := make(map[TypeName]TypeNameSet)
 
 	for _, def := range definitions {
-		for _, referee := range def.Type().Referees() {
-			if referee == nil {
-				return nil, errors.Errorf("nil referee for %s", def.Name())
-			}
-			refereeVal := *referee
-			referrers[refereeVal] = referrers[refereeVal].Add(def.Name())
+		for reference := range def.Type().References() {
+			referrers[reference] = referrers[reference].Add(def.Name())
 		}
 	}
 

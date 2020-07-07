@@ -80,23 +80,13 @@ func (structType *StructType) RequiredImports() []*PackageReference {
 	return result
 }
 
-// References this type has to the given type
-func (structType *StructType) References(d *TypeName) bool {
+// References returns the combination of all the types the fields refer to.
+func (structType *StructType) References() TypeNameSet {
+	var results TypeNameSet
 	for _, field := range structType.fields {
-		if field.FieldType().References(d) {
-			return true
+		for ref := range field.FieldType().References() {
+			results = results.Add(&ref)
 		}
-	}
-
-	// For now, not considering functions in references on purpose
-	return false
-}
-
-// Referees returns the combination of all the types the fields refer to.
-func (structType *StructType) Referees() []*TypeName {
-	var results []*TypeName
-	for _, field := range structType.fields {
-		results = append(results, field.FieldType().Referees()...)
 	}
 	// Not collecting types from functions deliberately.
 	return results

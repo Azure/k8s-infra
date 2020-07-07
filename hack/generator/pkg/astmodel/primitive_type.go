@@ -42,15 +42,9 @@ func (prim *PrimitiveType) RequiredImports() []*PackageReference {
 	return nil
 }
 
-// References this type has to the given type
-func (prim *PrimitiveType) References(d *TypeName) bool {
-	// Primitive types dont have references
-	return false
-}
-
-// Referees always returns nil because primitive types don't refer to
+// References always returns nil because primitive types don't refer to
 // any other types.
-func (prim *PrimitiveType) Referees() []*TypeName {
+func (prim *PrimitiveType) References() TypeNameSet {
 	return nil
 }
 
