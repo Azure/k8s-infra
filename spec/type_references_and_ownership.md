@@ -167,6 +167,16 @@ If the dependent resources aren't there, the status of the owning resource refle
 
 ## Proposal
 
+### A note on names before we get started
+In Kubernetes each resource must have a unique name for its group-kind. For example, if we had a `RouteTable` CRD, each `RouteTable` object would need to have a unique name.
+In ARM, resources do not need to be uniquely named. There can be two `RouteTable` resources with the same name provided they are in different resource groups. The owner-dependent resource
+relationship impacts uniqueness in Azure in a way that it doesn't in Kubernetes.
+
+#### Proposed solution
+All Kubernetes resources will have two fields which are used in combination to build the Azure name: `Metadata.Name` and `Spec.AzureName`.
+When `Spec.AzureName` is empty, `Metadata.Name` is used as the resource name. When `Spec.AzureName` is provided, it takes precedence and is used when interacting with ARM, but
+the resource in Kubernetes is still called by its  `Metadata.Name`.
+
 ### Overview
 
 We propose the following high-level solution:
@@ -295,10 +305,66 @@ allow references to resources that were created before the customer onboarded to
 
 `ResourceLifeCycle` is not specified by the customer explicitly in the `Spec`, instead 
 
-This is what [CAPZ does](https://github.com/kubernetes-sigs/cluster-api-provider-azure/blob/d93e75deff2be3c7647c2ddfd387ce0ef022e1cd/api/v1alpha2/tags.go#L78) today.
-Actually after speaking with Cecile it's not...
+RouteTable + Routes issue (multiple routes of the same name are allowed)
 
-TODO
+Options for this:
+Note that all of these options share this restriction: Each resource must be imported, i.e. to import a VNET you may need to import
+the resource group the VNET is in, and then the VNET (with an `Owner` reference pointing to the imported `ResourceGroup`). 
+
+Option 1: Users must create a _valid_ resource with the same name as the resource they want to track. If this resources spec differs from what is in Azure, an error is logged 
+but we never actually apply any state to Azure (i.e. we don't try to sync to the spec). A tag in the metadata must be added to inform the operator not to sync.
+Note that because of how we managed names in Azure and names in Kubernetes,  
+
+Advantages
+- Swapping from unmanaged to managed is super easy, just remove the tag blocking the reconciliation loop.
+
+Disadvantages
+- There is possibly a significant amount of extra effort required to re-specify a resource whose shape we really just want to "import" from ARM. Worse for large trees of objects
+  or deeply nested objects.
+- If the tag is forgotten (or has a typo) we will try to manage a resource which we shouldn't be managing. This could be _very_ problematic depending on how different
+  the specification is from what's there in Azure.
+- The existence of a spec may suggest we are actually seeking towards it -- which we are not. ASO does have a similar feature though so maybe not that big of a problem.
+
+Option 2: Users create an entity with just the "identifying fields" set: `Metadata.Name`, `Owner`, and optionally `Spec.AzureName`.
+When an entity is created like this, the controller knows to treat it specially (optionally may also add a tag automatically?).
+These entities will only be watched by the controller, no mutating update will be sent to ARM.
+
+Advantages
+- Relatively easy to import even complex object hierarchies.
+
+Disadvantages
+- This screws up the "required-ness" of non-identifying fields in a spec. For example: a Virtual Network requires a `Properties VirtualNetworkProperties` field to be set,
+  but since we have to allow that field to be `nil` when importing a Virtual Network we can't set the `Properties` field with a required annotation for Kubebuilder.
+
+Option 3: Same as option 2, but use `anyOf` to specify two valid structures:
+```yaml
+  spec:
+    type: object
+    properties:
+      owner:
+        properties:
+          name:
+            type: string
+      azureName:
+        type: string
+      foo:
+        type: integer
+      anyOf:
+        - required: ["owner"]
+        - required: ["owner", "foo"]
+```
+
+Note that it has to be `anyOf` because `oneOf` disallows multiple matches, and `owner` + `foo` matches both sets in the example above.
+
+Advantages
+- Represents what we want and maintains better automatic validation.
+
+Disadvantages
+- Kubebuilder doesn't generating this, so we would have to come up with another way to do it, or possibly upstream changes to Kubebuilder to support it.
+
+Option 4: Other ideas...
+Do away with Kubebuilder validation entirely and use our own (including our own validating webhooks).
+Use Kustomize and our own code-generator/parser to generate amendments to Kubebuilder's generated CRDs to get the `anyOf` shape we want above.
 
 ### How to transform Kubernetes objects to ARM objects (and back)
 In the case of resource ownership, the proposed `Owner` property exists on dependent resources in the CRD but must not go to Azure as Azure doesn't understand it.
