@@ -51,6 +51,9 @@ type (
 // findTypeDefinition looks to see if we have seen the specified definition before, returning its definition if we have.
 func (scanner *SchemaScanner) findTypeDefinition(name *astmodel.TypeName) (astmodel.TypeDefiner, bool) {
 	result, ok := scanner.definitions[*name]
+	if !ok || result == nil {
+		result, ok = scanner.definitions[*name.Singular()]
+	}
 	return result, ok
 }
 
@@ -485,7 +488,8 @@ func generateDefinitionsFor(
 	// Give the type a name:
 	if isResource {
 		if specType, ok := result.(*astmodel.StructType); ok {
-			definer, otherDefs = astmodel.CreateResourceDefinitions(typeName, specType, nil, scanner.idFactory)
+			resourceName := typeName.Singular()
+			definer, otherDefs = astmodel.CreateResourceDefinitions(resourceName, specType, nil, scanner.idFactory)
 		} else {
 			klog.Warningf("expected a struct type for resource: %v", typeName)
 			// TODO: handle this better, only Kusto does it
@@ -500,6 +504,7 @@ func generateDefinitionsFor(
 	definer = definer.WithDescription(&description)
 
 	// register all definitions
+	scanner.removeTypeDefinition(typeName) // In case we used a singular name for the actual type
 	scanner.addTypeDefinition(definer)
 	for _, otherDef := range otherDefs {
 		scanner.addTypeDefinition(otherDef)
