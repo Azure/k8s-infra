@@ -76,9 +76,16 @@ func (generator *CodeGenerator) Generate(ctx context.Context) error {
 		return errors.Wrapf(err, "failed to walk JSON schema")
 	}
 
-	defs, err = generator.FilterDefinitions(defs)
-	if err != nil {
-		return errors.Wrapf(err, "failed to filter generated definitions")
+	pipeline := []PipelineStage{
+		{"Filter Generated definitions", generator.FilterDefinitions},
+	}
+
+	for i, stage := range pipeline {
+		klog.V(2).Infof("Running pipeline stage %i/%i: %s", i, len(pipeline), stage.Name)
+		defs, err = stage.Action(defs)
+		if err != nil {
+			return errors.Wrapf(err, "Failed during pipeline stage %s", stage.Name)
+		}
 	}
 
 	roots := astmodel.CollectResourceDefinitions(defs)
