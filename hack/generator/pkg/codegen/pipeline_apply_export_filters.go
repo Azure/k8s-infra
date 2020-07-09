@@ -6,15 +6,17 @@
 package codegen
 
 import (
+	"context"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/config"
 	"k8s.io/klog/v2"
 )
 
+// applyExportFilters creates a PipelineStage to reduce our set of types for export
 func applyExportFilters(configuration *config.Configuration) PipelineStage {
 	return PipelineStage{
 		"Filter generated types",
-		func(types []astmodel.TypeDefiner) ([]astmodel.TypeDefiner, error) {
+		func(ctx context.Context, types []astmodel.TypeDefiner) ([]astmodel.TypeDefiner, error) {
 			return filterTypes(configuration, types)
 		},
 	}

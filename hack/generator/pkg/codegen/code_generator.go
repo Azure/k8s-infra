@@ -65,12 +65,12 @@ func (generator *CodeGenerator) Generate(ctx context.Context) error {
 
 	pipeline := []PipelineStage{
 		applyExportFilters(generator.configuration),
-		deleteGeneratedCode(ctx, generator.configuration.OutputPath),
+		deleteGeneratedCode(generator.configuration.OutputPath),
 	}
 
 	for i, stage := range pipeline {
 		klog.V(0).Infof("Pipeline stage %d/%d: %s", i+1, len(pipeline), stage.Name)
-		defs, err = stage.Action(defs)
+		defs, err = stage.Action(ctx, defs)
 		if err != nil {
 			return errors.Wrapf(err, "Failed during pipeline stage %s", stage.Name)
 		}
