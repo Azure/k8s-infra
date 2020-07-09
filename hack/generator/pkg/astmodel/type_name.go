@@ -55,7 +55,10 @@ func (typeName *TypeName) AsType(codeGenerationContext *CodeGenerationContext) a
 
 // References returns a set containing this type name.
 func (typeName *TypeName) References() TypeNameSet {
-	return NewTypeNameSet(typeName)
+	if typeName == nil {
+		return nil
+	}
+	return NewTypeNameSet(*typeName)
 }
 
 // RequiredImports returns all the imports required for this definition

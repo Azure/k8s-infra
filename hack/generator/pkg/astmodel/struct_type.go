@@ -85,7 +85,7 @@ func (structType *StructType) References() TypeNameSet {
 	var results TypeNameSet
 	for _, field := range structType.fields {
 		for ref := range field.FieldType().References() {
-			results = results.Add(&ref)
+			results = results.Add(ref)
 		}
 	}
 	// Not collecting types from functions deliberately.

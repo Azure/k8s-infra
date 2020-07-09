@@ -47,7 +47,7 @@ func runGoldenTest(t *testing.T, path string) {
 
 	// The golden files always generate a top-level Test type - mark
 	// that as the root.
-	roots := astmodel.NewTypeNameSet(astmodel.NewTypeName(
+	roots := astmodel.NewTypeNameSet(*astmodel.NewTypeName(
 		*astmodel.NewPackageReference(
 			"github.com/Azure/k8s-infra/hack/generator/apis/test/v20200101"),
 		"Test",

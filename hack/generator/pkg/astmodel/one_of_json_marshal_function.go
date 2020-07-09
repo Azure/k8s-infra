@@ -38,7 +38,10 @@ func (f *OneOfJSONMarshalFunction) Equals(other Function) bool {
 // References indicates whether this function includes any direct references to the given type
 func (f *OneOfJSONMarshalFunction) References(name *TypeName) bool {
 	// Defer this check to the owning struct as we only refer to its fields and it
-	return f.oneOfStruct.References().Contains(name)
+	if name == nil {
+		return false
+	}
+	return f.oneOfStruct.References().Contains(*name)
 }
 
 // AsFunc returns the function as a go ast
