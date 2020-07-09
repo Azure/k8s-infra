@@ -7,7 +7,7 @@ package astmodel
 
 import (
 	"fmt"
-	"github.com/jinzhu/inflection"
+	"github.com/gobuffalo/flect"
 	"go/ast"
 )
 
@@ -89,7 +89,7 @@ func (typeName *TypeName) String() string {
 }
 
 func (typeName *TypeName) Singular() *TypeName {
-	return NewTypeName(typeName.PackageReference, inflection.Singular(typeName.name))
+	return NewTypeName(typeName.PackageReference, flect.Singularize(typeName.name))
 }
 
 // Ensure we implement Stringer
