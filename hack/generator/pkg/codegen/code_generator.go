@@ -6,24 +6,17 @@
 package codegen
 
 import (
-	"bufio"
 	"context"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"path"
-	"path/filepath"
-	"sort"
-	"strings"
-
-	"github.com/bmatcuk/doublestar"
 	"github.com/pkg/errors"
 	"github.com/xeipuuv/gojsonreference"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v3"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	"io/ioutil"
 	"k8s.io/klog/v2"
+	"net/http"
+	"os"
+	"path/filepath"
+	"sort"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/config"
@@ -61,12 +54,6 @@ func (generator *CodeGenerator) Generate(ctx context.Context) error {
 		return errors.Wrapf(err, "error loading schema from %q", generator.configuration.SchemaURL)
 	}
 
-	klog.V(0).Infof("Cleaning output folder %q", generator.configuration.OutputPath)
-	err = deleteGeneratedCodeFromFolder(ctx, generator.configuration.OutputPath)
-	if err != nil {
-		return errors.Wrapf(err, "error cleaning output folder %q", generator.configuration.OutputPath)
-	}
-
 	scanner := jsonast.NewSchemaScanner(astmodel.NewIdentifierFactory(), generator.configuration)
 
 	klog.V(0).Infof("Walking JSON schema")
@@ -77,11 +64,12 @@ func (generator *CodeGenerator) Generate(ctx context.Context) error {
 	}
 
 	pipeline := []PipelineStage{
-		{"Filter Generated definitions", generator.FilterDefinitions},
+		applyExportFilters(generator.configuration),
+		deleteGeneratedCode(ctx, generator.configuration.OutputPath),
 	}
 
 	for i, stage := range pipeline {
-		klog.V(2).Infof("Running pipeline stage %i/%i: %s", i, len(pipeline), stage.Name)
+		klog.V(0).Infof("Pipeline stage %d/%d: %s", i+1, len(pipeline), stage.Name)
 		defs, err = stage.Action(defs)
 		if err != nil {
 			return errors.Wrapf(err, "Failed during pipeline stage %s", stage.Name)
@@ -230,33 +218,6 @@ func groupResourcesByVersion(
 	return result, nil
 }
 
-// FilterDefinitions applies the configuration include/exclude filters to the generated definitions
-func (generator *CodeGenerator) FilterDefinitions(
-	definitions []astmodel.TypeDefiner) ([]astmodel.TypeDefiner, error) {
-
-	var newDefinitions []astmodel.TypeDefiner
-
-	for _, def := range definitions {
-		defName := def.Name()
-		shouldExport, reason := generator.configuration.ShouldExport(defName)
-
-		switch shouldExport {
-		case config.Skip:
-			klog.V(2).Infof("Skipping %s because %s", defName, reason)
-
-		case config.Export:
-			if reason == "" {
-				klog.V(3).Infof("Exporting %s", defName)
-			} else {
-				klog.V(2).Infof("Exporting %s because %s", defName, reason)
-			}
-
-			newDefinitions = append(newDefinitions, def)
-		}
-	}
-
-	return newDefinitions, nil
-}
 
 // CreatePackagesForDefinitions groups type definitions into packages
 func (generator *CodeGenerator) CreatePackagesForDefinitions(
@@ -374,135 +335,4 @@ func loadSchema(ctx context.Context, source string) (*gojsonschema.Schema, error
 	}
 
 	return schema, nil
-}
-
-func deleteGeneratedCodeFromFolder(ctx context.Context, outputFolder string) error {
-	// We use doublestar here rather than filepath.Glob because filepath.Glob doesn't support **
-	globPattern := path.Join(outputFolder, "**", "*", "*"+astmodel.CodeGeneratedFileSuffix)
-
-	files, err := doublestar.Glob(globPattern)
-	if err != nil {
-		return errors.Wrapf(err, "error globbing files with pattern %q", globPattern)
-	}
-
-	var errs []error
-
-	for _, file := range files {
-		if ctx.Err() != nil { // check for cancellation
-			return ctx.Err()
-		}
-
-		isGenerated, err := isFileGenerated(file)
-
-		if err != nil {
-			errs = append(errs, errors.Wrapf(err, "error determining if file was generated"))
-		}
-
-		if isGenerated {
-			err := os.Remove(file)
-			if err != nil {
-				errs = append(errs, errors.Wrapf(err, "error removing file %q", file))
-			}
-		}
-	}
-
-	err = deleteEmptyDirectories(ctx, outputFolder)
-	if err != nil {
-		errs = append(errs, err)
-	}
-
-	return kerrors.NewAggregate(errs)
-}
-
-func isFileGenerated(filename string) (bool, error) {
-	// Technically, the code generated message could be on any line according to
-	// the specification at https://github.com/golang/go/issues/13560 but
-	// for our purposes checking the first few lines is plenty
-	maxLinesToCheck := 20
-
-	f, err := os.Open(filename)
-	if err != nil {
-		return false, err
-	}
-	defer f.Close()
-
-	reader := bufio.NewReader(f)
-	for i := 0; i < maxLinesToCheck; i++ {
-		line, err := reader.ReadString('\n')
-		if err == io.EOF {
-			return false, nil
-		}
-		if err != nil {
-			return false, err
-		}
-
-		if strings.Contains(line, astmodel.CodeGenerationComment) {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func deleteEmptyDirectories(ctx context.Context, path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return nil
-	}
-
-	// TODO: There has to be a better way to do this?
-	var dirs []string
-
-	// Second pass to clean up empty directories
-	walkFunction := func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if ctx.Err() != nil { // check for cancellation
-			return ctx.Err()
-		}
-
-		if info.IsDir() {
-			dirs = append(dirs, path)
-		}
-
-		return nil
-	}
-	err := filepath.Walk(path, walkFunction)
-	if err != nil {
-		return err
-	}
-
-	// Now order the directories by deepest first - we have to do this because otherwise a directory
-	// isn't empty because it has a bunch of empty directories inside of it
-	sortFunction := func(i int, j int) bool {
-		// Comparing by length is sufficient here because a nested directory path
-		// will always be longer than just the parent directory path
-		return len(dirs[i]) > len(dirs[j])
-	}
-	sort.Slice(dirs, sortFunction)
-
-	var errs []error
-
-	// Now clean things up
-	for _, dir := range dirs {
-		if ctx.Err() != nil { // check for cancellation
-			return ctx.Err()
-		}
-
-		files, err := ioutil.ReadDir(dir)
-		if err != nil {
-			errs = append(errs, errors.Wrapf(err, "error reading directory %q", dir))
-		}
-
-		if len(files) == 0 {
-			// Directory is empty now, we can delete it
-			err := os.Remove(dir)
-			if err != nil {
-				errs = append(errs, errors.Wrapf(err, "error removing dir %q", dir))
-			}
-		}
-	}
-
-	return kerrors.NewAggregate(errs)
 }
