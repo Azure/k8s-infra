@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) Microsoft Corporation.
+ * Licensed under the MIT license.
+ */
+
 package codegen
 
 import (
@@ -19,8 +24,8 @@ import (
 // deleteGeneratedCode creates a pipeline stage for cleanup of our output folder prior to generating files
 func deleteGeneratedCode(ctx context.Context, outputFolder string) PipelineStage {
 	return PipelineStage{
-		"Delete generated code from "+outputFolder,
-		func (types []astmodel.TypeDefiner) ([]astmodel.TypeDefiner, error) {
+		"Delete generated code from " + outputFolder,
+		func(types []astmodel.TypeDefiner) ([]astmodel.TypeDefiner, error) {
 			err := deleteGeneratedCodeFromFolder(ctx, outputFolder)
 			if err != nil {
 				return nil, err

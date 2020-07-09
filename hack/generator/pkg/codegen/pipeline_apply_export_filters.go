@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) Microsoft Corporation.
+ * Licensed under the MIT license.
+ */
+
 package codegen
 
 import (
@@ -9,7 +14,7 @@ import (
 func applyExportFilters(configuration *config.Configuration) PipelineStage {
 	return PipelineStage{
 		"Filter generated types",
-		func (types []astmodel.TypeDefiner) ([]astmodel.TypeDefiner, error) {
+		func(types []astmodel.TypeDefiner) ([]astmodel.TypeDefiner, error) {
 			return filterTypes(configuration, types)
 		},
 	}
