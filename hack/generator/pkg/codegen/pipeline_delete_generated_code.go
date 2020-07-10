@@ -25,7 +25,7 @@ import (
 func deleteGeneratedCode(outputFolder string) PipelineStage {
 	return PipelineStage{
 		"Delete generated code from " + outputFolder,
-		func(ctx context.Context, types []astmodel.TypeDefiner) ([]astmodel.TypeDefiner, error) {
+		func(ctx context.Context, types map[astmodel.TypeName]astmodel.TypeDefiner) (map[astmodel.TypeName]astmodel.TypeDefiner, error) {
 			err := deleteGeneratedCodeFromFolder(ctx, outputFolder)
 			if err != nil {
 				return nil, err

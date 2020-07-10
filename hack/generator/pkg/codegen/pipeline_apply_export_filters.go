@@ -16,7 +16,7 @@ import (
 func applyExportFilters(configuration *config.Configuration) PipelineStage {
 	return PipelineStage{
 		"Filter generated types",
-		func(ctx context.Context, types []astmodel.TypeDefiner) ([]astmodel.TypeDefiner, error) {
+		func(ctx context.Context, types map[astmodel.TypeName]astmodel.TypeDefiner) (map[astmodel.TypeName]astmodel.TypeDefiner, error) {
 			return filterTypes(configuration, types)
 		},
 	}
@@ -25,9 +25,9 @@ func applyExportFilters(configuration *config.Configuration) PipelineStage {
 // filterTypes applies the configuration include/exclude filters to the generated definitions
 func filterTypes(
 	configuration *config.Configuration,
-	definitions []astmodel.TypeDefiner) ([]astmodel.TypeDefiner, error) {
+	definitions map[astmodel.TypeName]astmodel.TypeDefiner) (map[astmodel.TypeName]astmodel.TypeDefiner, error) {
 
-	var newDefinitions []astmodel.TypeDefiner
+	newDefinitions := make(map[astmodel.TypeName]astmodel.TypeDefiner)
 
 	for _, def := range definitions {
 		defName := def.Name()
@@ -44,7 +44,7 @@ func filterTypes(
 				klog.V(2).Infof("Exporting %s because %s", defName, reason)
 			}
 
-			newDefinitions = append(newDefinitions, def)
+			newDefinitions[*def.Name()] = def
 		}
 	}
 

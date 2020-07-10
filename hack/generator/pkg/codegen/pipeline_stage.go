@@ -14,5 +14,5 @@ import (
 // of generated types
 type PipelineStage struct {
 	Name   string
-	Action func(context.Context, []astmodel.TypeDefiner) ([]astmodel.TypeDefiner, error)
+	Action func(context.Context, map[astmodel.TypeName]astmodel.TypeDefiner) (map[astmodel.TypeName]astmodel.TypeDefiner, error)
 }
