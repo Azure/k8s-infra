@@ -44,7 +44,7 @@ func (m *MapType) RequiredImports() []*PackageReference {
 	return result
 }
 
-// References returns all of the types the key and value types refer to.
+// References returns all of the types referenced by either the the key or value types.
 func (m *MapType) References() TypeNameSet {
 	return SetUnion(m.key.References(), m.value.References())
 }

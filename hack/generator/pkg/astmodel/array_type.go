@@ -34,7 +34,7 @@ func (array *ArrayType) RequiredImports() []*PackageReference {
 	return array.element.RequiredImports()
 }
 
-// References returns the type this array contains.
+// References returns the references of the type this array contains.
 func (array *ArrayType) References() TypeNameSet {
 	return array.element.References()
 }

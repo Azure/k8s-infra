@@ -80,7 +80,8 @@ func (structType *StructType) RequiredImports() []*PackageReference {
 	return result
 }
 
-// References returns the combination of all the types the fields refer to.
+// References returns the set of all the types the fields referred to
+// by any field.
 func (structType *StructType) References() TypeNameSet {
 	var results TypeNameSet
 	for _, field := range structType.fields {

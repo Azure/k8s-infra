@@ -39,7 +39,7 @@ func (optional *OptionalType) RequiredImports() []*PackageReference {
 	return optional.element.RequiredImports()
 }
 
-// References is the type that this type refers to directly.
+// References returns the set of types that the underlying type refers to directly.
 func (optional *OptionalType) References() TypeNameSet {
 	return optional.element.References()
 }
