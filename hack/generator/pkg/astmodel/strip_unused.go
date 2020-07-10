@@ -5,10 +5,6 @@
 
 package astmodel
 
-import (
-	"k8s.io/klog/v2"
-)
-
 // TypeNameSet stores type names in no particular order without
 // duplicates.
 type TypeNameSet map[TypeName]struct{}
@@ -68,22 +64,13 @@ func StripUnusedDefinitions(
 	references := make(map[TypeName]TypeNameSet)
 
 	for _, def := range definitions {
-		name := def.Name()
-		if name == nil {
-			klog.V(5).Infof("nil name for %#v", def)
-			continue
-		}
-		references[*name] = def.Type().References()
+		references[*def.Name()] = def.Type().References()
 	}
 
 	graph := newReferenceGraph(roots, references)
 	connectedTypes := graph.connected()
 	var usedDefinitions []TypeDefiner
 	for _, def := range definitions {
-		if def.Name() == nil {
-			klog.V(5).Infof("nil name for definition %#v", def)
-			continue
-		}
 		if connectedTypes.Contains(*def.Name()) {
 			usedDefinitions = append(usedDefinitions, def)
 		}
@@ -97,10 +84,6 @@ func CollectResourceDefinitions(definitions []TypeDefiner) TypeNameSet {
 	resources := make(TypeNameSet)
 	for _, def := range definitions {
 		if _, ok := def.(*ResourceDefinition); ok {
-			if def.Name() == nil {
-				klog.V(5).Infof("nil name for %#v", def)
-				continue
-			}
 			resources.Add(*def.Name())
 		}
 	}
