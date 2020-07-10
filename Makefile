@@ -2,7 +2,6 @@ SHELL := /bin/bash
 .DEFAULT_GOAL:=build
 
 timestamp := $(shell /bin/date "+%Y%m%d-%H%M%S")
-REGISTRY ?= localhost:5000/fake
 CONFIG_REGISTRY = kind-registry:5000/fake/k8s-infra-controller:latest
 IMG ?= k8s-infra-contoller:$(timestamp)
 CRD_OPTIONS ?= "crd:crdVersions=v1"

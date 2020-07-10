@@ -22,6 +22,9 @@ GOLINT              = $(TOOLS_BIN_DIR)/golint
 GOX                 = $(TOOLS_BIN_DIR)/gox
 GCOV2LCOV           = $(TOOLS_BIN_DIR)/gcov2lcov
 
+# Common paths
+REGISTRY ?= localhost:5000/fake
+
 $(KIND): ## Install kind tool
 	GOBIN=$(TOOLS_BIN_DIR) $(GO_INSTALL) sigs.k8s.io/kind@v0.8.1
 

@@ -6,8 +6,29 @@
 package genruntime
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"strings"
 )
+
+type MetaObject interface {
+	runtime.Object
+	metav1.Object
+	KubernetesResource
+}
+
+type KubernetesResource interface {
+	// Owner returns the ResourceReference so that we can extract the Group/Kind for easier lookups
+	Owner() *ResourceReference
+
+	AzureName() string
+}
+
+type ArmResourceSpec interface {
+	AzureApiVersion() string // TODO: This is technically not needed?
+}
+
+// TODO: Consider ArmSpecTransformer and ArmTransformer, so we don't have to pass owningName/name through all the calls
 
 // ArmTransformer is a type which can be converted to/from an Arm object shape.
 // Each CRD resource must implement these methods.
@@ -17,14 +38,28 @@ type ArmTransformer interface {
 	ConvertToArm(owningName string) (interface{}, error)
 	PopulateFromArm(owner KnownResourceReference, input interface{}) error
 }
+//
+//func LookupOwnerGroupKind(v MetaObject) (string, string) {
+//	t := reflect.TypeOf(v)
+//	field, _ := t.FieldByName("Spec")
+//	group, ok := field.Tag.Lookup("group")
+//	if !ok {
+//		panic(fmt.Sprintf("Couldn't find %s owner group tag", v.GetName()))
+//	}
+//	kind, ok := field.Tag.Lookup("kind")
+//	if !ok {
+//		panic(fmt.Sprintf("Couldn't find %s owner kind tag", v.GetName()))
+//	}
+//
+//	return group, kind
+//}
 
-// CreateArmResourceNameForDeployment creates a "fully qualified" resource name for use
+// CombineArmNames creates a "fully qualified" resource name for use
 // in an Azure template deployment.
 // See https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/child-resource-name-type#outside-parent-resource
 // for details on the format of the name field in ARM templates.
-func CreateArmResourceNameForDeployment(owningName string, name string) string {
-	result := owningName + "/" + name
-	return result
+func CombineArmNames(names ...string) string {
+	return strings.Join(names, "/")
 }
 
 // ExtractKubernetesResourceNameFromArmName extracts the Kubernetes resource name from an ARM name.
