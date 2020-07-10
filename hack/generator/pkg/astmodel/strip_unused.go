@@ -11,7 +11,7 @@ import (
 
 // TypeNameSet stores type names in no particular order without
 // duplicates.
-type TypeNameSet map[TypeName]bool
+type TypeNameSet map[TypeName]struct{}
 
 // NewTypeNameSet makes a TypeNameSet containing the specified
 // names. If no elements are passed it might be nil.
@@ -27,25 +27,11 @@ func NewTypeNameSet(initial ...TypeName) TypeNameSet {
 // set, so that adding can work for a nil set - this makes it more
 // convenient to add to sets kept in a map (in the way you might with
 // a map of slices).
-// TODO(babbageclunk): I like the idea of making the zero element
-// useful so a map works nicely, and the analogue with appending to a
-// slice, but the mutating and returning behaviour might be too weird.
 func (ts TypeNameSet) Add(val TypeName) TypeNameSet {
 	if ts == nil {
 		ts = make(TypeNameSet)
 	}
-	ts[val] = true
-	return ts
-}
-
-// Remove gets rid of the element from the set. If the element was
-// already not in the set, nothing changes. Returns the set for
-// symmetry with Add.
-func (ts TypeNameSet) Remove(val TypeName) TypeNameSet {
-	if ts == nil {
-		return nil
-	}
-	delete(ts, val)
+	ts[val] = struct{}{}
 	return ts
 }
 
@@ -78,33 +64,31 @@ func StripUnusedDefinitions(
 	roots TypeNameSet,
 	definitions []TypeDefiner,
 ) ([]TypeDefiner, error) {
-	// Build a referrers map for each type.
-	referrers := make(map[TypeName]TypeNameSet)
+	// Collect all the reference sets for each type.
+	references := make(map[TypeName]TypeNameSet)
 
 	for _, def := range definitions {
-		for reference := range def.Type().References() {
-			name := def.Name()
-			if name == nil {
-				klog.V(5).Infof("nil name for %#v", def)
-			}
-			referrers[reference] = referrers[reference].Add(*def.Name())
+		name := def.Name()
+		if name == nil {
+			klog.V(5).Infof("nil name for %#v", def)
+			continue
 		}
+		references[*name] = def.Type().References()
 	}
 
-	klog.V(0).Infof("definitions: %d, roots: %d, referrers: %d", len(definitions), len(roots), len(referrers))
-
-	checker := newConnectionChecker(roots, referrers)
-	var newDefinitions []TypeDefiner
+	graph := newReferenceGraph(roots, references)
+	connectedTypes := graph.connected()
+	var usedDefinitions []TypeDefiner
 	for _, def := range definitions {
 		if def.Name() == nil {
 			klog.V(5).Infof("nil name for definition %#v", def)
 			continue
 		}
-		if checker.connected(*def.Name()) {
-			newDefinitions = append(newDefinitions, def)
+		if connectedTypes.Contains(*def.Name()) {
+			usedDefinitions = append(usedDefinitions, def)
 		}
 	}
-	return newDefinitions, nil
+	return usedDefinitions, nil
 }
 
 // CollectResourceDefinitions returns a TypeNameSet of all of the
@@ -115,6 +99,7 @@ func CollectResourceDefinitions(definitions []TypeDefiner) TypeNameSet {
 		if _, ok := def.(*ResourceDefinition); ok {
 			if def.Name() == nil {
 				klog.V(5).Infof("nil name for %#v", def)
+				continue
 			}
 			resources.Add(*def.Name())
 		}
@@ -122,56 +107,36 @@ func CollectResourceDefinitions(definitions []TypeDefiner) TypeNameSet {
 	return resources
 }
 
-func newConnectionChecker(roots TypeNameSet, referrers map[TypeName]TypeNameSet) *connectionChecker {
-	return &connectionChecker{
-		roots:     roots,
-		referrers: referrers,
+func newReferenceGraph(roots TypeNameSet, references map[TypeName]TypeNameSet) *referenceGraph {
+	return &referenceGraph{
+		roots:      roots,
+		references: references,
 	}
 }
 
-type connectionChecker struct {
-	roots     TypeNameSet
-	referrers map[TypeName]TypeNameSet
-
-	// memo tracks results for typenames we've already seen.
-	memo TypeNameSet
+type referenceGraph struct {
+	roots      TypeNameSet
+	references map[TypeName]TypeNameSet
 }
 
-func (c *connectionChecker) connected(name TypeName) bool {
-	return c.checkWithPath(name, nil)
+// connected returns the set of types that are reachable from the
+// roots.
+func (c referenceGraph) connected() TypeNameSet {
+	// Make a non-nil set so we don't need to worry about passing it back down.
+	connectedTypes := make(TypeNameSet)
+	for node := range c.roots {
+		c.collectTypes(node, connectedTypes)
+	}
+	return connectedTypes
 }
 
-func (c *connectionChecker) checkWithPath(name TypeName, path TypeNameSet) bool {
-	if c.roots.Contains(name) {
-		return true
+func (c referenceGraph) collectTypes(node TypeName, collected TypeNameSet) {
+	if collected.Contains(node) {
+		// We can stop here - we've already visited this node.
+		return
 	}
-	// We don't need to recheck for a type we've seen is connected.
-	if c.memo.Contains(name) {
-		return true
+	collected.Add(node)
+	for child := range c.references[node] {
+		c.collectTypes(child, collected)
 	}
-	path = path.Add(name)
-	for referrer := range c.referrers[name] {
-		if path.Contains(referrer) {
-			// We've already visited this type, don't get caught
-			// in a cycle.
-			continue
-		}
-		if c.checkWithPath(referrer, path) {
-			// If our referrer is connected to a root, then we are
-			// too - track that in memo. Parent callers will
-			// record for themselves, so we don't need to store
-			// all of path
-			c.memo = c.memo.Add(name)
-			return true
-		}
-	}
-	path.Remove(name)
-
-	// Note: We can't memoise the negative result here because we
-	// don't know whether the search failed because it would have
-	// included a cycle. It's possible for this call to fail but a
-	// search taking a different path to this node still to succeed
-	// and prove that this is connected to a root. (It took me longer
-	// than I'd like to understand this.)
-	return false
 }
