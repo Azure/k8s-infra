@@ -1,8 +1,14 @@
+/*
+ * Copyright (c) Microsoft Corporation.
+ * Licensed under the MIT license.
+ */
+
 package codegen
 
 import (
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"testing"
+
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 
 	. "github.com/onsi/gomega"
 )

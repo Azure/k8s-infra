@@ -1,7 +1,13 @@
+/*
+ * Copyright (c) Microsoft Corporation.
+ * Licensed under the MIT license.
+ */
+
 package codegen
 
 import (
 	"context"
+
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
 
@@ -10,7 +16,7 @@ func stripUnreferencedTypeDefinitions() PipelineStage {
 		"Strip unreferenced types",
 		func(ctx context.Context, defs map[astmodel.TypeName]astmodel.TypeDefiner) (map[astmodel.TypeName]astmodel.TypeDefiner, error) {
 			roots := collectResourceDefinitions(defs)
-			return stripUnusedDefinitions(roots, defs)
+			return StripUnusedDefinitions(roots, defs)
 		},
 	}
 }
@@ -18,7 +24,7 @@ func stripUnreferencedTypeDefinitions() PipelineStage {
 // stripUnusedDefinitions removes all types that aren't in roots or
 // referred to by the types in roots, for example types that are
 // generated as a byproduct of an allOf element.
-func stripUnusedDefinitions(
+func StripUnusedDefinitions(
 	roots astmodel.TypeNameSet,
 	definitions map[astmodel.TypeName]astmodel.TypeDefiner,
 ) (map[astmodel.TypeName]astmodel.TypeDefiner, error) {
