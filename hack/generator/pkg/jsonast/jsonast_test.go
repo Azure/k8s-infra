@@ -50,6 +50,7 @@ func runGoldenTest(t *testing.T, path string) {
 	for _, def := range defs {
 		ds = append(ds, def)
 	}
+
 	// The golden files always generate a top-level Test type - mark
 	// that as the root.
 	roots := astmodel.NewTypeNameSet(*astmodel.NewTypeName(

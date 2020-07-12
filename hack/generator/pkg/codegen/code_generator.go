@@ -62,6 +62,7 @@ func (generator *CodeGenerator) Generate(ctx context.Context) error {
 
 	pipeline := []PipelineStage{
 		applyExportFilters(generator.configuration),
+		stripUnreferencedTypeDefinitions(),
 		deleteGeneratedCode(generator.configuration.OutputPath),
 		exportPackages(generator.configuration.OutputPath),
 	}
