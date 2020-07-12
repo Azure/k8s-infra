@@ -45,6 +45,11 @@ func runGoldenTest(t *testing.T, path string) {
 		t.Fatalf("could not produce nodes from scanner: %v", err)
 	}
 
+	var pr astmodel.PackageReference
+	var ds []astmodel.TypeDefiner
+	for _, def := range defs {
+		ds = append(ds, def)
+	}
 	// The golden files always generate a top-level Test type - mark
 	// that as the root.
 	roots := astmodel.NewTypeNameSet(*astmodel.NewTypeName(
@@ -60,6 +65,10 @@ func runGoldenTest(t *testing.T, path string) {
 	// put all definitions in one file, regardless
 	// the package reference isn't really used here
 	fileDef := astmodel.NewFileDefinition(&defs[0].Name().PackageReference, defs...)
+
+	// put all definitions in one file, regardless.
+	// the package reference isn't really used here.
+	fileDef := astmodel.NewFileDefinition(&pr, ds...)
 
 	buf := &bytes.Buffer{}
 	err = fileDef.SaveToWriter(path, buf)
