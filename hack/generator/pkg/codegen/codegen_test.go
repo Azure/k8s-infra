@@ -3,11 +3,12 @@
  * Licensed under the MIT license.
  */
 
-package jsonast
+package codegen
 
 import (
 	"bytes"
 	"context"
+	. "github.com/Azure/k8s-infra/hack/generator/pkg/jsonast"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -58,17 +59,12 @@ func runGoldenTest(t *testing.T, path string) {
 			"github.com/Azure/k8s-infra/hack/generator/apis/test/v20200101"),
 		"Test",
 	))
-	defs, err = astmodel.StripUnusedDefinitions(roots, defs)
+	defs, err = StripUnusedDefinitions(roots, defs)
 	if err != nil {
 		t.Fatalf("could not strip unused types: %v", err)
 	}
 
-	// put all definitions in one file, regardless
-	// the package reference isn't really used here
-	fileDef := astmodel.NewFileDefinition(&defs[0].Name().PackageReference, defs...)
-
-	// put all definitions in one file, regardless.
-	// the package reference isn't really used here.
+	// put all definitions in one file, regardless.	// the package reference isn't really used here.
 	fileDef := astmodel.NewFileDefinition(&pr, ds...)
 
 	buf := &bytes.Buffer{}
