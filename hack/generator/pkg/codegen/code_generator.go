@@ -71,7 +71,7 @@ func (generator *CodeGenerator) Generate(ctx context.Context) error {
 		klog.V(0).Infof("Pipeline stage %d/%d: %s", i+1, len(pipeline), stage.Name)
 		defs, err = stage.Action(ctx, defs)
 		if err != nil {
-			return errors.Wrapf(err, "Failed during pipeline stage %s", stage.Name)
+			return errors.Wrapf(err, "Failed during pipeline stage %d/%d: %s", i+1, len(pipeline), stage.Name)
 		}
 	}
 
