@@ -69,6 +69,14 @@ func CreatePackagesForDefinitions(definitions map[astmodel.TypeName]astmodel.Typ
 		pkgs = append(pkgs, pkg)
 	}
 
+	// Sort the list of packages to ensure we always write them to disk in the same sequence
+	sort.Slice(pkgs, func(i int, j int) bool {
+		iPkg := pkgs[i]
+		jPkg := pkgs[j]
+		return iPkg.GroupName < jPkg.GroupName ||
+			(iPkg.GroupName == jPkg.GroupName && iPkg.PackageName < jPkg.PackageName)
+	})
+
 	return pkgs, nil
 }
 
