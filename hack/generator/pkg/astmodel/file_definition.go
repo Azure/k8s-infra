@@ -113,7 +113,6 @@ func assignRanks(definers []TypeDefiner, ranks map[TypeName]int) []TypeDefiner {
 	for _, d := range assignable {
 		rank := ranks[*d.Name()]
 		for ref := range d.References() {
-			//klog.V(0).Infof("%v: %v -> %v\n", rank, d.Name(), ref)
 			ranks[ref] = rank + 1
 		}
 	}
