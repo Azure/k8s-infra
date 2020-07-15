@@ -159,7 +159,29 @@ func Test_FieldDefinition_MakeRequired_ReturnsDifferentReference(t *testing.T) {
 	original := NewFieldDefinition(fieldName, fieldJsonName, fieldType)
 	field := original.MakeRequired()
 
-	g.Expect(field).NotTo(Equal(original))
+	g.Expect(field).NotTo(BeIdenticalTo(original))
+}
+
+/*
+ * MakeTypeOptional() Tests
+ */
+
+func Test_FieldDefintionWithRequiredType_MakeTypeOptional_ReturnsDifferentReference(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewFieldDefinition(fieldName, fieldJsonName, fieldType)
+	field := original.MakeTypeOptional()
+
+	g.Expect(field).NotTo(BeIdenticalTo(original))
+}
+
+func Test_FieldDefintionWithOptionalType_MakeTypeOptional_ReturnsExistingReference(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewFieldDefinition(fieldName, fieldJsonName, fieldType).MakeTypeOptional()
+	field := original.MakeTypeOptional()
+
+	g.Expect(field).To(BeIdenticalTo(original))
 }
 
 /*
@@ -170,7 +192,7 @@ func Test_FieldDefinitionAsAst_GivenValidField_ReturnsNonNilResult(t *testing.T)
 	g := NewGomegaWithT(t)
 
 	field := NewFieldDefinition(fieldName, fieldJsonName, fieldType).
-		MakeOptional().
+		MakeTypeOptional().
 		WithDescription(&fieldDescription)
 
 	node := field.AsField(nil)

@@ -97,8 +97,12 @@ func (field *FieldDefinition) MakeRequired() *FieldDefinition {
 	return field.WithValidation(ValidateRequired())
 }
 
-// MakeOptional returns a new FieldDefinition that has an optional value
-func (field *FieldDefinition) MakeOptional() *FieldDefinition {
+// MakeTypeOptional returns a new FieldDefinition that has an optional value
+func (field *FieldDefinition) MakeTypeOptional() *FieldDefinition {
+	if _, ok := field.fieldType.(*OptionalType); ok {
+		return field
+	}
+
 	result := *field
 	result.fieldType = NewOptionalType(result.fieldType)
 	return &result
