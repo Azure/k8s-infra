@@ -192,7 +192,7 @@ func Test_FieldDefinitionAsAst_GivenValidField_ReturnsNonNilResult(t *testing.T)
 	g := NewGomegaWithT(t)
 
 	field := NewFieldDefinition(fieldName, fieldJsonName, fieldType).
-		MakeTypeOptional().
+		MakeRequired().
 		WithDescription(&fieldDescription)
 
 	node := field.AsField(nil)
