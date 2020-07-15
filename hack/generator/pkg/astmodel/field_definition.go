@@ -76,6 +76,10 @@ func (field *FieldDefinition) WithDescription(description *string) *FieldDefinit
 
 // WithType clones the field and returns it with a new type
 func (field *FieldDefinition) WithType(newType Type) *FieldDefinition {
+	if field.fieldType == newType {
+		return field
+	}
+
 	result := *field
 	result.fieldType = newType
 	return &result

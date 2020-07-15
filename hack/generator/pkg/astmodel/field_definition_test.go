@@ -110,6 +110,46 @@ func Test_FieldDefinitionWithDescription_GivenSameDescription_ReturnsSameReferen
 }
 
 /*
+ * WithType() tests
+ */
+
+func Test_FieldDefinitionWithType_GivenNewType_SetsFieldOnResult(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewFieldDefinition(fieldName, fieldJsonName, fieldType)
+	field := original.WithType(IntType)
+
+	g.Expect(field.fieldType).To(Equal(IntType))
+}
+
+func Test_FieldDefinitionWithType_GivenNewType_DoesNotModifyOriginal(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewFieldDefinition(fieldName, fieldJsonName, fieldType)
+	_ = original.WithType(IntType)
+
+	g.Expect(original.fieldType).To(Equal(fieldType))
+}
+
+func Test_FieldDefinitionWithType_GivenNewType_ReturnsDifferentReference(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewFieldDefinition(fieldName, fieldJsonName, fieldType)
+	field := original.WithType(IntType)
+
+	g.Expect(field).NotTo(Equal(original))
+}
+
+func Test_FieldDefinitionWithType_GivenSameType_ReturnsExistingReference(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewFieldDefinition(fieldName, fieldJsonName, fieldType)
+	field := original.WithType(fieldType)
+
+	g.Expect(field).To(BeIdenticalTo(original))
+}
+
+/*
  * AsAst Tests
  */
 
