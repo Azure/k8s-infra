@@ -11,131 +11,131 @@ import (
 	"go/token"
 )
 
-// FieldName is a semantic type
-type FieldName string
+// PropertyName is a semantic type
+type PropertyName string
 
-// FieldDefinition encapsulates the definition of a field
-type FieldDefinition struct {
-	fieldName   FieldName
-	fieldType   Type
-	jsonName    string
-	description string
-	validations []Validation
+// PropertyDefinition encapsulates the definition of a property
+type PropertyDefinition struct {
+	propertyName PropertyName
+	propertyType Type
+	jsonName     string
+	description  string
+	validations  []Validation
 }
 
-// NewFieldDefinition is a factory method for creating a new FieldDefinition
-// name is the name for the new field (mandatory)
-// fieldType is the type for the new field (mandatory)
-func NewFieldDefinition(fieldName FieldName, jsonName string, fieldType Type) *FieldDefinition {
-	return &FieldDefinition{
-		fieldName:   fieldName,
-		fieldType:   fieldType,
-		jsonName:    jsonName,
-		description: "",
+// NewPropertyDefinition is a factory method for creating a new PropertyDefinition
+// name is the name for the new property (mandatory)
+// propertyType is the type for the new property (mandatory)
+func NewPropertyDefinition(propertyName PropertyName, jsonName string, propertyType Type) *PropertyDefinition {
+	return &PropertyDefinition{
+		propertyName: propertyName,
+		propertyType: propertyType,
+		jsonName:     jsonName,
+		description:  "",
 	}
 }
 
 // NewEmbeddedStructDefinition is a factory method for defining an embedding
 // of another struct type.
-func NewEmbeddedStructDefinition(structType Type) *FieldDefinition {
+func NewEmbeddedStructDefinition(structType Type) *PropertyDefinition {
 	// in Go, this is just a field without a name:
-	return &FieldDefinition{
-		fieldName:   "",
-		fieldType:   structType,
-		jsonName:    "",
-		description: "",
+	return &PropertyDefinition{
+		propertyName: "",
+		propertyType: structType,
+		jsonName:     "",
+		description:  "",
 	}
 }
 
-// FieldName returns the name of the field
-func (field *FieldDefinition) FieldName() FieldName {
-	return field.fieldName
+// PropertyName returns the name of the property
+func (property *PropertyDefinition) PropertyName() PropertyName {
+	return property.propertyName
 }
 
-// FieldType returns the data type of the field
-func (field *FieldDefinition) FieldType() Type {
-	return field.fieldType
+// PropertyType returns the data type of the property
+func (property *PropertyDefinition) PropertyType() Type {
+	return property.propertyType
 }
 
-// WithDescription returns a new FieldDefinition with the specified description
-func (field *FieldDefinition) WithDescription(description *string) *FieldDefinition {
+// WithDescription returns a new PropertyDefinition with the specified description
+func (property *PropertyDefinition) WithDescription(description *string) *PropertyDefinition {
 	if description == nil {
 		// Special handling for nil
 		d := ""
-		return field.WithDescription(&d)
+		return property.WithDescription(&d)
 	}
 
-	if *description == field.description {
-		return field
+	if *description == property.description {
+		return property
 	}
 
-	result := *field
+	result := *property
 	result.description = *description
 	return &result
 }
 
-// WithType clones the field and returns it with a new type
-func (field *FieldDefinition) WithType(newType Type) *FieldDefinition {
-	if field.fieldType == newType {
-		return field
+// WithType clones the property and returns it with a new type
+func (property *PropertyDefinition) WithType(newType Type) *PropertyDefinition {
+	if property.propertyType == newType {
+		return property
 	}
 
-	result := *field
-	result.fieldType = newType
+	result := *property
+	result.propertyType = newType
 	return &result
 }
 
-// WithValidation adds the given validation to the field's set of validations
-func (field *FieldDefinition) WithValidation(validation Validation) *FieldDefinition {
-	result := *field
+// WithValidation adds the given validation to the property's set of validations
+func (property *PropertyDefinition) WithValidation(validation Validation) *PropertyDefinition {
+	result := *property
 	result.validations = append(result.validations, validation)
 	return &result
 }
 
-// MakeRequired returns a new FieldDefinition that is marked as required
-func (field *FieldDefinition) MakeRequired() *FieldDefinition {
-	return field.WithValidation(ValidateRequired())
+// MakeRequired returns a new PropertyDefinition that is marked as required
+func (property *PropertyDefinition) MakeRequired() *PropertyDefinition {
+	return property.WithValidation(ValidateRequired())
 }
 
-// MakeTypeOptional returns a new FieldDefinition that has an optional value
-func (field *FieldDefinition) MakeTypeOptional() *FieldDefinition {
-	if _, ok := field.fieldType.(*OptionalType); ok {
-		return field
+// MakeTypeOptional returns a new PropertyDefinition that has an optional value
+func (property *PropertyDefinition) MakeTypeOptional() *PropertyDefinition {
+	if _, ok := property.propertyType.(*OptionalType); ok {
+		return property
 	}
 
-	result := *field
-	result.fieldType = NewOptionalType(result.fieldType)
+	result := *property
+	result.propertyType = NewOptionalType(result.propertyType)
 	return &result
 }
 
-// AsField generates an AST field node representing this field definition
-func (field *FieldDefinition) AsField(codeGenerationContext *CodeGenerationContext) *ast.Field {
+// AsField generates a Go AST field node representing this property definition
+func (property *PropertyDefinition) AsField(codeGenerationContext *CodeGenerationContext) *ast.Field {
 
 	result := &ast.Field{
 		Doc:   &ast.CommentGroup{},
-		Names: []*ast.Ident{ast.NewIdent(string(field.fieldName))},
-		Type:  field.FieldType().AsType(codeGenerationContext),
+		Names: []*ast.Ident{ast.NewIdent(string(property.propertyName))},
+		Type:  property.PropertyType().AsType(codeGenerationContext),
 		Tag: &ast.BasicLit{
 			Kind:  token.STRING,
-			Value: fmt.Sprintf("`json:%q`", field.jsonName),
+			Value: fmt.Sprintf("`json:%q`", property.jsonName),
 		},
 	}
 
 	// generate validation comments:
-	for _, validation := range field.validations {
-		// these are not doc comments but they must go here to be emitted before the field
+	for _, validation := range property.validations {
+		// these are not doc comments but they must go here to be emitted before the property
 		addDocComment(&result.Doc.List, GenerateKubebuilderComment(validation), 200)
 	}
 
 	// generate doc comment:
-	if field.description != "" {
-		addDocComment(&result.Doc.List, fmt.Sprintf("%s: %s", field.fieldName, field.description), 80)
+	if property.description != "" {
+		addDocComment(&result.Doc.List, fmt.Sprintf("%s: %s", property.propertyName, property.description), 80)
 	}
 
 	return result
 }
 
-// Equals tests to see if the specified FieldDefinition specifies the same field
-func (field *FieldDefinition) Equals(f *FieldDefinition) bool {
-	return field == f || (field.fieldName == f.fieldName && field.fieldType.Equals(f.fieldType))
+// Equals tests to see if the specified PropertyDefinition specifies the same property
+func (property *PropertyDefinition) Equals(f *PropertyDefinition) bool {
+	return property == f || (property.propertyName == f.propertyName && property.propertyType.Equals(f.propertyType))
 }
