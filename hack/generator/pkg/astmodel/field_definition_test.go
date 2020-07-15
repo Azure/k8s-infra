@@ -44,6 +44,23 @@ func Test_NewFieldDefinition_GivenValues_ReturnsInstanceWithExpectedGetters(t *t
 }
 
 /*
+ * NewEmbeddedStructDefinition() tests
+ */
+
+func Test_NewEmbeddedStructDefinition_ReturnsInstanceWithExpectedFields(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	st := NewStructType()
+	field := NewEmbeddedStructDefinition(st)
+
+	g.Expect(field.fieldName).To(Equal(FieldName("")))
+	g.Expect(field.fieldType).To(Equal(st))
+	g.Expect(field.jsonName).To(Equal(""))
+	g.Expect(field.description).To(Equal(""))
+
+}
+
+/*
  * WithDescription() tests
  */
 
