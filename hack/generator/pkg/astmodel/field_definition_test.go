@@ -11,48 +11,123 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func Test_NewFieldDefinition_GivenValues_InitializesFields(t *testing.T) {
+// Common values for testing
+var (
+	fieldName        = FieldName("FullName")
+	fieldType        = StringType
+	fieldJsonName    = "family-name"
+	fieldDescription = "description"
+)
+
+/*
+ * NewFieldDefinition() tests
+ */
+
+func Test_NewFieldDefinition_GivenValues_ReturnsInstanceWithExpectedFields(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	fieldName := FieldName("FullName")
-	fieldtype := StringType
-	jsonName := "family-name"
-
-	field := NewFieldDefinition(fieldName, jsonName, fieldtype)
+	field := NewFieldDefinition(fieldName, fieldJsonName, fieldType)
 
 	g.Expect(field.fieldName).To(Equal(fieldName))
-	g.Expect(field.fieldType).To(Equal(fieldtype))
-	g.Expect(field.jsonName).To(Equal(jsonName))
+	g.Expect(field.fieldType).To(Equal(fieldType))
+	g.Expect(field.jsonName).To(Equal(fieldJsonName))
 	g.Expect(field.description).To(BeEmpty())
 }
+
+func Test_NewFieldDefinition_GivenValues_ReturnsInstanceWithExpectedGetters(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	field := NewFieldDefinition(fieldName, fieldJsonName, fieldType)
+
+	g.Expect(field.FieldName()).To(Equal(fieldName))
+	g.Expect(field.FieldType()).To(Equal(fieldType))
+}
+
+/*
+ * WithDescription() tests
+ */
 
 func Test_FieldDefinitionWithDescription_GivenDescription_SetsField(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	description := "description"
-	field := NewFieldDefinition("FullName", "fullname", StringType).WithDescription(&description)
+	field := NewFieldDefinition(fieldName, fieldJsonName, fieldType).WithDescription(&fieldDescription)
 
-	g.Expect(field.description).To(Equal(description))
+	g.Expect(field.description).To(Equal(fieldDescription))
+}
+
+func Test_FieldDefinitionWithDescription_GivenDescription_ReturnsDifferentReference(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewFieldDefinition(fieldName, fieldJsonName, fieldType)
+	field := original.WithDescription(&fieldDescription)
+
+	g.Expect(field).NotTo(Equal(original))
 }
 
 func Test_FieldDefinitionWithDescription_GivenDescription_DoesNotModifyOriginal(t *testing.T) {
 	g := NewGomegaWithT(t)
-	description := "description"
-	original := NewFieldDefinition("FullName", "fullName", StringType)
 
-	field := original.WithDescription(&description)
+	original := NewFieldDefinition(fieldName, fieldJsonName, fieldType)
+	field := original.WithDescription(&fieldDescription)
 
 	g.Expect(field.description).NotTo(Equal(original.description))
 }
 
+func Test_FieldDefinitionWithDescription_GivenNilDescription_SetsDescriptionToEmptyString(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewFieldDefinition(fieldName, fieldJsonName, fieldType).WithDescription(&fieldDescription)
+	field := original.WithDescription(nil)
+
+	g.Expect(field.description).To(Equal(""))
+}
+
+func Test_FieldDefinitionWithDescription_GivenNilDescription_ReturnsDifferentReference(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewFieldDefinition(fieldName, fieldJsonName, fieldType).WithDescription(&fieldDescription)
+	field := original.WithDescription(nil)
+
+	g.Expect(field).NotTo(Equal(original))
+}
+
+func Test_FieldDefinitionWithNoDescription_GivenNilDescription_ReturnsSameReference(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewFieldDefinition(fieldName, fieldJsonName, fieldType)
+	field := original.WithDescription(nil)
+
+	g.Expect(field).To(Equal(original))
+}
+
+func Test_FieldDefinitionWithDescription_GivenSameDescription_ReturnsSameReference(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewFieldDefinition(fieldName, fieldJsonName, fieldType).WithDescription(&fieldDescription)
+	field := original.WithDescription(&fieldDescription)
+
+	g.Expect(field).To(Equal(original))
+}
+
+/*
+ * AsAst Tests
+ */
+
 func Test_FieldDefinitionAsAst_GivenValidField_ReturnsNonNilResult(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	field := NewFieldDefinition("FullName", "fullName", StringType)
+	field := NewFieldDefinition(fieldName, fieldJsonName, fieldType).
+		MakeOptional().
+		WithDescription(&fieldDescription)
+
 	node := field.AsField(nil)
 
 	g.Expect(node).NotTo(BeNil())
 }
+
+/*
+ * Equals Tests
+ */
 
 func TestFieldDefinition_Equals_WhenGivenFieldDefinition_ReturnsExpectedResult(t *testing.T) {
 

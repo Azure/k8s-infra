@@ -60,6 +60,12 @@ func (field *FieldDefinition) FieldType() Type {
 // WithDescription returns a new FieldDefinition with the specified description
 func (field *FieldDefinition) WithDescription(description *string) *FieldDefinition {
 	if description == nil {
+		// Special handling for nil
+		d := ""
+		return field.WithDescription(&d)
+	}
+
+	if *description == field.description {
 		return field
 	}
 
