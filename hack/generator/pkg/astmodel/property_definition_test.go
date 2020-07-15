@@ -23,7 +23,7 @@ var (
  * NewPropertyDefinition() tests
  */
 
-func Test_NewFieldDefinition_GivenValues_ReturnsInstanceWithExpectedFields(t *testing.T) {
+func Test_NewPropertyDefinition_GivenValues_ReturnsInstanceWithExpectedFields(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	field := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
@@ -34,7 +34,7 @@ func Test_NewFieldDefinition_GivenValues_ReturnsInstanceWithExpectedFields(t *te
 	g.Expect(field.description).To(BeEmpty())
 }
 
-func Test_NewFieldDefinition_GivenValues_ReturnsInstanceWithExpectedGetters(t *testing.T) {
+func Test_NewPropertyDefinition_GivenValues_ReturnsInstanceWithExpectedGetters(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	field := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
@@ -64,7 +64,7 @@ func Test_NewEmbeddedStructDefinition_ReturnsInstanceWithExpectedFields(t *testi
  * WithDescription() tests
  */
 
-func Test_FieldDefinitionWithDescription_GivenDescription_SetsField(t *testing.T) {
+func Test_PropertyDefinitionWithDescription_GivenDescription_SetsField(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	field := NewPropertyDefinition(fieldName, fieldJsonName, fieldType).WithDescription(&fieldDescription)
@@ -72,7 +72,7 @@ func Test_FieldDefinitionWithDescription_GivenDescription_SetsField(t *testing.T
 	g.Expect(field.description).To(Equal(fieldDescription))
 }
 
-func Test_FieldDefinitionWithDescription_GivenDescription_ReturnsDifferentReference(t *testing.T) {
+func Test_PropertyDefinitionWithDescription_GivenDescription_ReturnsDifferentReference(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
@@ -81,7 +81,7 @@ func Test_FieldDefinitionWithDescription_GivenDescription_ReturnsDifferentRefere
 	g.Expect(field).NotTo(Equal(original))
 }
 
-func Test_FieldDefinitionWithDescription_GivenDescription_DoesNotModifyOriginal(t *testing.T) {
+func Test_PropertyDefinitionWithDescription_GivenDescription_DoesNotModifyOriginal(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
@@ -90,7 +90,7 @@ func Test_FieldDefinitionWithDescription_GivenDescription_DoesNotModifyOriginal(
 	g.Expect(field.description).NotTo(Equal(original.description))
 }
 
-func Test_FieldDefinitionWithDescription_GivenNilDescription_SetsDescriptionToEmptyString(t *testing.T) {
+func Test_PropertyDefinitionWithDescription_GivenNilDescription_SetsDescriptionToEmptyString(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType).WithDescription(&fieldDescription)
@@ -99,7 +99,7 @@ func Test_FieldDefinitionWithDescription_GivenNilDescription_SetsDescriptionToEm
 	g.Expect(field.description).To(Equal(""))
 }
 
-func Test_FieldDefinitionWithDescription_GivenNilDescription_ReturnsDifferentReference(t *testing.T) {
+func Test_PropertyDefinitionWithDescription_GivenNilDescription_ReturnsDifferentReference(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType).WithDescription(&fieldDescription)
@@ -108,7 +108,7 @@ func Test_FieldDefinitionWithDescription_GivenNilDescription_ReturnsDifferentRef
 	g.Expect(field).NotTo(Equal(original))
 }
 
-func Test_FieldDefinitionWithNoDescription_GivenNilDescription_ReturnsSameReference(t *testing.T) {
+func Test_PropertyDefinitionWithNoDescription_GivenNilDescription_ReturnsSameReference(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
@@ -117,7 +117,7 @@ func Test_FieldDefinitionWithNoDescription_GivenNilDescription_ReturnsSameRefere
 	g.Expect(field).To(Equal(original))
 }
 
-func Test_FieldDefinitionWithDescription_GivenSameDescription_ReturnsSameReference(t *testing.T) {
+func Test_PropertyDefinitionWithDescription_GivenSameDescription_ReturnsSameReference(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType).WithDescription(&fieldDescription)
@@ -130,7 +130,7 @@ func Test_FieldDefinitionWithDescription_GivenSameDescription_ReturnsSameReferen
  * WithType() tests
  */
 
-func Test_FieldDefinitionWithType_GivenNewType_SetsFieldOnResult(t *testing.T) {
+func Test_PropertyDefinitionWithType_GivenNewType_SetsFieldOnResult(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
@@ -139,7 +139,7 @@ func Test_FieldDefinitionWithType_GivenNewType_SetsFieldOnResult(t *testing.T) {
 	g.Expect(field.propertyType).To(Equal(IntType))
 }
 
-func Test_FieldDefinitionWithType_GivenNewType_DoesNotModifyOriginal(t *testing.T) {
+func Test_PropertyDefinitionWithType_GivenNewType_DoesNotModifyOriginal(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
@@ -148,7 +148,7 @@ func Test_FieldDefinitionWithType_GivenNewType_DoesNotModifyOriginal(t *testing.
 	g.Expect(original.propertyType).To(Equal(fieldType))
 }
 
-func Test_FieldDefinitionWithType_GivenNewType_ReturnsDifferentReference(t *testing.T) {
+func Test_PropertyDefinitionWithType_GivenNewType_ReturnsDifferentReference(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
@@ -157,7 +157,7 @@ func Test_FieldDefinitionWithType_GivenNewType_ReturnsDifferentReference(t *test
 	g.Expect(field).NotTo(Equal(original))
 }
 
-func Test_FieldDefinitionWithType_GivenSameType_ReturnsExistingReference(t *testing.T) {
+func Test_PropertyDefinitionWithType_GivenSameType_ReturnsExistingReference(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
@@ -170,7 +170,7 @@ func Test_FieldDefinitionWithType_GivenSameType_ReturnsExistingReference(t *test
  * MakeRequired() Tests
  */
 
-func Test_FieldDefinition_MakeRequired_ReturnsDifferentReference(t *testing.T) {
+func Test_PropertyDefinition_MakeRequired_ReturnsDifferentReference(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
@@ -183,7 +183,7 @@ func Test_FieldDefinition_MakeRequired_ReturnsDifferentReference(t *testing.T) {
  * MakeTypeOptional() Tests
  */
 
-func Test_FieldDefintionWithRequiredType_MakeTypeOptional_ReturnsDifferentReference(t *testing.T) {
+func Test_PropertyDefinitionWithRequiredType_MakeTypeOptional_ReturnsDifferentReference(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
@@ -192,7 +192,7 @@ func Test_FieldDefintionWithRequiredType_MakeTypeOptional_ReturnsDifferentRefere
 	g.Expect(field).NotTo(BeIdenticalTo(original))
 }
 
-func Test_FieldDefintionWithOptionalType_MakeTypeOptional_ReturnsExistingReference(t *testing.T) {
+func Test_PropertyDefinitionWithOptionalType_MakeTypeOptional_ReturnsExistingReference(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType).MakeTypeOptional()
@@ -205,7 +205,7 @@ func Test_FieldDefintionWithOptionalType_MakeTypeOptional_ReturnsExistingReferen
  * AsAst() Tests
  */
 
-func Test_FieldDefinitionAsAst_GivenValidField_ReturnsNonNilResult(t *testing.T) {
+func Test_PropertyDefinitionAsAst_GivenValidField_ReturnsNonNilResult(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	field := NewPropertyDefinition(fieldName, fieldJsonName, fieldType).
@@ -221,16 +221,16 @@ func Test_FieldDefinitionAsAst_GivenValidField_ReturnsNonNilResult(t *testing.T)
  * Equals Tests
  */
 
-func TestFieldDefinition_Equals_WhenGivenFieldDefinition_ReturnsExpectedResult(t *testing.T) {
+func TestPropertyDefinition_Equals_WhenGivenPropertyDefinition_ReturnsExpectedResult(t *testing.T) {
 
 	strField := createStringProperty("FullName", "Full Legal Name")
 	otherStrField := createStringProperty("FullName", "Full Legal Name")
 
-	intField := CreateIntProperty("Age", "Age at last birthday")
+	intField := createIntProperty("Age", "Age at last birthday")
 
 	differentName := createStringProperty("Name", "Full Legal Name")
-	differentType := CreateIntProperty("FullName", "Full Legal Name")
-	differentDescription := CreateIntProperty("FullName", "The whole thing")
+	differentType := createIntProperty("FullName", "Full Legal Name")
+	differentDescription := createIntProperty("FullName", "The whole thing")
 
 	cases := []struct {
 		name       string
