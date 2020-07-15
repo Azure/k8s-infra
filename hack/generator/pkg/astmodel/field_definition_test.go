@@ -150,7 +150,20 @@ func Test_FieldDefinitionWithType_GivenSameType_ReturnsExistingReference(t *test
 }
 
 /*
- * AsAst Tests
+ * MakeRequired() Tests
+ */
+
+func Test_FieldDefinition_MakeRequired_ReturnsDifferentReference(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewFieldDefinition(fieldName, fieldJsonName, fieldType)
+	field := original.MakeRequired()
+
+	g.Expect(field).NotTo(Equal(original))
+}
+
+/*
+ * AsAst() Tests
  */
 
 func Test_FieldDefinitionAsAst_GivenValidField_ReturnsNonNilResult(t *testing.T) {
