@@ -488,14 +488,7 @@ func generateDefinitionsFor(
 
 	// Give the type a name:
 	if isResource {
-		if specType, ok := result.(*astmodel.StructType); ok {
-			definer, otherDefs = astmodel.CreateResourceDefinitions(typeName, specType, nil, scanner.idFactory)
-		} else {
-			klog.Warningf("expected a struct type for resource: %v", typeName)
-			// TODO: handle this better, only Kusto does it
-			// we can lookup the actual struct and then use that
-			definer, otherDefs = result.CreateDefinitions(typeName, scanner.idFactory)
-		}
+		definer, otherDefs = astmodel.CreateResourceDefinitions(typeName, result, nil, scanner.idFactory)
 	} else {
 		definer, otherDefs = result.CreateDefinitions(typeName, scanner.idFactory)
 	}

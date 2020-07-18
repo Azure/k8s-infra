@@ -14,13 +14,13 @@ import (
 )
 
 // CreateResourceDefinitions creates definitions for a resource
-func CreateResourceDefinitions(name *TypeName, specType *StructType, statusType *StructType, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
+func CreateResourceDefinitions(name *TypeName, specType Type, statusType Type, idFactory IdentifierFactory) (TypeDefiner, []TypeDefiner) {
 
 	var others []TypeDefiner
 
-	defineStruct := func(suffix string, structType *StructType) *TypeName {
+	defineType := func(suffix string, theType Type) *TypeName {
 		definedName := NewTypeName(name.PackageReference, name.Name()+suffix)
-		defined, definedOthers := structType.CreateDefinitions(definedName, idFactory)
+		defined, definedOthers := theType.CreateDefinitions(definedName, idFactory)
 		others = append(append(others, defined), definedOthers...)
 		return definedName
 	}
@@ -29,12 +29,12 @@ func CreateResourceDefinitions(name *TypeName, specType *StructType, statusType 
 	if specType == nil {
 		panic("spec must always be provided")
 	} else {
-		specName = defineStruct("Spec", specType)
+		specName = defineType("Spec", specType)
 	}
 
 	var statusName *TypeName
 	if statusType != nil {
-		statusName = defineStruct("Status", statusType)
+		statusName = defineType("Status", statusType)
 	}
 
 	this := &ResourceDefinition{typeName: name, spec: specName, status: statusName, isStorageVersion: false}
