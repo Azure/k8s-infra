@@ -24,8 +24,14 @@ func NewSimpleTypeDefiner(name *TypeName, theType Type) *SimpleTypeDefiner {
 // SimpleTypeDefiner is a TypeDefiner
 var _ TypeDefiner = (*SimpleTypeDefiner)(nil)
 
+// Name returns the name being associated with the type
 func (std *SimpleTypeDefiner) Name() *TypeName {
 	return std.name
+}
+
+// Type returns the type being associated with the name
+func (std *SimpleTypeDefiner) Type() Type {
+	return std.theType
 }
 
 func (std *SimpleTypeDefiner) References() TypeNameSet {

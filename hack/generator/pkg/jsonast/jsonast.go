@@ -550,8 +550,23 @@ func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsch
 					if err != nil {
 						return nil, err
 					}
+				} else if simpleDef, ok := def.(*astmodel.SimpleTypeDefiner); ok {
+					var err error
+					properties, err = handleType(properties, simpleDef.Type())
+					if err != nil {
+						return nil, err
+					}
+				} else if resourceDef, ok := def.(*astmodel.ResourceDefinition); ok {
+					// this is a weird schema thing having a type inherit from a resource,
+					// but we need to support it; at the moment just expand the spec type.
+					// · an example type is Microsoft.VisualStudio’s Project type
+					var err error
+					properties, err = handleType(properties, resourceDef.SpecType())
+					if err != nil {
+						return nil, err
+					}
 				} else {
-					return nil, errors.Errorf("unhandled case in allOf: unable to unpack %v", concreteType)
+					return nil, errors.Errorf("unhandled case in allOf: unable to unpack (%T) %v", def, concreteType)
 				}
 			} else {
 				return nil, errors.Errorf("couldn't find definition for: %v", concreteType)

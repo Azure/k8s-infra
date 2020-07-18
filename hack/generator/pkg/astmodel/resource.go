@@ -59,6 +59,11 @@ func (definition *ResourceDefinition) Name() *TypeName {
 	return definition.typeName
 }
 
+// SpecType returns the name of the spec type of the resource
+func (definition *ResourceDefinition) SpecType() *TypeName {
+	return definition.spec
+}
+
 // References returns the types referenced by Status or Spec parts of the resource
 func (definition *ResourceDefinition) References() TypeNameSet {
 	spec := definition.spec.References()
