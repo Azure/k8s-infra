@@ -305,14 +305,14 @@ func generatePropertyDefinitions(ctx context.Context, scanner *SchemaScanner, pr
 		return property, nil
 	}
 
+	if err != nil {
+		return nil, err
+	}
+
 	// This can happen if the property type was pruned away by a type filter.
 	if propType == nil {
 		// returning nil here is a signal to the caller that this property cannot be constructed.
 		return nil, nil
-	}
-
-	if err != nil {
-		return nil, err
 	}
 
 	property := astmodel.NewPropertyDefinition(propertyName, prop.Property, propType)
