@@ -112,7 +112,7 @@ func assignRanks(definers []TypeDefiner, ranks map[TypeName]int) []TypeDefiner {
 	// Assign ranks
 	for _, d := range assignable {
 		rank := ranks[*d.Name()]
-		for ref := range d.Type().References() {
+		for ref := range d.References() {
 			if _, ok := ranks[ref]; !ok {
 				// Never overwrite an existing rank
 				ranks[ref] = rank + 1

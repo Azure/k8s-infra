@@ -20,11 +20,11 @@ func Test_NewFileDefinition_GivenValues_InitializesFields(t *testing.T) {
 
 	person := NewTestStruct(
 		"Person",
-		NewStringFieldDefinition("fullName"),
-		NewStringFieldDefinition("knownAs"),
-		NewStringFieldDefinition("familyName"),
+		NewStringPropertyDefinition("fullName"),
+		NewStringPropertyDefinition("knownAs"),
+		NewStringPropertyDefinition("familyName"),
 	)
-	file := NewFileDefinition(&person.Name().PackageReference, []TypeDefiner{&person}, nil)
+	file := NewFileDefinition(&person.Name().PackageReference, &person, nil)
 
 	g.Expect(*file.packageReference).To(Equal(person.Name().PackageReference))
 	g.Expect(file.definitions).To(HaveLen(1))
@@ -54,13 +54,13 @@ func Test_CalcRanks_GivenLinearDependencies_AssignsRanksInOrder(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	rank3 := NewTestStruct("d")
-	referenceToRank3 := NewFieldDefinition("f3", "f3", rank3.Name())
+	referenceToRank3 := NewPropertyDefinition("f3", "f3", rank3.Name())
 
 	rank2 := NewTestStruct("c", referenceToRank3)
-	referenceToRank2 := NewFieldDefinition("f2", "f2", rank2.Name())
+	referenceToRank2 := NewPropertyDefinition("f2", "f2", rank2.Name())
 
 	rank1 := NewTestStruct("b", referenceToRank2)
-	referenceToRank1 := NewFieldDefinition("f1", "f1", rank1.Name())
+	referenceToRank1 := NewPropertyDefinition("f1", "f1", rank1.Name())
 
 	rank0 := NewTestStruct("a", referenceToRank1)
 
@@ -76,13 +76,13 @@ func Test_CalcRanks_GivenDiamondDependencies_AssignRanksInOrder(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	bottom := NewTestStruct("bottom")
-	referenceToBottom := NewFieldDefinition("b", "b", bottom.Name())
+	referenceToBottom := NewPropertyDefinition("b", "b", bottom.Name())
 
 	left := NewTestStruct("l", referenceToBottom)
-	referenceToLeft := NewFieldDefinition("l", "l", left.Name())
+	referenceToLeft := NewPropertyDefinition("l", "l", left.Name())
 
 	right := NewTestStruct("r", referenceToBottom)
-	referenceToRight := NewFieldDefinition("r", "r", right.Name())
+	referenceToRight := NewPropertyDefinition("r", "r", right.Name())
 
 	top := NewTestStruct("a", referenceToLeft, referenceToRight)
 
@@ -98,13 +98,13 @@ func Test_CalcRanks_GivenDiamondWithBar_AssignRanksInOrder(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	bottom := NewTestStruct("bottom")
-	referenceToBottom := NewFieldDefinition("b", "b", bottom.Name())
+	referenceToBottom := NewPropertyDefinition("b", "b", bottom.Name())
 
 	right := NewTestStruct("r", referenceToBottom)
-	referenceToRight := NewFieldDefinition("r", "r", right.Name())
+	referenceToRight := NewPropertyDefinition("r", "r", right.Name())
 
 	left := NewTestStruct("l", referenceToBottom, referenceToRight)
-	referenceToLeft := NewFieldDefinition("l", "l", left.Name())
+	referenceToLeft := NewPropertyDefinition("l", "l", left.Name())
 
 	top := NewTestStruct("a", referenceToLeft, referenceToRight)
 
@@ -121,13 +121,13 @@ func Test_CalcRanks_GivenDiamondWithReverseBar_AssignRanksInOrder(t *testing.T) 
 
 	bottom := NewTestStruct("bottom")
 
-	referenceToBottom := NewFieldDefinition("b", "b", bottom.Name())
+	referenceToBottom := NewPropertyDefinition("b", "b", bottom.Name())
 	left := NewTestStruct("l", referenceToBottom)
 
-	referenceToLeft := NewFieldDefinition("l", "l", left.Name())
+	referenceToLeft := NewPropertyDefinition("l", "l", left.Name())
 	right := NewTestStruct("r", referenceToBottom, referenceToLeft)
 
-	referenceToRight := NewFieldDefinition("r", "r", right.Name())
+	referenceToRight := NewPropertyDefinition("r", "r", right.Name())
 	top := NewTestStruct("a", referenceToLeft, referenceToRight)
 
 	ranks := calcRanks([]TypeDefiner{&top, &left, &right, &bottom})
@@ -142,14 +142,13 @@ func Test_CalcRanks_GivenDiamondWithReverseBar_AssignRanksInOrder(t *testing.T) 
  * Supporting methods
  */
 
-func NewTestStruct(name string, fields ...*FieldDefinition) StructDefinition {
+func NewTestStruct(name string, fields ...*PropertyDefinition) StructDefinition {
 	ref := NewTypeName(*NewLocalPackageReference("group", "2020-01-01"), name)
-	definition := NewStructDefinition(ref, NewStructType().WithFields(fields...))
+	definition := NewStructDefinition(ref, NewStructType().WithProperties(fields...))
 
 	return *definition
 }
 
-func NewStringFieldDefinition(name string) *FieldDefinition {
-	return NewFieldDefinition(FieldName(name), name, StringType)
+func NewStringPropertyDefinition(name string) *PropertyDefinition {
+	return NewPropertyDefinition(PropertyName(name), name, StringType)
 }
-
