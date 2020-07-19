@@ -546,6 +546,7 @@ func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsch
 			// but it is done and therefore we have to support it.
 			// (an example is Microsoft.VisualStudio’s Project type)
 			// at the moment we will just take the spec type:
+			var err error
 			properties, err = handleType(properties, concreteType.SpecType())
 			if err != nil {
 				return nil, err
