@@ -12,30 +12,30 @@ import (
 )
 
 /*
- * NewStructType() tests
+ * NewObjectType() tests
  */
 
 func TestNewStuctType_ReturnsEmptyType(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	st := NewStructType()
+	st := NewObjectType()
 
 	g.Expect(st.properties).To(HaveLen(0))
 	g.Expect(st.functions).To(HaveLen(0))
 }
 
-func TestStructType_Equals_WhenGivenType_ReturnsExpectedResult(t *testing.T) {
+func TestObjectType_Equals_WhenGivenType_ReturnsExpectedResult(t *testing.T) {
 
 	fullNameField := NewPropertyDefinition("FullName", "full-name", StringType)
 	familyNameField := NewPropertyDefinition("FamilyName", "family-name", StringType)
 	knownAsField := NewPropertyDefinition("KnownAs", "known-as", StringType)
 	genderField := NewPropertyDefinition("Gender", "gender", StringType)
 
-	personType := NewStructType().WithProperties(fullNameField, familyNameField, knownAsField)
-	otherPersonType := NewStructType().WithProperties(fullNameField, familyNameField, knownAsField)
-	reorderedType := NewStructType().WithProperties(knownAsField, familyNameField, fullNameField)
-	shorterType := NewStructType().WithProperties(knownAsField, fullNameField)
-	longerType := NewStructType().WithProperties(fullNameField, familyNameField, knownAsField, genderField)
+	personType := NewObjectType().WithProperties(fullNameField, familyNameField, knownAsField)
+	otherPersonType := NewObjectType().WithProperties(fullNameField, familyNameField, knownAsField)
+	reorderedType := NewObjectType().WithProperties(knownAsField, familyNameField, fullNameField)
+	shorterType := NewObjectType().WithProperties(knownAsField, fullNameField)
+	longerType := NewObjectType().WithProperties(fullNameField, familyNameField, knownAsField, genderField)
 	mapType := NewMapType(StringType, personType)
 
 	cases := []struct {

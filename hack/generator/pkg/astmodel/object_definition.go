@@ -10,50 +10,50 @@ import (
 	"go/token"
 )
 
-// StructDefinition encapsulates a complex (object) schema type
-type StructDefinition struct {
+// ObjectDefinition encapsulates a complex (object) schema type
+type ObjectDefinition struct {
 	typeName    *TypeName
-	structType  *StructType
+	objectType  *ObjectType
 	description *string
 }
 
-// NewStructDefinition creates a new StructDefinition
-func NewStructDefinition(typeName *TypeName, structType *StructType) *StructDefinition {
-	return &StructDefinition{typeName, structType, nil}
+// NewObjectDefinition creates a new ObjectDefinition
+func NewObjectDefinition(typeName *TypeName, objectType *ObjectType) *ObjectDefinition {
+	return &ObjectDefinition{typeName, objectType, nil}
 }
 
-// ensure StructDefinition is a TypeDefiner
-var _ TypeDefiner = &StructDefinition{}
+// ensure ObjectDefinition is a TypeDefiner
+var _ TypeDefiner = &ObjectDefinition{}
 
 // Name provides the type name
-func (definition *StructDefinition) Name() *TypeName {
+func (definition *ObjectDefinition) Name() *TypeName {
 	return definition.typeName
 }
 
 // Type provides the type being linked to the name
-func (definition *StructDefinition) Type() Type {
-	return definition.structType
+func (definition *ObjectDefinition) Type() Type {
+	return definition.objectType
 }
 
-// References returns the types referenced by the struct type
-func (definition *StructDefinition) References() TypeNameSet {
-	return definition.structType.References()
+// References returns the types referenced by the object type
+func (definition *ObjectDefinition) References() TypeNameSet {
+	return definition.objectType.References()
 }
 
 // WithDescription adds a description (doc-comment) to the definition
-func (definition *StructDefinition) WithDescription(description *string) TypeDefiner {
+func (definition *ObjectDefinition) WithDescription(description *string) TypeDefiner {
 	result := *definition
 	result.description = description
 	return &result
 }
 
 // RequiredImports returns a list of packages required by this
-func (definition *StructDefinition) RequiredImports() []*PackageReference {
-	return definition.structType.RequiredImports()
+func (definition *ObjectDefinition) RequiredImports() []*PackageReference {
+	return definition.objectType.RequiredImports()
 }
 
-// AsDeclarations returns the Go AST declarations for this struct
-func (definition *StructDefinition) AsDeclarations(codeGenerationContext *CodeGenerationContext) []ast.Decl {
+// AsDeclarations returns the Go AST declarations for this object
+func (definition *ObjectDefinition) AsDeclarations(codeGenerationContext *CodeGenerationContext) []ast.Decl {
 	identifier := ast.NewIdent(definition.typeName.name)
 	declaration := &ast.GenDecl{
 		Tok: token.TYPE,
@@ -61,7 +61,7 @@ func (definition *StructDefinition) AsDeclarations(codeGenerationContext *CodeGe
 		Specs: []ast.Spec{
 			&ast.TypeSpec{
 				Name: identifier,
-				Type: definition.structType.AsType(codeGenerationContext),
+				Type: definition.objectType.AsType(codeGenerationContext),
 			},
 		},
 	}
@@ -75,9 +75,9 @@ func (definition *StructDefinition) AsDeclarations(codeGenerationContext *CodeGe
 	return result
 }
 
-func (definition *StructDefinition) generateMethodDecls(codeGenerationContext *CodeGenerationContext) []ast.Decl {
+func (definition *ObjectDefinition) generateMethodDecls(codeGenerationContext *CodeGenerationContext) []ast.Decl {
 	var result []ast.Decl
-	for methodName, function := range definition.structType.functions {
+	for methodName, function := range definition.objectType.functions {
 		funcDef := function.AsFunc(codeGenerationContext, definition.typeName, methodName)
 		result = append(result, funcDef)
 	}
