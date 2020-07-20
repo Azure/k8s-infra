@@ -37,6 +37,12 @@ func Test_NewFileDefinition_GivenValues_InitializesFields(t *testing.T) {
 func Test_CalcRanks_GivenMultipleRoots_AssignsRankZeroToAll(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// +---------+   +---------+   +---------+   +---------+
+	// |         |   |         |   |         |   |         |
+	// |  root1  |   |  root2  |   |  root3  |   |  root4  |
+	// |         |   |         |   |         |   |         |
+	// +---------+   +---------+   +---------+   +---------+
+
 	root1 := NewTestStruct("r1")
 	root2 := NewTestStruct("b")
 	root3 := NewTestStruct("c")
@@ -52,6 +58,36 @@ func Test_CalcRanks_GivenMultipleRoots_AssignsRankZeroToAll(t *testing.T) {
 
 func Test_CalcRanks_GivenLinearDependencies_AssignsRanksInOrder(t *testing.T) {
 	g := NewGomegaWithT(t)
+
+	// +---------+
+	// |         |
+	// |  rank0  |
+	// |         |
+	// +---+-----+
+	//     |
+	//     |
+	//     v
+	// +---+-----+
+	// |         |
+	// |  rank1  |
+	// |         |
+	// +---+-----+
+	//     |
+	//     |
+	//     v
+	// +---+-----+
+	// |         |
+	// |  rank2  |
+	// |         |
+	// +---+-----+
+	//     |
+	//     |
+	//     v
+	// +---+-----+
+	// |         |
+	// |  rank3  |
+	// |         |
+	// +---------+
 
 	rank3 := NewTestStruct("d")
 	referenceToRank3 := NewPropertyDefinition("f3", "f3", rank3.Name())
@@ -75,6 +111,28 @@ func Test_CalcRanks_GivenLinearDependencies_AssignsRanksInOrder(t *testing.T) {
 func Test_CalcRanks_GivenDiamondDependencies_AssignRanksInOrder(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	//         +---------+
+	//         |         |
+	//         |   top   |
+	//         |         |
+	//         ++-------++
+	//          |       |
+	//          |       |
+	//          v       v
+	// +--------++     ++--------+
+	// |         |     |         |
+	// |  left   |     |  right  |
+	// |         |     |         |
+	// +--------++     ++--------+
+	//          |       |
+	//          |       |
+	//          v       v
+	//         ++-------++
+	//         |         |
+	//         | bottom  |
+	//         |         |
+	//         +---------+
+
 	bottom := NewTestStruct("bottom")
 	referenceToBottom := NewPropertyDefinition("b", "b", bottom.Name())
 
@@ -97,6 +155,28 @@ func Test_CalcRanks_GivenDiamondDependencies_AssignRanksInOrder(t *testing.T) {
 func Test_CalcRanks_GivenDiamondWithBar_AssignRanksInOrder(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	//         +---------+
+	//         |         |
+	//         |   top   |
+	//         |         |
+	//         ++-------++
+	//          |       |
+	//          |       |
+	//          v       v
+	// +--------++     ++--------+
+	// |         |     |         |
+	// |  left   +---->+  right  |
+	// |         |     |         |
+	// +--------++     ++--------+
+	//          |       |
+	//          |       |
+	//          v       v
+	//         ++-------++
+	//         |         |
+	//         | bottom  |
+	//         |         |
+	//         +---------+
+
 	bottom := NewTestStruct("bottom")
 	referenceToBottom := NewPropertyDefinition("b", "b", bottom.Name())
 
@@ -118,6 +198,28 @@ func Test_CalcRanks_GivenDiamondWithBar_AssignRanksInOrder(t *testing.T) {
 
 func Test_CalcRanks_GivenDiamondWithReverseBar_AssignRanksInOrder(t *testing.T) {
 	g := NewGomegaWithT(t)
+
+	//         +---------+
+	//         |         |
+	//         |   top   |
+	//         |         |
+	//         ++-------++
+	//          |       |
+	//          |       |
+	//          v       v
+	// +--------++     ++--------+
+	// |         |     |         |
+	// |  left   +<----+  right  |
+	// |         |     |         |
+	// +--------++     ++--------+
+	//          |       |
+	//          |       |
+	//          v       v
+	//         ++-------++
+	//         |         |
+	//         | bottom  |
+	//         |         |
+	//         +---------+
 
 	bottom := NewTestStruct("bottom")
 
