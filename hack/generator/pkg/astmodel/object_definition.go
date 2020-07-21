@@ -35,6 +35,11 @@ func (definition *ObjectDefinition) Type() Type {
 	return definition.objectType
 }
 
+// Description returns the description of the object
+func (definition *ObjectDefinition) Description() string {
+	return *definition.description
+}
+
 // References returns the types referenced by the object type
 func (definition *ObjectDefinition) References() TypeNameSet {
 	return definition.objectType.References()

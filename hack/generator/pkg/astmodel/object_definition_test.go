@@ -11,29 +11,57 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func Test_NewStructDefinition_GivenValues_InitializesProperties(t *testing.T) {
+/*
+ * NewObjectDefinition() Tests
+ */
+
+func Test_NewObjectDefinition_GivenValues_InitializesProperties(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	const name = "demo"
 	const group = "group"
 	const version = "2020-01-01"
-	fullNameProperty := createStringProperty("fullName", "Full legal name")
-	familyNameProperty := createStringProperty("familyName", "Shared family name")
-	knownAsProperty := createStringProperty("knownAs", "Commonly known as")
 
 	ref := NewTypeName(*NewLocalPackageReference(group, version), name)
-	definition := NewObjectDefinition(ref, NewObjectType().WithProperties(fullNameProperty, familyNameProperty, knownAsProperty))
+	objectType := NewObjectType().WithProperties(fullName, familyName, knownAs)
+	objectDefinition := NewObjectDefinition(ref, objectType)
 
-	definitionGroup, definitionPackage, err := definition.Name().PackageReference.GroupAndPackage()
+	g.Expect(objectDefinition.Name().name).To(Equal(name))
+	g.Expect(objectDefinition.Type()).To(Equal(objectType))
+
+	definitionGroup, definitionPackage, err := objectDefinition.Name().PackageReference.GroupAndPackage()
 	g.Expect(err).To(BeNil())
 
-	g.Expect(definition.Name().name).To(Equal(name))
 	g.Expect(definitionGroup).To(Equal(group))
 	g.Expect(definitionPackage).To(Equal(version))
-	g.Expect(definition.objectType.properties).To(HaveLen(3))
+	g.Expect(objectDefinition.objectType.properties).To(HaveLen(3))
 }
 
-func Test_StructDefinitionAsAst_GivenValidStruct_ReturnsNonNilResult(t *testing.T) {
+/*
+ * WithDescription() tests
+ */
+
+func Test_ObjectDefinitionWithDescription_GivenDescription_ReturnsExpected(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	const name = "demo"
+	const group = "group"
+	const version = "2020-01-01"
+
+	description := "This is my test description"
+
+	ref := NewTypeName(*NewLocalPackageReference(group, version), name)
+	objectType := NewObjectType().WithProperties(fullName, familyName, knownAs)
+	objectDefinition := NewObjectDefinition(ref, objectType).WithDescription(&description).(*ObjectDefinition)
+
+	g.Expect(objectDefinition.Description()).To(Equal(description))
+}
+
+/*
+ * AsAst() Tests
+ */
+
+func Test_ObjectDefinitionAsAst_GivenValidStruct_ReturnsNonNilResult(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	ref := NewTypeName(*NewLocalPackageReference("group", "2020-01-01"), "name")
