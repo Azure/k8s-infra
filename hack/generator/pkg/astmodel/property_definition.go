@@ -85,9 +85,9 @@ func (property *PropertyDefinition) MakeRequired() *PropertyDefinition {
 	return property.WithValidation(ValidateRequired())
 }
 
-// MakeTypeOptional returns a new PropertyDefinition that has an optional value
-func (property *PropertyDefinition) MakeTypeOptional() *PropertyDefinition {
 	if _, ok := property.propertyType.(*OptionalType); ok {
+// MakeOptional returns a new PropertyDefinition that has an optional value
+func (property *PropertyDefinition) MakeOptional() *PropertyDefinition {
 		return property
 	}
 

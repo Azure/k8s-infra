@@ -163,7 +163,7 @@ func Test_PropertyDefinition_MakeRequired_ReturnsDifferentReference(t *testing.T
 }
 
 /*
- * MakeTypeOptional() Tests
+ * MakeOptional() Tests
  */
 
 func Test_PropertyDefinitionWithRequiredType_MakeTypeOptional_ReturnsDifferentReference(t *testing.T) {
