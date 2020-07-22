@@ -558,7 +558,9 @@ func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonsch
 		case *astmodel.MapType:
 			if concreteType.KeyType().Equals(astmodel.StringType) {
 				// move map type into 'additionalProperties' property
-				// TODO: consider privileging this as a special property on ObjectType?
+				// TODO: consider privileging this as its own property on ObjectType,
+				// since it has special behaviour and we need to handle it differently
+				// for JSON serialization
 				newProp := astmodel.NewPropertyDefinition(
 					"additionalProperties",
 					"additionalProperties",
