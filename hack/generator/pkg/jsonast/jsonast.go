@@ -479,10 +479,6 @@ func generateDefinitionsFor(
 		return nil, err
 	}
 
-	if isResource {
-		typeName = typeName.Singular()
-	}
-
 	// see if we already generated something for this ref
 	if _, ok := scanner.findTypeDefinition(typeName); ok {
 		return typeName, nil
