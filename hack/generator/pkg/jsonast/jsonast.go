@@ -356,13 +356,9 @@ func getProperties(ctx context.Context, scanner *SchemaScanner, schema *gojsonsc
 		}
 
 		// add documentation
-		var description string
-		if prop.Description == nil {
-			description = ""
-		} else {
-			description = *prop.Description
+		if prop.Description != nil {
+			property = property.WithDescription(*prop.Description)
 		}
-		property = property.WithDescription(description)
 
 		// add validations
 		isRequired := false
