@@ -96,7 +96,7 @@ func createRenames() map[string]string {
 	}
 }
 
-// These are words reserved by go
+// These are words reserved by go, along with our chosen substitutes
 func createReservedWords() map[string]string {
 	return map[string]string{
 		"break":       "brk",
