@@ -45,7 +45,7 @@ func runGoldenTest(t *testing.T, path string) {
 
 	stripUnusedTypesPipelineStage := PipelineStage{
 		Name: "Strip unused types for test",
-		Action: func(ctx context.Context, defs Types) (Types, error) {
+		Action: func(ctx context.Context, defs astmodel.Types) (astmodel.Types, error) {
 			// The golden files always generate a top-level Test type - mark
 			// that as the root.
 			roots := astmodel.NewTypeNameSet(astmodel.MakeTypeName(
@@ -64,7 +64,7 @@ func runGoldenTest(t *testing.T, path string) {
 
 	exportPackagesTestPipelineStage := PipelineStage{
 		Name: "Export packages for test",
-		Action: func(ctx context.Context, defs Types) (Types, error) {
+		Action: func(ctx context.Context, defs astmodel.Types) (astmodel.Types, error) {
 			var pr astmodel.PackageReference
 			var ds []astmodel.TypeDefinition
 			for _, def := range defs {

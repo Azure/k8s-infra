@@ -16,9 +16,9 @@ func nameTypesForCRD(idFactory astmodel.IdentifierFactory) PipelineStage {
 
 	return PipelineStage{
 		Name: "Name inner types for CRD",
-		Action: func(ctx context.Context, types Types) (Types, error) {
+		Action: func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 
-			result := make(Types)
+			result := make(astmodel.Types)
 
 			// this is a little bit of a hack, better way to do it?
 			getDescription := func(typeName astmodel.TypeName) *string {
@@ -32,13 +32,13 @@ func nameTypesForCRD(idFactory astmodel.IdentifierFactory) PipelineStage {
 			for typeName, typeDef := range types {
 				newDefs := nameInnerTypes(typeDef, idFactory, getDescription)
 				for _, newDef := range newDefs {
-					result[newDef.Name()] = newDef
+					result.Add(newDef)
 				}
 
 				if _, ok := result[typeName]; !ok {
 					// if we didn’t regenerate the “input” type in nameInnerTypes then it won’t
 					// have been added to the output; do it here
-					result[typeName] = typeDef
+					result.Add(typeDef)
 				}
 			}
 

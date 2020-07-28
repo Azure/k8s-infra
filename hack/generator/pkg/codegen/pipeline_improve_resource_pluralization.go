@@ -16,16 +16,15 @@ func improveResourcePluralization() PipelineStage {
 
 	return PipelineStage{
 		Name: "Improve resource pluralization",
-		Action: func(ctx context.Context, types Types) (Types, error) {
+		Action: func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 
-			result := make(Types)
+			result := make(astmodel.Types)
 			for typeName, typeDef := range types {
 				if _, ok := typeDef.Type().(*astmodel.ResourceType); ok {
 					newTypeName := typeName.Singular()
-					typeDef = typeDef.WithName(newTypeName)
-					result[newTypeName] = typeDef
+					result.Add(typeDef.WithName(newTypeName))
 				} else {
-					result[typeName] = typeDef
+					result.Add(typeDef)
 				}
 			}
 
