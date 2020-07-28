@@ -76,7 +76,7 @@ func nameInnerTypes(
 		var props []*astmodel.PropertyDefinition
 		// first map the inner types:
 		for _, prop := range it.Properties() {
-			newPropType := this.Visit(prop.PropertyType(), nameHint+string(prop.PropertyName()))
+			newPropType := this.Visit(prop.PropertyType(), nameHint+"_"+string(prop.PropertyName()))
 			props = append(props, prop.WithType(newPropType))
 		}
 
