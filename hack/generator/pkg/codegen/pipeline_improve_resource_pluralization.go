@@ -7,7 +7,6 @@ package codegen
 
 import (
 	"context"
-	"sort"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
@@ -20,28 +19,20 @@ func improveResourcePluralization() PipelineStage {
 		Action: func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 
 			result := make(astmodel.Types)
-			var resources []astmodel.TypeDefinition
 			for _, typeDef := range types {
 				if _, ok := typeDef.Type().(*astmodel.ResourceType); ok {
-					resources = append(resources, typeDef)
+					newTypeName := typeDef.Name().Singular()
+					// check if there is already a resource with this name
+					if _, ok := types[newTypeName]; !ok {
+						// not found: rename the resource
+						result.Add(typeDef.WithName(newTypeName))
+					} else {
+						// resource with singular name already exists,
+						// so output the resource without depluralizing
+						result.Add(typeDef)
+					}
 				} else {
 					result.Add(typeDef)
-				}
-			}
-
-			// now sort resources so that plurals will come after any singulars that
-			// already exist, so we don't conflict
-			sort.Slice(resources, func(i, j int) bool {
-				return resources[i].Name().Name() < resources[j].Name().Name()
-			})
-
-			for _, resource := range resources {
-				newTypeName := resource.Name().Singular()
-				if _, ok := result[newTypeName]; !ok {
-					result.Add(resource.WithName(newTypeName))
-				} else {
-					// non-plural form already exists, don't depluralize
-					result.Add(resource)
 				}
 			}
 
