@@ -1,18 +1,21 @@
+SHELL           = /bin/bash
 APP             = k8sinfra-gen
 PACKAGE         = github.com/Azure/k8s-infra/hack/generator
+
+include ../../tools.mk
+
 DATE            ?= $(shell date +%FT%T%z)
 VERSION         ?= $(shell git rev-list -1 HEAD)
 SHORT_VERSION   ?= $(shell git rev-parse --short HEAD)
 TREE_STATE      ?= $(if $(shell git status --porcelain),dirty,clean)
-CRD_OPTIONS ?= "crd:crdVersions=v1,allowDangerousTypes=true"
-
-include ../../tools.mk
+CRD_OPTIONS     ?= "crd:crdVersions=v1,allowDangerousTypes=true"
+GO_DIRS         := $(shell $(GO) list -f '{{.Dir}}' ./...)
 
 V = 0
 Q = $(if $(filter 1,$V),,@)
 
 .PHONY: all
-all: header-check build test
+all: header-check fmt build test
 
 .PHONY: manifests
 manifests: $(CONTROLLER_GEN)
@@ -45,7 +48,7 @@ rm-apis: ; $(info $(M) removing previously generated apis…)
 	$(Q) rm -rf apis
 
 .PHONY: build
-build: tidy fmt vet lint ; $(info $(M) building ./bin/$(APP))
+build: tidy lint ; $(info $(M) building ./bin/$(APP))
 	$(Q) $(GO) build -ldflags "-X $(PACKAGE)/pkg/codegen.GitCommit=$(SHORT_VERSION) -X $(PACKAGE)/pkg/codegen.GitTreeState=$(TREE_STATE)" -o ./bin/$(APP)
 
 .PHONY: lint
@@ -58,13 +61,7 @@ lint-full: $(GOLANGCI_LINT) ; $(info $(M) running golangci configured linters…
 
 .PHONY: fmt
 fmt: ; $(info $(M) running gofmt…) @ ## Run gofmt on all source files
-	@ret=0 && for d in $$($(GO) list -f '{{.Dir}}' ./...); do \
-		$(GOFMT) -l -w $$d/*.go || ret=$$? ; \
-	 done ; exit $$ret
-
-.PHONY: vet
-vet: $(GOLINT) ; $(info $(M) running vet…) @ ## Run vet
-	$Q $(GO) vet ./...
+	$(Q) $(GOFMT) -l -s -w $(GO_DIRS)
 
 .PHONY: tidy
 tidy: ; $(info $(M) running tidy…) @ ## Run tidy
