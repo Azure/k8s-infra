@@ -16,21 +16,21 @@ const (
 	localPathPrefix = "github.com/Azure/k8s-infra/hack/generator/apis/"
 )
 
-var MetaV1PackageReference = NewPackageReference("k8s.io/apimachinery/pkg/apis/meta/v1")
+var MetaV1PackageReference = MakePackageReference("k8s.io/apimachinery/pkg/apis/meta/v1")
 
 // PackageReference indicates which package a type belongs to
 type PackageReference struct {
 	packagePath string
 }
 
-// NewLocalPackageReference Creates a new local package reference from a group and package name
-func NewLocalPackageReference(groupName string, packageName string) PackageReference {
+// MakeLocalPackageReference Creates a new local package reference from a group and package name
+func MakeLocalPackageReference(groupName string, packageName string) PackageReference {
 	url := localPathPrefix + groupName + "/" + packageName
 	return PackageReference{packagePath: url}
 }
 
-// NewPackageReference creates a new package reference from a path
-func NewPackageReference(packagePath string) PackageReference {
+// MakePackageReference creates a new package reference from a path
+func MakePackageReference(packagePath string) PackageReference {
 	return PackageReference{packagePath: packagePath}
 }
 

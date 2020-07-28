@@ -188,11 +188,11 @@ func (scanner *SchemaScanner) GenerateDefinitions(
 		return nil, errors.Wrapf(err, "Unable to extract version for schema")
 	}
 
-	rootPackage := astmodel.NewLocalPackageReference(
+	rootPackage := astmodel.MakeLocalPackageReference(
 		scanner.idFactory.CreateGroupName(rootGroup),
 		scanner.idFactory.CreatePackageNameFromVersion(rootVersion))
 
-	rootTypeName := astmodel.NewTypeName(rootPackage, rootName)
+	rootTypeName := astmodel.MakeTypeName(rootPackage, rootName)
 
 	_, err = generateDefinitionsFor(ctx, scanner, rootTypeName, false, url, schema)
 	if err != nil {
@@ -443,8 +443,8 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 	isResource := isResource(url)
 
 	// produce a usable name:
-	typeName := astmodel.NewTypeName(
-		astmodel.NewLocalPackageReference(
+	typeName := astmodel.MakeTypeName(
+		astmodel.MakeLocalPackageReference(
 			scanner.idFactory.CreateGroupName(group),
 			scanner.idFactory.CreatePackageNameFromVersion(version)),
 		scanner.idFactory.CreateIdentifier(name, astmodel.Exported))

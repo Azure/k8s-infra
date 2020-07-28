@@ -60,7 +60,7 @@ func nameInnerTypes(
 	visitor.VisitEnumType = func(this *astmodel.TypeVisitor, it *astmodel.EnumType, ctx interface{}) astmodel.Type {
 		nameHint := ctx.(string)
 
-		enumName := astmodel.NewTypeName(def.Name().PackageReference, idFactory.CreateEnumIdentifier(nameHint))
+		enumName := astmodel.MakeTypeName(def.Name().PackageReference, idFactory.CreateEnumIdentifier(nameHint))
 
 		namedEnum := astmodel.MakeTypeDefinition(enumName, it)
 		namedEnum = namedEnum.WithDescription(getDescription(enumName))
@@ -80,7 +80,7 @@ func nameInnerTypes(
 			props = append(props, prop.WithType(newPropType))
 		}
 
-		objectName := astmodel.NewTypeName(def.Name().PackageReference, nameHint)
+		objectName := astmodel.MakeTypeName(def.Name().PackageReference, nameHint)
 
 		namedObjectType := astmodel.MakeTypeDefinition(objectName, it.WithProperties(props...))
 		namedObjectType = namedObjectType.WithDescription(getDescription(objectName))
@@ -100,7 +100,7 @@ func nameInnerTypes(
 			status = this.Visit(it.StatusType(), nameHint+"Status")
 		}
 
-		resourceName := astmodel.NewTypeName(def.Name().PackageReference, nameHint)
+		resourceName := astmodel.MakeTypeName(def.Name().PackageReference, nameHint)
 
 		resource := astmodel.MakeTypeDefinition(resourceName, astmodel.NewResourceType(spec, status))
 		resource = resource.WithDescription(getDescription(resourceName))

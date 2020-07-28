@@ -18,8 +18,8 @@ type TypeName struct {
 	name             string
 }
 
-// NewTypeName is a factory method for creating a TypeName
-func NewTypeName(pr PackageReference, name string) TypeName {
+// MakeTypeName is a factory method for creating a TypeName
+func MakeTypeName(pr PackageReference, name string) TypeName {
 	return TypeName{pr, name}
 }
 
@@ -83,7 +83,7 @@ func (typeName TypeName) String() string {
 }
 
 func (typeName TypeName) Singular() TypeName {
-	return NewTypeName(typeName.PackageReference, flect.Singularize(typeName.name))
+	return MakeTypeName(typeName.PackageReference, flect.Singularize(typeName.name))
 }
 
 // Ensure we implement Stringer

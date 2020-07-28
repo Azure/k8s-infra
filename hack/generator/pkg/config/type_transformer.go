@@ -47,8 +47,8 @@ func (transformer *TypeTransformer) Initialize() error {
 		return transformer.initializePrimitiveTypeTarget()
 	}
 
-	transformer.targetType = astmodel.NewTypeName(
-		astmodel.NewPackageReference(transformer.Target.PackagePath),
+	transformer.targetType = astmodel.MakeTypeName(
+		astmodel.MakePackageReference(transformer.Target.PackagePath),
 		transformer.Target.Name)
 	return nil
 }
