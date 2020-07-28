@@ -95,7 +95,7 @@ func nameInnerTypes(
 
 		spec := this.Visit(it.SpecType(), nameHint+"Spec")
 
-		var status astmodel.Type // the type is very important here, it must be a nil(Type) if status isn’t set, not a nil(*TypeName)
+		var status astmodel.Type
 		if it.StatusType() != nil {
 			status = this.Visit(it.StatusType(), nameHint+"Status")
 		}
