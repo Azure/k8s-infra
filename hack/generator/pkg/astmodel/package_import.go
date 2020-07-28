@@ -57,5 +57,5 @@ func (pi *PackageImport) PackageName() string {
 
 // Equals returns true if the passed package reference references the same package, false otherwise
 func (pi *PackageImport) Equals(ref *PackageImport) bool {
-	return pi.PackageReference.Equals(&ref.PackageReference) && pi.name == ref.name
+	return pi.PackageReference.Equals(ref.PackageReference) && pi.name == ref.name
 }

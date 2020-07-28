@@ -14,12 +14,12 @@ import (
 )
 
 // Shared test values:
-var package2019 = *astmodel.NewLocalPackageReference("group", "2019-01-01")
+var package2019 = astmodel.NewLocalPackageReference("group", "2019-01-01")
 var person2019 = astmodel.NewTypeName(package2019, "person")
 var post2019 = astmodel.NewTypeName(package2019, "post")
 var student2019 = astmodel.NewTypeName(package2019, "student")
 
-var package2020 = *astmodel.NewLocalPackageReference("group", "2020-01-01")
+var package2020 = astmodel.NewLocalPackageReference("group", "2020-01-01")
 var address2020 = astmodel.NewTypeName(package2020, "address")
 var person2020 = astmodel.NewTypeName(package2020, "person")
 var professor2020 = astmodel.NewTypeName(package2020, "professor")
