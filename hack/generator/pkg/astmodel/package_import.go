@@ -12,7 +12,7 @@ import (
 
 // PackageImport represents an import of a name from a package
 type PackageImport struct {
-	PackageReference PackageReference // This is used as the key in a map so can't be pointer
+	PackageReference PackageReference
 	name             *string
 }
 
