@@ -44,21 +44,20 @@ func NewReferenceGraphWithResourcesAsRoots(types Types) ReferenceGraph {
 	return NewReferenceGraph(roots, references)
 }
 
-// Connected returns the set of types that are reachable from the
-// roots.
+// Connected returns the set of types that are reachable from the roots.
 func (c ReferenceGraph) Connected() TypeNameSet {
 	// Make a non-nil set so we don't need to worry about passing it back down.
 	connectedTypes := make(TypeNameSet)
 	for node := range c.roots {
-		c.CollectTypes(node, connectedTypes)
+		c.collectTypes(node, connectedTypes)
 	}
 
 	return connectedTypes
 }
 
-// CollectTypes returns the set of types that are reachable from the given
+// collectTypes returns the set of types that are reachable from the given
 // 'node' (and places them in 'collected').
-func (c ReferenceGraph) CollectTypes(node TypeName, collected TypeNameSet) {
+func (c ReferenceGraph) collectTypes(node TypeName, collected TypeNameSet) {
 	if collected.Contains(node) {
 		// We can stop here - we've already visited this node.
 		return
@@ -66,6 +65,6 @@ func (c ReferenceGraph) CollectTypes(node TypeName, collected TypeNameSet) {
 
 	collected.Add(node)
 	for child := range c.references[node] {
-		c.CollectTypes(child, collected)
+		c.collectTypes(child, collected)
 	}
 }
