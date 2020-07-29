@@ -6,9 +6,9 @@ We're generating a large volume of CRD definitions based on the JSON schema defi
 
 ## Goals
 
-**Principle of Least Surprise:** The goal of the service operator is to allow users to consumer Azure resources without having to leave the tooling they are familiar with. We therefore want to do things in the idiomatic Kubernetes fashion, so that they don't experience any nasty surprises.
+**Principle of Least Surprise:** The goal of the service operator is to allow users to consume Azure resources without having to leave the tooling they are familiar with. We therefore want to do things in the idiomatic Kubernetes fashion, so that they don't experience any nasty surprises.
 
-**Auto-generated conversions:** As far as practical, we want to autogenerating the schema for storage use along with the conversions to and from the actual ARM API versions. Hand coding all the required conversions doesn't scale across all the different Azure sevices, especially with the ongoing rate of change. 
+**Auto-generated conversions:** As far as practical, we want to autogenerate the schema for storage use along with the conversions to and from the actual ARM API versions. Hand coding all the required conversions doesn't scale across all the different Azure sevices, especially with the ongoing rate of change. 
 
 **Allow for hand coded conversions:** While we expect to use code generation to handle the vast majority of needed conversions, we anticipate that some breaking API changes will require *part* of the conversion to be hand coded. We need to make it simple for these conversions to be introduced while still autogenerating the majority of the conversion.
 
