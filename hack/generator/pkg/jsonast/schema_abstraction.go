@@ -247,7 +247,6 @@ type OpenAPISchema struct {
 	root      spec.Swagger
 	fileName  string
 	groupName string
-	version   string
 
 	cache *OpenAPISchemaCache
 }
@@ -263,8 +262,8 @@ func MakeOpenAPISchemaCache() *OpenAPISchemaCache {
 	}
 }
 
-func MakeOpenAPISchema(schema spec.Schema, root spec.Swagger, fileName string, groupName string, version string, cache *OpenAPISchemaCache) Schema {
-	return &OpenAPISchema{schema, root, fileName, groupName, version, cache}
+func MakeOpenAPISchema(schema spec.Schema, root spec.Swagger, fileName string, groupName string, cache *OpenAPISchemaCache) Schema {
+	return &OpenAPISchema{schema, root, fileName, groupName, cache}
 }
 
 func (it *OpenAPISchema) withNewSchema(newSchema spec.Schema) Schema {
@@ -273,7 +272,6 @@ func (it *OpenAPISchema) withNewSchema(newSchema spec.Schema) Schema {
 		it.root,
 		it.fileName,
 		it.groupName,
-		it.version,
 		it.cache,
 	}
 }
@@ -415,20 +413,70 @@ type fileNameAndSwagger struct {
 	swagger  spec.Swagger
 }
 
-func loadFile(fileCache *OpenAPISchemaCache, baseFileName string, url *url.URL) fileNameAndSwagger {
+// loadFileWithoutCache loads the schema at the specified file path. it does not read from
+// or add to the cache.
+func (fileCache *OpenAPISchemaCache) loadUncachedFile(filePath string) (spec.Swagger, error) {
+	var swagger spec.Swagger
+
+	fileContent, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return swagger, errors.Wrap(err, "unable to read swagger file")
+	}
+
+	err = swagger.UnmarshalJSON(fileContent)
+	if err != nil {
+		return swagger, errors.Wrap(err, "unable to parse swagger file")
+	}
+
+	return swagger, err
+}
+
+// PreloadCache loads the specified schema into the cache. it does not attempt to deduplicate work.
+func (fileCache *OpenAPISchemaCache) PreloadCache(filePath string) (spec.Swagger, error) {
+	swagger, err := fileCache.loadUncachedFile(filePath)
+	if err == nil {
+		fileCache.setCachedValue(filePath, swagger)
+	}
+
+	return swagger, err
+}
+
+func (fileCache *OpenAPISchemaCache) setCachedValue(filePath string, swagger spec.Swagger) {
+	fileCache.mutex.Lock()
+	defer fileCache.mutex.Unlock()
+	fileCache.files[filePath] = swagger
+}
+
+// fetchFileRelative fetches the schema for the relative path created by combining 'baseFileName' and 'url'
+// if multiple requests for the same file come in at the same time, only one request will hit the disk
+func (fileCache *OpenAPISchemaCache) fetchFileRelative(baseFileName string, url *url.URL) (fileNameAndSwagger, error) {
+	if url.IsAbs() {
+		panic("only relative URLs may be passed")
+	}
+
 	fileURL, err := url.Parse("file://" + baseFileName)
 	if err != nil {
 		panic(err)
 	}
 
 	resolvedFile := fileURL.ResolveReference(url).Path
+	swagger, err := fileCache.fetchFileAbsolute(resolvedFile)
+	if err != nil {
+		return fileNameAndSwagger{}, err
+	}
 
+	return fileNameAndSwagger{resolvedFile, swagger}, nil
+}
+
+// fetchFileAbsolute fetches the schema for the absolute path specified
+// if multiple requests for the same file come in at the same time, only one request will hit the disk
+func (fileCache *OpenAPISchemaCache) fetchFileAbsolute(filePath string) (spec.Swagger, error) {
 	{
 		fileCache.mutex.RLock()
 
-		if swag, ok := fileCache.files[resolvedFile]; ok {
+		if swag, ok := fileCache.files[filePath]; ok {
 			fileCache.mutex.RUnlock()
-			return fileNameAndSwagger{resolvedFile, swag}
+			return swag, nil
 		}
 
 		fileCache.mutex.RUnlock()
@@ -437,33 +485,30 @@ func loadFile(fileCache *OpenAPISchemaCache, baseFileName string, url *url.URL) 
 	fileCache.mutex.Lock()
 	defer fileCache.mutex.Unlock()
 
-	// need to double-check after re-claiming lock
-	if swag, ok := fileCache.files[resolvedFile]; ok {
-		return fileNameAndSwagger{resolvedFile, swag}
+	// need to double-check after releasing read lock and claiming write lock
+	if swag, ok := fileCache.files[filePath]; ok {
+		return swag, nil
 	}
 
 	// ok, it really doesn't exist: read it
-	fileContent, err := ioutil.ReadFile(resolvedFile)
-	if err != nil {
-		panic(err)
+	swagger, err := fileCache.loadUncachedFile(filePath)
+
+	if err == nil {
+		fileCache.files[filePath] = swagger
 	}
 
-	var swag spec.Swagger
-	err = swag.UnmarshalJSON(fileContent)
-	if err != nil {
-		panic(err)
-	}
-
-	fileCache.files[resolvedFile] = swag
-
-	return fileNameAndSwagger{resolvedFile, swag}
+	return swagger, err
 }
 
 func (it *OpenAPISchema) RefSchema() Schema {
 	var fileName string
 	var root spec.Swagger
 	if !it.schema.Ref.HasFragmentOnly {
-		loaded := loadFile(it.cache, it.fileName, it.schema.Ref.GetURL())
+		loaded, err := it.cache.fetchFileRelative(it.fileName, it.schema.Ref.GetURL())
+		if err != nil {
+			panic(err)
+		}
+
 		root = loaded.swagger
 		fileName = loaded.fileName
 	} else {
@@ -480,14 +525,17 @@ func (it *OpenAPISchema) RefSchema() Schema {
 			root,
 			fileName,
 			it.groupName,
-			it.version,
 			it.cache,
 		}
 	}
 }
 
 func (it *OpenAPISchema) RefVersion() (string, error) {
-	return it.version, nil
+	if it.root.Info != nil && it.root.Info.Version != "" {
+		return it.root.Info.Version, nil
+	}
+
+	return "", errors.Errorf("no version on root schema")
 }
 
 func (it *OpenAPISchema) RefGroupName() (string, error) {

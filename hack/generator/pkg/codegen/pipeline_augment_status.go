@@ -7,7 +7,6 @@ package codegen
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -30,21 +29,21 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 
 			klog.V(2).Info("loading Swagger data")
 
-			statusLookup, err := loadSwaggerData(ctx, idFactory, config)
+			statusTypes, err := loadSwaggerData(ctx, idFactory, config)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to load Swagger data")
 			}
 
-			klog.Infof("loaded Swagger data (%v types)", len(statusLookup))
+			klog.Infof("loaded Swagger data (%v types)", len(statusTypes))
 
 			newTypes := make(astmodel.Types)
 
-			statusVisitor := makeStatusVisitor(statusLookup)
+			statusVisitor := makeStatusVisitor(statusTypes)
 
 			for typeName, typeDef := range types {
 				// insert all status objects regardless of if they are used;
 				// they will be trimmed by a later phase if they are not
-				if statusDef, ok := statusLookup[typeName]; ok {
+				if statusDef, ok := statusTypes[typeName]; ok {
 					statusType := statusDef.Type()
 					switch statusType.(type) {
 					case *astmodel.ResourceType:
@@ -57,7 +56,7 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 				}
 
 				if resource, ok := typeDef.Type().(*astmodel.ResourceType); ok {
-					if statusDef, ok := statusLookup[typeName]; ok {
+					if statusDef, ok := statusTypes[typeName]; ok {
 						statusType := statusDef.Type()
 						statusType = statusVisitor.Visit(statusType, nil)
 						//klog.Infof("Found swagger information for %v", typeName)
@@ -107,11 +106,44 @@ var swaggerGroupRegex = regexp.MustCompile("[Mm]icrosoft\\.[^/\\\\]+")
 func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, config *config.Configuration) (astmodel.Types, error) {
 
 	azureRestSpecsRoot := "/home/george/k8s-infra/hack/generator/azure-rest-api-specs/specification"
+	loaded, err := loadSchemas(ctx, azureRestSpecsRoot)
+	if err != nil {
+		return nil, err
+	}
 
-	loader := fileLoader{config, idFactory, jsonast.MakeOpenAPISchemaCache()}
-	output := makeOutput()
+	statusTypes := make(astmodel.Types)
 
-	err := filepath.Walk(azureRestSpecsRoot, func(path string, info os.FileInfo, err error) error {
+	extractor := typeExtractor{
+		idFactory: idFactory,
+		cache:     loaded.cache,
+		config:    config,
+	}
+
+	for filePath, schema := range loaded.schemas {
+		err := extractor.extractTypes(ctx, filePath, schema, statusTypes)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return statusTypes, nil
+}
+
+type loadResult struct {
+	schemas map[string]spec.Swagger
+	cache   *jsonast.OpenAPISchemaCache
+}
+
+func loadSchemas(ctx context.Context, rootPath string) (loadResult, error) {
+
+	var wg sync.WaitGroup
+	cache := jsonast.MakeOpenAPISchemaCache()
+
+	var mutex sync.Mutex
+	schemas := make(map[string]spec.Swagger)
+	var sharedErr error
+
+	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -127,116 +159,57 @@ func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, 
 			!strings.Contains(path, "/control-plane/") &&
 			!strings.Contains(path, "/data-plane/") {
 
-			/*
-				version := swaggerVersionRegex.FindString(path)
-				if version == "" {
-					//return fmt.Errorf("unable to extract version from path [%s]", path)
-					return nil
+			wg.Add(1)
+			go func() {
+				swagger, err := cache.PreloadCache(path)
+				mutex.Lock()
+				if err != nil {
+					// first error wins
+					if sharedErr == nil {
+						sharedErr = err
+					}
+				} else {
+					schemas[path] = swagger
 				}
-			*/
+				mutex.Unlock()
 
-			/*
-				group := swaggerGroupRegex.FindString(path)
-				if group == "" {
-					//return fmt.Errorf("unable to extract group from path [%s]", path)
-					return nil
-				}
-			*/
-
-			output.WaitGroup.Add(1)
-			go loader.loadFileAsync(ctx, path, output)
+				wg.Done()
+			}()
 		}
 
 		return nil
 	})
 
-	output.WaitGroup.Wait()
+	wg.Wait()
 
 	if err != nil {
-		return nil, err
+		return loadResult{}, err
 	}
 
-	if output.err != nil {
-		return nil, output.err
+	if sharedErr != nil {
+		return loadResult{}, sharedErr
 	}
 
-	return output.results, nil
+	return loadResult{schemas, cache}, nil
 }
 
-type loadOutput struct {
-	sync.Mutex
-	results astmodel.Types
-	err     error
-	sync.WaitGroup
-}
-
-func makeOutput() *loadOutput {
-	return &loadOutput{
-		results: make(astmodel.Types),
-	}
-}
-
-func (output *loadOutput) setError(err error) {
-	output.Mutex.Lock()
-	defer output.Mutex.Unlock()
-
-	// first one wins
-	if output.err == nil {
-		output.err = err
-	}
-}
-
-func (output *loadOutput) setResults(results astmodel.Types) {
-	output.Mutex.Lock()
-	defer output.Mutex.Unlock()
-
-	for key, value := range results {
-		output.results[key] = value
-	}
-}
-
-type fileLoader struct {
-	config    *config.Configuration
+type typeExtractor struct {
 	idFactory astmodel.IdentifierFactory
+	config    *config.Configuration
 	cache     *jsonast.OpenAPISchemaCache
 }
 
-func (loader *fileLoader) loadFileAsync(
+func (extractor *typeExtractor) extractTypes(
 	ctx context.Context,
-	path string,
-	output *loadOutput) {
-
-	results, err := loader.loadFile(ctx, path)
-	if err != nil {
-		output.setError(err)
-	} else {
-		output.setResults(results)
-	}
-
-	output.WaitGroup.Done()
-}
-
-func (loader *fileLoader) loadFile(
-	ctx context.Context,
-	filePath string) (astmodel.Types, error) {
-
-	bytes, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to open Swagger document")
-	}
-
-	var swagger spec.Swagger
-	err = swagger.UnmarshalJSON(bytes)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse Swagger document")
-	}
+	filePath string,
+	swagger spec.Swagger,
+	types astmodel.Types) error {
 
 	version := swagger.Info.Version
-	packageName := loader.idFactory.CreatePackageNameFromVersion(version)
+	packageName := extractor.idFactory.CreatePackageNameFromVersion(version)
 
-	scanner := jsonast.NewSchemaScanner(loader.idFactory, loader.config)
+	scanner := jsonast.NewSchemaScanner(extractor.idFactory, extractor.config)
 
-	results := make(astmodel.Types)
 	for operationPath, op := range swagger.Paths.Paths {
 		put := op.Put
 		if put == nil {
@@ -249,54 +222,70 @@ func (loader *fileLoader) loadFile(
 			continue
 		}
 
-		groupName := loader.idFactory.CreateGroupName(group)
-
-		// infer name from path
-		name, err := inferNameFromURLPath(group, operationPath)
+		resourceName, err := extractor.resourceNameFromOperationPath(group, packageName, operationPath)
 		if err != nil {
-			klog.Warningf("unable to infer name from path: %s (in %s)", err.Error(), filePath)
+			klog.Errorf("unable to produce resource name for path %q (in %s)", operationPath, filePath)
 			continue
 		}
 
-		packageRef := astmodel.MakeLocalPackageReference(groupName, packageName)
-		typeName := astmodel.MakeTypeName(packageRef, name)
-		//fmt.Printf("inferred name %v\n", typeName)
+		resourceType, err := extractor.resourceTypeFromOperation(ctx, scanner, swagger, filePath, group, put)
+		if err != nil {
+			if err == context.Canceled {
+				return err
+			}
 
-		for _, param := range put.Parameters {
-			if param.In == "body" && param.Required { // assume this is the Resource
-				schema := jsonast.MakeOpenAPISchema(*param.Schema, swagger, filePath, group, version, loader.cache)
-				resultType, err := scanner.RunHandlerForSchema(ctx, schema)
-				if err == nil {
-					if definedType, ok := results[typeName]; !ok {
-						results.Add(astmodel.MakeTypeDefinition(typeName, resultType))
-					} else {
-						if !astmodel.TypeEquals(definedType.Type(), resultType) {
-							klog.Errorf("already defined differently: %v (in %s)", typeName, filePath)
-						}
-					}
-				} else {
-					if err == context.Canceled {
-						return nil, err
-					}
+			klog.Errorf("unable to produce type for %v (in %s): %v", resourceName, filePath, err)
+			continue // TODO: make fatal
+		}
 
-					klog.Errorf("unable to produce type for %s: %v", name, err)
-					continue
-					//return nil, err
+		if resourceType != nil {
+			if existingResource, ok := types[resourceName]; !ok {
+				types.Add(astmodel.MakeTypeDefinition(resourceName, resourceType))
+			} else {
+				if !astmodel.TypeEquals(existingResource.Type(), resourceType) {
+					klog.Errorf("already defined differently: %v (in %s)", resourceName, filePath)
 				}
-
-				break
 			}
 		}
 	}
 
 	for key, def := range scanner.Definitions() {
 		// get generated-aside definitions too
-		if _, ok := results[key]; !ok {
-			results.Add(def)
+		if _, ok := types[key]; !ok {
+			types.Add(def)
 		}
 	}
 
-	return results, nil
+	return nil
+}
+
+func (extractor *typeExtractor) resourceNameFromOperationPath(group string, packageName string, operationPath string) (astmodel.TypeName, error) {
+	// infer name from path
+	name, err := inferNameFromURLPath(group, operationPath)
+	if err != nil {
+		return astmodel.TypeName{}, errors.Wrapf(err, "unable to infer name from path")
+	}
+
+	packageRef := astmodel.MakeLocalPackageReference(extractor.idFactory.CreateGroupName(group), packageName)
+	return astmodel.MakeTypeName(packageRef, name), nil
+}
+
+func (extractor *typeExtractor) resourceTypeFromOperation(
+	ctx context.Context,
+	scanner *jsonast.SchemaScanner,
+	schemaRoot spec.Swagger,
+	filePath string,
+	group string,
+	operation *spec.Operation) (astmodel.Type, error) {
+
+	for _, param := range operation.Parameters {
+		if param.In == "body" && param.Required { // assume this is the Resource
+			schema := jsonast.MakeOpenAPISchema(*param.Schema, schemaRoot, filePath, group, extractor.cache)
+			return scanner.RunHandlerForSchema(ctx, schema)
+		}
+	}
+
+	return nil, nil
 }
 
 func inferNameFromURLPath(group string, operationPath string) (string, error) {
@@ -312,7 +301,7 @@ func inferNameFromURLPath(group string, operationPath string) (string, error) {
 			} else {
 				if skippedLast {
 					// this means two {parameters} in a row
-					return "", errors.Errorf("don’t know how to handle path %q", operationPath)
+					return "", errors.Errorf("multiple parameters in path")
 				}
 
 				skippedLast = true
@@ -323,11 +312,11 @@ func inferNameFromURLPath(group string, operationPath string) (string, error) {
 	}
 
 	if reading == false {
-		return "", errors.Errorf("no group name (‘Microsoft…’) found in path %q", operationPath)
+		return "", errors.Errorf("no group name (‘Microsoft…’) found")
 	}
 
 	if name == "" {
-		return "", errors.Errorf("couldn’t get name from %q", operationPath)
+		return "", errors.Errorf("couldn’t infer name")
 	}
 
 	return name, nil
