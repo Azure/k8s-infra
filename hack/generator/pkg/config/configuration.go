@@ -6,11 +6,10 @@
 package config
 
 import (
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
 // Configuration is used to control which types get generated
@@ -53,7 +52,7 @@ func NewConfiguration() *Configuration {
 	return &result
 }
 
-/// WithExportFilters adds the provided ExportFilters to the configurations collection of ExportFilters
+// WithExportFilters adds the provided ExportFilters to the configurations collection of ExportFilters
 func (config *Configuration) WithExportFilters(filters ...*ExportFilter) *Configuration {
 	result := *config
 	result.ExportFilters = append(result.ExportFilters, filters...)
@@ -100,7 +99,7 @@ func (config *Configuration) Initialize() error {
 
 // ShouldExport tests for whether a given type should be exported as Go code
 // Returns a result indicating whether export should occur as well as a reason for logging
-func (config *Configuration) ShouldExport(typeName *astmodel.TypeName) (result ShouldExportResult, because string) {
+func (config *Configuration) ShouldExport(typeName astmodel.TypeName) (result ShouldExportResult, because string) {
 	for _, f := range config.ExportFilters {
 		if f.AppliesToType(typeName) {
 			switch f.Action {
@@ -109,7 +108,7 @@ func (config *Configuration) ShouldExport(typeName *astmodel.TypeName) (result S
 			case ExportFilterInclude:
 				return Export, f.Because
 			default:
-				panic(fmt.Errorf("unknown exportfilter directive: %s", f.Action))
+				panic(errors.Errorf("unknown exportfilter directive: %s", f.Action))
 			}
 		}
 	}
@@ -119,7 +118,7 @@ func (config *Configuration) ShouldExport(typeName *astmodel.TypeName) (result S
 }
 
 // ShouldPrune tests for whether a given type should be extracted from the JSON schema or pruned
-func (config *Configuration) ShouldPrune(typeName *astmodel.TypeName) (result ShouldPruneResult, because string) {
+func (config *Configuration) ShouldPrune(typeName astmodel.TypeName) (result ShouldPruneResult, because string) {
 	for _, f := range config.TypeFilters {
 		if f.AppliesToType(typeName) {
 			switch f.Action {
@@ -128,7 +127,7 @@ func (config *Configuration) ShouldPrune(typeName *astmodel.TypeName) (result Sh
 			case TypeFilterInclude:
 				return Include, f.Because
 			default:
-				panic(fmt.Errorf("unknown typefilter directive: %s", f.Action))
+				panic(errors.Errorf("unknown typefilter directive: %s", f.Action))
 			}
 		}
 	}
@@ -139,7 +138,7 @@ func (config *Configuration) ShouldPrune(typeName *astmodel.TypeName) (result Sh
 
 // TransformType uses the configured type transformers to transform a type name (reference) to a different type.
 // If no transformation is performed, nil is returned
-func (config *Configuration) TransformType(name *astmodel.TypeName) (astmodel.Type, string) {
+func (config *Configuration) TransformType(name astmodel.TypeName) (astmodel.Type, string) {
 	for _, transformer := range config.TypeTransformers {
 		result := transformer.TransformTypeName(name)
 		if result != nil {

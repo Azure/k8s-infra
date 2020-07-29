@@ -10,32 +10,29 @@ import (
 	"go/token"
 )
 
-// PackageReference indicates which package
-// a struct belongs to.
+// PackageImport represents an import of a name from a package
 type PackageImport struct {
-	PackageReference PackageReference // This is used as the key in a map so can't be pointer
-	name             *string
+	PackageReference PackageReference
+	name             string
 }
 
 // NewPackageImport creates a new package import from a reference
-func NewPackageImport(packageReference PackageReference) *PackageImport {
-	return &PackageImport{
+func NewPackageImport(packageReference PackageReference) PackageImport {
+	return PackageImport{
 		PackageReference: packageReference,
 	}
 }
 
 // WithName creates a new package reference with a friendly name
-func (pi *PackageImport) WithName(name string) *PackageImport {
-	result := NewPackageImport(pi.PackageReference)
-	result.name = &name
-
-	return result
+func (pi PackageImport) WithName(name string) PackageImport {
+	pi.name = name
+	return pi
 }
 
-func (pi *PackageImport) AsImportSpec() *ast.ImportSpec {
+func (pi PackageImport) AsImportSpec() *ast.ImportSpec {
 	var name *ast.Ident
-	if pi.name != nil {
-		name = ast.NewIdent(*pi.name)
+	if pi.name != "" {
+		name = ast.NewIdent(pi.name)
 	}
 
 	return &ast.ImportSpec{
@@ -48,15 +45,18 @@ func (pi *PackageImport) AsImportSpec() *ast.ImportSpec {
 }
 
 // PackageName is the package name of the package reference
-func (pi *PackageImport) PackageName() string {
-	if pi.name != nil {
-		return *pi.name
+func (pi PackageImport) PackageName() string {
+	if pi.name != "" {
+		return pi.name
 	}
 
 	return pi.PackageReference.PackageName()
 }
 
 // Equals returns true if the passed package reference references the same package, false otherwise
-func (pi *PackageImport) Equals(ref *PackageImport) bool {
-	return pi.PackageReference.Equals(&ref.PackageReference) && pi.name == ref.name
+func (pi PackageImport) Equals(ref PackageImport) bool {
+	packagesEqual := pi.PackageReference.Equals(ref.PackageReference)
+	namesEqual := pi.name == ref.name
+
+	return packagesEqual && namesEqual
 }

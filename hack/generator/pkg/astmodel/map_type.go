@@ -9,10 +9,20 @@ import (
 	"go/ast"
 )
 
-// MapType is used to define fields that contain additional property values
+// MapType is used to define properties that contain additional property values
 type MapType struct {
 	key   Type
 	value Type
+}
+
+// KeyType returns the type of keys in the type represented by this MapType
+func (m *MapType) KeyType() Type {
+	return m.key
+}
+
+// ValueType returns the type of values in the type represented by this MapType
+func (m *MapType) ValueType() Type {
+	return m.value
 }
 
 // NewMapType creates a new map with the specified key and value types
@@ -28,6 +38,10 @@ func NewStringMapType(value Type) *MapType {
 // assert that we implemented Type correctly
 var _ Type = (*MapType)(nil)
 
+func (m *MapType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description *string) []ast.Decl {
+	return AsSimpleDeclarations(codeGenerationContext, name, description, m)
+}
+
 // AsType implements Type for MapType to create the abstract syntax tree for a map
 func (m *MapType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
 	return &ast.MapType{
@@ -37,16 +51,16 @@ func (m *MapType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr 
 }
 
 // RequiredImports returns a list of packages required by this
-func (m *MapType) RequiredImports() []*PackageReference {
-	var result []*PackageReference
+func (m *MapType) RequiredImports() []PackageReference {
+	var result []PackageReference
 	result = append(result, m.key.RequiredImports()...)
 	result = append(result, m.value.RequiredImports()...)
 	return result
 }
 
-// References this type has to the given type
-func (m *MapType) References(d *TypeName) bool {
-	return m.key.References(d) || m.value.References(d)
+// References returns all of the types referenced by either the the key or value types.
+func (m *MapType) References() TypeNameSet {
+	return SetUnion(m.key.References(), m.value.References())
 }
 
 // Equals returns true if the passed type is a map type with the same kinds of keys and elements, false otherwise
@@ -60,16 +74,4 @@ func (m *MapType) Equals(t Type) bool {
 	}
 
 	return false
-}
-
-// CreateInternalDefinitions invokes CreateInCreateInternalDefinitions on both key and map types
-func (m *MapType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []TypeDefiner) {
-	newKeyType, keyOtherTypes := m.key.CreateInternalDefinitions(name, idFactory)
-	newValueType, valueOtherTypes := m.value.CreateInternalDefinitions(name, idFactory)
-	return NewMapType(newKeyType, newValueType), append(keyOtherTypes, valueOtherTypes...)
-}
-
-// CreateDefinitions defines a named type for this MapType
-func (m *MapType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
-	return NewSimpleTypeDefiner(name, m), nil
 }

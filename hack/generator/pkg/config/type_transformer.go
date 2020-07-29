@@ -7,9 +7,13 @@ package config
 
 import (
 	"fmt"
+
+	"github.com/pkg/errors"
+
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
 
+// A transformation target
 type TransformTarget struct {
 	PackagePath string `yaml:",omitempty"`
 	Name        string `yaml:",omitempty"`
@@ -32,7 +36,7 @@ func (transformer *TypeTransformer) Initialize() error {
 	}
 
 	if transformer.Target.Name == "" {
-		return fmt.Errorf(
+		return errors.Errorf(
 			"type transformer for group: %s, version: %s, name: %s is missing type name to transform to",
 			transformer.Group,
 			transformer.Version,
@@ -44,8 +48,8 @@ func (transformer *TypeTransformer) Initialize() error {
 		return transformer.initializePrimitiveTypeTarget()
 	}
 
-	transformer.targetType = astmodel.NewTypeName(
-		*astmodel.NewPackageReference(transformer.Target.PackagePath),
+	transformer.targetType = astmodel.MakeTypeName(
+		astmodel.MakePackageReference(transformer.Target.PackagePath),
 		transformer.Target.Name)
 	return nil
 }
@@ -61,7 +65,7 @@ func (transformer *TypeTransformer) initializePrimitiveTypeTarget() error {
 	case "string":
 		transformer.targetType = astmodel.StringType
 	default:
-		return fmt.Errorf(
+		return errors.Errorf(
 			"type transformer for group: %s, version: %s, name: %s has unknown"+
 				"primtive type transformation target: %s",
 			transformer.Group,
@@ -74,7 +78,9 @@ func (transformer *TypeTransformer) initializePrimitiveTypeTarget() error {
 	return nil
 }
 
-func (transformer *TypeTransformer) TransformTypeName(typeName *astmodel.TypeName) astmodel.Type {
+// TransformTypeName transforms the type with the specified name into the TypeTransformer target type if
+// the provided type name matches the pattern(s) specified in the TypeTransformer
+func (transformer *TypeTransformer) TransformTypeName(typeName astmodel.TypeName) astmodel.Type {
 	name := typeName.Name()
 
 	if typeName.PackageReference.IsLocalPackage() {

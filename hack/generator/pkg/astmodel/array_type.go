@@ -9,7 +9,7 @@ import (
 	"go/ast"
 )
 
-// ArrayType is used for fields that contain an array of values
+// ArrayType is used for properties that contain an array of values
 type ArrayType struct {
 	element Type
 }
@@ -22,6 +22,10 @@ func NewArrayType(element Type) *ArrayType {
 // assert we implemented Type correctly
 var _ Type = (*ArrayType)(nil)
 
+func (array *ArrayType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description *string) []ast.Decl {
+	return AsSimpleDeclarations(codeGenerationContext, name, description, array)
+}
+
 // AsType renders the Go abstract syntax tree for an array type
 func (array *ArrayType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
 	return &ast.ArrayType{
@@ -30,13 +34,13 @@ func (array *ArrayType) AsType(codeGenerationContext *CodeGenerationContext) ast
 }
 
 // RequiredImports returns a list of packages required by this
-func (array *ArrayType) RequiredImports() []*PackageReference {
+func (array *ArrayType) RequiredImports() []PackageReference {
 	return array.element.RequiredImports()
 }
 
-// References this type has to the given type
-func (array *ArrayType) References(d *TypeName) bool {
-	return array.element.References(d)
+// References returns the references of the type this array contains.
+func (array *ArrayType) References() TypeNameSet {
+	return array.element.References()
 }
 
 // Equals returns true if the passed type is an array type with the same kind of elements, false otherwise
@@ -50,15 +54,4 @@ func (array *ArrayType) Equals(t Type) bool {
 	}
 
 	return false
-}
-
-// CreateInternalDefinitions invokes CreateInternalDefinitions on the inner 'element' type
-func (array *ArrayType) CreateInternalDefinitions(name *TypeName, idFactory IdentifierFactory) (Type, []TypeDefiner) {
-	newElementType, otherTypes := array.element.CreateInternalDefinitions(name, idFactory)
-	return NewArrayType(newElementType), otherTypes
-}
-
-// CreateDefinitions defines a named type for this array type
-func (array *ArrayType) CreateDefinitions(name *TypeName, _ IdentifierFactory, _ bool) (TypeDefiner, []TypeDefiner) {
-	return NewSimpleTypeDefiner(name, array), nil
 }
