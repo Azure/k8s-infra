@@ -35,7 +35,7 @@ There are three case studies that accompany this specification, each one walking
 
 The [**Rolling Versions**](case-study-rolling-storage-versions.md) case study shows how the preferred solution adapts to changes as the Azure Resources evolve over time.
 
-The [**Fixed Version**](case-study-fixed-storage-versions.md) case study shows how the primary alternative would fare, calling out some specific problems that will occur.
+The [**Fixed Version**](case-study-fixed-storage-version.md) case study shows how the primary alternative would fare, calling out some specific problems that will occur.
 
 The [**Chained Versions**](case-study-chained-storage-versions.md) case study shows another alternative that maximizes code reuse between versions of the service operator.
 
