@@ -68,11 +68,12 @@ func (c ReferenceGraph) collectTypes(depth int, node TypeName, collected Reachab
 	if currentDepth, ok := collected[node]; ok {
 		// We can stop here - we've already visited this node.
 		// But first, see if we are at a lower depth:
-		if depth < currentDepth {
-			collected[node] = depth
+		if depth >= currentDepth {
+			return
 		}
 
-		return
+		// if the depth is lower than what we already had
+		// we must continue to reassign depths
 	}
 
 	collected[node] = depth
