@@ -182,15 +182,6 @@ func (it *OpenAPISchema) IsRef() bool {
 	return it.schema.Ref.GetURL() != nil
 }
 
-func objectNameFromPointer(ptr *jsonpointer.Pointer) string {
-	tokens := ptr.DecodedTokens()
-	if len(tokens) != 2 || tokens[0] != "definitions" {
-		panic(fmt.Sprintf("not understood: %v", tokens))
-	}
-
-	return tokens[1]
-}
-
 type fileNameAndSwagger struct {
 	fileName string
 	swagger  spec.Swagger
@@ -328,6 +319,17 @@ func (it *OpenAPISchema) RefGroupName() (string, error) {
 
 func (it *OpenAPISchema) RefObjectName() (string, error) {
 	return objectNameFromPointer(it.schema.Ref.GetPointer()), nil
+}
+
+func objectNameFromPointer(ptr *jsonpointer.Pointer) string {
+	// turns a fragment like "#/definitions/Name" into "Name"
+	tokens := ptr.DecodedTokens()
+	if len(tokens) != 2 || tokens[0] != "definitions" {
+		// this condition is never violated by the swagger files
+		panic(fmt.Sprintf("not understood: %v", tokens))
+	}
+
+	return tokens[1]
 }
 
 func (it *OpenAPISchema) RefIsResource() bool {
