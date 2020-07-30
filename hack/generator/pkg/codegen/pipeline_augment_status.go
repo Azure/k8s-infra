@@ -29,6 +29,11 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 		"Add information from Swagger specs for 'status' fields",
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 
+			if config.Status.SchemaRoot == "" {
+				klog.Warningf("no status schema root specified, not generating status types")
+				return types, nil
+			}
+
 			klog.V(2).Info("loading Swagger data")
 
 			swaggerTypes, err := loadSwaggerData(ctx, idFactory, config)
