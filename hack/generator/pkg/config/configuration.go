@@ -6,6 +6,8 @@
 package config
 
 import (
+	"path/filepath"
+
 	"github.com/pkg/errors"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 
@@ -16,6 +18,8 @@ import (
 type Configuration struct {
 	// Base URL for the JSON schema to generate
 	SchemaURL string `yaml:"schemaUrl"`
+	// Information about where to location status (Swagger) files
+	Status StatusConfiguration `yaml:"status"`
 	// The folder where the code should be generated
 	OutputPath string `yaml:"outputPath"`
 	// Filters used to control which types are exported
@@ -62,7 +66,7 @@ func (config *Configuration) WithExportFilters(filters ...*ExportFilter) *Config
 
 // Initialize checks for common errors and initializes structures inside the configuration
 // which need additional setup after json deserialization
-func (config *Configuration) Initialize() error {
+func (config *Configuration) Initialize(myLocation string) error {
 	if config.SchemaURL == "" {
 		return errors.New("SchemaURL missing")
 	}
@@ -92,6 +96,15 @@ func (config *Configuration) Initialize() error {
 		if err != nil {
 			errs = append(errs, err)
 		}
+	}
+
+	// make Status.SchemaRoot an absolute path
+	absLocation, err := filepath.Abs(myLocation)
+	if err != nil {
+		errs = append(errs, err)
+	} else {
+		parentDir := filepath.Dir(absLocation)
+		config.Status.SchemaRoot = filepath.Join(parentDir, config.Status.SchemaRoot)
 	}
 
 	return kerrors.NewAggregate(errs)
@@ -148,4 +161,31 @@ func (config *Configuration) TransformType(name astmodel.TypeName) (astmodel.Typ
 
 	// No matches, return nil
 	return nil, ""
+}
+
+// StatusConfiguration provides configuration options for the
+// status parts of resources, which are generated from the
+// Azure Swagger specs.
+type StatusConfiguration struct {
+	// The root URL of the status (Swagger) files (relative to this file)
+	SchemaRoot string `yaml:"schemaRoot"`
+
+	// The per-namespace configuration
+	Schemas []StatusNamespace `yaml:"schemas"`
+}
+
+// StatusNamespace provides per-namespace configuration
+type StatusNamespace struct {
+	// The root for this namespace (relative to SchemaRoot)
+	BasePath string `yaml:"basePath"`
+
+	// The namespace that corresponds to this
+	// (this is "group" in our terminology)
+	Namespace string `yaml:"namespace"`
+
+	// A suffix to add on to the namespace
+	// this is used, for example, to separate the Microsoft.Network
+	// and Microsoft.Network.Frontdoor specs (even though both use
+	// Microsoft.Network in the input Swagger)
+	Suffix string `yaml:"suffix"`
 }

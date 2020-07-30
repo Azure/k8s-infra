@@ -7,7 +7,9 @@ package codegen
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -29,47 +31,40 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 
 			klog.V(2).Info("loading Swagger data")
 
-			statusTypes, err := loadSwaggerData(ctx, idFactory, config)
+			swaggerTypes, err := loadSwaggerData(ctx, idFactory, config)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to load Swagger data")
 			}
 
-			klog.Infof("loaded Swagger data (%v types)", len(statusTypes))
+			klog.Infof("loaded Swagger data (%v resources, %v other types)", len(swaggerTypes.resources), len(swaggerTypes.types))
 
 			newTypes := make(astmodel.Types)
 
-			statusVisitor := makeStatusVisitor(statusTypes)
+			resourceLookup, otherTypes := makeStatusLookup(swaggerTypes)
+			for _, otherType := range otherTypes {
+				newTypes.Add(otherType)
+			}
 
+			found := 0
+			notFound := 0
 			for typeName, typeDef := range types {
-				// insert all status objects regardless of if they are used;
-				// they will be trimmed by a later phase if they are not
-				if statusDef, ok := statusTypes[typeName]; ok {
-					statusType := statusDef.Type()
-					switch statusType.(type) {
-					case *astmodel.ResourceType:
-						panic("should never happen")
-					case *astmodel.ObjectType:
-						statusName := appendStatusToName(typeName)
-						statusType = statusVisitor.Visit(statusType, nil)
-						newTypes.Add(astmodel.MakeTypeDefinition(statusName, statusType))
-					}
-				}
-
 				if resource, ok := typeDef.Type().(*astmodel.ResourceType); ok {
-					if statusDef, ok := statusTypes[typeName]; ok {
-						statusType := statusDef.Type()
-						statusType = statusVisitor.Visit(statusType, nil)
+					if statusDef, ok := resourceLookup[typeName]; ok {
 						//klog.Infof("Found swagger information for %v", typeName)
-						newTypes.Add(astmodel.MakeTypeDefinition(typeName, resource.WithStatus(statusType)))
+						newTypes.Add(astmodel.MakeTypeDefinition(typeName, resource.WithStatus(statusDef)))
+						found++
 					} else {
-						klog.Infof("No swagger information found for %v", typeName)
+						klog.Warningf("No swagger information found for %v", typeName)
 						newTypes.Add(typeDef)
+						notFound++
 					}
 				} else {
 					newTypes.Add(typeDef)
 				}
 			}
 
+			klog.Infof("Found status information for %v resources", found)
+			klog.Infof("Missing status information for %v resources", notFound)
 			klog.Infof("Input %v types, output %v types", len(types), len(newTypes))
 
 			return newTypes, nil
@@ -77,67 +72,149 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 	}
 }
 
-func appendStatusToName(typeName astmodel.TypeName) astmodel.TypeName {
-	return astmodel.MakeTypeName(typeName.PackageReference, typeName.Name()+"Status")
+type resourceLookup map[astmodel.TypeName]astmodel.Type
+
+// makeStatusLookup makes a map of old name (non-status name) to status type
+func makeStatusLookup(swaggerTypes swaggerTypes) (resourceLookup, []astmodel.TypeDefinition) {
+	statusVisitor := makeStatusVisitor()
+
+	var otherTypes []astmodel.TypeDefinition
+	for typeName, typeDef := range swaggerTypes.types {
+		newName := appendStatusToName(typeName)
+		otherTypes = append(otherTypes, astmodel.MakeTypeDefinition(newName, statusVisitor.Visit(typeDef.Type(), nil)))
+	}
+
+	resources := make(resourceLookup)
+	for resourceName, resourceDef := range swaggerTypes.resources {
+		resources[resourceName] = statusVisitor.Visit(resourceDef.Type(), nil)
+	}
+
+	return resources, otherTypes
 }
 
-func makeStatusVisitor(statusTypes astmodel.Types) astmodel.TypeVisitor {
+func appendStatusToName(typeName astmodel.TypeName) astmodel.TypeName {
+	return astmodel.MakeTypeName(typeName.PackageReference, typeName.Name()+"_Status")
+}
+
+func makeStatusVisitor() astmodel.TypeVisitor {
 	visitor := astmodel.MakeTypeVisitor()
 
-	// rename any references to object/resource types
 	visitor.VisitTypeName = func(this *astmodel.TypeVisitor, it astmodel.TypeName, ctx interface{}) astmodel.Type {
-		if statusType, ok := statusTypes[it]; ok {
-			switch statusType.Type().(type) {
-			case *astmodel.ResourceType:
-			case *astmodel.ObjectType:
-				return appendStatusToName(it)
+		return appendStatusToName(it)
+		/*
+			if statusType, ok := statusTypes[it]; ok {
+				switch statusType.Type().(type) {
+				case *astmodel.ResourceType:
+				case *astmodel.ObjectType:
+					return appendStatusToName(it)
+				}
 			}
-		}
 
-		return it
+			return it
+		*/
 	}
 
 	return visitor
 }
 
 var swaggerVersionRegex = regexp.MustCompile("\\d{4}-\\d{2}-\\d{2}(-preview)?")
-var swaggerGroupRegex = regexp.MustCompile("[Mm]icrosoft\\.[^/\\\\]+")
 
-func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, config *config.Configuration) (astmodel.Types, error) {
+type swaggerTypes struct {
+	resources astmodel.Types
+	types     astmodel.Types
+}
 
-	azureRestSpecsRoot := "/home/george/k8s-infra/hack/generator/azure-rest-api-specs/specification"
-	loaded, err := loadSchemas(ctx, azureRestSpecsRoot)
+func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, config *config.Configuration) (swaggerTypes, error) {
+
+	result := swaggerTypes{
+		resources: make(astmodel.Types),
+		types:     make(astmodel.Types),
+	}
+
+	cache := jsonast.MakeOpenAPISchemaCache()
+
+	for _, namespace := range config.Status.Schemas {
+		rootPath := path.Join(config.Status.SchemaRoot, namespace.BasePath)
+
+		// based off: https://github.com/Azure/azure-resource-manager-schemas/blob/1153d20f38e11bf1815bb855f309f83023fe6b0c/generator/cmd/listbasepaths.ts#L12-L15
+		if _, err := os.Stat(path.Join(rootPath, "readme.md")); os.IsNotExist(err) {
+			return swaggerTypes{}, errors.Errorf("configuration points to a directory that does not have status: %q", rootPath)
+		}
+
+		versionDirs, err := findVersionDirectories(rootPath)
+		if err != nil {
+			return swaggerTypes{}, errors.Wrapf(err, "unable to find version directories")
+		}
+
+		for _, versionDir := range versionDirs {
+			version := path.Base(versionDir)
+
+			schemas, err := loadSchemas(ctx, versionDir, cache)
+			if err != nil {
+				return swaggerTypes{}, err
+			}
+
+			outputGroup := namespace.Namespace
+			if namespace.Suffix != "" {
+				outputGroup = outputGroup + "." + namespace.Suffix
+			}
+
+			extractor := typeExtractor{
+				outputVersion: version,
+				outputGroup:   outputGroup,
+				idFactory:     idFactory,
+				cache:         cache,
+				config:        config,
+			}
+
+			for filePath, schema := range schemas {
+				err := extractor.extractTypes(ctx, filePath, schema, result.resources, result.types)
+				if err != nil {
+					return swaggerTypes{}, err
+				}
+			}
+		}
+	}
+
+	return result, nil
+}
+
+func findVersionDirectories(rootPath string) ([]string, error) {
+	candidates, err := ioutil.ReadDir(rootPath)
 	if err != nil {
 		return nil, err
 	}
 
-	statusTypes := make(astmodel.Types)
+	var result []string
+	for _, candidate := range candidates {
+		if candidate.IsDir() {
+			candidatePath := path.Join(rootPath, candidate.Name())
+			if swaggerVersionRegex.MatchString(candidate.Name()) {
+				result = append(result, candidatePath)
+			} else {
+				results, err := findVersionDirectories(candidatePath)
+				if err != nil {
+					return nil, err
+				}
 
-	extractor := typeExtractor{
-		idFactory: idFactory,
-		cache:     loaded.cache,
-		config:    config,
-	}
-
-	for filePath, schema := range loaded.schemas {
-		err := extractor.extractTypes(ctx, filePath, schema, statusTypes)
-		if err != nil {
-			return nil, err
+				result = append(result, results...)
+			}
 		}
 	}
 
-	return statusTypes, nil
+	return result, nil
 }
 
-type loadResult struct {
-	schemas map[string]spec.Swagger
-	cache   *jsonast.OpenAPISchemaCache
+var skipDirectories = []string{
+	"/examples/",
+	"/quickstart-templates/",
+	"/control-plane/",
+	"/data-plane/",
 }
 
-func loadSchemas(ctx context.Context, rootPath string) (loadResult, error) {
+func loadSchemas(ctx context.Context, rootPath string, cache *jsonast.OpenAPISchemaCache) (map[string]spec.Swagger, error) {
 
 	var wg sync.WaitGroup
-	cache := jsonast.MakeOpenAPISchemaCache()
 
 	var mutex sync.Mutex
 	schemas := make(map[string]spec.Swagger)
@@ -152,30 +229,32 @@ func loadSchemas(ctx context.Context, rootPath string) (loadResult, error) {
 			return ctx.Err()
 		}
 
-		// TODO: less hardcoding
-		if filepath.Ext(path) == ".json" &&
-			!strings.Contains(path, "/examples/") &&
-			!strings.Contains(path, "/quickstart-templates/") &&
-			!strings.Contains(path, "/control-plane/") &&
-			!strings.Contains(path, "/data-plane/") {
-
-			wg.Add(1)
-			go func() {
-				swagger, err := cache.PreloadCache(path)
-				mutex.Lock()
-				if err != nil {
-					// first error wins
-					if sharedErr == nil {
-						sharedErr = err
-					}
-				} else {
-					schemas[path] = swagger
-				}
-				mutex.Unlock()
-
-				wg.Done()
-			}()
+		for _, skipDir := range skipDirectories {
+			if strings.Contains(path, skipDir) {
+				return filepath.SkipDir // this is a magic error
+			}
 		}
+
+		if filepath.Ext(path) != ".json" {
+			return nil
+		}
+
+		wg.Add(1)
+		go func() {
+			swagger, err := cache.PreloadCache(path)
+			mutex.Lock()
+			if err != nil {
+				// first error wins
+				if sharedErr == nil {
+					sharedErr = err
+				}
+			} else {
+				schemas[path] = swagger
+			}
+			mutex.Unlock()
+
+			wg.Done()
+		}()
 
 		return nil
 	})
@@ -183,30 +262,33 @@ func loadSchemas(ctx context.Context, rootPath string) (loadResult, error) {
 	wg.Wait()
 
 	if err != nil {
-		return loadResult{}, err
+		return nil, err
 	}
 
 	if sharedErr != nil {
-		return loadResult{}, sharedErr
+		return nil, sharedErr
 	}
 
-	return loadResult{schemas, cache}, nil
+	return schemas, nil
 }
 
 type typeExtractor struct {
 	idFactory astmodel.IdentifierFactory
 	config    *config.Configuration
 	cache     *jsonast.OpenAPISchemaCache
+	// group for output types (e.g. Microsoft.Network.Frontdoor)
+	outputGroup   string
+	outputVersion string
 }
 
 func (extractor *typeExtractor) extractTypes(
 	ctx context.Context,
 	filePath string,
 	swagger spec.Swagger,
+	resources astmodel.Types,
 	types astmodel.Types) error {
 
-	version := swagger.Info.Version
-	packageName := extractor.idFactory.CreatePackageNameFromVersion(version)
+	packageName := extractor.idFactory.CreatePackageNameFromVersion(extractor.outputVersion)
 
 	scanner := jsonast.NewSchemaScanner(extractor.idFactory, extractor.config)
 
@@ -216,19 +298,13 @@ func (extractor *typeExtractor) extractTypes(
 			continue
 		}
 
-		group := swaggerGroupRegex.FindString(operationPath)
-		if group == "" {
-			klog.Warningf("unable to extract group from %q", operationPath)
-			continue
-		}
-
-		resourceName, err := extractor.resourceNameFromOperationPath(group, packageName, operationPath)
+		resourceName, err := extractor.resourceNameFromOperationPath(packageName, operationPath)
 		if err != nil {
-			klog.Errorf("unable to produce resource name for path %q (in %s)", operationPath, filePath)
+			klog.Errorf("unable to produce resource name for path %q (in %s): %v", operationPath, filePath, err)
 			continue
 		}
 
-		resourceType, err := extractor.resourceTypeFromOperation(ctx, scanner, swagger, filePath, group, put)
+		resourceType, err := extractor.resourceTypeFromOperation(ctx, scanner, swagger, filePath, put)
 		if err != nil {
 			if err == context.Canceled {
 				return err
@@ -239,19 +315,23 @@ func (extractor *typeExtractor) extractTypes(
 		}
 
 		if resourceType != nil {
-			if existingResource, ok := types[resourceName]; !ok {
-				types.Add(astmodel.MakeTypeDefinition(resourceName, resourceType))
-			} else {
+			if existingResource, ok := resources[resourceName]; ok {
 				if !astmodel.TypeEquals(existingResource.Type(), resourceType) {
-					klog.Errorf("already defined differently: %v (in %s)", resourceName, filePath)
+					klog.Errorf("RESOURCE already defined differently 😱: %v (%s)", resourceName, filePath)
 				}
+			} else {
+				resources.Add(astmodel.MakeTypeDefinition(resourceName, resourceType))
 			}
 		}
 	}
 
-	for key, def := range scanner.Definitions() {
+	for _, def := range scanner.Definitions() {
 		// get generated-aside definitions too
-		if _, ok := types[key]; !ok {
+		if existingDef, ok := types[def.Name()]; ok {
+			if !astmodel.TypeEquals(existingDef.Type(), def.Type()) {
+				klog.Errorf("type already defined differently: %v (%s)", def.Name(), filePath)
+			}
+		} else {
 			types.Add(def)
 		}
 	}
@@ -259,14 +339,14 @@ func (extractor *typeExtractor) extractTypes(
 	return nil
 }
 
-func (extractor *typeExtractor) resourceNameFromOperationPath(group string, packageName string, operationPath string) (astmodel.TypeName, error) {
+func (extractor *typeExtractor) resourceNameFromOperationPath(packageName string, operationPath string) (astmodel.TypeName, error) {
 	// infer name from path
-	name, err := inferNameFromURLPath(group, operationPath)
+	_, name, err := inferNameFromURLPath(operationPath)
 	if err != nil {
 		return astmodel.TypeName{}, errors.Wrapf(err, "unable to infer name from path")
 	}
 
-	packageRef := astmodel.MakeLocalPackageReference(extractor.idFactory.CreateGroupName(group), packageName)
+	packageRef := astmodel.MakeLocalPackageReference(extractor.idFactory.CreateGroupName(extractor.outputGroup), packageName)
 	return astmodel.MakeTypeName(packageRef, name), nil
 }
 
@@ -275,12 +355,18 @@ func (extractor *typeExtractor) resourceTypeFromOperation(
 	scanner *jsonast.SchemaScanner,
 	schemaRoot spec.Swagger,
 	filePath string,
-	group string,
 	operation *spec.Operation) (astmodel.Type, error) {
 
 	for _, param := range operation.Parameters {
 		if param.In == "body" && param.Required { // assume this is the Resource
-			schema := jsonast.MakeOpenAPISchema(*param.Schema, schemaRoot, filePath, group, extractor.cache)
+			schema := jsonast.MakeOpenAPISchema(
+				*param.Schema,
+				schemaRoot,
+				filePath,
+				extractor.outputGroup,
+				extractor.outputVersion,
+				extractor.cache)
+
 			return scanner.RunHandlerForSchema(ctx, schema)
 		}
 	}
@@ -288,8 +374,11 @@ func (extractor *typeExtractor) resourceTypeFromOperation(
 	return nil, nil
 }
 
-func inferNameFromURLPath(group string, operationPath string) (string, error) {
+func inferNameFromURLPath(operationPath string) (string, string, error) {
+
+	group := ""
 	name := ""
+
 	urlParts := strings.Split(operationPath, "/")
 	reading := false
 	skippedLast := false
@@ -301,23 +390,27 @@ func inferNameFromURLPath(group string, operationPath string) (string, error) {
 			} else {
 				if skippedLast {
 					// this means two {parameters} in a row
-					return "", errors.Errorf("multiple parameters in path")
+					return "", "", errors.Errorf("multiple parameters in path")
 				}
 
 				skippedLast = true
 			}
-		} else if strings.ToLower(urlPart) == strings.ToLower(group) {
+		} else if swaggerGroupRegex.MatchString(urlPart) {
+			group = urlPart
 			reading = true
 		}
 	}
 
 	if reading == false {
-		return "", errors.Errorf("no group name (‘Microsoft…’) found")
+		return "", "", errors.Errorf("no group name (‘Microsoft…’ = %q) found", group)
 	}
 
 	if name == "" {
-		return "", errors.Errorf("couldn’t infer name")
+		return "", "", errors.Errorf("couldn’t infer name")
 	}
 
-	return name, nil
+	return group, name, nil
 }
+
+// based on: https://github.com/Azure/autorest/blob/85de19623bdce3ccc5000bae5afbf22a49bc4665/core/lib/pipeline/metadata-generation.ts#L25
+var swaggerGroupRegex = regexp.MustCompile("[Mm]icrosoft\\.[^/\\\\]+")

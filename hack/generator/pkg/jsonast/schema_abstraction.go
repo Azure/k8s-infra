@@ -212,7 +212,7 @@ func (it GoJSONSchema) RefGroupName() (string, error) {
 	return strings.TrimSuffix(file, ".json"), nil
 }
 
-var versionRegex = regexp.MustCompile(`\d{4}-\d{2}-\d{2}`)
+var versionRegex = regexp.MustCompile(`v1|(\d{4}-\d{2}-\d{2}(-preview)?)`)
 
 func (it GoJSONSchema) RefVersion() (string, error) {
 	url := it.schema.Ref.GetUrl()
@@ -247,6 +247,7 @@ type OpenAPISchema struct {
 	root      spec.Swagger
 	fileName  string
 	groupName string
+	version   string
 
 	cache *OpenAPISchemaCache
 }
@@ -262,8 +263,14 @@ func MakeOpenAPISchemaCache() *OpenAPISchemaCache {
 	}
 }
 
-func MakeOpenAPISchema(schema spec.Schema, root spec.Swagger, fileName string, groupName string, cache *OpenAPISchemaCache) Schema {
-	return &OpenAPISchema{schema, root, fileName, groupName, cache}
+func MakeOpenAPISchema(
+	schema spec.Schema,
+	root spec.Swagger,
+	fileName string,
+	groupName string,
+	version string,
+	cache *OpenAPISchemaCache) Schema {
+	return &OpenAPISchema{schema, root, fileName, groupName, version, cache}
 }
 
 func (it *OpenAPISchema) withNewSchema(newSchema spec.Schema) Schema {
@@ -272,6 +279,7 @@ func (it *OpenAPISchema) withNewSchema(newSchema spec.Schema) Schema {
 		it.root,
 		it.fileName,
 		it.groupName,
+		it.version,
 		it.cache,
 	}
 }
@@ -524,18 +532,16 @@ func (it *OpenAPISchema) RefSchema() Schema {
 			result,
 			root,
 			fileName,
+			// TODO: dubious, should be based on fileName
 			it.groupName,
+			it.version,
 			it.cache,
 		}
 	}
 }
 
 func (it *OpenAPISchema) RefVersion() (string, error) {
-	if it.root.Info != nil && it.root.Info.Version != "" {
-		return it.root.Info.Version, nil
-	}
-
-	return "", errors.Errorf("no version on root schema")
+	return it.version, nil
 }
 
 func (it *OpenAPISchema) RefGroupName() (string, error) {

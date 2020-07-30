@@ -29,7 +29,7 @@ func NewCodeGeneratorFromConfigFile(configurationFile string) (*CodeGenerator, e
 		return nil, errors.Wrapf(err, "failed to load configuration file %q", configurationFile)
 	}
 
-	err = configuration.Initialize()
+	err = configuration.Initialize(configurationFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "configuration loaded from %q is invalid", configurationFile)
 	}
