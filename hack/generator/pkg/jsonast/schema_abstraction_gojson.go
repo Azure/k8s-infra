@@ -151,7 +151,7 @@ func (it GoJSONSchema) RefGroupName() (string, error) {
 	return strings.TrimSuffix(file, ".json"), nil
 }
 
-var versionRegex = regexp.MustCompile(`v1|(\d{4}-\d{2}-\d{2}(-preview)?)`)
+var versionRegex = regexp.MustCompile(`\d{4}-\d{2}-\d{2}(-preview)?`)
 
 func (it GoJSONSchema) RefVersion() (string, error) {
 	url := it.schema.Ref.GetUrl()

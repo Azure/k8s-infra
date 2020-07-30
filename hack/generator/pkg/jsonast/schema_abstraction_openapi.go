@@ -307,7 +307,10 @@ func (it *OpenAPISchema) RefSchema() Schema {
 			result,
 			root,
 			fileName,
-			// TODO: dubious, should be based on fileName
+			// Note that we preserve the groupName and version that were input at the start,
+			// even if we are reading a file from a different group or version. this is intentional;
+			// essentially all imported types are copied into the target group/version, which avoids
+			// issues with types from the 'common-types' files which have no group and a version of 'v1'.
 			it.groupName,
 			it.version,
 			it.cache,
