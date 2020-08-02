@@ -1,8 +1,34 @@
-# Versioning
+<!-- omit in toc -->
+# Versioning 
+
 
 Specification for how storage versioning will operate for code generated CRD definitions.
 
-We're generating a large volume of CRD definitions based on the JSON schema definitions available for Azure Resource Manager use.
+We're generating a large number of CRD definitions based on the JSON schema definitions published for Azure Resource Manager use.
+
+<!-- omit in toc -->
+## Table of Contents
+
+- [Goals](#goals)
+- [Non-Goals](#non-goals)
+- [Other Constraints](#other-constraints)
+- [Case Studies](#case-studies)
+- [Proposed Solution](#proposed-solution)
+  - [Defining a central hub type](#defining-a-central-hub-type)
+  - [Generated conversion methods](#generated-conversion-methods)
+  - [External Metadata for common changes](#external-metadata-for-common-changes)
+  - [Standard extension points](#standard-extension-points)
+- [Testing](#testing)
+  - [Round Trip Testing](#round-trip-testing)
+  - [Relibility Testing](#relibility-testing)
+  - [Golden Tests](#golden-tests)
+- [Alternative Solutions](#alternative-solutions)
+  - [Alternative: Fixed storage version](#alternative-fixed-storage-version)
+  - [Alternative: Use the latest API version](#alternative-use-the-latest-api-version)
+- [Metadata Design](#metadata-design)
+- [Outstanding Issues](#outstanding-issues)
+  - [Service Operator Upgrades](#service-operator-upgrades)
+- [See Also](#see-also)
 
 ## Goals
 
@@ -296,8 +322,17 @@ As identification of renames requires manual inspection, any case of a property 
 
 ## Outstanding Issues
 
+### Service Operator Upgrades
 
+There are a number of issues outstanding around upgrades of the service operator.
 
+**Timing** - when are upgrades triggered? Does this happen immediately after installation of a new version of the service operator, or does it happen at a later point? If so, what's the trigger?
+
+**Atomicity** - are all the CRDs upgraded in one atomic operation that either succeeds or fails, or are they upgraded one at a time? Are CRDs upgraded serially, or in parallel? 
+
+**Performance** - for users who have a large number of CRDs (hundreds to thousands), what sort of upgrade performance will they see? 
+
+**Recovery** - if an upgrade aborts part way through, or if a new version of the service operator proves to be unreliable, is it possible for users to roll back to a previous version, or must they roll forward to a fixed version?
 
 ## See Also
 
