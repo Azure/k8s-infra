@@ -1,3 +1,4 @@
+<!-- omit in toc -->
 # Case Study - Rolling Storage Versions
 
 This case study explores the recommended solution of using a *rolling storage version* where we update the storage schema of each resource each release of the service operator. We'll keep the storage version up to date with the latest GA release of each resource.
@@ -5,6 +6,42 @@ This case study explores the recommended solution of using a *rolling storage ve
 For the purposes of discussion, we'll be following the version by version evolution of a theoretical ARM service that provides customer resource management (CRM) services. Synthetic examples are used to allow focus on specific scenarios one by one, providing motivation for specific features.
 
 Examples shown are deliberately simplified in order to focus, and therefore minutiae should be considered motivational, not binding. Reference the formal specification for precise details.
+
+## Table of Contents
+
+- [Version 2011-01-01 - Initial Release](#version-2011-01-01---initial-release)
+  - [Storage Conversion](#storage-conversion)
+  - [Version Map](#version-map)
+- [Version 2012-02-02 - No Change](#version-2012-02-02---no-change)
+  - [Storage Conversion](#storage-conversion-1)
+  - [Version Map](#version-map-1)
+- [Version 2013-03-03 - New Property](#version-2013-03-03---new-property)
+  - [Storage Conversions](#storage-conversions)
+  - [Version Map](#version-map-2)
+  - [How often are new properties added?](#how-often-are-new-properties-added)
+- [Version 2014-04-04 Preview - Schema Change](#version-2014-04-04-preview---schema-change)
+  - [Storage Conversion](#storage-conversion-2)
+  - [Version Map](#version-map-3)
+- [Version 2014-04-04 - Schema Change](#version-2014-04-04---schema-change)
+  - [Storage Conversion](#storage-conversion-3)
+  - [Version Map](#version-map-4)
+- [Version 2015-05-05 - Property Rename](#version-2015-05-05---property-rename)
+  - [Storage Conversion](#storage-conversion-4)
+  - [Version Map](#version-map-5)
+  - [How often do property renames happen?](#how-often-do-property-renames-happen)
+- [Version 2016-06-06 - Complex Properties](#version-2016-06-06---complex-properties)
+  - [Storage Conversion](#storage-conversion-5)
+  - [Version Map](#version-map-6)
+- [Version 2017-07-07 - Optionality changes](#version-2017-07-07---optionality-changes)
+  - [Storage Conversion](#storage-conversion-6)
+  - [Version Map](#version-map-7)
+  - [How often does optionality change?](#how-often-does-optionality-change)
+- [Version 2018-08-08 - Extending nested properties](#version-2018-08-08---extending-nested-properties)
+  - [Version Map](#version-map-8)
+- [Version 2019-09-09 - Changing types](#version-2019-09-09---changing-types)
+  - [Storage Conversion](#storage-conversion-7)
+  - [Version Map](#version-map-9)
+  - [How often do properties change their type?](#how-often-do-properties-change-their-type)
 
 # Version 2011-01-01 - Initial Release
 

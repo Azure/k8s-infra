@@ -1,3 +1,4 @@
+<!-- omit in toc -->
 # Case Study - Fixed Storage Version
 
 This case study explores the alternative solution of using a *fixed storage version* where the schema of the storage version is modified to handle each additional release.
@@ -5,6 +6,45 @@ This case study explores the alternative solution of using a *fixed storage vers
 For the purposes of discussion, we'll be following the version by version evolution of a theoretical ARM service that provides customer resource management (CRM) services. Synthetic examples are used to allow focus on specific scenarios one by one, providing motivation for specific features.
 
 Examples shown are deliberately simplified in order to focus on specific details, and therefore minutiae should be considered motivational, not binding. Reference the formal specification for precise details.
+
+## Table of Contents
+
+- [Version 2011-01-01 - Initial Release](#version-2011-01-01---initial-release)
+  - [Storage Conversion](#storage-conversion)
+  - [Version Map](#version-map)
+- [Version 2012-02-02 - No Change](#version-2012-02-02---no-change)
+  - [Storage Conversion](#storage-conversion-1)
+  - [Version Map](#version-map-1)
+- [Version 2013-03-03 - New Property](#version-2013-03-03---new-property)
+  - [Storage Conversions](#storage-conversions)
+  - [Version Map](#version-map-2)
+  - [How often are new properties added?](#how-often-are-new-properties-added)
+- [Version 2014-04-04 Preview - Schema Change](#version-2014-04-04-preview---schema-change)
+  - [Storage Conversion](#storage-conversion-2)
+  - [Version Map](#version-map-3)
+- [Version 2014-04-04 - Schema Change](#version-2014-04-04---schema-change)
+  - [Issue: Property Bloat](#issue-property-bloat)
+  - [Storage Conversion](#storage-conversion-3)
+  - [Version Map](#version-map-4)
+- [Version 2015-05-05 - Property Rename](#version-2015-05-05---property-rename)
+  - [Storage Conversion](#storage-conversion-4)
+  - [Version Map](#version-map-5)
+  - [How often do property renames happen?](#how-often-do-property-renames-happen)
+- [Version 2016-06-06 - Complex Properties](#version-2016-06-06---complex-properties)
+  - [Storage Conversion](#storage-conversion-5)
+  - [Version Map](#version-map-6)
+- [Version 2017-07-07 - Optionality changes](#version-2017-07-07---optionality-changes)
+  - [Storage Conversion](#storage-conversion-6)
+  - [Version Map](#version-map-7)
+  - [How often do optionality changes happen?](#how-often-do-optionality-changes-happen)
+  - [Issue: Property Amnesia](#issue-property-amnesia)
+- [Version 2018-08-08 - Extending nested properties](#version-2018-08-08---extending-nested-properties)
+  - [Version Map](#version-map-8)
+- [Version 2019-09-09 - Changing types](#version-2019-09-09---changing-types)
+  - [Issue: Type collision](#issue-type-collision)
+  - [Storage Conversion](#storage-conversion-7)
+  - [Version Map](#version-map-9)
+  - [How often do properties change their type?](#how-often-do-properties-change-their-type)
 
 # Version 2011-01-01 - Initial Release
 
