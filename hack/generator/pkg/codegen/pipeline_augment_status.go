@@ -30,7 +30,7 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 
 			if config.Status.SchemaRoot == "" {
-				klog.Warningf("no status schema root specified, not generating status types")
+				klog.Warningf("no status schema root specified, will not generate status types")
 				return types, nil
 			}
 
