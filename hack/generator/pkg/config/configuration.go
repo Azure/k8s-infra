@@ -18,7 +18,7 @@ import (
 type Configuration struct {
 	// Base URL for the JSON schema to generate
 	SchemaURL string `yaml:"schemaUrl"`
-	// Information about where to location status (Swagger) files
+	// Information about where to locate status (Swagger) files
 	Status StatusConfiguration `yaml:"status"`
 	// The folder where the code should be generated
 	OutputPath string `yaml:"outputPath"`
