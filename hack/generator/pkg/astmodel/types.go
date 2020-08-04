@@ -58,3 +58,10 @@ func (types Types) Contains(name TypeName) bool {
 	_, ok := types[name]
 	return ok
 }
+
+// Union merges this and other, with a safety check that no type is overwritten
+func (types Types) Union(other Types) { // TODO: Do we want this to modify the LHS collection or return a new one?
+	for _, o := range other {
+		types.Add(o)
+	}
+}

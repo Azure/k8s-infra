@@ -12,51 +12,144 @@ import (
 	"github.com/pkg/errors"
 )
 
-// TODO: There should probably actually be 2 passes here, one for Arm (creating types) and one for Kube (modifying existing types)
-func createArmTypes(idFactory astmodel.IdentifierFactory) PipelineStage {
+func createArmTypesAndCleanKubernetesTypes(idFactory astmodel.IdentifierFactory) PipelineStage {
 	return PipelineStage{
 		id: "createArmTypes",
-		description: "Create ARM types",
+		description: "Create ARM types and remove ARM-only properties from Kubernetes types",
 		Action: func(ctx context.Context, definitions astmodel.Types) (astmodel.Types, error) {
-			return createArmTypesInternal(definitions, idFactory)
+			// Two phases:
+			// 1. walk types and produce mapping of Kubernetes Type -> new Arm Type
+			// 2. Walk Kubernetes types, remove ARM-only properties and add conversion interface
+			// 3. merge results from 1 and 2 together
+
+			armTypes, kubeNameToArmDefs, err := createArmTypes(definitions)
+			if err != nil {
+				return nil, err
+			}
+
+			kubeTypes, err := modifyKubeTypes(definitions, kubeNameToArmDefs, idFactory)
+			if err != nil {
+				return nil, err
+			}
+
+			result := make(astmodel.Types)
+			result.Union(armTypes)
+			result.Union(kubeTypes)
+			for _, def := range definitions {
+				if _, ok := result[def.Name()]; !ok {
+					result.Add(def)
+				}
+			}
+
+			return result, nil
 		},
 	}
 }
 
-// createArmTypesInternal generates ARM types and adds them to the object graph
-func createArmTypesInternal(
+func createArmTypes(definitions astmodel.Types) (astmodel.Types, astmodel.Types, error) {
+
+	kubeNameToArmDefs := make(astmodel.Types)
+
+	armDefs, err := iterDefs(
+		definitions,
+		// Resource handler
+		func(name astmodel.TypeName, resourceType *astmodel.ResourceType) (astmodel.TypeName, *astmodel.TypeDefinition, error) {
+			armSpecDef, kubeSpecName, err := createArmResourceSpecDefinition(definitions, name, resourceType)
+			if err != nil {
+				return astmodel.TypeName{}, nil, err
+			}
+			kubeNameToArmDefs[kubeSpecName] = *armSpecDef
+
+			return kubeSpecName, armSpecDef, nil
+		},
+		// Other defs handler
+		func(def astmodel.TypeDefinition) (*astmodel.TypeDefinition, error) {
+			armDef, err := createArmTypeDefinition(
+				definitions,
+				def)
+			if err != nil {
+				return nil, err
+			}
+
+			kubeNameToArmDefs[def.Name()] = *armDef
+
+			return armDef, nil
+		})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return armDefs, kubeNameToArmDefs, nil
+}
+
+func modifyKubeTypes(
 	definitions astmodel.Types,
+	kubeNameToArmDefs astmodel.Types,
 	idFactory astmodel.IdentifierFactory) (astmodel.Types, error) {
 
-	updatedDefs := make(astmodel.Types)
+	return iterDefs(
+		definitions,
+		// Resource handler
+		func(name astmodel.TypeName, resourceType *astmodel.ResourceType) (astmodel.TypeName, *astmodel.TypeDefinition, error) {
+			kubernetesSpecDef, err := modifyKubeResourceSpecDefinition(definitions, idFactory, name, resourceType)
+			if err != nil {
+				return astmodel.TypeName{}, nil, err
+			}
 
-	// This function has multiple objectives:
-	// 1. Create a duplicate hierarchy of ARM types.
-	// 2. Remove ARM only properties (Name, Type) from the Kubernetes type. These properties will
-	//    still exist on the ARM type.
-	// 3. Add Kubernetes only properties (Owner, AzureName) to the Kubernetes type.
-	// 4. Attach an interface to each Kubernetes type which contains methods to transform to/from
-	//    the ARM types.
+			armDef, ok := kubeNameToArmDefs[kubernetesSpecDef.Name()]
+			if !ok {
+				return astmodel.TypeName{}, nil, errors.Errorf("couldn't find arm def matching kube def %q", kubernetesSpecDef.Name())
+			}
+
+			result, err := addArmConversionInterface(*kubernetesSpecDef, armDef, idFactory, true)
+			if err != nil {
+				return astmodel.TypeName{}, nil, err
+			}
+
+			return result.Name(), result, nil
+		},
+		// Other defs handler
+		func(def astmodel.TypeDefinition) (*astmodel.TypeDefinition, error) {
+			armDef, ok := kubeNameToArmDefs[def.Name()]
+			if !ok {
+				return nil, errors.Errorf("couldn't find arm def matching kube def %q", def.Name())
+			}
+
+			return addArmConversionInterface(
+				def,
+				armDef,
+				idFactory,
+				false)
+		})
+}
+
+func iterDefs(
+	definitions astmodel.Types,
+	resourceHandler func(name astmodel.TypeName, resourceType *astmodel.ResourceType) (astmodel.TypeName, *astmodel.TypeDefinition, error),
+	otherDefsHandler func(def astmodel.TypeDefinition) (*astmodel.TypeDefinition, error)) (astmodel.Types, error) {
+
+	newDefs := make(astmodel.Types)
+	actionedDefs := make(map[astmodel.TypeName]struct{})
 
 	// Do all the resources first - this ensures we avoid handling a spec before we've processed
 	// its associated resource.
 	for _, def := range definitions {
 		// Special handling for resources because we need to modify their specs with extra properties
-		if _, ok := def.Type().(*astmodel.ResourceType); ok {
-			kubernetesSpecDef, armSpecDef, err := createArmAndKubeResourceSpecDefinitions(definitions, idFactory, def)
+		if resourceType, ok := def.Type().(*astmodel.ResourceType); ok {
+			specTypeName, newDef, err := resourceHandler(def.Name(), resourceType)
 			if err != nil {
 				return nil, err
 			}
 
-			updatedDefs.Add(*armSpecDef)
-			updatedDefs.Add(*kubernetesSpecDef)
+			newDefs.Add(*newDef)
+			actionedDefs[specTypeName] = struct{}{}
 		}
 	}
 
 	// Process the remaining definitions
 	for _, def := range definitions {
 		// If it's a type which has already been handled (specs from above), skip it
-		if _, ok := updatedDefs[def.Name()]; ok {
+		if _, ok := actionedDefs[def.Name()]; ok {
 			continue
 		}
 
@@ -70,32 +163,14 @@ func createArmTypesInternal(
 			continue
 		}
 
-		kubernetesDef, armDef, err := createArmTypeDefsWithComplexPropertiesTypesUpdated(
-			definitions,
-			idFactory,
-			def)
+		newDef, err := otherDefsHandler(def)
 		if err != nil {
 			return nil, err
 		}
-		updatedDefs.Add(*armDef)
-		updatedDefs.Add(*kubernetesDef)
+		newDefs.Add(*newDef)
 	}
 
-	// Merge our updates in
-	results := make(astmodel.Types)
-	for _, updatedSpec := range updatedDefs {
-		results.Add(updatedSpec)
-	}
-	for _, def := range definitions {
-		_, ok := updatedDefs[def.Name()]
-		if ok {
-			continue // Already included above, so skip here to avoid duplicates
-		}
-
-		results.Add(def)
-	}
-
-	return results, nil
+	return newDefs, nil
 }
 
 func removeValidations(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
@@ -117,76 +192,87 @@ func createArmTypeName(name astmodel.TypeName) astmodel.TypeName {
 	return astmodel.MakeTypeName(name.PackageReference, name.Name()+"Arm")
 }
 
-type armKubeConversionHandler = func(t *astmodel.ObjectType) (*astmodel.ObjectType, error)
+type conversionHandler = func(t *astmodel.ObjectType) (*astmodel.ObjectType, error)
 
-func createArmAndKubeDefinitions(
-	idFactory astmodel.IdentifierFactory,
-	typeDefinition astmodel.TypeDefinition,
-	armStructHandlers []armKubeConversionHandler,
-	kubeStructHandlers []armKubeConversionHandler,
-	isResource bool) (*astmodel.TypeDefinition, *astmodel.TypeDefinition, error) {
+func transformTypeDefinition(
+	def astmodel.TypeDefinition,
+	handlers []conversionHandler) (*astmodel.TypeDefinition, error) {
 
-	originalType, ok := typeDefinition.Type().(*astmodel.ObjectType)
+	originalType, ok := def.Type().(*astmodel.ObjectType)
 	if !ok {
-		return nil, nil, errors.Errorf("input type definition %q (%T) was not of expected type Object", typeDefinition.Name(), typeDefinition.Type())
+		return nil, errors.Errorf("input type %q (%T) was not of expected type Object", def.Name(), def.Type())
 	}
 
-	armType := originalType
+	resultType := originalType
 	var err error
-	for _, handler := range armStructHandlers {
-		armType, err = handler(armType)
+	for _, handler := range handlers {
+		resultType, err = handler(resultType)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
-	kubernetesType := originalType
-	for _, handler := range kubeStructHandlers {
-		kubernetesType, err = handler(kubernetesType)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-
-	armTypeName := createArmTypeName(typeDefinition.Name())
-	kubernetesTypeName := typeDefinition.Name()
-
-	kubernetesType = kubernetesType.WithInterface(
-		armconversion.NewArmTransformerImpl(
-			armTypeName,
-			armType,
-			idFactory,
-			isResource))
-
-	armDef := astmodel.MakeTypeDefinition(
-		armTypeName,
-		armType)
-	kubernetesDef := astmodel.MakeTypeDefinition(
-		kubernetesTypeName,
-		kubernetesType)
-
-	armDef = armDef.WithDescription(typeDefinition.Description())
-	kubernetesDef = kubernetesDef.WithDescription(typeDefinition.Description())
-
-	return &kubernetesDef, &armDef, nil
+	result := def.WithType(resultType)
+	return &result, nil
 }
 
-func createArmAndKubeResourceSpecDefinitions(
+func createArmResourceSpecDefinition(
 	definitions astmodel.Types,
-	idFactory astmodel.IdentifierFactory,
-	resourceDef astmodel.TypeDefinition) (*astmodel.TypeDefinition, *astmodel.TypeDefinition, error) {
+	resourceName astmodel.TypeName,
+	resourceType *astmodel.ResourceType) (*astmodel.TypeDefinition, astmodel.TypeName, error) {
 
-	resourceType := resourceDef.Type().(*astmodel.ResourceType)
+	// TODO: Helper for below (resource spec lookup)
 
 	// The expectation is that the spec type is just a name
 	specName, ok := resourceType.SpecType().(astmodel.TypeName)
 	if !ok {
-		return nil, nil, errors.Errorf("%s spec was not of type TypeName, instead: %T", resourceDef.Name(), resourceType.SpecType())
+		return nil, astmodel.TypeName{}, errors.Errorf("%s spec was not of type TypeName, instead: %T", resourceName, resourceType.SpecType())
 	}
 
 	resourceSpecDef, ok := definitions[specName]
 	if !ok {
-		return nil, nil, errors.Errorf("couldn't find spec for resource %s", resourceDef.Name())
+		return nil, astmodel.TypeName{}, errors.Errorf("couldn't find spec for resource %s", resourceName)
+	}
+
+	armTypeDef, err := createArmTypeDefinition(definitions, resourceSpecDef)
+	if err != nil {
+		return nil, astmodel.TypeName{}, nil
+	}
+
+	return armTypeDef, specName, nil
+}
+
+func createArmTypeDefinition(definitions astmodel.Types, def astmodel.TypeDefinition) (*astmodel.TypeDefinition, error) {
+	complexPropertyHandlerWrapper := func(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
+		return complexPropertyHandler(t, definitions)
+	}
+
+	armDef, err := transformTypeDefinition(
+		// This type is the ARM type so give it the ARM name
+		def.WithName(createArmTypeName(def.Name())),
+		[]conversionHandler{removeValidations, complexPropertyHandlerWrapper})
+	if err != nil {
+		return nil, err
+	}
+
+	return armDef, nil
+}
+
+func modifyKubeResourceSpecDefinition(
+	definitions astmodel.Types,
+	idFactory astmodel.IdentifierFactory,
+	resourceName astmodel.TypeName,
+	resourceType *astmodel.ResourceType) (*astmodel.TypeDefinition, error) {
+
+	// The expectation is that the spec type is just a name
+	specName, ok := resourceType.SpecType().(astmodel.TypeName)
+	if !ok {
+		return nil, errors.Errorf("%s spec was not of type TypeName, instead: %T", resourceName, resourceType.SpecType())
+	}
+
+	resourceSpecDef, ok := definitions[specName]
+	if !ok {
+		return nil, errors.Errorf("couldn't find spec for resource %s", resourceName)
 	}
 
 	createOwnerProperty := func(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
@@ -220,21 +306,37 @@ func createArmAndKubeResourceSpecDefinitions(
 		return kubernetesType, nil
 	}
 
-	complexPropertyHandlerWrapper := func(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
-		return complexPropertyHandler(t, definitions)
-	}
-
-	kubernetesDef, armDef, err := createArmAndKubeDefinitions(
-		idFactory,
+	kubernetesDef, err := transformTypeDefinition(
 		resourceSpecDef,
-		[]armKubeConversionHandler{removeValidations, complexPropertyHandlerWrapper},
-		[]armKubeConversionHandler{kubePropertyRemapper, createOwnerProperty},
-		true)
+		[]conversionHandler{kubePropertyRemapper, createOwnerProperty})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return kubernetesDef, armDef, nil
+	return kubernetesDef, nil
+}
+
+func addArmConversionInterface(
+	kubeDef astmodel.TypeDefinition,
+	armDef astmodel.TypeDefinition,
+	idFactory astmodel.IdentifierFactory,
+	isResource bool) (*astmodel.TypeDefinition, error) {
+	armObjectType, ok := armDef.Type().(*astmodel.ObjectType)
+	if !ok {
+		return nil, errors.Errorf("arm def %q was not of type object", armDef.Name())
+	}
+
+	addInterfaceHandler := func(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
+		return t.WithInterface(armconversion.NewArmTransformerImpl(
+			armDef.Name(),
+			armObjectType,
+			idFactory,
+			isResource)), nil
+	}
+
+	return transformTypeDefinition(
+		kubeDef,
+		[]conversionHandler{addInterfaceHandler})
 }
 
 func convertArmPropertyTypeIfNeeded(definitions astmodel.Types, t astmodel.Type) (astmodel.Type, error) {
@@ -330,25 +432,6 @@ func complexPropertyHandler(t *astmodel.ObjectType, definitions astmodel.Types) 
 	}
 
 	return result, nil
-}
-
-func createArmTypeDefsWithComplexPropertiesTypesUpdated( // TODO: ick, naming
-	definitions astmodel.Types,
-	idFactory astmodel.IdentifierFactory,
-	objectDef astmodel.TypeDefinition) (*astmodel.TypeDefinition, *astmodel.TypeDefinition, error) {
-
-	complexPropertyHandlerWrapper := func(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
-		return complexPropertyHandler(t, definitions)
-	}
-
-	kubernetesDef, armDef, err := createArmAndKubeDefinitions(
-		idFactory,
-		objectDef,
-		[]armKubeConversionHandler{removeValidations, complexPropertyHandlerWrapper},
-		nil,
-		false)
-
-	return kubernetesDef, armDef, err
 }
 
 func createOwnerProperty(idFactory astmodel.IdentifierFactory, ownerTypeName *astmodel.TypeName) (*astmodel.PropertyDefinition, error) {

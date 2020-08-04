@@ -182,9 +182,6 @@ func TestGolden(t *testing.T) {
 			}
 
 			for _, f := range fs {
-				if f.name != "Arm_test_dependent_resource_and_ownership" {
-					continue
-				}
 				t.Run(f.name, func(t *testing.T) {
 					runGoldenTest(t, f.path)
 				})
