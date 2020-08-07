@@ -1,4 +1,4 @@
-schemaUrl: file:///home/george/k8s-infra/hack/generator/deploymentTemplate.json
+schemaUrl: https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json
 outputPath: apis
 typeFilters:
   - action: prune
