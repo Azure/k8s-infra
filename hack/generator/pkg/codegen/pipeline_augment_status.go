@@ -7,7 +7,6 @@ package codegen
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -59,7 +58,7 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 						newTypes.Add(astmodel.MakeTypeDefinition(typeName, resource.WithStatus(statusDef)))
 						found++
 					} else {
-						klog.Warningf("No swagger information found for %v", typeName)
+						//klog.Warningf("No swagger information found for %v", typeName)
 						newTypes.Add(typeDef)
 						notFound++
 					}
@@ -106,17 +105,6 @@ func makeStatusVisitor() astmodel.TypeVisitor {
 
 	visitor.VisitTypeName = func(this *astmodel.TypeVisitor, it astmodel.TypeName, ctx interface{}) astmodel.Type {
 		return appendStatusToName(it)
-		/*
-			if statusType, ok := statusTypes[it]; ok {
-				switch statusType.Type().(type) {
-				case *astmodel.ResourceType:
-				case *astmodel.ObjectType:
-					return appendStatusToName(it)
-				}
-			}
-
-			return it
-		*/
 	}
 
 	return visitor
@@ -129,6 +117,13 @@ type swaggerTypes struct {
 	types     astmodel.Types
 }
 
+var skipDirectories = []string{
+	"/examples/",
+	"/quickstart-templates/",
+	"/control-plane/",
+	"/data-plane/",
+}
+
 func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, config *config.Configuration) (swaggerTypes, error) {
 
 	result := swaggerTypes{
@@ -138,86 +133,51 @@ func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, 
 
 	cache := jsonast.MakeOpenAPISchemaCache()
 
-	for _, namespace := range config.Status.Schemas {
-		rootPath := path.Join(config.Status.SchemaRoot, namespace.BasePath)
-
-		// based off: https://github.com/Azure/azure-resource-manager-schemas/blob/1153d20f38e11bf1815bb855f309f83023fe6b0c/generator/cmd/listbasepaths.ts#L12-L15
-		if _, err := os.Stat(path.Join(rootPath, "readme.md")); os.IsNotExist(err) {
-			return swaggerTypes{}, errors.Errorf("configuration points to a directory that does not have status: %q", rootPath)
-		}
-
-		versionDirs, err := findVersionDirectories(rootPath)
-		if err != nil {
-			return swaggerTypes{}, errors.Wrapf(err, "unable to find version directories")
-		}
-
-		for _, versionDir := range versionDirs {
-			version := path.Base(versionDir)
-
-			schemas, err := loadSchemas(ctx, versionDir, cache)
-			if err != nil {
-				return swaggerTypes{}, err
-			}
-
-			outputGroup := namespace.Namespace
-			if namespace.Suffix != "" {
-				outputGroup = outputGroup + "." + namespace.Suffix
-			}
-
-			extractor := typeExtractor{
-				outputVersion: version,
-				outputGroup:   outputGroup,
-				idFactory:     idFactory,
-				cache:         cache,
-				config:        config,
-			}
-
-			for filePath, schema := range schemas {
-				err := extractor.extractTypes(ctx, filePath, schema, result.resources, result.types)
-				if err != nil {
-					return swaggerTypes{}, err
-				}
-			}
-		}
-	}
-
-	return result, nil
-}
-
-func findVersionDirectories(rootPath string) ([]string, error) {
-	candidates, err := ioutil.ReadDir(rootPath)
+	schemas, err := loadAllSchemas(ctx, config.Status.SchemaRoot, cache)
 	if err != nil {
-		return nil, err
+		return swaggerTypes{}, err
 	}
 
-	var result []string
-	for _, candidate := range candidates {
-		if candidate.IsDir() {
-			candidatePath := path.Join(rootPath, candidate.Name())
-			if swaggerVersionRegex.MatchString(candidate.Name()) {
-				result = append(result, candidatePath)
-			} else {
-				results, err := findVersionDirectories(candidatePath)
-				if err != nil {
-					return nil, err
+	for schemaPath, schema := range schemas {
+		// these have already been tested in the loadAllSchemas function
+		outputGroup := swaggerGroupRegex.FindString(schemaPath)
+		outputVersion := swaggerVersionRegex.FindString(schemaPath)
+
+		// see if there is a config override for the namespace (group) name
+		for _, configSchema := range config.Status.Schemas {
+			configSchemaPath := path.Join(config.Status.SchemaRoot, configSchema.BasePath)
+			if strings.HasPrefix(schemaPath, configSchemaPath) {
+				// found a corresponding schema
+				outputGroup = configSchema.Namespace
+				if configSchema.Suffix != "" {
+					outputGroup += "." + configSchema.Suffix
 				}
 
-				result = append(result, results...)
+				break
 			}
+		}
+
+		extractor := typeExtractor{
+			outputVersion: outputVersion,
+			outputGroup:   outputGroup,
+			idFactory:     idFactory,
+			cache:         cache,
+			config:        config,
+		}
+
+		err := extractor.extractTypes(ctx, schemaPath, schema, result.resources, result.types)
+		if err != nil {
+			return swaggerTypes{}, err
 		}
 	}
 
 	return result, nil
 }
 
-var skipDirectories = []string{
-	"/examples/",
-	"/quickstart-templates/",
-	"/control-plane/",
-	"/data-plane/",
-}
-
-func loadSchemas(ctx context.Context, rootPath string, cache *jsonast.OpenAPISchemaCache) (map[string]spec.Swagger, error) {
+func loadAllSchemas(
+	ctx context.Context,
+	rootPath string,
+	cache *jsonast.OpenAPISchemaCache) (map[string]spec.Swagger, error) {
 
 	var wg sync.WaitGroup
 
@@ -225,41 +185,44 @@ func loadSchemas(ctx context.Context, rootPath string, cache *jsonast.OpenAPISch
 	schemas := make(map[string]spec.Swagger)
 	var sharedErr error
 
-	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(rootPath, func(filePath string, fileInfo os.FileInfo, err error) error {
+
 		if err != nil {
 			return err
 		}
 
-		if ctx.Err() != nil { // check for cancellation
+		if ctx.Err() != nil {
 			return ctx.Err()
 		}
 
 		for _, skipDir := range skipDirectories {
-			if strings.Contains(path, skipDir) {
-				return filepath.SkipDir // this is a magic error
+			if strings.Contains(filePath, skipDir) {
+				return filepath.SkipDir // magic error
 			}
 		}
 
-		if filepath.Ext(path) != ".json" {
-			return nil
-		}
+		if !fileInfo.IsDir() &&
+			filepath.Ext(filePath) == ".json" &&
+			swaggerGroupRegex.MatchString(filePath) &&
+			swaggerVersionRegex.MatchString(filePath) {
 
-		wg.Add(1)
-		go func() {
-			swagger, err := cache.PreloadCache(path)
-			mutex.Lock()
-			if err != nil {
-				// first error wins
-				if sharedErr == nil {
-					sharedErr = err
+			wg.Add(1)
+			go func() {
+				swagger, err := cache.PreloadCache(filePath)
+				mutex.Lock()
+				if err != nil {
+					// first error wins
+					if sharedErr == nil {
+						sharedErr = err
+					}
+				} else {
+					schemas[filePath] = swagger
 				}
-			} else {
-				schemas[path] = swagger
-			}
-			mutex.Unlock()
+				mutex.Unlock()
 
-			wg.Done()
-		}()
+				wg.Done()
+			}()
+		}
 
 		return nil
 	})
