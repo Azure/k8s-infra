@@ -179,11 +179,7 @@ type StatusNamespace struct {
 	// The root for this namespace (relative to SchemaRoot)
 	BasePath string `yaml:"basePath"`
 
-	// The namespace that corresponds to this
-	// (this is "group" in our terminology)
-	Namespace string `yaml:"namespace"`
-
-	// A suffix to add on to the namespace
+	// A suffix to add on to the group name
 	// this is used, for example, to separate the Microsoft.Network
 	// and Microsoft.Network.Frontdoor specs (even though both use
 	// Microsoft.Network in the input Swagger)

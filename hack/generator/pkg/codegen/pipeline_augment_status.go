@@ -148,7 +148,6 @@ func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, 
 			configSchemaPath := path.Join(config.Status.SchemaRoot, configSchema.BasePath)
 			if strings.HasPrefix(schemaPath, configSchemaPath) {
 				// found a corresponding schema
-				outputGroup = configSchema.Namespace
 				if configSchema.Suffix != "" {
 					outputGroup += "." + configSchema.Suffix
 				}
