@@ -18,11 +18,12 @@ type FakeResource struct {
 }
 
 type FakeResourceSpecArm struct {
-	ApiVersion  FakeResourceSpecApiVersion `json:"apiVersion"`
-	Foo         FooArm                     `json:"foo"`
-	Name        string                     `json:"name"`
-	OptionalFoo *FooArm                    `json:"optionalFoo"`
-	Type        FakeResourceSpecType       `json:"type"`
+	ApiVersion  FakeResourceSpecApiVersion   `json:"apiVersion"`
+	MapFoo      map[string]FooArm            `json:"mapFoo"`
+	MapOfArrays map[string][]FooArm          `json:"mapOfArrays"`
+	MapOfMaps   map[string]map[string]FooArm `json:"mapOfMaps"`
+	Name        string                       `json:"name"`
+	Type        FakeResourceSpecType         `json:"type"`
 }
 
 type FakeResourceSpec struct {
@@ -35,8 +36,9 @@ type FakeResourceSpec struct {
 	AzureName string `json:"azureName"`
 
 	// +kubebuilder:validation:Required
-	Foo         Foo  `json:"foo"`
-	OptionalFoo *Foo `json:"optionalFoo"`
+	MapFoo      map[string]Foo            `json:"mapFoo"`
+	MapOfArrays map[string][]Foo          `json:"mapOfArrays"`
+	MapOfMaps   map[string]map[string]Foo `json:"mapOfMaps"`
 
 	// +kubebuilder:validation:Required
 	Owner genruntime.KnownResourceReference `group:"microsoft.resources" json:"owner" kind:"ResourceGroup"`
@@ -53,19 +55,48 @@ func (fakeResourceSpec *FakeResourceSpec) FromArm(owner genruntime.KnownResource
 	fakeResourceSpec.ApiVersion = typedInput.ApiVersion
 	fakeResourceSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
 	var err error
-	foo := Foo{}
-	err = foo.FromArm(owner, typedInput.Foo)
-	if err != nil {
-		return err
-	}
-	fakeResourceSpec.Foo = foo
-	if typedInput.OptionalFoo != nil {
-		optionalFoo := Foo{}
-		err = optionalFoo.FromArm(owner, typedInput.OptionalFoo)
-		if err != nil {
-			return err
+	if typedInput.MapFoo != nil {
+		fakeResourceSpec.MapFoo = make(map[string]Foo)
+		for key, value := range typedInput.MapFoo {
+			elem := Foo{}
+			err = elem.FromArm(owner, value)
+			if err != nil {
+				return err
+			}
+			fakeResourceSpec.MapFoo[key] = elem
 		}
-		fakeResourceSpec.OptionalFoo = &optionalFoo
+	}
+	if typedInput.MapOfArrays != nil {
+		fakeResourceSpec.MapOfArrays = make(map[string][]Foo)
+		for key, value := range typedInput.MapOfArrays {
+			var elem []Foo
+			for _, item := range value {
+				elem1 := Foo{}
+				err = elem1.FromArm(owner, item)
+				if err != nil {
+					return err
+				}
+				elem = append(elem, elem1)
+			}
+			fakeResourceSpec.MapOfArrays[key] = elem
+		}
+	}
+	if typedInput.MapOfMaps != nil {
+		fakeResourceSpec.MapOfMaps = make(map[string]map[string]Foo)
+		for key, value := range typedInput.MapOfMaps {
+			if value != nil {
+				elem := make(map[string]Foo)
+				for key, value := range value {
+					elem1 := Foo{}
+					err = elem1.FromArm(owner, value)
+					if err != nil {
+						return err
+					}
+					elem[key] = elem1
+				}
+				fakeResourceSpec.MapOfMaps[key] = elem
+			}
+		}
 	}
 	fakeResourceSpec.Owner = owner
 	return nil
@@ -78,20 +109,50 @@ func (fakeResourceSpec *FakeResourceSpec) ToArm(owningName string) (interface{},
 	}
 	result := FakeResourceSpecArm{}
 	result.ApiVersion = fakeResourceSpec.ApiVersion
-	foo, err := fakeResourceSpec.Foo.ToArm(owningName)
-	if err != nil {
-		return nil, err
-	}
-	result.Foo = foo.(FooArm)
-	result.Name = genruntime.CreateArmResourceNameForDeployment(owningName, fakeResourceSpec.AzureName)
-	if fakeResourceSpec.OptionalFoo != nil {
-		optionalFoo, err := fakeResourceSpec.OptionalFoo.ToArm(owningName)
-		if err != nil {
-			return nil, err
+	result.MapFoo = make(map[string]FooArm)
+	if fakeResourceSpec.MapFoo != nil {
+		for key, value := range fakeResourceSpec.MapFoo {
+			elem, err := value.ToArm(owningName)
+			if err != nil {
+				return nil, err
+			}
+			elemTyped := elem.(FooArm)
+			result.MapFoo[key] = elemTyped
 		}
-		optionalFooTyped := optionalFoo.(FooArm)
-		result.OptionalFoo = &optionalFooTyped
 	}
+	result.MapOfArrays = make(map[string][]FooArm)
+	if fakeResourceSpec.MapOfArrays != nil {
+		for key, value := range fakeResourceSpec.MapOfArrays {
+			var elemTyped []FooArm
+			for _, item := range value {
+				elem, err := item.ToArm(owningName)
+				if err != nil {
+					return nil, err
+				}
+				elemTyped1 := elem.(FooArm)
+				elemTyped = append(elemTyped, elemTyped1)
+			}
+			result.MapOfArrays[key] = elemTyped
+		}
+	}
+	result.MapOfMaps = make(map[string]map[string]FooArm)
+	if fakeResourceSpec.MapOfMaps != nil {
+		for key, value := range fakeResourceSpec.MapOfMaps {
+			elemTyped := make(map[string]FooArm)
+			if value != nil {
+				for key, value := range value {
+					elem, err := value.ToArm(owningName)
+					if err != nil {
+						return nil, err
+					}
+					elemTyped1 := elem.(FooArm)
+					elemTyped[key] = elemTyped1
+				}
+			}
+			result.MapOfMaps[key] = elemTyped
+		}
+	}
+	result.Name = genruntime.CreateArmResourceNameForDeployment(owningName, fakeResourceSpec.AzureName)
 	result.Type = FakeResourceSpecTypeMicrosoftAzureFakeResource
 	return result, nil
 }

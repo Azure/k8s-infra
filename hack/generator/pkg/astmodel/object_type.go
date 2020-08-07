@@ -169,13 +169,8 @@ func (objectType *ObjectType) Property(name PropertyName) (*PropertyDefinition, 
 
 // HasFunctionWithName determines if this object has a function with the given name
 func (objectType *ObjectType) HasFunctionWithName(name string) bool {
-	for n := range objectType.functions {
-		if n == name {
-			return true
-		}
-	}
-
-	return false
+	_, ok := objectType.functions[name]
+	return ok
 }
 
 // AsType implements Type for ObjectType

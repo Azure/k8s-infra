@@ -453,7 +453,8 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (ast
 	return generateDefinitionsFor(ctx, scanner, typeName, schema.refSchema())
 }
 
-// TODO: Delete this -- at least if pipeline phase can do this instead?
+// TODO: Consider doing this in a pipeline phase or removing
+// TODO: it entirely once we fix https://github.com/Azure/k8s-infra/issues/211
 func newResource(t astmodel.Type, typeName astmodel.TypeName) *astmodel.ResourceType {
 	if objectType, ok := t.(*astmodel.ObjectType); ok {
 		// We have certain expectations about structure for resources
@@ -462,7 +463,6 @@ func newResource(t astmodel.Type, typeName astmodel.TypeName) *astmodel.Resource
 		isNameOptional := false
 		isTypeOptional := false
 		for _, property := range objectType.Properties() {
-			// TODO: Addition of Name property isn't required if we fix https://github.com/Azure/k8s-infra/issues/211
 			if property.PropertyName() == "Name" {
 				nameProperty = property
 				if _, ok := property.PropertyType().(*astmodel.OptionalType); ok {

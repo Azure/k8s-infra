@@ -6,17 +6,25 @@
 package armconversion
 
 import (
+	"fmt"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"go/ast"
 )
 
-// ArmConversionFunction represents an ARM conversion function for converting between an Kubernetes resource
+type ConversionDirection string
+
+const (
+	ConversionDirectionToArm   = ConversionDirection("ToArm")
+	ConversionDirectionFromArm = ConversionDirection("FromArm")
+)
+
+// ArmConversionFunction represents an ARM conversion function for converting between a Kubernetes resource
 // and an ARM resource.
 type ArmConversionFunction struct {
 	armTypeName astmodel.TypeName
 	armType     *astmodel.ObjectType
 	idFactory   astmodel.IdentifierFactory
-	toArm       bool
+	direction   ConversionDirection
 	isResource  bool
 }
 
@@ -26,8 +34,13 @@ var _ astmodel.Function = &ArmConversionFunction{}
 func (c *ArmConversionFunction) RequiredImports() []astmodel.PackageReference {
 	var result []astmodel.PackageReference
 
+	// Because this interface is attached to an object, by definition that object will specify
+	// its own required imports. We don't want to call the objects required imports here
+	// because then we're in infinite recursion (object delegates to us, we delegate back to it)
+
+	// We need these because we're going to be constructing/casting to the types
+	// of the properties in the ARM object, so we need to import those.
 	result = append(result, c.armType.RequiredImports()...)
-	//result = append(result, c.kubeType.RequiredImports()...)
 	result = append(result, astmodel.MakeGenRuntimePackageReference())
 	result = append(result, astmodel.MakePackageReference("fmt"))
 
@@ -39,13 +52,42 @@ func (c *ArmConversionFunction) References() astmodel.TypeNameSet {
 	return c.armType.References()
 }
 
-// AsFunc returns the function as a go ast
+// AsFunc returns the function as a Go AST
 func (c *ArmConversionFunction) AsFunc(codeGenerationContext *astmodel.CodeGenerationContext, receiver astmodel.TypeName, methodName string) *ast.FuncDecl {
-	if c.toArm {
+	switch c.direction {
+	case ConversionDirectionToArm:
 		return c.asConvertToArmFunc(codeGenerationContext, receiver, methodName)
-	} else {
+	case ConversionDirectionFromArm:
 		return c.asConvertFromArmFunc(codeGenerationContext, receiver, methodName)
+	default:
+		panic(fmt.Sprintf("Unknown conversion direction %s", c.direction))
 	}
+}
+
+func (c *ArmConversionFunction) asConvertToArmFunc(
+	codeGenerationContext *astmodel.CodeGenerationContext,
+	receiver astmodel.TypeName,
+	methodName string) *ast.FuncDecl {
+
+	builder := newConvertToArmFunctionBuilder(
+		c,
+		codeGenerationContext,
+		receiver,
+		methodName)
+	return builder.functionDeclaration()
+}
+
+func (c *ArmConversionFunction) asConvertFromArmFunc(
+	codeGenerationContext *astmodel.CodeGenerationContext,
+	receiver astmodel.TypeName,
+	methodName string) *ast.FuncDecl {
+
+	builder := newConvertFromArmFunctionBuilder(
+		c,
+		codeGenerationContext,
+		receiver,
+		methodName)
+	return builder.functionDeclaration()
 }
 
 // Equals determines if this function is equal to the passed in function
@@ -53,7 +95,7 @@ func (c *ArmConversionFunction) Equals(other astmodel.Function) bool {
 	if o, ok := other.(*ArmConversionFunction); ok {
 		return c.armType.Equals(o.armType) &&
 			c.armTypeName.Equals(o.armTypeName) &&
-			c.toArm == o.toArm
+			c.direction == o.direction
 	}
 
 	return false

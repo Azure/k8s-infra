@@ -12,6 +12,40 @@ import (
 	"sync"
 )
 
+type conversionBuilder struct {
+	receiverIdent              *ast.Ident
+	receiverTypeExpr           ast.Expr
+	armTypeIdent               *ast.Ident
+	codeGenerationContext      *astmodel.CodeGenerationContext
+	idFactory                  astmodel.IdentifierFactory
+	isResource                 bool
+	methodName                 string
+	kubeType                   *astmodel.ObjectType
+	armType                    *astmodel.ObjectType
+	propertyConversionHandlers []propertyConversionHandler
+}
+
+func (builder conversionBuilder) propertyConversionHandler(
+	toProp *astmodel.PropertyDefinition,
+	fromType *astmodel.ObjectType) []ast.Stmt {
+
+	for _, conversionHandler := range builder.propertyConversionHandlers {
+		matched, matchedProperty := conversionHandler.finder(toProp, fromType)
+		if matched {
+			return conversionHandler.matchHandler(toProp, matchedProperty)
+		}
+	}
+
+	panic(fmt.Sprintf("No property found for %s", toProp.PropertyName()))
+}
+
+type propertyMatchHandlerFunc = func(toProp *astmodel.PropertyDefinition, fromProp *astmodel.PropertyDefinition) []ast.Stmt
+
+type propertyConversionHandler struct {
+	finder       func(toProp *astmodel.PropertyDefinition, fromType *astmodel.ObjectType) (bool, *astmodel.PropertyDefinition)
+	matchHandler propertyMatchHandlerFunc
+}
+
 var once sync.Once
 var azureNameProperty *astmodel.PropertyDefinition
 
@@ -25,8 +59,8 @@ func initializeAzureName(idFactory astmodel.IdentifierFactory) {
 		astmodel.StringType).WithDescription(azureNameFieldDescription)
 }
 
-// GetAzureNameField returns the special "AzureName" field
-func GetAzureNameField(idFactory astmodel.IdentifierFactory) *astmodel.PropertyDefinition {
+// GetAzureNameProperty returns the special "AzureName" field
+func GetAzureNameProperty(idFactory astmodel.IdentifierFactory) *astmodel.PropertyDefinition {
 	once.Do(func() { initializeAzureName(idFactory) })
 
 	return azureNameProperty
@@ -87,14 +121,14 @@ func NewArmTransformerImpl(
 			armTypeName: armTypeName,
 			armType:     armType,
 			idFactory:   idFactory,
-			toArm:       true,
+			direction:   ConversionDirectionToArm,
 			isResource:  isResource,
 		},
 		"FromArm": &ArmConversionFunction{
 			armTypeName: armTypeName,
 			armType:     armType,
 			idFactory:   idFactory,
-			toArm:       false,
+			direction:   ConversionDirectionFromArm,
 			isResource:  isResource,
 		},
 	}

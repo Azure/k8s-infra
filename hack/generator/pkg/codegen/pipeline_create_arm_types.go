@@ -12,15 +12,18 @@ import (
 	"github.com/pkg/errors"
 )
 
+// createArmTypesAndCleanKubernetesTypes walks the type graph and builds new types for communicating
+// with ARM, as well as removes ARM-only properties from the Kubernetes types.
 func createArmTypesAndCleanKubernetesTypes(idFactory astmodel.IdentifierFactory) PipelineStage {
 	return PipelineStage{
 		id: "createArmTypes",
 		description: "Create ARM types and remove ARM-only properties from Kubernetes types",
 		Action: func(ctx context.Context, definitions astmodel.Types) (astmodel.Types, error) {
-			// Two phases:
-			// 1. walk types and produce mapping of Kubernetes Type -> new Arm Type
-			// 2. Walk Kubernetes types, remove ARM-only properties and add conversion interface
-			// 3. merge results from 1 and 2 together
+			// 1. Walk types and produce the new ARM types, as well as a mapping of Kubernetes Type -> Arm Type
+			// 2. Walk Kubernetes types, remove ARM-only properties and add conversion interface (use mapping
+			//    from step 1 to determine which ARM resource we need to convert to).
+			// 3. Merge results from 1 and 2 together. Add any type/definition from the originally provided
+			//    definitions that wasn't changed by the previous steps (enums primarily).
 
 			armTypes, kubeNameToArmDefs, err := createArmTypes(definitions)
 			if err != nil {
@@ -216,22 +219,33 @@ func transformTypeDefinition(
 	return &result, nil
 }
 
+func getResourceSpecDefinition(
+	definitions astmodel.Types,
+	resourceName astmodel.TypeName,
+	resourceType *astmodel.ResourceType) (astmodel.TypeDefinition, error) {
+
+	// The expectation is that the spec type is just a name
+	specName, ok := resourceType.SpecType().(astmodel.TypeName)
+	if !ok {
+		return astmodel.TypeDefinition{}, errors.Errorf("%s spec was not of type TypeName, instead: %T", resourceName, resourceType.SpecType())
+	}
+
+	resourceSpecDef, ok := definitions[specName]
+	if !ok {
+		return astmodel.TypeDefinition{}, errors.Errorf("couldn't find spec for resource %s", resourceName)
+	}
+
+	return resourceSpecDef, nil
+}
+
 func createArmResourceSpecDefinition(
 	definitions astmodel.Types,
 	resourceName astmodel.TypeName,
 	resourceType *astmodel.ResourceType) (*astmodel.TypeDefinition, astmodel.TypeName, error) {
 
-	// TODO: Helper for below (resource spec lookup)
-
-	// The expectation is that the spec type is just a name
-	specName, ok := resourceType.SpecType().(astmodel.TypeName)
-	if !ok {
-		return nil, astmodel.TypeName{}, errors.Errorf("%s spec was not of type TypeName, instead: %T", resourceName, resourceType.SpecType())
-	}
-
-	resourceSpecDef, ok := definitions[specName]
-	if !ok {
-		return nil, astmodel.TypeName{}, errors.Errorf("couldn't find spec for resource %s", resourceName)
+	resourceSpecDef, err := getResourceSpecDefinition(definitions, resourceName, resourceType)
+	if err != nil {
+		return nil, astmodel.TypeName{}, err
 	}
 
 	armTypeDef, err := createArmTypeDefinition(definitions, resourceSpecDef)
@@ -239,7 +253,7 @@ func createArmResourceSpecDefinition(
 		return nil, astmodel.TypeName{}, nil
 	}
 
-	return armTypeDef, specName, nil
+	return armTypeDef, resourceSpecDef.Name(), nil
 }
 
 func createArmTypeDefinition(definitions astmodel.Types, def astmodel.TypeDefinition) (*astmodel.TypeDefinition, error) {
@@ -264,15 +278,9 @@ func modifyKubeResourceSpecDefinition(
 	resourceName astmodel.TypeName,
 	resourceType *astmodel.ResourceType) (*astmodel.TypeDefinition, error) {
 
-	// The expectation is that the spec type is just a name
-	specName, ok := resourceType.SpecType().(astmodel.TypeName)
-	if !ok {
-		return nil, errors.Errorf("%s spec was not of type TypeName, instead: %T", resourceName, resourceType.SpecType())
-	}
-
-	resourceSpecDef, ok := definitions[specName]
-	if !ok {
-		return nil, errors.Errorf("couldn't find spec for resource %s", resourceName)
+	resourceSpecDef, err := getResourceSpecDefinition(definitions, resourceName, resourceType)
+	if err != nil {
+		return nil, err
 	}
 
 	createOwnerProperty := func(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
@@ -300,7 +308,7 @@ func modifyKubeResourceSpecDefinition(
 		// TODO: https://github.com/kubernetes-sigs/controller-tools/issues/461 is fixed
 		kubernetesType := t.WithoutProperty(astmodel.PropertyName("Name")).WithoutProperty(astmodel.PropertyName("Type"))
 		if hasName {
-			kubernetesType = kubernetesType.WithProperty(armconversion.GetAzureNameField(idFactory))
+			kubernetesType = kubernetesType.WithProperty(armconversion.GetAzureNameProperty(idFactory))
 		}
 
 		return kubernetesType, nil

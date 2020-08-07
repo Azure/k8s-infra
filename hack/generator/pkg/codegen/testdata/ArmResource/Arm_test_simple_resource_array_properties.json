@@ -1,5 +1,5 @@
 {
-    "$comment": "Test that a simple ARM resource with some complex properties is rendered property",
+    "$comment": "Test that a simple ARM resource with some array properties is rendered property",
     "id": "https://test.test/schemas/2020-01-01/test.json",
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Test",
@@ -28,18 +28,37 @@
                         "2020-06-01"
                     ]
                 },
-                "optionalFoo": {
-                    "$ref": "#/definitions/Foo"
+                "arrayFoo": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Foo"
+                    }
                 },
-                "foo": {
-                    "$ref": "#/definitions/Foo"
+                "arrayOfArrays": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/Foo"
+                        }
+                    }
+                },
+                "arrayOfMaps": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/definitions/Foo"
+                        },
+                        "properties": {}
+                    }
                 }
             },
             "required": [
                 "name",
                 "type",
                 "apiVersion",
-                "foo"
+                "arrayFoo"
             ]
         }
     },

@@ -47,7 +47,7 @@ type DependentResourceSpec struct {
 	AzureName string `json:"azureName"`
 
 	// +kubebuilder:validation:Required
-	Owner genruntime.KnownResourceReference `json:"owner" group:"test" kind:"FakeResource"`
+	Owner genruntime.KnownResourceReference `group:"test" json:"owner" kind:"FakeResource"`
 }
 
 var _ genruntime.ArmTransformer = &DependentResourceSpec{}
@@ -96,7 +96,7 @@ type FakeResourceSpec struct {
 	AzureName string `json:"azureName"`
 
 	// +kubebuilder:validation:Required
-	Owner genruntime.KnownResourceReference `json:"owner" group:"microsoft.resources" kind:"ResourceGroup"`
+	Owner genruntime.KnownResourceReference `group:"microsoft.resources" json:"owner" kind:"ResourceGroup"`
 }
 
 var _ genruntime.ArmTransformer = &FakeResourceSpec{}

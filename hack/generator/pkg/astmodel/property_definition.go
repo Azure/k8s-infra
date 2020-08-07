@@ -10,6 +10,7 @@ import (
 	"go/ast"
 	"go/token"
 	"sort"
+	"strings"
 )
 
 // PropertyName is a semantic type
@@ -19,7 +20,6 @@ type PropertyName string
 type PropertyDefinition struct {
 	propertyName PropertyName
 	propertyType Type
-	jsonName     string
 	description  string
 	validations  []Validation
 	tags         map[string]string
@@ -29,12 +29,14 @@ type PropertyDefinition struct {
 // name is the name for the new property (mandatory)
 // propertyType is the type for the new property (mandatory)
 func NewPropertyDefinition(propertyName PropertyName, jsonName string, propertyType Type) *PropertyDefinition {
+	tags := make(map[string]string)
+	tags["json"] = jsonName
+
 	return &PropertyDefinition{
 		propertyName: propertyName,
 		propertyType: propertyType,
-		jsonName:     jsonName,
 		description:  "",
-		tags:         make(map[string]string),
+		tags:         tags,
 	}
 }
 
@@ -88,7 +90,9 @@ func (property *PropertyDefinition) WithoutValidation() *PropertyDefinition {
 func (property *PropertyDefinition) WithTag(key string, value string) *PropertyDefinition {
 	result := *property
 	// TODO: Should we have a copy function here to make this a bit safer? Right now both this function
-	// TODO: and the above WithValidations technically leave the reference the same.
+	// TODO: and the above WithValidations technically leave references (i.e. maps) the same. That is ok
+	// TODO: as long as this object really is immutable and nothing is changing the content of the maps
+	// TODO: after a copy has been made it it was a bit surprising that we aren't doing a deep copy here.
 	// Have to copy the map here
 	result.tags = make(map[string]string)
 	for k, v := range property.tags {
@@ -181,12 +185,12 @@ func (property *PropertyDefinition) renderedTags() string {
 		return orderedKeys[i] < orderedKeys[j]
 	})
 
-	tags := fmt.Sprintf("json:%q", property.jsonName)
+	var tags []string
 	for _, key := range orderedKeys {
-		tags = tags + fmt.Sprintf(" %s:%q", key, property.tags[key])
+		tags = append(tags, fmt.Sprintf("%s:%q", key, property.tags[key]))
 	}
 
-	return tags
+	return strings.Join(tags, " ")
 }
 
 // AsField generates a Go AST field node representing this property definition

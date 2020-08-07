@@ -33,7 +33,7 @@ type FakeResourceSpec struct {
 	AzureName string `json:"azureName"`
 
 	// +kubebuilder:validation:Required
-	Owner genruntime.KnownResourceReference `json:"owner" group:"microsoft.resources" kind:"ResourceGroup"`
+	Owner genruntime.KnownResourceReference `group:"microsoft.resources" json:"owner" kind:"ResourceGroup"`
 }
 
 var _ genruntime.ArmTransformer = &FakeResourceSpec{}
