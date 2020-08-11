@@ -44,6 +44,31 @@ func (types Types) Add(def TypeDefinition) {
 	types[key] = def
 }
 
+// AddAll adds multiple types to the set, with the same safety check as Add()
+func (types Types) AddAll(otherTypes Types) {
+	for _, t := range otherTypes {
+		types.Add(t)
+	}
+}
+
+// Where returns a new set of types including only those that satisfy the predicate
+func (types Types) Where(predicate func(definition TypeDefinition) bool) Types {
+	result := make(Types, len(types))
+	for _, t := range types {
+		if predicate(t) {
+			result[t.Name()] = t
+		}
+	}
+
+	return result
+}
+
+// Contains returns true if the set contains the passed definition
+func (types Types) Contains(def TypeDefinition) bool {
+	_, ok := types[def.Name()]
+	return ok
+}
+
 // TypeEquals decides if the types are the same and handles the `nil` case
 func TypeEquals(left, right Type) bool {
 	if left == nil {
