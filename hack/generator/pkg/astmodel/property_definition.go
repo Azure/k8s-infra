@@ -74,6 +74,16 @@ func (property *PropertyDefinition) WithValidation(validation Validation) *Prope
 	return &result
 }
 
+// WithoutValidation removes all validation from the property
+func (property *PropertyDefinition) WithoutValidation() *PropertyDefinition {
+	result := *property
+
+	var validations []Validation
+	result.validations = validations
+
+	return &result
+}
+
 // MakeRequired returns a new PropertyDefinition that is marked as required
 func (property *PropertyDefinition) MakeRequired() *PropertyDefinition {
 	if !property.hasOptionalType() && property.HasRequiredValidation() {
