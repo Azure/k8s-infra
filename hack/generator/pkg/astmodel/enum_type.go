@@ -33,6 +33,11 @@ func NewEnumType(baseType *PrimitiveType, options []EnumValue) *EnumType {
 	return &EnumType{baseType: baseType, options: options}
 }
 
+// BaseType returns the underlying type used to store the enum
+func (enum *EnumType) BaseType() Type {
+	return enum.baseType
+}
+
 // AsDeclarations converts the EnumType to a series of Go AST Decls
 func (enum *EnumType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
 	var specs []ast.Spec
