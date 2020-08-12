@@ -83,6 +83,7 @@ func corePipelineStages(idFactory astmodel.IdentifierFactory, configuration *con
 
 		createArmTypesAndCleanKubernetesTypes(idFactory),
 		applyKubernetesResourceInterface(idFactory),
+		createStorageTypes(),
 		simplifyDefinitions(),
 
 		// Safety checks at the end:
