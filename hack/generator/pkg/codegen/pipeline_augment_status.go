@@ -7,6 +7,7 @@ package codegen
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -131,12 +132,12 @@ func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, 
 		types:     make(astmodel.Types),
 	}
 
-	cache := jsonast.MakeOpenAPISchemaCache()
-
-	schemas, err := loadAllSchemas(ctx, config.Status.SchemaRoot, cache)
+	schemas, err := loadAllSchemas(ctx, config.Status.SchemaRoot)
 	if err != nil {
 		return swaggerTypes{}, err
 	}
+
+	cache := jsonast.MakeOpenAPISchemaCache(schemas)
 
 	for schemaPath, schema := range schemas {
 		// these have already been tested in the loadAllSchemas function
@@ -175,8 +176,7 @@ func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, 
 
 func loadAllSchemas(
 	ctx context.Context,
-	rootPath string,
-	cache *jsonast.OpenAPISchemaCache) (map[string]spec.Swagger, error) {
+	rootPath string) (map[string]spec.Swagger, error) {
 
 	var wg sync.WaitGroup
 
@@ -207,7 +207,18 @@ func loadAllSchemas(
 
 			wg.Add(1)
 			go func() {
-				swagger, err := cache.PreloadCache(filePath)
+				fileContent, err := ioutil.ReadFile(filePath)
+
+				var swagger spec.Swagger
+				if err != nil {
+					err = errors.Wrap(err, "unable to read swagger file")
+				} else {
+					err = swagger.UnmarshalJSON(fileContent)
+					if err != nil {
+						err = errors.Wrap(err, "unable to parse swagger file")
+					}
+				}
+
 				mutex.Lock()
 				if err != nil {
 					// first error wins
