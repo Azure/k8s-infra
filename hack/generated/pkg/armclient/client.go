@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"k8s.io/klog/v2"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -123,6 +124,10 @@ func (c *Client) PutDeployment(ctx context.Context, deployment *Deployment, mw .
 		return nil, err
 	}
 
+	// TODO: Is this how we should be logging here?
+	// TODO: either way this level is wrong
+	klog.V(0).Infof("Creating deployment: %s", string(bits))
+
 	res, err := c.Put(ctx, entityPath, bytes.NewReader(bits), mw...)
 	defer closeResponse(ctx, res)
 
@@ -176,10 +181,10 @@ func (c *Client) GetResource(ctx context.Context, resourceID string, resource in
 	return nil
 }
 
-// DeleteResource will make an HTTP DELETE call to the resourceID and attempt to fill the resource with the response.
+// DeleteResource will make an HTTP DELETE call to the resourceId and attempt to fill the resource with the response.
 // If the body of the response is empty, the resource will be nil.
-func (c *Client) DeleteResource(ctx context.Context, resourceID string, resource interface{}, mw ...MiddlewareFunc) error {
-	res, err := c.Delete(ctx, resourceID, mw...)
+func (c *Client) DeleteResource(ctx context.Context, resourceId string, resource interface{}, mw ...MiddlewareFunc) error {
+	res, err := c.Delete(ctx, resourceId, mw...)
 	defer closeResponse(ctx, res)
 	if err != nil {
 		return err

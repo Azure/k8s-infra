@@ -9,6 +9,7 @@ import (
 	"flag"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
 	"os"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -46,12 +47,16 @@ func main() {
 
 	ctrl.SetLogger(klogr.New())
 
+	// syncPeriod := 30 * time.Second
+	syncPeriod := 30 * time.Minute
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
 		LeaderElection:     enableLeaderElection,
 		LeaderElectionID:   "controllers-leader-election-azinfra-generated",
 		Port:               9443,
+		SyncPeriod:         &syncPeriod, // TODO: Don't leave this set, just playing with it
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

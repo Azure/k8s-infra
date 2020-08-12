@@ -368,7 +368,7 @@ func Test_AllocateBatchAccountToAzure(t *testing.T) {
 
 	// Should be able to call apply a number of times and it works
 	for !deployment.IsTerminalProvisioningState() {
-		deployment, err = armApplier.Apply(context.TODO(), deployment)
+		deployment, err = armApplier.ApplyDeployment(context.TODO(), deployment)
 		g.Expect(err).To(BeNil())
 
 		print(fmt.Sprintf("ProvState: %s\n", deployment.ProvisioningStateOrUnknown()))

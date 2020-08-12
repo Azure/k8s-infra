@@ -14,19 +14,21 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"strings"
 )
 
 type (
+	// TODO: Naming?
 	Applier interface {
-		Apply(ctx context.Context, deployment *Deployment) (*Deployment, error)
-		DeleteApply(ctx context.Context, deploymentId string) error
-		NewDeployment(resourceGroup string, name string, res genruntime.ArmResourceSpec) *Deployment
+		ApplyDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error)
+		DeleteDeployment(ctx context.Context, deploymentId string) error
+		NewDeployment(resourceGroup string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment
 
 		// TODO: Commented these out for now
 
-		//BeginDelete(ctx context.Context, res genruntime.ArmResource) (genruntime.ArmResource, error)
+		BeginDeleteResource(ctx context.Context, res genruntime.ArmResource) (genruntime.ArmResource, error)
 		//GetResource(ctx context.Context, res genruntime.ArmResource) (genruntime.ArmResource, error)
-		//HeadResource(ctx context.Context, res genruntime.ArmResource) (bool, error)
+		HeadResource(ctx context.Context, res genruntime.ArmResource) (bool, error)
 	}
 
 	AzureTemplateClient struct {
@@ -74,7 +76,7 @@ type (
 	TemplateResourceObjectOutput struct {
 		APIVersion            string                     `json:"apiVersion,omitempty"`
 		Location              string                     `json:"location,omitempty"`
-		Properties            genruntime.ArmResourceSpec `json:"properties,omitempty"`
+		Properties            interface{}                `json:"properties,omitempty"`
 		SubscriptionID        string                     `json:"subscriptionId,omitempty"`
 		Scope                 string                     `json:"scope,omitempty"`
 		ID                    string                     `json:"id,omitempty"`
@@ -153,7 +155,6 @@ func NewAzureTemplateClient(opts ...AzureTemplateClientOption) (*AzureTemplateCl
 	}, nil
 }
 
-// TODO
 //func (atc *AzureTemplateClient) GetResource(ctx context.Context, id string, res genruntime.ArmResource) error {
 //	if id == "" {
 //		return errors.Errorf("resource ID cannot be empty")
@@ -165,8 +166,8 @@ func NewAzureTemplateClient(opts ...AzureTemplateClientOption) (*AzureTemplateCl
 //}
 
 // TODO: Not sure that this logic makes sense in the template client -- move into controller?
-// Apply deploys a resource to Azure via a deployment template
-func (atc *AzureTemplateClient) Apply(ctx context.Context, deployment *Deployment) (*Deployment, error) {
+// ApplyDeployment deploys a resource to Azure via a deployment template
+func (atc *AzureTemplateClient) ApplyDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error) {
 	switch {
 	case deployment.Properties.ProvisioningState == DeletingProvisioningState:
 		return deployment, errors.Errorf("resource is currently deleting; it can not be applied")
@@ -183,7 +184,7 @@ func (atc *AzureTemplateClient) Apply(ctx context.Context, deployment *Deploymen
 }
 
 func (atc *AzureTemplateClient) updateFromExistingDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error) {
-	de, err := atc.getApply(ctx, deployment.Id)
+	de, err := atc.getDeployment(ctx, deployment.Id)
 	if err != nil {
 		return deployment, err
 	}
@@ -226,14 +227,14 @@ func (atc *AzureTemplateClient) startNewDeploy(ctx context.Context, deployment *
 	}
 	//
 	//// we have hit a terminal state, so clean up the deployment
-	return atc.cleanupDeployment(ctx, de)
+	return atc.cleanupDeployment(ctx, de) // TODO: I feel like this should be in the controller too?
 }
 
-func (atc *AzureTemplateClient) DeleteApply(ctx context.Context, deploymentId string) error {
+func (atc *AzureTemplateClient) DeleteDeployment(ctx context.Context, deploymentId string) error {
 	return atc.RawClient.DeleteResource(ctx, idWithAPIVersion(deploymentId), nil)
 }
 
-func (atc *AzureTemplateClient) getApply(ctx context.Context, deploymentId string) (*Deployment, error) {
+func (atc *AzureTemplateClient) getDeployment(ctx context.Context, deploymentId string) (*Deployment, error) {
 	var deployment Deployment
 	if err := atc.RawClient.GetResource(ctx, idWithAPIVersion(deploymentId), &deployment); err != nil {
 		return &deployment, err
@@ -243,7 +244,7 @@ func (atc *AzureTemplateClient) getApply(ctx context.Context, deploymentId strin
 
 func (atc *AzureTemplateClient) cleanupDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error) {
 	if deployment.Id != "" && !deployment.PreserveDeployment {
-		if err := atc.DeleteApply(ctx, deployment.Id); err != nil {
+		if err := atc.DeleteDeployment(ctx, deployment.Id); err != nil {
 			if !IsNotFound(err) {
 				return deployment, err
 			}
@@ -254,47 +255,64 @@ func (atc *AzureTemplateClient) cleanupDeployment(ctx context.Context, deploymen
 	return deployment, nil
 }
 
-func (atc *AzureTemplateClient) NewDeployment(resourceGroup string, name string, res genruntime.ArmResourceSpec) *Deployment {
+func (atc *AzureTemplateClient) NewDeployment(resourceGroup string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment {
 	//if res.ResourceGroup() == "" {
 	//	return NewSubscriptionDeployment(atc.SubscriptionID, res.Location, name, res)
 	//}
-	return NewResourceGroupDeployment(atc.SubscriptionID, resourceGroup, name, res)
+
+	resourceName := resourceSpec.GetName()
+	names := strings.Split(resourceName, "/")
+	formattedNames := make([]string, len(names))
+	for i, name := range names {
+		formattedNames[i] = fmt.Sprintf("'%s'", name)
+	}
+
+	deployment := NewResourceGroupDeployment(atc.SubscriptionID, resourceGroup, deploymentName, resourceSpec)
+	resourceIdTemplateFunction := fmt.Sprintf("resourceId('%s', %s)", resourceSpec.GetType(), strings.Join(formattedNames, ", "))
+	deployment.Properties.Template.Outputs = map[string]Output{
+		"resourceId": {
+			Type: "string",
+			Value: fmt.Sprintf("[%s]", resourceIdTemplateFunction),
+		},
+	}
+
+	return deployment
 }
 
-//func (atc *AzureTemplateClient) BeginDelete(ctx context.Context, res *Resource) (*Resource, error) {
-//	if res.ID == "" {
-//		return nil, fmt.Errorf("resource ID cannot be empty")
-//	}
-//
-//	path := fmt.Sprintf("%s?api-version=%s", res.ID, res.APIVersion)
-//	if err := atc.RawClient.DeleteResource(ctx, path, &res); err != nil {
-//		return res, fmt.Errorf("failed deleting %s with %w and error type %T", res.Type, err, err)
-//	}
-//
-//	return res, nil
-//}
+func (atc *AzureTemplateClient) BeginDeleteResource(ctx context.Context, res genruntime.ArmResource) (genruntime.ArmResource, error) {
+	if res.GetId() == "" {
+		return nil, errors.Errorf("resource ID cannot be empty")
+	}
+
+	path := fmt.Sprintf("%s?api-version=%s", res.GetId(), res.GetApiVersion())
+	if err := atc.RawClient.DeleteResource(ctx, path, &res); err != nil {
+		return res, errors.Wrapf(err, "failed deleting %s", res.GetType())
+	}
+
+	return res, nil
+}
 
 // HeadResource checks to see if the resource exists
 //
 // Note: this doesn't actually use HTTP HEAD as Azure Resource Manager does not uniformly implement HEAD for all
 // all resources. Also, ARM returns a 400 rather than 405 when requesting HEAD for a resource which the Resource
 // Provider does not implement HEAD. For these reasons, we use an HTTP GET
-//func (atc *AzureTemplateClient) HeadResource(ctx context.Context, res *Resource) (bool, error) {
-//	if res.ID == "" {
-//		return false, fmt.Errorf("resource ID cannot be empty")
-//	}
-//
-//	idAndAPIVersion := res.ID + fmt.Sprintf("?api-version=%s", res.APIVersion)
-//	err := atc.RawClient.GetResource(ctx, idAndAPIVersion, nil, nil)
-//	switch {
-//	case IsNotFound(err):
-//		return false, nil
-//	case err != nil:
-//		return false, err
-//	default:
-//		return true, nil
-//	}
-//}
+func (atc *AzureTemplateClient) HeadResource(ctx context.Context, res genruntime.ArmResource) (bool, error) {
+	if res.GetId() == "" {
+		return false, fmt.Errorf("resource ID cannot be empty")
+	}
+
+	idAndAPIVersion := res.GetId() + fmt.Sprintf("?api-version=%s", res.GetApiVersion())
+	err := atc.RawClient.GetResource(ctx, idAndAPIVersion, nil, nil)
+	switch {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, err
+	default:
+		return true, nil
+	}
+}
 
 //func fillResource(de *Deployment, res *Resource) error {
 //	res.DeploymentID = de.ID

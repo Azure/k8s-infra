@@ -13,6 +13,7 @@ import (
 	"github.com/Azure/k8s-infra/pkg/util/patch"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"time"
 
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
@@ -39,6 +40,8 @@ const (
 	// TODO: Delete these later
 	DeploymentIdAnnotation = "deployment-id.infra.azure.com"
 	DeploymentNameAnnotation = "deployment-name.infra.azure.com"
+	ResourceStateAnnotation = "resource-state.infra.azure.com"
+	ResourceIdAnnotation = "resource-id.infra.azure.com"
 )
 
 var (
@@ -102,9 +105,6 @@ func register(mgr ctrl.Manager, applier armclient.Applier, obj runtime.Object, l
 	if err != nil {
 		return err
 	}
-	// TODO: Remove this
-	log.V(0).Info("GVK details:", "group", gvk.Group, "version", gvk.Version, "kind", gvk.Kind)
-
 	//if err := mgr.GetFieldIndexer().IndexField(obj, "status.id", func(obj runtime.Object) []string {
 	//	unObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
 	//	if err != nil {
@@ -201,19 +201,24 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
+	if obj == nil {
+		// This means that the resource doesn't exist
+		return ctrl.Result{}, nil
+	}
+
 	// ToUnstructured and get spec? or else interface that returns spec as interface{}
 
 	// The Go type for the Kubernetes object must understand how to
 	// convert itself to/from the corresponding Azure types.
 	metaObj, ok := obj.(genruntime.MetaObject)
 	if !ok {
-		return ctrl.Result{}, fmt.Errorf("object is not a genruntime.MetaObject: %+v", obj)
+		return ctrl.Result{}, fmt.Errorf("object is not a genruntime.MetaObject: %+v - type: %T", obj, obj)
 	}
 
 	// reconcile delete
 	if !metaObj.GetDeletionTimestamp().IsZero() {
 		log.Info("reconcile delete start")
-		result, err := gr.reconcileDelete(ctx, metaObj)
+		result, err := gr.reconcileDelete(ctx, log, metaObj)
 		if err != nil {
 			gr.Recorder.Event(metaObj, v1.EventTypeWarning, "ReconcileDeleteError", err.Error())
 			log.Error(err, "reconcile delete error")
@@ -266,7 +271,7 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return result, err
 	}
 
-	// TODO: Apply ownership
+	// TODO: ApplyDeployment ownership
 	//allApplied, err := gr.Converter.ApplyOwnership(ctx, metaObj)
 	//if err != nil {
 	//	log.Error(err, "failed applying ownership to owned references")
@@ -300,16 +305,25 @@ func (gr *GenericReconciler) reconcileApply(ctx context.Context, metaObj genrunt
 		return ctrl.Result{}, err
 	}
 
+	provisioningState := getResourceProvisioningState(metaObj)
+
 	// if the resource hash (spec) has not changed, don't apply again
-	if !hasChanged { // TODO: Check state here too
-		msg := "resource spec has not changed"
+	if !hasChanged && provisioningState != nil && IsTerminalProvisioningState(*provisioningState) {
+		msg := fmt.Sprintf("resource spec has not changed and resource is in terminal state: %q", *provisioningState)
+		log.V(0).Info(msg)
 		gr.Recorder.Event(metaObj, v1.EventTypeNormal, "ResourceHasNotChanged", msg)
 		return ctrl.Result{}, nil
 	}
 
-	msg := fmt.Sprintf("resource %q in state has changed and spec will be applied to Azure", metaObj.GetName())
+	// TODO: is there a better way to do this?
+	provisioningStateStr := "<nil>"
+	if provisioningState != nil {
+		provisioningStateStr = string(*provisioningState)
+	}
+	msg := fmt.Sprintf("resource spec for %q will be applied to Azure. Current provisioning state: %q", metaObj.GetName(), provisioningStateStr)
 	gr.Recorder.Event(metaObj, v1.EventTypeNormal, "ResourceHasChanged", msg)
-	return gr.applySpecChange(ctx, metaObj)
+	log.V(0).Info(msg) // TODO: Delete this?
+	return gr.applySpecChange(ctx, metaObj) // TODO: pass log?
 }
 
 // TODO: ??
@@ -349,80 +363,104 @@ func (gr *GenericReconciler) reconcileApply(ctx context.Context, metaObj genrunt
 // There are 2 possible state transitions.
 // *  obj.ProvisioningState == \*\ --> Start deleting in Azure and mark state as "Deleting"
 // *  obj.ProvisioningState == "Deleting" --> http HEAD to see if resource still exists in Azure. If so, requeue, else, remove finalizer.
-func (gr *GenericReconciler) reconcileDelete(ctx context.Context, metaObj genruntime.MetaObject) (ctrl.Result, error) {
-	//resource, err := gr.Converter.ToResource(ctx, metaObj)
-	//// if error IsOwnerNotFound, then carry on. Perhaps, the owner has already been deleted.
+func (gr *GenericReconciler) reconcileDelete(ctx context.Context, log logr.Logger, metaObj genruntime.MetaObject) (ctrl.Result, error) {
+	// resource, err := gr.Converter.ToResource(ctx, metaObj)
+	// if error IsOwnerNotFound, then carry on. Perhaps, the owner has already been deleted.
 	//if err != nil && !xform.IsOwnerNotFound(err) {
 	//	return ctrl.Result{}, fmt.Errorf("unable to transform to resource with: %w", err)
 	//}
-	//
-	//switch resource.ProvisioningState {
-	//case zips.DeletingProvisioningState:
-	//	msg := fmt.Sprintf("deleting... checking for updated state")
-	//	gr.Recorder.Event(metaObj, v1.EventTypeNormal, "ResourceDeleteInProgress", msg)
-	//	return gr.updateFromNonTerminalDeleteState(ctx, resource, metaObj)
-	//default:
-	//	msg := fmt.Sprintf("start deleting resource in state %q", resource.ProvisioningState)
-	//	gr.Recorder.Event(metaObj, v1.EventTypeNormal, "ResourceDeleteStart", msg)
-	//	return gr.startDeleteOfResource(ctx, resource, metaObj)
-	//}
 
-	return ctrl.Result{}, nil
+	provisioningState := getResourceProvisioningState(metaObj)
+
+	_, armResourceSpec, err := ResourceSpecToArmResourceSpec(gr, metaObj)
+	if err != nil {
+		return ctrl.Result{}, errors.Wrapf(err, "couldn't convert to armResourceSpec")
+	}
+	// TODO: Fix this up
+	resource := &genruntime.ArmResourceImpl{
+		ArmResourceSpec: armResourceSpec,
+		Id: getResourceId(metaObj),
+	}
+
+	if provisioningState != nil && *provisioningState == DeletingProvisioningState {
+		msg := fmt.Sprintf("deleting... checking for updated state")
+		log.V(0).Info(msg)
+		gr.Recorder.Event(metaObj, v1.EventTypeNormal, "ResourceDeleteInProgress", msg)
+		return gr.updateFromNonTerminalDeleteState(ctx, log, resource, metaObj)
+	} else {
+		msg := fmt.Sprintf("start deleting resource in state %q", provisioningState)
+		gr.Recorder.Event(metaObj, v1.EventTypeNormal, "ResourceDeleteStart", msg)
+		return gr.startDeleteOfResource(ctx, log, resource, metaObj)
+	}
 }
 
 // startDeleteOfResource will begin the delete of a resource by telling Azure to start deleting it. The resource will be
 // marked with the provisioning state of "Deleting".
-//func (gr *GenericReconciler) startDeleteOfResource(ctx context.Context, resource *zips.Resource, metaObj genruntime.MetaObject) (ctrl.Result, error) {
-//	if err := patcher(ctx, gr.Client, metaObj, func(mutMetaObject genruntime.MetaObject) error {
-//		if resource.ID != "" {
-//			if _, err := gr.Applier.BeginDelete(ctx, resource); err != nil {
-//				return fmt.Errorf("failed trying to delete with %w", err)
-//			}
-//
-//			resource.ProvisioningState = zips.DeletingProvisioningState
-//		} else {
-//			controllerutil.RemoveFinalizer(mutMetaObject, apis.AzureInfraFinalizer)
-//		}
-//
-//		if err := gr.Converter.FromResource(resource, mutMetaObject); err != nil {
-//			return fmt.Errorf("error gr.Converter.FromResource with: %w", err)
-//		}
-//
-//		return nil
-//	}); err != nil && !apierrors.IsNotFound(err) {
-//		return ctrl.Result{}, fmt.Errorf("failed to patch after starting delete with: %w", err)
-//	}
-//
-//	// delete has started, check back to seen when the finalizer can be removed
-//	return ctrl.Result{
-//		RequeueAfter: 5 * time.Second,
-//	}, nil
-//}
+func (gr *GenericReconciler) startDeleteOfResource(
+	ctx context.Context,
+	log logr.Logger,
+	resource genruntime.ArmResource,
+	metaObj genruntime.MetaObject) (ctrl.Result, error) {
+
+	if err := patcher(ctx, gr.Client, metaObj, func(mutMetaObject genruntime.MetaObject) error {
+		if resource.GetId() != "" {
+			if _, err := gr.Applier.BeginDeleteResource(ctx, resource); err != nil {
+				return errors.Wrapf(err, "failed trying to delete resource")
+			}
+
+			annotations := make(map[string]string)
+			annotations[ResourceStateAnnotation] = string(DeletingProvisioningState)
+			addAnnotations(metaObj, annotations)
+		} else {
+			controllerutil.RemoveFinalizer(mutMetaObject, apis.AzureInfraFinalizer)
+		}
+
+		// TODO: Not exactly sure what this was doing
+		//if err := gr.Converter.FromResource(resource, mutMetaObject); err != nil {
+		//	return errors.Wrapf(err, "error gr.Converter.FromResource")
+		//}
+
+		return nil
+	}); err != nil && !apierrors.IsNotFound(err) {
+		return ctrl.Result{}, errors.Wrapf(err, "failed to patch after starting delete")
+	}
+
+	// delete has started, check back to seen when the finalizer can be removed
+	return ctrl.Result{
+		RequeueAfter: 5 * time.Second,
+	}, nil
+}
 
 // updateFromNonTerminalDeleteState will call Azure to check if the resource still exists. If so, it will requeue, else,
 // the finalizer will be removed.
-//func (gr *GenericReconciler) updateFromNonTerminalDeleteState(ctx context.Context, resource *zips.Resource, metaObj genruntime.MetaObject) (ctrl.Result, error) {
-//	// already deleting, just check to see if it still exists and if it's gone, remove finalizer
-//	found, err := gr.Applier.HeadResource(ctx, resource)
-//	if err != nil {
-//		return ctrl.Result{}, fmt.Errorf("failed to head resource with: %w", err)
-//	}
-//
-//	if found {
-//		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
-//	}
-//
-//	err = patcher(ctx, gr.Client, metaObj, func(mutMetaObject genruntime.MetaObject) error {
-//		controllerutil.RemoveFinalizer(mutMetaObject, apis.AzureInfraFinalizer)
-//		return nil
-//	})
-//
-//	// patcher will try to fetch the object after patching, so ignore not found errors
-//	if apierrors.IsNotFound(err) {
-//		return ctrl.Result{}, nil
-//	}
-//	return ctrl.Result{}, err
-//}
+func (gr *GenericReconciler) updateFromNonTerminalDeleteState(
+	ctx context.Context,
+	log logr.Logger,
+	resource genruntime.ArmResource,
+	metaObj genruntime.MetaObject) (ctrl.Result, error) {
+
+	// already deleting, just check to see if it still exists and if it's gone, remove finalizer
+	found, err := gr.Applier.HeadResource(ctx, resource)
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "failed to head resource")
+	}
+
+	if found {
+		log.V(0).Info("Found resource: continuing to wait for deletion...")
+		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+	}
+
+	err = patcher(ctx, gr.Client, metaObj, func(mutMetaObject genruntime.MetaObject) error {
+		controllerutil.RemoveFinalizer(mutMetaObject, apis.AzureInfraFinalizer)
+		return nil
+	})
+
+	// patcher will try to fetch the object after patching, so ignore not found errors
+	if apierrors.IsNotFound(err) {
+		return ctrl.Result{}, nil
+	}
+	return ctrl.Result{}, err
+}
 
 // updatedFromNonTerminalApplyState will ask Azure for the updated status of the deployment. If the object is in a
 // non terminal state, it will requeue, else, status will be updated.
@@ -434,7 +472,7 @@ func (gr *GenericReconciler) reconcileDelete(ctx context.Context, metaObj genrun
 //
 //	if err := patcher(ctx, gr.Client, metaObj, func(mutMetaObj genruntime.MetaObject) error {
 //		// update with latest information about the apply
-//		resource, err = gr.Applier.Apply(ctx, resource)
+//		resource, err = gr.Applier.ApplyDeployment(ctx, resource)
 //		if err != nil {
 //			return fmt.Errorf("failed to apply state to Azure with %w", err)
 //		}
@@ -466,7 +504,7 @@ func (gr *GenericReconciler) reconcileDelete(ctx context.Context, metaObj genrun
 // into a non terminal state and will then be requeued for polling.
 func (gr *GenericReconciler) applySpecChange(ctx context.Context, metaObj genruntime.MetaObject) (ctrl.Result, error) {
 
-	resource, err := ResourceSpecToDeployment(gr, metaObj)
+	deployment, err := ResourceSpecToDeployment(gr, metaObj)
 	if err != nil {
 		err := errors.Wrapf(err, "unable to transform to resource")
 		gr.Recorder.Event(metaObj, v1.EventTypeWarning, "ToResourceError", err.Error())
@@ -475,22 +513,37 @@ func (gr *GenericReconciler) applySpecChange(ctx context.Context, metaObj genrun
 
 	if err := patcher(ctx, gr.Client, metaObj, func(mutObj genruntime.MetaObject) error {
 		controllerutil.AddFinalizer(mutObj, apis.AzureInfraFinalizer)
-		// resource.ProvisioningState = "" // TODO
-		resource, err = gr.Applier.Apply(ctx, resource)
+		deployment, err = gr.Applier.ApplyDeployment(ctx, deployment)
 		if err != nil {
 			return fmt.Errorf("failed to apply state to Azure with %w", err)
 		}
 
 		// TODO: we need to update status with provisioning state and whatnot
+		// TODO: For now, sticking a few things into annotations
 		//if err := gr.Converter.FromResource(resource, mutObj); err != nil {
 		//	return err
 		//}
 
-		if err := addResourceHashAnnotation(mutObj); err != nil {
-			return fmt.Errorf("failed to addResourceHashAnnotation with: %w", err)
+		sig, err := SpecSignature(metaObj)
+		if err != nil {
+			return errors.Wrap(err, "failed to compute resource spec hash")
 		}
 
-		addDeploymentIdAndNameAnnotation(mutObj, resource.Id, resource.Name)
+		annotations := make(map[string]string)
+		annotations[ResourceSigAnnotationKey] = sig
+		annotations[DeploymentIdAnnotation] = deployment.Id
+		annotations[DeploymentNameAnnotation] = deployment.Name
+		annotations[ResourceStateAnnotation] = string(deployment.Properties.ProvisioningState)
+
+		if deployment.IsTerminalProvisioningState() {
+			if len(deployment.Properties.OutputResources) == 0 {
+				return errors.Errorf("Template deployment didn't have any output resources")
+			} else {
+				annotations[ResourceIdAnnotation] = deployment.Properties.OutputResources[0].ID
+			}
+		}
+
+		addAnnotations(metaObj, annotations)
 
 		return nil
 	}); err != nil {
@@ -498,12 +551,11 @@ func (gr *GenericReconciler) applySpecChange(ctx context.Context, metaObj genrun
 	}
 
 	result := ctrl.Result{}
-	// TODO: Need to requeue to monitor?
-	//if !IsTerminalProvisioningState(resource.ProvisioningState) {
-	//	result = ctrl.Result{
-	//		RequeueAfter: 5 * time.Second,
-	//	}
-	//}
+	if !deployment.IsTerminalProvisioningState() {
+		result = ctrl.Result{
+			RequeueAfter: 5 * time.Second,
+		}
+	}
 	return result, err
 }
 
@@ -522,30 +574,36 @@ func hasResourceHashAnnotationChanged(metaObj genruntime.MetaObject) (bool, erro
 	return oldSig != newSig, nil
 }
 
-func addResourceHashAnnotation(metaObj genruntime.MetaObject) error {
-	sig, err := SpecSignature(metaObj)
-	if err != nil {
-		return err
+func getResourceProvisioningState(metaObj genruntime.MetaObject) *ProvisioningState {
+	state, ok := metaObj.GetAnnotations()[ResourceStateAnnotation]
+	if !ok {
+		return nil
 	}
 
-	annotations := metaObj.GetAnnotations()
-	if annotations == nil {
-		annotations = map[string]string{}
-	}
-
-	annotations[ResourceSigAnnotationKey] = sig
-	metaObj.SetAnnotations(annotations)
-	return nil
+	result := ProvisioningState(state)
+	return &result
 }
 
-func addDeploymentIdAndNameAnnotation(metaObj genruntime.MetaObject, deploymentId string, deploymentName string) {
+// TODO: Remove this when we have status
+func getResourceId(metaObj genruntime.MetaObject) string {
+	id, ok := metaObj.GetAnnotations()[ResourceIdAnnotation]
+	if !ok {
+		return ""
+	}
+
+	return id
+}
+
+func addAnnotations(metaObj genruntime.MetaObject, newAnnotations map[string]string) {
 	annotations := metaObj.GetAnnotations()
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
 
-	annotations[DeploymentNameAnnotation] = deploymentId
-	annotations[DeploymentNameAnnotation] = deploymentName
+	for k, v := range newAnnotations {
+		annotations[k] = v
+	}
+
 	metaObj.SetAnnotations(annotations)
 }
 

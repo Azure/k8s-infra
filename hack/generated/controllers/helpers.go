@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"reflect"
 	"time"
 )
 
@@ -61,40 +62,6 @@ func SpecSignature(metaObject genruntime.MetaObject) (string, error) {
 	return hex.EncodeToString(hash[:]), nil
 }
 
-//func SpecSignature(metaObject genruntime.MetaObject) (string, error) {
-//	// Convert the resource to unstructured for easier comparison later.
-//	unObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(metaObject)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	spec, ok, err := unstructured.NestedFieldNoCopy(unObj, "spec")
-//	if err != nil {
-//		return "", err
-//	}
-//	if !ok {
-//		return "", errors.New("unable to find spec within unstructured MetaObject")
-//	}
-//
-//	armTransformer, ok := spec.(genruntime.ArmTransformer)
-//	if !ok {
-//		return "", errors.Errorf("spec was of type %T which doesn't implement genruntime.ArmTransformer", spec)
-//	}
-//
-//	armSpec, err := armTransformer.ToArm()
-//	if err != nil {
-//		return "", errors.Wrapf(err, "failed to transform resource %s to ARM", metaObject.GetName())
-//	}
-//
-//	bits, err := json.Marshal(armSpec)
-//	if err != nil {
-//		return "", errors.Wrapf(err, "unable to marshal spec of %s", metaObject.GetName())
-//	}
-//
-//	hash := sha256.Sum256(bits)
-//	return hex.EncodeToString(hash[:]), nil
-//}
-
 func CreateDeploymentName() (string, error) {
 	// no status yet, so start provisioning
 	deploymentUUID, err := uuid.NewUUID()
@@ -106,39 +73,52 @@ func CreateDeploymentName() (string, error) {
 	return deploymentName, nil
 }
 
-func ResourceSpecToDeployment(gr *GenericReconciler, metaObject genruntime.MetaObject) (*armclient.Deployment, error) {
-	// Convert the resource to unstructured for easier comparison later.
-	unObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(metaObject)
-	if err != nil {
-		return nil, err
+func ResourceSpecToArmResourceSpec(gr *GenericReconciler, metaObject genruntime.MetaObject) (string, genruntime.ArmResourceSpec, error) {
+
+	metaObjReflector := reflect.Indirect(reflect.ValueOf(metaObject))
+	if !metaObjReflector.IsValid() {
+		return "", nil, errors.Errorf("couldn't indirect %T", metaObject)
 	}
 
-	spec, ok, err := unstructured.NestedFieldNoCopy(unObj, "spec")
-	if err != nil {
-		return nil, err
+	specField := metaObjReflector.FieldByName("Spec")
+	if !specField.IsValid() {
+		return "", nil, errors.Errorf("couldn't find spec field on type %T", metaObject)
 	}
-	if !ok {
-		return nil, errors.New("unable to find spec within unstructured MetaObject")
-	}
+
+	// Spec fields are values, we want a ptr
+	specFieldPtr := reflect.New(specField.Type())
+	specFieldPtr.Elem().Set(specField)
+
+	// TODO: how to check that this doesn't fail
+	spec := specFieldPtr.Interface()
 
 	armTransformer, ok := spec.(genruntime.ArmTransformer)
 	if !ok {
-		return nil, errors.Errorf("spec was of type %T which doesn't implement genruntime.ArmTransformer", spec)
+		return "", nil, errors.Errorf("spec was of type %T which doesn't implement genruntime.ArmTransformer", spec)
 	}
 
 	resourceGroupName, azureName, err := GetFullAzureNameAndResourceGroup(metaObject, gr)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
-	armSpec, err := armTransformer.ToArm(azureName)
+	armSpec, err := armTransformer.ConvertToArm(azureName)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to transform resource %s to ARM", metaObject.GetName())
+		return "", nil, errors.Wrapf(err, "failed to transform resource %s to ARM", metaObject.GetName())
 	}
 
-	castArmSpec, ok := armSpec.(genruntime.ArmResourceSpec)
+	typedArmSpec, ok := armSpec.(genruntime.ArmResourceSpec)
 	if !ok {
-		return nil, errors.Errorf("arm spec for %s didn't implement ArmResourceSpec", metaObject.GetName())
+		return "", nil, errors.Errorf("failed to cast armSpec of type %T to genruntime.ArmResourceSpec", armSpec)
+	}
+
+	return resourceGroupName, typedArmSpec, nil
+}
+
+func ResourceSpecToDeployment(gr *GenericReconciler, metaObject genruntime.MetaObject) (*armclient.Deployment, error) {
+	resourceGroupName, typedArmSpec, err := ResourceSpecToArmResourceSpec(gr, metaObject)
+	if err != nil {
+		return nil, err
 	}
 
 	// TODO: get other deployment details from status and avoid creating a new deployment
@@ -153,23 +133,32 @@ func ResourceSpecToDeployment(gr *GenericReconciler, metaObject genruntime.MetaO
 
 	var deployment *armclient.Deployment
 	if deploymentIdOk && deploymentNameOk {
-		deployment = gr.Applier.NewDeployment(resourceGroupName, deploymentName, castArmSpec)
+		deployment = gr.Applier.NewDeployment(resourceGroupName, deploymentName, typedArmSpec)
 		deployment.Id = deploymentId
 	} else {
 		deploymentName, err := CreateDeploymentName()
 		if err != nil {
 			return nil, err
 		}
-		deployment = gr.Applier.NewDeployment(resourceGroupName, deploymentName, castArmSpec)
+		deployment = gr.Applier.NewDeployment(resourceGroupName, deploymentName, typedArmSpec)
 	}
 	return deployment, nil
+}
+
+// TODO: Remove this when we have proper AzureName defaulting on hte way in
+func GetAzureName(r genruntime.MetaObject) string {
+	if r.AzureName() == "" {
+		return r.GetName()
+	}
+
+	return r.AzureName()
 }
 
 func GetFullAzureNameAndResourceGroup(r genruntime.MetaObject, gr *GenericReconciler) (string, string, error) {
 	owner := r.Owner()
 
 	if r.GetObjectKind().GroupVersionKind().Kind == "ResourceGroup" {
-		return r.AzureName(), "", nil
+		return GetAzureName(r), "", nil
 	}
 
 	if owner != nil {
@@ -185,6 +174,17 @@ func GetFullAzureNameAndResourceGroup(r genruntime.MetaObject, gr *GenericReconc
 				}
 			}
 		}
+
+		// TODO: This is a hack for now since we don't have an RG type yet
+		if owner.Kind == "ResourceGroup" {
+			return owner.Name, GetAzureName(r), nil
+		}
+
+		// TODO: We could do this on launch probably since we can check based on the AllKnownTypes() collection
+		if !found {
+			return "", "", errors.Errorf("couldn't find registered scheme for owner %+v", owner)
+		}
+
 		ownerNamespacedName := types.NamespacedName{
 			Namespace: r.GetNamespace(), // TODO: Assumption that resource ownership is not cross namespace
 			Name: owner.Name,
@@ -201,7 +201,7 @@ func GetFullAzureNameAndResourceGroup(r genruntime.MetaObject, gr *GenericReconc
 		}
 
 		rgName, ownerName, err := GetFullAzureNameAndResourceGroup(ownerMeta, gr)
-		combinedAzureName := r.AzureName()
+		combinedAzureName := GetAzureName(r)
 		if ownerName != "" {
 			combinedAzureName = genruntime.CombineArmNames(ownerName, r.AzureName())
 		}

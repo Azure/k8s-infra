@@ -40,10 +40,6 @@ test-cover: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) header-check lint ## Run tests 
 test-cover-int: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) header-check lint ## Run tests w/ code coverage (./cover.out)
 	$(GO) test ./... -tags integration -coverprofile=cover.out -coverpkg=./...
 
-$(KUBECTL) $(KUBE_APISERVER) $(ETCD) $(KUBEBUILDER): ## Install test asset kubectl, kube-apiserver, etcd
-	. ./scripts/fetch_ext_bins.sh && fetch_tools
-
-
 ## --------------------------------------
 ## Linting
 ## --------------------------------------

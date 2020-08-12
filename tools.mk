@@ -61,3 +61,6 @@ $(GCOV2LCOV): ## Build gcov2lcov
 
 .PHONY: install-tools
 install-tools: $(KIND) $(KUSTOMIZE) $(CONTROLLER_GEN) $(CONVERSION_GEN) $(GOLANGCI_LINT) $(GOLINT) $(GOX) $(GCOV2LCOV)
+
+$(KUBECTL) $(KUBE_APISERVER) $(ETCD) $(KUBEBUILDER): ## Install test asset kubectl, kube-apiserver, etcd
+	. $(SCRIPTS_DIR)/fetch_ext_bins.sh && fetch_tools

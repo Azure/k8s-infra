@@ -1,0 +1,11 @@
+apiVersion: microsoft.batch.infra.azure.com/v20170901
+kind: BatchAccount
+metadata:
+  name: batchaccountexample
+  namespace: default
+spec:
+  apiVersion: 2017-09-01  # TODO: Remove?
+  location: westcentralus
+  owner:
+    name: matthchr-rg
+  properties: {} # TODO: This is awkward
