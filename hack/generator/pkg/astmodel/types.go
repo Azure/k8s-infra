@@ -59,9 +59,15 @@ func (types Types) Contains(name TypeName) bool {
 	return ok
 }
 
-// Union merges this and other, with a safety check that no type is overwritten
-func (types Types) Union(other Types) { // TODO: Do we want this to modify the LHS collection or return a new one?
-	for _, o := range other {
-		types.Add(o)
+// TypesSetDisjointUnion merges this and other, with a safety check that no type is overwritten.
+// If an attempt is made to overwrite a type, this function panics
+func TypesSetDisjointUnion(s1 Types, s2 Types) Types {
+	result := make(Types)
+	for _, o := range s1 {
+		result.Add(o)
 	}
+	for _, o := range s2 {
+		result.Add(o)
+	}
+	return result
 }

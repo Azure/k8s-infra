@@ -16,7 +16,7 @@ import (
 // with ARM, as well as removes ARM-only properties from the Kubernetes types.
 func createArmTypesAndCleanKubernetesTypes(idFactory astmodel.IdentifierFactory) PipelineStage {
 	return PipelineStage{
-		id: "createArmTypes",
+		id:          "createArmTypes",
 		description: "Create ARM types and remove ARM-only properties from Kubernetes types",
 		Action: func(ctx context.Context, definitions astmodel.Types) (astmodel.Types, error) {
 			// 1. Walk types and produce the new ARM types, as well as a mapping of Kubernetes Type -> Arm Type
@@ -35,9 +35,7 @@ func createArmTypesAndCleanKubernetesTypes(idFactory astmodel.IdentifierFactory)
 				return nil, err
 			}
 
-			result := make(astmodel.Types)
-			result.Union(armTypes)
-			result.Union(kubeTypes)
+			result := astmodel.TypesSetDisjointUnion(armTypes, kubeTypes)
 			for _, def := range definitions {
 				if _, ok := result[def.Name()]; !ok {
 					result.Add(def)
@@ -57,9 +55,9 @@ func createArmTypes(definitions astmodel.Types) (astmodel.Types, astmodel.Types,
 		definitions,
 		// Resource handler
 		func(name astmodel.TypeName, resourceType *astmodel.ResourceType) (astmodel.TypeName, *astmodel.TypeDefinition, error) {
-			armSpecDef, kubeSpecName, err := createArmResourceSpecDefinition(definitions, name, resourceType)
+			armSpecDef, kubeSpecName, err := createArmResourceSpecDefinition(definitions, resourceType)
 			if err != nil {
-				return astmodel.TypeName{}, nil, err
+				return astmodel.TypeName{}, nil, errors.Wrapf(err, "unable to create arm resource spec definition for resource %s", name)
 			}
 			kubeNameToArmDefs[kubeSpecName] = *armSpecDef
 
@@ -94,9 +92,9 @@ func modifyKubeTypes(
 		definitions,
 		// Resource handler
 		func(name astmodel.TypeName, resourceType *astmodel.ResourceType) (astmodel.TypeName, *astmodel.TypeDefinition, error) {
-			kubernetesSpecDef, err := modifyKubeResourceSpecDefinition(definitions, idFactory, name, resourceType)
+			kubernetesSpecDef, err := modifyKubeResourceSpecDefinition(definitions, idFactory, resourceType)
 			if err != nil {
-				return astmodel.TypeName{}, nil, err
+				return astmodel.TypeName{}, nil, errors.Wrapf(err, "unable to modify kube resource spec definition for resource %s", name)
 			}
 
 			armDef, ok := kubeNameToArmDefs[kubernetesSpecDef.Name()]
@@ -177,18 +175,12 @@ func iterDefs(
 }
 
 func removeValidations(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
-	result := t
-
-	for _, p := range t.Properties() {
-		result = result.WithoutProperty(p.PropertyName())
-	}
-
 	for _, p := range t.Properties() {
 		p = p.WithoutValidation()
-		result = result.WithProperty(p)
+		t = t.WithProperty(p)
 	}
 
-	return result, nil
+	return t, nil
 }
 
 func createArmTypeName(name astmodel.TypeName) astmodel.TypeName {
@@ -221,18 +213,17 @@ func transformTypeDefinition(
 
 func getResourceSpecDefinition(
 	definitions astmodel.Types,
-	resourceName astmodel.TypeName,
 	resourceType *astmodel.ResourceType) (astmodel.TypeDefinition, error) {
 
 	// The expectation is that the spec type is just a name
 	specName, ok := resourceType.SpecType().(astmodel.TypeName)
 	if !ok {
-		return astmodel.TypeDefinition{}, errors.Errorf("%s spec was not of type TypeName, instead: %T", resourceName, resourceType.SpecType())
+		return astmodel.TypeDefinition{}, errors.Errorf("spec was not of type TypeName, instead: %T", resourceType.SpecType())
 	}
 
 	resourceSpecDef, ok := definitions[specName]
 	if !ok {
-		return astmodel.TypeDefinition{}, errors.Errorf("couldn't find spec for resource %s", resourceName)
+		return astmodel.TypeDefinition{}, errors.Errorf("couldn't find spec")
 	}
 
 	return resourceSpecDef, nil
@@ -240,10 +231,9 @@ func getResourceSpecDefinition(
 
 func createArmResourceSpecDefinition(
 	definitions astmodel.Types,
-	resourceName astmodel.TypeName,
 	resourceType *astmodel.ResourceType) (*astmodel.TypeDefinition, astmodel.TypeName, error) {
 
-	resourceSpecDef, err := getResourceSpecDefinition(definitions, resourceName, resourceType)
+	resourceSpecDef, err := getResourceSpecDefinition(definitions, resourceType)
 	if err != nil {
 		return nil, astmodel.TypeName{}, err
 	}
@@ -257,14 +247,14 @@ func createArmResourceSpecDefinition(
 }
 
 func createArmTypeDefinition(definitions astmodel.Types, def astmodel.TypeDefinition) (*astmodel.TypeDefinition, error) {
-	complexPropertyHandlerWrapper := func(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
-		return complexPropertyHandler(t, definitions)
+	convertPropertiesToArmTypesWrapper := func(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
+		return convertPropertiesToArmTypes(t, definitions)
 	}
 
 	armDef, err := transformTypeDefinition(
 		// This type is the ARM type so give it the ARM name
 		def.WithName(createArmTypeName(def.Name())),
-		[]conversionHandler{removeValidations, complexPropertyHandlerWrapper})
+		[]conversionHandler{removeValidations, convertPropertiesToArmTypesWrapper})
 	if err != nil {
 		return nil, err
 	}
@@ -275,10 +265,9 @@ func createArmTypeDefinition(definitions astmodel.Types, def astmodel.TypeDefini
 func modifyKubeResourceSpecDefinition(
 	definitions astmodel.Types,
 	idFactory astmodel.IdentifierFactory,
-	resourceName astmodel.TypeName,
 	resourceType *astmodel.ResourceType) (*astmodel.TypeDefinition, error) {
 
-	resourceSpecDef, err := getResourceSpecDefinition(definitions, resourceName, resourceType)
+	resourceSpecDef, err := getResourceSpecDefinition(definitions, resourceType)
 	if err != nil {
 		return nil, err
 	}
@@ -423,7 +412,7 @@ func convertArmPropertyTypeIfNeeded(definitions astmodel.Types, t astmodel.Type)
 	}
 }
 
-func complexPropertyHandler(t *astmodel.ObjectType, definitions astmodel.Types) (*astmodel.ObjectType, error) {
+func convertPropertiesToArmTypes(t *astmodel.ObjectType, definitions astmodel.Types) (*astmodel.ObjectType, error) {
 	result := t
 
 	for _, prop := range result.Properties() {
@@ -435,7 +424,7 @@ func complexPropertyHandler(t *astmodel.ObjectType, definitions astmodel.Types) 
 
 		if newType != propType {
 			newProp := prop.WithType(newType)
-			result = result.WithoutProperty(prop.PropertyName()).WithProperty(newProp)
+			result = result.WithProperty(newProp)
 		}
 	}
 

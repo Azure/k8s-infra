@@ -16,23 +16,21 @@ const resourcesPropertyName = astmodel.PropertyName("Resources")
 
 func determineResourceOwnership() PipelineStage {
 	return PipelineStage{
-		id: "determineResourceOwnership",
+		id:          "determineResourceOwnership",
 		description: "Determine ARM resource relationships",
-		Action: func(ctx context.Context, definitions astmodel.Types) (astmodel.Types, error) {
-			return determineOwnership(definitions)
-		},
+		Action:      determineOwnership,
 	}
 }
 
-func determineOwnership(definitions astmodel.Types) (astmodel.Types, error) {
+func determineOwnership(ctx context.Context, definitions astmodel.Types) (astmodel.Types, error) {
 
 	updatedDefs := make(astmodel.Types)
 
 	for _, def := range definitions {
 		if resourceType, ok := def.Type().(*astmodel.ResourceType); ok {
-			specDef, err := getResourceSpecDefinition(definitions, def.Name(), resourceType)
+			specDef, err := getResourceSpecDefinition(definitions, resourceType)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, "couldn't get spec definition for resource %s", def.Name())
 			}
 
 			specType, err := resourceSpecTypeAsObject(specDef)
@@ -57,7 +55,7 @@ func determineOwnership(definitions astmodel.Types) (astmodel.Types, error) {
 				return nil, err
 			}
 
-			err = createdUpdatedChildResourceDefinitionsWithOwner(definitions, childResourceTypeNames, def.Name(), updatedDefs)
+			err = updateChildResourceDefinitionsWithOwner(definitions, childResourceTypeNames, def.Name(), updatedDefs)
 			if err != nil {
 				return nil, err
 			}
@@ -129,7 +127,7 @@ func extractChildResourcePropertyTypeDef(
 	return &resourcesDef, nil
 }
 
-func handleObjectTypeResourcesProperty(
+func resolveResourcesTypeNames(
 	resourcesPropertyName astmodel.TypeName,
 	resourcesPropertyType *astmodel.ObjectType) ([]astmodel.TypeName, error) {
 	var results []astmodel.TypeName
@@ -171,14 +169,18 @@ func extractChildResourceTypeNames(resourcesPropertyTypeDef astmodel.TypeDefinit
 
 	// Determine if this is a OneOf/AllOf
 	// TODO: Checking for the presence of the JSON marshal function is a bit of a hack...
-	if isObject && resourcesPropertyTypeAsObject.HasFunctionWithName(astmodel.JSONMarshalFunctionName) {
-		return handleObjectTypeResourcesProperty(resourcesPropertyTypeDef.Name(), resourcesPropertyTypeAsObject)
+	if isObject && isObjectOneOfObject(resourcesPropertyTypeAsObject) {
+		return resolveResourcesTypeNames(resourcesPropertyTypeDef.Name(), resourcesPropertyTypeAsObject)
 	} else {
 		return []astmodel.TypeName{resourcesPropertyTypeDef.Name()}, nil
 	}
 }
 
-func createdUpdatedChildResourceDefinitionsWithOwner(
+func isObjectOneOfObject(o *astmodel.ObjectType) bool {
+	return o.HasFunctionWithName(astmodel.JSONMarshalFunctionName)
+}
+
+func updateChildResourceDefinitionsWithOwner(
 	definitions astmodel.Types,
 	childResourceTypeNames []astmodel.TypeName,
 	owningResourceName astmodel.TypeName,
