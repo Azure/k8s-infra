@@ -22,15 +22,15 @@ type PropertyDefinition struct {
 	propertyType Type
 	description  string
 	validations  []Validation
-	tags         map[string]string
+	tags         map[string][]string
 }
 
 // NewPropertyDefinition is a factory method for creating a new PropertyDefinition
 // name is the name for the new property (mandatory)
 // propertyType is the type for the new property (mandatory)
 func NewPropertyDefinition(propertyName PropertyName, jsonName string, propertyType Type) *PropertyDefinition {
-	tags := make(map[string]string)
-	tags["json"] = jsonName
+	tags := make(map[string][]string)
+	tags["json"] = []string{jsonName}
 
 	return &PropertyDefinition{
 		propertyName: propertyName,
@@ -94,11 +94,11 @@ func (property *PropertyDefinition) WithTag(key string, value string) *PropertyD
 	// TODO: as long as this object really is immutable and nothing is changing the content of the maps
 	// TODO: after a copy has been made it it was a bit surprising that we aren't doing a deep copy here.
 	// Have to copy the map here
-	result.tags = make(map[string]string)
+	result.tags = make(map[string][]string)
 	for k, v := range property.tags {
 		result.tags[k] = v
 	}
-	result.tags[key] = value
+	result.tags[key] = append(result.tags[key], value)
 	return &result
 }
 
@@ -187,7 +187,8 @@ func (property *PropertyDefinition) renderedTags() string {
 
 	var tags []string
 	for _, key := range orderedKeys {
-		tags = append(tags, fmt.Sprintf("%s:%q", key, property.tags[key]))
+		tagString := strings.Join(property.tags[key], ",")
+		tags = append(tags, fmt.Sprintf("%s:%q", key, tagString))
 	}
 
 	return strings.Join(tags, " ")
