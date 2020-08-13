@@ -35,10 +35,7 @@ func (std TypeDefinition) Type() Type {
 // We return a new slice to preserve immutability
 func (std TypeDefinition) Description() []string {
 	var result []string
-	for _, s := range std.description {
-		result = append(result, s)
-	}
-
+	result = append(result, std.description...)
 	return result
 }
 
