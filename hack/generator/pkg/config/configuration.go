@@ -170,18 +170,18 @@ type StatusConfiguration struct {
 	// The root URL of the status (Swagger) files (relative to this file)
 	SchemaRoot string `yaml:"schemaRoot"`
 
-	// The per-namespace configuration
-	Schemas []StatusNamespace `yaml:"schemas"`
+	// Custom per-group configuration
+	Overrides []SchemaOverride `yaml:"overrides"`
 }
 
-// StatusNamespace provides per-namespace configuration
-type StatusNamespace struct {
-	// The root for this namespace (relative to SchemaRoot)
+// SchemaOverride provides configuration to override namespaces (groups)
+// this is used (for example) to distinguish Microsoft.Network.Frontdoor
+// from Microsoft.Network, even though both use Microsoft.Network in
+// their Swagger specs.
+type SchemaOverride struct {
+	// The root for this group (relative to SchemaRoot)
 	BasePath string `yaml:"basePath"`
 
 	// A suffix to add on to the group name
-	// this is used, for example, to separate the Microsoft.Network
-	// and Microsoft.Network.Frontdoor specs (even though both use
-	// Microsoft.Network in the input Swagger)
 	Suffix string `yaml:"suffix"`
 }

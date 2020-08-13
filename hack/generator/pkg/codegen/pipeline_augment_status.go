@@ -157,13 +157,13 @@ func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, 
 		outputGroup := swaggerGroupRegex.FindString(schemaPath)
 		outputVersion := swaggerVersionRegex.FindString(schemaPath)
 
-		// see if there is a config override for the namespace (group) name
-		for _, configSchema := range config.Status.Schemas {
-			configSchemaPath := path.Join(config.Status.SchemaRoot, configSchema.BasePath)
+		// see if there is a config override for this file
+		for _, schemaOverride := range config.Status.Overrides {
+			configSchemaPath := path.Join(config.Status.SchemaRoot, schemaOverride.BasePath)
 			if strings.HasPrefix(schemaPath, configSchemaPath) {
-				// found a corresponding schema
-				if configSchema.Suffix != "" {
-					outputGroup += "." + configSchema.Suffix
+				// found an override: apply it
+				if schemaOverride.Suffix != "" {
+					outputGroup += "." + schemaOverride.Suffix
 				}
 
 				break
