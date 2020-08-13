@@ -92,6 +92,14 @@ func (c *ArmConversionFunction) asConvertFromArmFunc(
 
 // Equals determines if this function is equal to the passed in function
 func (c *ArmConversionFunction) Equals(other astmodel.Function) bool {
+	// TODO: Equality on functions is currently awkward because we can't easily pass
+	// TODO: a reference to the object the function is on to the function (since both
+	// TODO: are immutable and it's impossible to have two immutable objects with
+	// TODO: references to each other). Really this equality is always in the context
+	// TODO: of comparing objects (since you can't have a free-floating function
+	// TODO: with a receiver), and as such we just need to compare things that aren't
+	// TODO: the receiver type.
+
 	if o, ok := other.(*ArmConversionFunction); ok {
 		return c.armType.Equals(o.armType) &&
 			c.armTypeName.Equals(o.armTypeName) &&

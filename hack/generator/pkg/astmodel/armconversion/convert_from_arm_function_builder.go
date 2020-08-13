@@ -144,16 +144,16 @@ func (builder *convertFromArmBuilder) namePropertyHandler() propertyConversionHa
 
 	return propertyConversionHandler{
 		finder: func(toProp *astmodel.PropertyDefinition, fromType *astmodel.ObjectType) (bool, *astmodel.PropertyDefinition) {
-			if toProp.Equals(GetAzureNameProperty(builder.idFactory)) && builder.isResource {
-				// Check to make sure that the ARM object has a "Name" property (which matches our "AzureName")
-				fromProperty, ok := fromType.Property(astmodel.PropertyName("Name"))
-				if !ok {
-					panic("Arm resource missing property Name")
-				}
-				return true, fromProperty
+			if !toProp.Equals(GetAzureNameProperty(builder.idFactory)) || !builder.isResource {
+				return false, nil
 			}
 
-			return false, nil
+			// Check to make sure that the ARM object has a "Name" property (which matches our "AzureName")
+			fromProperty, ok := fromType.Property(astmodel.PropertyName("Name"))
+			if !ok {
+				panic("Arm resource missing property 'Name'")
+			}
+			return true, fromProperty
 		},
 		matchHandler: func(toProp *astmodel.PropertyDefinition, fromProp *astmodel.PropertyDefinition) []ast.Stmt {
 			result := astbuilder.SimpleAssignment(
