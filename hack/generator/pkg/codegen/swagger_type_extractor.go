@@ -27,12 +27,16 @@ type typeExtractor struct {
 	outputVersion string
 }
 
+// extractTypes finds all operations in the Swagger spec that
+// have a PUT verb and a path like "Microsoft.GroupName/…/resourceName/{resourceId}",
+// and extracts the types for those operations, into the 'resources' parameter.
+// Any additional types required by the resource types are placed into the 'otherTypes' parameter.
 func (extractor *typeExtractor) extractTypes(
 	ctx context.Context,
 	filePath string,
 	swagger spec.Swagger,
 	resources astmodel.Types,
-	types astmodel.Types) error {
+	otherTypes astmodel.Types) error {
 
 	packageName := extractor.idFactory.CreatePackageNameFromVersion(extractor.outputVersion)
 
@@ -73,12 +77,12 @@ func (extractor *typeExtractor) extractTypes(
 
 	for _, def := range scanner.Definitions() {
 		// get generated-aside definitions too
-		if existingDef, ok := types[def.Name()]; ok {
+		if existingDef, ok := otherTypes[def.Name()]; ok {
 			if !astmodel.TypeEquals(existingDef.Type(), def.Type()) {
 				klog.Errorf("type already defined differently: %v (%s)", def.Name(), filePath)
 			}
 		} else {
-			types.Add(def)
+			otherTypes.Add(def)
 		}
 	}
 
@@ -119,6 +123,9 @@ func (extractor *typeExtractor) resourceTypeFromOperation(
 	return nil, nil
 }
 
+// inferNameFromURLPath attempts to extract a name from a Swagger operation path
+// for example "…/Microsoft.GroupName/resourceType/{resourceId}" would result
+// in the name "ResourceType".
 func inferNameFromURLPath(operationPath string) (string, string, error) {
 
 	group := ""

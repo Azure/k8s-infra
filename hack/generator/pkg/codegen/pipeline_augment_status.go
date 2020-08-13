@@ -132,6 +132,7 @@ type swaggerTypes struct {
 	otherTypes astmodel.Types
 }
 
+// TODO: is there, perhaps, a way to detect these without hardcoding these paths?
 var skipDirectories = []string{
 	"/examples/",
 	"/quickstart-templates/",
@@ -154,7 +155,7 @@ func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, 
 	cache := jsonast.MakeOpenAPISchemaCache(schemas)
 
 	for schemaPath, schema := range schemas {
-		// these have already been tested in the loadAllSchemas function
+		// these have already been tested in the loadAllSchemas function so are guaranteed to match
 		outputGroup := swaggerGroupRegex.FindString(schemaPath)
 		outputVersion := swaggerVersionRegex.FindString(schemaPath)
 
@@ -188,6 +189,9 @@ func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, 
 	return result, nil
 }
 
+// loadAllSchemas walks all .json files in the given rootPath in directories
+// of the form "Microsoft.GroupName/…/2000-01-01/…" (excluding those matching
+// skipDirectories), and returns those files in a map of path→swagger spec.
 func loadAllSchemas(
 	ctx context.Context,
 	rootPath string) (map[string]spec.Swagger, error) {
@@ -210,7 +214,7 @@ func loadAllSchemas(
 
 		for _, skipDir := range skipDirectories {
 			if strings.Contains(filePath, skipDir) {
-				return filepath.SkipDir // magic error
+				return filepath.SkipDir // this is a magic error
 			}
 		}
 
@@ -219,6 +223,7 @@ func loadAllSchemas(
 			swaggerGroupRegex.MatchString(filePath) &&
 			swaggerVersionRegex.MatchString(filePath) {
 
+			// all files are loaded in parallel to speed this up
 			wg.Add(1)
 			go func() {
 				fileContent, err := ioutil.ReadFile(filePath)
@@ -242,7 +247,7 @@ func loadAllSchemas(
 				} else {
 					schemas[filePath] = swagger
 				}
-				mutex.Unlock()
+				mutex.Unlock() // not using defer as mutex must be unlocked before wg.Done() is invoked
 
 				wg.Done()
 			}()
@@ -251,7 +256,7 @@ func loadAllSchemas(
 		return nil
 	})
 
-	wg.Wait()
+	wg.Wait() // for files to finish loading
 
 	if err != nil {
 		return nil, err
