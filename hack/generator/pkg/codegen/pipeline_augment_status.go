@@ -23,7 +23,19 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// augmentResourcesWithStatus creates a PipelineStage to add Swagger information into the 'status' part of CRD
+/* augmentResourcesWithStatus creates a PipelineStage to add status information into the generated resources.
+
+This information is derived from the Azure Swagger specifications. We parse the Swagger specs and look for
+any actions that appear to be ARM resources (have PUT methods with types we can use and appropriate names in the
+action path). Then for each resource, we use the existing JSON AST parser to extract the status type
+(the type-definition part of swagger is the same as JSON Schema).
+
+Next, we walk over all the resources we are currently generating CRDs for and attempt to locate
+a match for the resource in the status information we have parsed. If we locate a match, it is
+added to the Status field of the Resource type, after we have renamed all the status types to
+avoid any conflicts with existing Spec types that have already been defined.
+
+*/
 func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *config.Configuration) PipelineStage {
 	return PipelineStage{
 		"Add information from Swagger specs for 'status' fields",
