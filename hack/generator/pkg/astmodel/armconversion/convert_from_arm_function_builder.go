@@ -220,7 +220,7 @@ func (builder *convertFromArmBuilder) propertiesWithSameNameAndTypeHandler(
 func (builder *convertFromArmBuilder) propertiesWithSameNameButDifferentTypeHandler() propertyConversionHandler {
 	definedErrVar := false
 
-	return func (toProp *astmodel.PropertyDefinition, fromType *astmodel.ObjectType) []ast.Stmt {
+	return func(toProp *astmodel.PropertyDefinition, fromType *astmodel.ObjectType) []ast.Stmt {
 		fromProp, ok := fromType.Property(toProp.PropertyName())
 
 		if !ok || toProp.PropertyType().Equals(fromProp.PropertyType()) {

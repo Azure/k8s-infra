@@ -30,7 +30,7 @@ func (builder conversionBuilder) propertyConversionHandler(
 	fromType *astmodel.ObjectType) []ast.Stmt {
 
 	for _, conversionHandler := range builder.propertyConversionHandlers {
-		stmts :=  conversionHandler(toProp, fromType)
+		stmts := conversionHandler(toProp, fromType)
 		if len(stmts) > 0 {
 			return stmts
 		}
@@ -95,7 +95,7 @@ func NewArmTransformerImpl(
 	armTypeName astmodel.TypeName,
 	armType *astmodel.ObjectType,
 	idFactory astmodel.IdentifierFactory,
-	isResource bool) *astmodel.Interface {
+	isResource bool) *astmodel.InterfaceImplementation {
 
 	funcs := map[string]astmodel.Function{
 		"ToArm": &ArmConversionFunction{

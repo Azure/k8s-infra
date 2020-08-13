@@ -6,23 +6,23 @@
 package astmodel
 
 // Interface defines an interface implementation
-type Interface struct {
+type InterfaceImplementation struct {
 	name      TypeName
 	functions map[string]Function
 }
 
 // NewInterface creates a new interface implementation with the given name and set of functions
-func NewInterface(name TypeName, functions map[string]Function) *Interface {
-	return &Interface{name: name, functions: functions}
+func NewInterface(name TypeName, functions map[string]Function) *InterfaceImplementation {
+	return &InterfaceImplementation{name: name, functions: functions}
 }
 
 // Name returns the name of the interface
-func (iface *Interface) Name() TypeName {
+func (iface *InterfaceImplementation) Name() TypeName {
 	return iface.name
 }
 
 // RequiredImports returns a list of packages required by this
-func (iface *Interface) RequiredImports() []PackageReference {
+func (iface *InterfaceImplementation) RequiredImports() []PackageReference {
 	var result []PackageReference
 
 	for _, f := range iface.functions {
@@ -33,18 +33,19 @@ func (iface *Interface) RequiredImports() []PackageReference {
 }
 
 // References indicates whether this type includes any direct references to the given type
-func (iface *Interface) References() TypeNameSet {
-	var result TypeNameSet
-
+func (iface *InterfaceImplementation) References() TypeNameSet {
+	var results TypeNameSet
 	for _, f := range iface.functions {
-		result = SetUnion(result, f.References())
+		for ref := range f.References() {
+			results.Add(ref)
+		}
 	}
 
-	return result
+	return results
 }
 
 // Equals determines if this interface is equal to another interface
-func (iface *Interface) Equals(other *Interface) bool {
+func (iface *InterfaceImplementation) Equals(other *InterfaceImplementation) bool {
 	if len(iface.functions) != len(other.functions) {
 		return false
 	}

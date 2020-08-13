@@ -15,7 +15,7 @@ import (
 type ObjectType struct {
 	properties map[PropertyName]*PropertyDefinition
 	functions  map[string]Function
-	interfaces map[TypeName]*Interface
+	interfaces map[TypeName]*InterfaceImplementation
 }
 
 // EmptyObjectType is an empty object
@@ -29,7 +29,7 @@ func NewObjectType() *ObjectType {
 	return &ObjectType{
 		properties: make(map[PropertyName]*PropertyDefinition),
 		functions:  make(map[string]Function),
-		interfaces: make(map[TypeName]*Interface),
+		interfaces: make(map[TypeName]*InterfaceImplementation),
 	}
 }
 
@@ -98,7 +98,7 @@ func (objectType *ObjectType) generateInterfaceDecls(codeGenerationContext *Code
 	return result
 }
 
-func (objectType *ObjectType) generateInterfaceImplAssertion(codeGenerationContext *CodeGenerationContext, iface *Interface, typeName TypeName) ast.Decl {
+func (objectType *ObjectType) generateInterfaceImplAssertion(codeGenerationContext *CodeGenerationContext, iface *InterfaceImplementation, typeName TypeName) ast.Decl {
 
 	ifacePackageName, err := codeGenerationContext.GetImportedPackageName(iface.name.PackageReference)
 	if err != nil {
@@ -314,12 +314,12 @@ func (objectType *ObjectType) WithFunction(name string, function Function) *Obje
 }
 
 // WithInterface creates a new ObjectType with a function (method) attached to it
-func (objectType *ObjectType) WithInterface(iface *Interface) *ObjectType {
+func (objectType *ObjectType) WithInterface(iface *InterfaceImplementation) *ObjectType {
 	// Create a copy of objectType to preserve immutability
 	result := *objectType
 
 	// Copy contents of old map into new map
-	result.interfaces = make(map[TypeName]*Interface)
+	result.interfaces = make(map[TypeName]*InterfaceImplementation)
 	for key, value := range objectType.interfaces {
 		result.interfaces[key] = value
 	}
