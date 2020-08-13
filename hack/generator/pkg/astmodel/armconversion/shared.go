@@ -81,20 +81,6 @@ func getReceiverObjectType(codeGenerationContext *astmodel.CodeGenerationContext
 	return kubeType
 }
 
-func countArraysAndMapsInConversionContext(types []astmodel.Type) int {
-	result := 0
-	for _, t := range types {
-		switch t.(type) {
-		case *astmodel.MapType:
-			result += 1
-		case *astmodel.ArrayType:
-			result += 1
-		}
-	}
-
-	return result
-}
-
 func generateTypeConversionAssignments(
 	fromType *astmodel.ObjectType,
 	toType *astmodel.ObjectType,
@@ -136,6 +122,80 @@ func NewArmTransformerImpl(
 	result := astmodel.NewInterface(
 		astmodel.MakeTypeName(astmodel.MakeGenRuntimePackageReference(), "ArmTransformer"),
 		funcs)
+
+	return result
+}
+
+type complexPropertyConversionParameters struct {
+	source            ast.Expr
+	destination       ast.Expr
+	destinationType   astmodel.Type
+	nameHint          string
+	conversionContext []astmodel.Type
+	assignmentHandler func(result ast.Expr, destination ast.Expr) ast.Stmt
+}
+
+func (params complexPropertyConversionParameters) copy() complexPropertyConversionParameters {
+	result := params
+	result.conversionContext = nil
+	result.conversionContext = append(result.conversionContext, params.conversionContext...)
+
+	return result
+}
+
+func (params complexPropertyConversionParameters) withAdditionalConversionContext(t astmodel.Type) complexPropertyConversionParameters {
+	result := params.copy()
+	result.conversionContext = append(result.conversionContext, t)
+
+	return result
+}
+
+func (params complexPropertyConversionParameters) withSource(source ast.Expr) complexPropertyConversionParameters {
+	result := params.copy()
+	result.source = source
+
+	return result
+}
+
+func (params complexPropertyConversionParameters) withNameHint(nameHint string) complexPropertyConversionParameters {
+	result := params.copy()
+	result.nameHint = nameHint
+
+	return result
+}
+
+func (params complexPropertyConversionParameters) withDestination(destination ast.Expr) complexPropertyConversionParameters {
+	result := params.copy()
+	result.destination = destination
+
+	return result
+}
+
+func (params complexPropertyConversionParameters) withDestinationType(t astmodel.Type) complexPropertyConversionParameters {
+	result := params.copy()
+	result.destinationType = t
+
+	return result
+}
+
+func (params complexPropertyConversionParameters) withAssignmentHandler(
+	assignmentHandler func(result ast.Expr, destination ast.Expr) ast.Stmt) complexPropertyConversionParameters {
+	result := params.copy()
+	result.assignmentHandler = assignmentHandler
+
+	return result
+}
+
+func (params complexPropertyConversionParameters) countArraysAndMapsInConversionContext() int {
+	result := 0
+	for _, t := range params.conversionContext {
+		switch t.(type) {
+		case *astmodel.MapType:
+			result += 1
+		case *astmodel.ArrayType:
+			result += 1
+		}
+	}
 
 	return result
 }
