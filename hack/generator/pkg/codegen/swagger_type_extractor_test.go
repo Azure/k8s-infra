@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func ExampleInferNameFromURLPath() {
+func Example_inferNameFromURLPath() {
 	group, name, _ := inferNameFromURLPath("/Microsoft.GroupName/resourceName/{resourceId}")
 	fmt.Printf("%s: %s", group, name)
 	// Output: Microsoft.GroupName: ResourceName
