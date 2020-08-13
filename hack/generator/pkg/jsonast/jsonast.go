@@ -774,9 +774,18 @@ func getPrimitiveType(name SchemaType) (*astmodel.PrimitiveType, error) {
 		return astmodel.FloatType, nil
 	case Bool:
 		return astmodel.BoolType, nil
-	default:
+	case AllOf:
+	case AnyOf:
+	case Array:
+	case Enum:
+	case Object:
+	case OneOf:
+	case Ref:
+	case Unknown:
 		return astmodel.AnyType, errors.Errorf("%s is not a simple type and no ast.NewIdent can be created", name)
 	}
+
+	panic(fmt.Sprintf("unhandled case in getPrimitiveType: %s", name)) // this is also checked by linter
 }
 
 func isURLPathSeparator(c rune) bool {
