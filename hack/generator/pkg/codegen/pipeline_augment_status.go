@@ -30,18 +30,18 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 
 			if config.Status.SchemaRoot == "" {
-				klog.Warningf("no status schema root specified, will not generate status types")
+				klog.Warningf("No status schema root specified, will not generate status types")
 				return types, nil
 			}
 
-			klog.V(2).Info("loading Swagger data")
+			klog.V(1).Info("Loading Swagger data from %q", config.Status.SchemaRoot)
 
 			swaggerTypes, err := loadSwaggerData(ctx, idFactory, config)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to load Swagger data")
 			}
 
-			klog.Infof("loaded Swagger data (%v resources, %v other types)", len(swaggerTypes.resources), len(swaggerTypes.types))
+			klog.V(1).Infof("Loaded Swagger data (%v resources, %v other types)", len(swaggerTypes.resources), len(swaggerTypes.otherTypes))
 
 			newTypes := make(astmodel.Types)
 
@@ -55,11 +55,12 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 			for typeName, typeDef := range types {
 				if resource, ok := typeDef.Type().(*astmodel.ResourceType); ok {
 					if statusDef, ok := resourceLookup[typeName]; ok {
-						//klog.Infof("Found swagger information for %v", typeName)
+						klog.V(4).Infof("Swagger information found for %v", typeName)
 						newTypes.Add(astmodel.MakeTypeDefinition(typeName, resource.WithStatus(statusDef)))
 						found++
 					} else {
-						//klog.Warningf("No swagger information found for %v", typeName)
+						// TODO: eventually this will be a warning
+						klog.V(2).Infof("No swagger information found for %v", typeName)
 						newTypes.Add(typeDef)
 						notFound++
 					}
@@ -68,9 +69,9 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 				}
 			}
 
-			klog.Infof("Found status information for %v resources", found)
-			klog.Infof("Missing status information for %v resources", notFound)
-			klog.Infof("Input %v types, output %v types", len(types), len(newTypes))
+			klog.V(1).Infof("Found status information for %v resources", found)
+			klog.V(1).Infof("Missing status information for %v resources", notFound)
+			klog.V(1).Infof("Input %v types, output %v types", len(types), len(newTypes))
 
 			return newTypes, nil
 		},
@@ -84,7 +85,7 @@ func makeStatusLookup(swaggerTypes swaggerTypes) (resourceLookup, []astmodel.Typ
 	statusVisitor := makeStatusVisitor()
 
 	var otherTypes []astmodel.TypeDefinition
-	for typeName, typeDef := range swaggerTypes.types {
+	for typeName, typeDef := range swaggerTypes.otherTypes {
 		newName := appendStatusToName(typeName)
 		otherTypes = append(otherTypes, astmodel.MakeTypeDefinition(newName, statusVisitor.Visit(typeDef.Type(), nil)))
 	}
@@ -114,8 +115,8 @@ func makeStatusVisitor() astmodel.TypeVisitor {
 var swaggerVersionRegex = regexp.MustCompile("\\d{4}-\\d{2}-\\d{2}(-preview)?")
 
 type swaggerTypes struct {
-	resources astmodel.Types
-	types     astmodel.Types
+	resources  astmodel.Types
+	otherTypes astmodel.Types
 }
 
 var skipDirectories = []string{
@@ -128,8 +129,8 @@ var skipDirectories = []string{
 func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, config *config.Configuration) (swaggerTypes, error) {
 
 	result := swaggerTypes{
-		resources: make(astmodel.Types),
-		types:     make(astmodel.Types),
+		resources:  make(astmodel.Types),
+		otherTypes: make(astmodel.Types),
 	}
 
 	schemas, err := loadAllSchemas(ctx, config.Status.SchemaRoot)
@@ -165,7 +166,7 @@ func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, 
 			config:        config,
 		}
 
-		err := extractor.extractTypes(ctx, schemaPath, schema, result.resources, result.types)
+		err := extractor.extractTypes(ctx, schemaPath, schema, result.resources, result.otherTypes)
 		if err != nil {
 			return swaggerTypes{}, err
 		}
