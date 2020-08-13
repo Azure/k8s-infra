@@ -7,6 +7,7 @@ package codegen
 
 import (
 	"context"
+	"fmt"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel/armconversion"
 	"github.com/pkg/errors"
@@ -336,80 +337,31 @@ func addArmConversionInterface(
 		[]conversionHandler{addInterfaceHandler})
 }
 
-func convertArmPropertyTypeIfNeeded(definitions astmodel.Types, t astmodel.Type) (astmodel.Type, error) {
-	switch concreteType := t.(type) {
-	case astmodel.TypeName:
-		def, ok := definitions[concreteType]
+func convertArmPropertyTypeIfNeeded(definitions astmodel.Types, t astmodel.Type) astmodel.Type {
+
+	visitor := astmodel.MakeTypeVisitor()
+	visitor.VisitTypeName = func(this *astmodel.TypeVisitor, it astmodel.TypeName, ctx interface{}) astmodel.Type {
+		def, ok := definitions[it]
 		if !ok {
-			return nil, errors.Errorf("couldn't find type %v", concreteType)
+			panic(fmt.Sprintf("couldn't find type %v", it))
 		}
 
 		if _, ok := def.Type().(*astmodel.ObjectType); ok {
-			return createArmTypeName(def.Name()), nil
+			return createArmTypeName(def.Name())
 		} else {
 			// We may or may not need to use an updated type name (i.e. if it's an aliased primitive type we can
 			// just keep using that alias)
-			updatedType, err := convertArmPropertyTypeIfNeeded(definitions, def.Type())
-			if err != nil {
-				return nil, err
-			}
+			updatedType := this.Visit(def.Type(), ctx)
 
 			if updatedType.Equals(def.Type()) {
-				return t, nil
+				return it
 			} else {
-				return createArmTypeName(def.Name()), nil
+				return createArmTypeName(def.Name())
 			}
 		}
-
-	case *astmodel.EnumType:
-		return t, nil // Do nothing to enums
-	case *astmodel.ResourceType:
-		return t, nil // Do nothing to resources -- they have their own handling elsewhere
-	case *astmodel.PrimitiveType:
-		// No action required as the property is already the right name and type
-		return t, nil
-	case *astmodel.MapType:
-		keyType, err := convertArmPropertyTypeIfNeeded(definitions, concreteType.KeyType())
-		if err != nil {
-			return nil, errors.Wrapf(err, "error converting to arm type for map key")
-		}
-
-		valueType, err := convertArmPropertyTypeIfNeeded(definitions, concreteType.ValueType())
-		if err != nil {
-			return nil, errors.Wrapf(err, "error converting to arm type for map value")
-		}
-
-		if keyType.Equals(concreteType.KeyType()) && valueType.Equals(concreteType.ValueType()) {
-			return t, nil // No changes needed as both key/value haven't had special handling
-		}
-
-		return astmodel.NewMapType(keyType, valueType), nil
-	case *astmodel.ArrayType:
-		elementType, err := convertArmPropertyTypeIfNeeded(definitions, concreteType.Element())
-		if err != nil {
-			return nil, errors.Wrapf(err, "error converting to arm type for array")
-		}
-
-		if elementType.Equals(concreteType.Element()) {
-			return t, nil // No changes needed as element wasn't changed
-		}
-
-		return astmodel.NewArrayType(elementType), nil
-	case *astmodel.OptionalType:
-		inner, err := convertArmPropertyTypeIfNeeded(definitions, concreteType.Element())
-		if err != nil {
-			return nil, err
-		}
-
-		if inner.Equals(concreteType.Element()) {
-			return t, nil // No changes needed
-		}
-
-		return astmodel.NewOptionalType(inner), nil
-
-	default:
-		return nil, errors.Errorf("unhandled type %T", t)
 	}
+
+	return visitor.Visit(t, nil)
 }
 
 func convertPropertiesToArmTypes(t *astmodel.ObjectType, definitions astmodel.Types) (*astmodel.ObjectType, error) {
@@ -417,10 +369,7 @@ func convertPropertiesToArmTypes(t *astmodel.ObjectType, definitions astmodel.Ty
 
 	for _, prop := range result.Properties() {
 		propType := prop.PropertyType()
-		newType, err := convertArmPropertyTypeIfNeeded(definitions, propType)
-		if err != nil {
-			return nil, errors.Wrapf(err, "error converting type to arm type for property %s", prop.PropertyName())
-		}
+		newType := convertArmPropertyTypeIfNeeded(definitions, propType)
 
 		if newType != propType {
 			newProp := prop.WithType(newType)
