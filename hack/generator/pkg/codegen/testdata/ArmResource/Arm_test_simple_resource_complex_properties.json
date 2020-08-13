@@ -33,6 +33,14 @@
                 },
                 "foo": {
                     "$ref": "#/definitions/Foo"
+                },
+                "color": {
+                    "type": "string",
+                    "enum": [
+                        "red",
+                        "green",
+                        "blue"
+                    ]
                 }
             },
             "required": [

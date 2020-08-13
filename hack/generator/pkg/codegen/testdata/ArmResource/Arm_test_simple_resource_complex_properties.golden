@@ -19,6 +19,7 @@ type FakeResource struct {
 
 type FakeResourceSpecArm struct {
 	ApiVersion  FakeResourceSpecApiVersion `json:"apiVersion"`
+	Color       *FakeResourceSpecColor     `json:"color"`
 	Foo         FooArm                     `json:"foo"`
 	Name        string                     `json:"name"`
 	OptionalFoo *FooArm                    `json:"optionalFoo"`
@@ -32,7 +33,8 @@ type FakeResourceSpec struct {
 
 	//AzureName: The name of the resource in Azure. This is often the same as the name
 	//of the resource in Kubernetes but it doesn't have to be.
-	AzureName string `json:"azureName"`
+	AzureName string                 `json:"azureName"`
+	Color     *FakeResourceSpecColor `json:"color"`
 
 	// +kubebuilder:validation:Required
 	Foo         Foo  `json:"foo"`
@@ -52,6 +54,7 @@ func (fakeResourceSpec *FakeResourceSpec) FromArm(owner genruntime.KnownResource
 	}
 	fakeResourceSpec.ApiVersion = typedInput.ApiVersion
 	fakeResourceSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
+	fakeResourceSpec.Color = typedInput.Color
 	var err error
 	foo := Foo{}
 	err = foo.FromArm(owner, typedInput.Foo)
@@ -78,6 +81,7 @@ func (fakeResourceSpec *FakeResourceSpec) ToArm(owningName string) (interface{},
 	}
 	result := FakeResourceSpecArm{}
 	result.ApiVersion = fakeResourceSpec.ApiVersion
+	result.Color = fakeResourceSpec.Color
 	foo, err := fakeResourceSpec.Foo.ToArm(owningName)
 	if err != nil {
 		return nil, err
@@ -100,6 +104,15 @@ func (fakeResourceSpec *FakeResourceSpec) ToArm(owningName string) (interface{},
 type FakeResourceSpecApiVersion string
 
 const FakeResourceSpecApiVersion20200601 = FakeResourceSpecApiVersion("2020-06-01")
+
+// +kubebuilder:validation:Enum={"blue","green","red"}
+type FakeResourceSpecColor string
+
+const (
+	FakeResourceSpecColorBlue  = FakeResourceSpecColor("blue")
+	FakeResourceSpecColorGreen = FakeResourceSpecColor("green")
+	FakeResourceSpecColorRed   = FakeResourceSpecColor("red")
+)
 
 // +kubebuilder:validation:Enum={"Microsoft.Azure/FakeResource"}
 type FakeResourceSpecType string

@@ -52,6 +52,12 @@
                             "$ref": "#/definitions/Foo"
                         }
                     }
+                },
+                "mapOfEnums": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref":  "#/definitions/Color"
+                    }
                 }
             },
             "required": [
@@ -70,6 +76,14 @@
                     "type": "string"
                 }
             }
+        },
+        "Color": {
+            "type": "string",
+            "enum": [
+                "red",
+                "green",
+                "blue"
+            ]
         }
     }
 }

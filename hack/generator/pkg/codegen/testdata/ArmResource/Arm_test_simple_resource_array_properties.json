@@ -52,6 +52,12 @@
                         },
                         "properties": {}
                     }
+                },
+                "arrayOfEnums": {
+                    "type": "array",
+                    "items": {
+                        "$ref":  "#/definitions/Color"
+                    }
                 }
             },
             "required": [
@@ -70,6 +76,14 @@
                     "type": "string"
                 }
             }
+        },
+        "Color": {
+            "type": "string",
+            "enum": [
+                "red",
+                "green",
+                "blue"
+            ]
         }
     }
 }

@@ -21,10 +21,22 @@ type FakeResourceSpecArm struct {
 	ApiVersion  FakeResourceSpecApiVersion   `json:"apiVersion"`
 	MapFoo      map[string]FooArm            `json:"mapFoo"`
 	MapOfArrays map[string][]FooArm          `json:"mapOfArrays"`
+	MapOfEnums  map[string]Color             `json:"mapOfEnums"`
 	MapOfMaps   map[string]map[string]FooArm `json:"mapOfMaps"`
 	Name        string                       `json:"name"`
 	Type        FakeResourceSpecType         `json:"type"`
 }
+
+/*Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/Color*/
+
+// +kubebuilder:validation:Enum={"blue","green","red"}
+type Color string
+
+const (
+	ColorBlue  = Color("blue")
+	ColorGreen = Color("green")
+	ColorRed   = Color("red")
+)
 
 type FakeResourceSpec struct {
 
@@ -38,6 +50,7 @@ type FakeResourceSpec struct {
 	// +kubebuilder:validation:Required
 	MapFoo      map[string]Foo            `json:"mapFoo"`
 	MapOfArrays map[string][]Foo          `json:"mapOfArrays"`
+	MapOfEnums  map[string]Color          `json:"mapOfEnums"`
 	MapOfMaps   map[string]map[string]Foo `json:"mapOfMaps"`
 
 	// +kubebuilder:validation:Required
@@ -81,6 +94,7 @@ func (fakeResourceSpec *FakeResourceSpec) FromArm(owner genruntime.KnownResource
 			fakeResourceSpec.MapOfArrays[key] = elem
 		}
 	}
+	fakeResourceSpec.MapOfEnums = typedInput.MapOfEnums
 	if typedInput.MapOfMaps != nil {
 		fakeResourceSpec.MapOfMaps = make(map[string]map[string]Foo)
 		for key, value := range typedInput.MapOfMaps {
@@ -135,6 +149,7 @@ func (fakeResourceSpec *FakeResourceSpec) ToArm(owningName string) (interface{},
 			result.MapOfArrays[key] = elemTyped
 		}
 	}
+	result.MapOfEnums = fakeResourceSpec.MapOfEnums
 	result.MapOfMaps = make(map[string]map[string]FooArm)
 	if fakeResourceSpec.MapOfMaps != nil {
 		for key, value := range fakeResourceSpec.MapOfMaps {
