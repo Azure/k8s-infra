@@ -70,11 +70,11 @@ func (scanner *SchemaScanner) removeTypeDefinition(name astmodel.TypeName) {
 }
 
 func (use *UnknownSchemaError) Error() string {
-	if use.Schema == nil || use.Schema.URL() == nil {
+	if use.Schema == nil || use.Schema.url() == nil {
 		return "unable to determine schema type for nil schema or one without a URL"
 	}
 
-	return fmt.Sprintf("unable to determine the schema type for %s", use.Schema.URL().String())
+	return fmt.Sprintf("unable to determine the schema type for %s", use.Schema.url().String())
 }
 
 // NewSchemaScanner constructs a new scanner, ready for use
@@ -152,7 +152,7 @@ func (scanner *SchemaScanner) GenerateDefinitions(
 	}
 
 	// get initial topic from ID and Title:
-	title := schema.Title()
+	title := schema.title()
 
 	if title == nil {
 		return nil, errors.New("Given schema has no Title")
@@ -160,12 +160,12 @@ func (scanner *SchemaScanner) GenerateDefinitions(
 
 	rootName := *title
 
-	rootGroup, err := schema.RefGroupName()
+	rootGroup, err := schema.refGroupName()
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to extract group for schema")
 	}
 
-	rootVersion, err := schema.RefVersion()
+	rootVersion, err := schema.refVersion()
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to extract version for schema")
 	}
@@ -229,7 +229,7 @@ func enumHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (as
 	// Default to a string base type
 	baseType := astmodel.StringType
 	for _, t := range []SchemaType{Bool, Int, Number, String} {
-		if schema.HasType(t) {
+		if schema.hasType(t) {
 			bt, err := GetPrimitiveType(t)
 			if err != nil {
 				return nil, err
@@ -240,7 +240,7 @@ func enumHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (as
 	}
 
 	var values []astmodel.EnumValue
-	for _, v := range schema.EnumValues() {
+	for _, v := range schema.enumValues() {
 
 		vTrimmed := strings.Trim(v, "\"")
 
@@ -330,7 +330,7 @@ func getProperties(ctx context.Context, scanner *SchemaScanner, schema Schema) (
 	defer span.End()
 
 	var properties []*astmodel.PropertyDefinition
-	for propName, propSchema := range schema.Properties() {
+	for propName, propSchema := range schema.properties() {
 
 		property, err := generatePropertyDefinition(ctx, scanner, propName, propSchema)
 		if err != nil {
@@ -349,13 +349,13 @@ func getProperties(ctx context.Context, scanner *SchemaScanner, schema Schema) (
 		}
 
 		// add documentation
-		if propSchema.Description() != nil {
-			property = property.WithDescription(*propSchema.Description())
+		if propSchema.description() != nil {
+			property = property.WithDescription(*propSchema.description())
 		}
 
 		// add validations
 		isRequired := false
-		for _, required := range schema.RequiredProperties() {
+		for _, required := range schema.requiredProperties() {
 			if propName == required {
 				isRequired = true
 				break
@@ -372,8 +372,8 @@ func getProperties(ctx context.Context, scanner *SchemaScanner, schema Schema) (
 	}
 
 	// see: https://json-schema.org/understanding-json-schema/reference/object.html#properties
-	if schema.AdditionalPropertiesAllowed() {
-		additionalPropSchema := schema.AdditionalPropertiesSchema()
+	if schema.additionalPropertiesAllowed() {
+		additionalPropSchema := schema.additionalPropertiesSchema()
 		if additionalPropSchema == nil {
 			// if not specified, any additional properties are allowed (TODO: tell all Azure teams this fact and get them to update their API definitions)
 			// for now we aren't following the spec 100% as it pollutes the generated code
@@ -421,22 +421,22 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (ast
 	defer span.End()
 
 	// make a new topic based on the ref URL
-	name, err := schema.RefObjectName()
+	name, err := schema.refObjectName()
 	if err != nil {
 		return nil, err
 	}
 
-	group, err := schema.RefGroupName()
+	group, err := schema.refGroupName()
 	if err != nil {
 		return nil, err
 	}
 
-	version, err := schema.RefVersion()
+	version, err := schema.refVersion()
 	if err != nil {
 		return nil, err
 	}
 
-	isResource := schema.RefIsResource()
+	isResource := schema.refIsResource()
 
 	// produce a usable name:
 	typeName := astmodel.MakeTypeName(
@@ -459,7 +459,7 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (ast
 		return transformation, nil
 	}
 
-	return generateDefinitionsFor(ctx, scanner, typeName, isResource, schema.RefSchema())
+	return generateDefinitionsFor(ctx, scanner, typeName, isResource, schema.refSchema())
 }
 
 func generateDefinitionsFor(
@@ -497,7 +497,7 @@ func generateDefinitionsFor(
 		result = astmodel.NewResourceType(result, nil)
 	}
 
-	description := fmt.Sprintf("Generated from: %s", schema.URL().String())
+	description := fmt.Sprintf("Generated from: %s", schema.url().String())
 	definition := astmodel.MakeTypeDefinition(typeName, result).WithDescription(&description)
 
 	scanner.addTypeDefinition(definition)
@@ -515,7 +515,7 @@ func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (a
 	defer span.End()
 
 	var types []astmodel.Type
-	for _, all := range schema.AllOf() {
+	for _, all := range schema.allOf() {
 
 		d, err := scanner.RunHandlerForSchema(ctx, all)
 		if err != nil {
@@ -528,7 +528,7 @@ func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (a
 	}
 
 	// if the node that contains the allOf defines other properties, create an object type with them inside to merge
-	if len(schema.Properties()) > 0 {
+	if len(schema.properties()) > 0 {
 		objectType, err := scanner.RunHandler(ctx, Object, schema)
 		if err != nil {
 			return nil, err
@@ -600,7 +600,7 @@ func oneOfHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (a
 	ctx, span := tab.StartSpan(ctx, "oneOfHandler")
 	defer span.End()
 
-	return generateOneOfUnionType(ctx, schema.OneOf(), scanner)
+	return generateOneOfUnionType(ctx, schema.oneOf(), scanner)
 }
 
 func generateOneOfUnionType(ctx context.Context, subschemas []Schema, scanner *SchemaScanner) (astmodel.Type, error) {
@@ -703,22 +703,22 @@ func anyOfHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (a
 	defer span.End()
 
 	// See https://github.com/Azure/k8s-infra/issues/111 for details about why this is treated as oneOf
-	klog.V(2).Infof("Handling anyOf type as if it were oneOf: %v\n", schema.URL()) // TODO: was Ref.URL
-	return generateOneOfUnionType(ctx, schema.AnyOf(), scanner)
+	klog.V(2).Infof("Handling anyOf type as if it were oneOf: %v\n", schema.url()) // TODO: was Ref.URL
+	return generateOneOfUnionType(ctx, schema.anyOf(), scanner)
 }
 
 func arrayHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (astmodel.Type, error) {
 	ctx, span := tab.StartSpan(ctx, "arrayHandler")
 	defer span.End()
 
-	items := schema.Items()
+	items := schema.items()
 	if len(items) > 1 {
-		return nil, errors.Errorf("item contains more children than expected: %v", schema.Items())
+		return nil, errors.Errorf("item contains more children than expected: %v", schema.items())
 	}
 
 	if len(items) == 0 {
 		// there is no type to the elements, so we must assume interface{}
-		klog.Warningf("Interface assumption unproven for %v\n", schema.URL())
+		klog.Warningf("Interface assumption unproven for %v\n", schema.url())
 
 		return astmodel.NewArrayType(astmodel.AnyType), nil
 	}
@@ -743,27 +743,27 @@ func arrayHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (a
 func getSubSchemaType(schema Schema) (SchemaType, error) {
 	// handle special nodes:
 	switch {
-	case len(schema.EnumValues()) > 0: // this should come before the primitive checks below
+	case len(schema.enumValues()) > 0: // this should come before the primitive checks below
 		return Enum, nil
-	case schema.HasOneOf():
+	case schema.hasOneOf():
 		return OneOf, nil
-	case schema.HasAllOf():
+	case schema.hasAllOf():
 		return AllOf, nil
-	case schema.HasAnyOf():
+	case schema.hasAnyOf():
 		return AnyOf, nil
-	case schema.IsRef():
+	case schema.isRef():
 		return Ref, nil
 	}
 
 	for _, t := range []SchemaType{Object, String, Number, Int, Bool, Array} {
-		if schema.HasType(t) {
+		if schema.hasType(t) {
 			return t, nil
 		}
 	}
 
 	// TODO: this whole switch is a bit wrong because type: 'object' can
 	// be combined with OneOf/AnyOf/etc. still, it works okay for now...
-	if len(schema.Properties()) > 0 {
+	if len(schema.properties()) > 0 {
 		// haven't figured out a type but it has properties, treat it as an object
 		return Object, nil
 	}

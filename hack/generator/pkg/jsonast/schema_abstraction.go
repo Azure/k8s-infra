@@ -16,41 +16,41 @@ import (
 // 'go-openapi' for everything because it could handle
 // both JSON Schema and Swagger; but this is not yet done.
 type Schema interface {
-	URL() *url.URL
-	Title() *string
-	Description() *string
+	url() *url.URL
+	title() *string
+	description() *string
 
-	HasType(schemaType SchemaType) bool
+	hasType(schemaType SchemaType) bool
 
 	// complex things
-	HasOneOf() bool
-	OneOf() []Schema
+	hasOneOf() bool
+	oneOf() []Schema
 
-	HasAnyOf() bool
-	AnyOf() []Schema
+	hasAnyOf() bool
+	anyOf() []Schema
 
-	HasAllOf() bool
-	AllOf() []Schema
+	hasAllOf() bool
+	allOf() []Schema
 
 	// enum things
-	EnumValues() []string
+	enumValues() []string
 
 	// array things
-	Items() []Schema
+	items() []Schema
 
 	// object things
-	RequiredProperties() []string
-	Properties() map[string]Schema
-	AdditionalPropertiesAllowed() bool
-	AdditionalPropertiesSchema() Schema
+	requiredProperties() []string
+	properties() map[string]Schema
+	additionalPropertiesAllowed() bool
+	additionalPropertiesSchema() Schema
 
 	// ref things
-	IsRef() bool
-	RefIsResource() bool
-	RefGroupName() (string, error)
-	RefObjectName() (string, error)
-	RefVersion() (string, error)
-	RefSchema() Schema
+	isRef() bool
+	refIsResource() bool
+	refGroupName() (string, error)
+	refObjectName() (string, error)
+	refVersion() (string, error)
+	refSchema() Schema
 }
 
 // SchemaType defines the type of JSON schema node we are currently processing

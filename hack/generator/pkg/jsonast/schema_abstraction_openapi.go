@@ -26,10 +26,14 @@ type OpenAPISchema struct {
 	cache *OpenAPISchemaCache
 }
 
+// OpenAPISchemaCache is a cache of schema that have been loaded,
+// identified by file path
 type OpenAPISchemaCache struct {
 	files map[string]spec.Swagger
 }
 
+// MakeOpenAPISchemaCache creates an OpenAPISchemaCache with the initial
+// file path → spec mapping
 func MakeOpenAPISchemaCache(specs map[string]spec.Swagger) *OpenAPISchemaCache {
 	files := make(map[string]spec.Swagger)
 	for specPath, spec := range specs {
@@ -39,6 +43,7 @@ func MakeOpenAPISchemaCache(specs map[string]spec.Swagger) *OpenAPISchemaCache {
 	return &OpenAPISchemaCache{files}
 }
 
+// MakeOpenAPISchema wrapes a spec.Swagger to conform to the Schema abstraction
 func MakeOpenAPISchema(
 	schema spec.Schema,
 	root spec.Swagger,
@@ -71,7 +76,7 @@ func (schema *OpenAPISchema) transformOpenAPISlice(slice []spec.Schema) []Schema
 	return result
 }
 
-func (schema *OpenAPISchema) Title() *string {
+func (schema *OpenAPISchema) title() *string {
 	if len(schema.inner.Title) == 0 {
 		return nil // translate to optional
 	}
@@ -79,7 +84,7 @@ func (schema *OpenAPISchema) Title() *string {
 	return &schema.inner.Title
 }
 
-func (schema *OpenAPISchema) URL() *url.URL {
+func (schema *OpenAPISchema) url() *url.URL {
 	url, err := url.Parse(schema.inner.ID)
 	if err != nil {
 		return nil
@@ -88,39 +93,39 @@ func (schema *OpenAPISchema) URL() *url.URL {
 	return url
 }
 
-func (schema *OpenAPISchema) HasType(schemaType SchemaType) bool {
+func (schema *OpenAPISchema) hasType(schemaType SchemaType) bool {
 	return schema.inner.Type.Contains(string(schemaType))
 }
 
-func (schema *OpenAPISchema) HasAllOf() bool {
+func (schema *OpenAPISchema) hasAllOf() bool {
 	return len(schema.inner.AllOf) > 0
 }
 
-func (schema *OpenAPISchema) AllOf() []Schema {
+func (schema *OpenAPISchema) allOf() []Schema {
 	return schema.transformOpenAPISlice(schema.inner.AllOf)
 }
 
-func (schema *OpenAPISchema) HasAnyOf() bool {
+func (schema *OpenAPISchema) hasAnyOf() bool {
 	return len(schema.inner.AnyOf) > 0
 }
 
-func (schema *OpenAPISchema) AnyOf() []Schema {
+func (schema *OpenAPISchema) anyOf() []Schema {
 	return schema.transformOpenAPISlice(schema.inner.AnyOf)
 }
 
-func (schema *OpenAPISchema) HasOneOf() bool {
+func (schema *OpenAPISchema) hasOneOf() bool {
 	return len(schema.inner.OneOf) > 0
 }
 
-func (schema *OpenAPISchema) OneOf() []Schema {
+func (schema *OpenAPISchema) oneOf() []Schema {
 	return schema.transformOpenAPISlice(schema.inner.OneOf)
 }
 
-func (schema *OpenAPISchema) RequiredProperties() []string {
+func (schema *OpenAPISchema) requiredProperties() []string {
 	return schema.inner.Required
 }
 
-func (schema *OpenAPISchema) Properties() map[string]Schema {
+func (schema *OpenAPISchema) properties() map[string]Schema {
 	result := make(map[string]Schema)
 	for propName, propSchema := range schema.inner.Properties {
 		result[propName] = schema.withNewSchema(propSchema)
@@ -129,7 +134,7 @@ func (schema *OpenAPISchema) Properties() map[string]Schema {
 	return result
 }
 
-func (schema *OpenAPISchema) Description() *string {
+func (schema *OpenAPISchema) description() *string {
 	if len(schema.inner.Description) == 0 {
 		return nil
 	}
@@ -137,7 +142,7 @@ func (schema *OpenAPISchema) Description() *string {
 	return &schema.inner.Description
 }
 
-func (schema *OpenAPISchema) Items() []Schema {
+func (schema *OpenAPISchema) items() []Schema {
 	if schema.inner.Items.Schema != nil {
 		return []Schema{schema.withNewSchema(*schema.inner.Items.Schema)}
 	}
@@ -145,11 +150,11 @@ func (schema *OpenAPISchema) Items() []Schema {
 	return schema.transformOpenAPISlice(schema.inner.Items.Schemas)
 }
 
-func (schema *OpenAPISchema) AdditionalPropertiesAllowed() bool {
+func (schema *OpenAPISchema) additionalPropertiesAllowed() bool {
 	return schema.inner.AdditionalProperties == nil || schema.inner.AdditionalProperties.Allows
 }
 
-func (schema *OpenAPISchema) AdditionalPropertiesSchema() Schema {
+func (schema *OpenAPISchema) additionalPropertiesSchema() Schema {
 	if schema.inner.AdditionalProperties == nil {
 		return nil
 	}
@@ -162,7 +167,7 @@ func (schema *OpenAPISchema) AdditionalPropertiesSchema() Schema {
 	return schema.withNewSchema(*result)
 }
 
-func (schema *OpenAPISchema) EnumValues() []string {
+func (schema *OpenAPISchema) enumValues() []string {
 	result := make([]string, len(schema.inner.Enum))
 	for i, enumValue := range schema.inner.Enum {
 		if enumString, ok := enumValue.(string); ok {
@@ -179,7 +184,7 @@ func (schema *OpenAPISchema) EnumValues() []string {
 	return result
 }
 
-func (schema *OpenAPISchema) IsRef() bool {
+func (schema *OpenAPISchema) isRef() bool {
 	return schema.inner.Ref.GetURL() != nil
 }
 
@@ -231,7 +236,7 @@ func (fileCache *OpenAPISchemaCache) fetchFileAbsolute(filePath string) (spec.Sw
 	return swagger, err
 }
 
-func (schema *OpenAPISchema) RefSchema() Schema {
+func (schema *OpenAPISchema) refSchema() Schema {
 	var fileName string
 	var root spec.Swagger
 	if !schema.inner.Ref.HasFragmentOnly {
@@ -248,7 +253,7 @@ func (schema *OpenAPISchema) RefSchema() Schema {
 	}
 
 	reffed := objectNameFromPointer(schema.inner.Ref.GetPointer())
-	if result, ok := root.Definschemaions[reffed]; !ok {
+	if result, ok := root.Definitions[reffed]; !ok {
 		panic(fmt.Sprintf("couldn't find: %s in %s", reffed, fileName))
 	} else {
 		return &OpenAPISchema{
@@ -266,15 +271,15 @@ func (schema *OpenAPISchema) RefSchema() Schema {
 	}
 }
 
-func (schema *OpenAPISchema) RefVersion() (string, error) {
+func (schema *OpenAPISchema) refVersion() (string, error) {
 	return schema.version, nil
 }
 
-func (schema *OpenAPISchema) RefGroupName() (string, error) {
+func (schema *OpenAPISchema) refGroupName() (string, error) {
 	return schema.groupName, nil
 }
 
-func (schema *OpenAPISchema) RefObjectName() (string, error) {
+func (schema *OpenAPISchema) refObjectName() (string, error) {
 	return objectNameFromPointer(schema.inner.Ref.GetPointer()), nil
 }
 
@@ -289,6 +294,8 @@ func objectNameFromPointer(ptr *jsonpointer.Pointer) string {
 	return tokens[1]
 }
 
-func (schema *OpenAPISchema) RefIsResource() bool {
+func (schema *OpenAPISchema) refIsResource() bool {
+	// the swagger schema types will never identify a resource;
+	// we create those “by hand”
 	return false
 }

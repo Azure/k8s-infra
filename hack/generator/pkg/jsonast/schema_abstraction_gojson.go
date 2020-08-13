@@ -20,6 +20,7 @@ type GoJSONSchema struct {
 	inner *gojsonschema.SubSchema
 }
 
+// MakeGoJSONSchema wrapes a gojsonschema.SubSchema to conform to the Schema abstraction
 func MakeGoJSONSchema(schema *gojsonschema.SubSchema) Schema {
 	return GoJSONSchema{schema}
 }
@@ -35,47 +36,47 @@ func transformGoJSONSlice(slice []*gojsonschema.SubSchema) []Schema {
 	return result
 }
 
-func (schema GoJSONSchema) URL() *url.URL {
+func (schema GoJSONSchema) url() *url.URL {
 	return schema.inner.ID.GetUrl()
 }
 
-func (schema GoJSONSchema) Title() *string {
+func (schema GoJSONSchema) title() *string {
 	return schema.inner.Title
 }
 
-func (schema GoJSONSchema) HasType(schemaType SchemaType) bool {
+func (schema GoJSONSchema) hasType(schemaType SchemaType) bool {
 	return schema.inner.Types.Contains(string(schemaType))
 }
 
-func (schema GoJSONSchema) RequiredProperties() []string {
+func (schema GoJSONSchema) requiredProperties() []string {
 	return schema.inner.Required
 }
 
-func (schema GoJSONSchema) HasAllOf() bool {
+func (schema GoJSONSchema) hasAllOf() bool {
 	return len(schema.inner.AllOf) > 0
 }
 
-func (schema GoJSONSchema) AllOf() []Schema {
+func (schema GoJSONSchema) allOf() []Schema {
 	return transformGoJSONSlice(schema.inner.AllOf)
 }
 
-func (schema GoJSONSchema) HasAnyOf() bool {
+func (schema GoJSONSchema) hasAnyOf() bool {
 	return len(schema.inner.AnyOf) > 0
 }
 
-func (schema GoJSONSchema) AnyOf() []Schema {
+func (schema GoJSONSchema) anyOf() []Schema {
 	return transformGoJSONSlice(schema.inner.AnyOf)
 }
 
-func (schema GoJSONSchema) HasOneOf() bool {
+func (schema GoJSONSchema) hasOneOf() bool {
 	return len(schema.inner.OneOf) > 0
 }
 
-func (schema GoJSONSchema) OneOf() []Schema {
+func (schema GoJSONSchema) oneOf() []Schema {
 	return transformGoJSONSlice(schema.inner.OneOf)
 }
 
-func (schema GoJSONSchema) Properties() map[string]Schema {
+func (schema GoJSONSchema) properties() map[string]Schema {
 	result := make(map[string]Schema)
 	for _, prop := range schema.inner.PropertiesChildren {
 		result[prop.Property] = GoJSONSchema{prop}
@@ -84,21 +85,21 @@ func (schema GoJSONSchema) Properties() map[string]Schema {
 	return result
 }
 
-func (schema GoJSONSchema) Description() *string {
+func (schema GoJSONSchema) description() *string {
 	return schema.inner.Description
 }
 
-func (schema GoJSONSchema) Items() []Schema {
+func (schema GoJSONSchema) items() []Schema {
 	return transformGoJSONSlice(schema.inner.ItemsChildren)
 }
 
-func (schema GoJSONSchema) AdditionalPropertiesAllowed() bool {
+func (schema GoJSONSchema) additionalPropertiesAllowed() bool {
 	aps := schema.inner.AdditionalProperties
 
 	return aps == nil || aps != false
 }
 
-func (schema GoJSONSchema) AdditionalPropertiesSchema() Schema {
+func (schema GoJSONSchema) additionalPropertiesSchema() Schema {
 	result := schema.inner.AdditionalProperties
 
 	if result == nil {
@@ -108,15 +109,15 @@ func (schema GoJSONSchema) AdditionalPropertiesSchema() Schema {
 	return GoJSONSchema{result.(*gojsonschema.SubSchema)}
 }
 
-func (schema GoJSONSchema) EnumValues() []string {
+func (schema GoJSONSchema) enumValues() []string {
 	return schema.inner.Enum
 }
 
-func (schema GoJSONSchema) IsRef() bool {
+func (schema GoJSONSchema) isRef() bool {
 	return schema.inner.RefSchema != nil
 }
 
-func (schema GoJSONSchema) RefSchema() Schema {
+func (schema GoJSONSchema) refSchema() Schema {
 	return GoJSONSchema{schema.inner.RefSchema}
 }
 
@@ -124,7 +125,7 @@ func isURLPathSeparator(c rune) bool {
 	return c == '/'
 }
 
-func (schema GoJSONSchema) RefObjectName() (string, error) {
+func (schema GoJSONSchema) refObjectName() (string, error) {
 	url := schema.inner.Ref.GetUrl()
 	fragmentParts := strings.FieldsFunc(url.Fragment, isURLPathSeparator)
 
@@ -135,7 +136,7 @@ func (schema GoJSONSchema) RefObjectName() (string, error) {
 	return fragmentParts[len(fragmentParts)-1], nil
 }
 
-func (schema GoJSONSchema) RefGroupName() (string, error) {
+func (schema GoJSONSchema) refGroupName() (string, error) {
 	url := schema.inner.Ref.GetUrl()
 	pathParts := strings.FieldsFunc(url.Path, isURLPathSeparator)
 
@@ -153,7 +154,7 @@ func (schema GoJSONSchema) RefGroupName() (string, error) {
 
 var versionRegex = regexp.MustCompile(`\d{4}-\d{2}-\d{2}(-preview)?`)
 
-func (schema GoJSONSchema) RefVersion() (string, error) {
+func (schema GoJSONSchema) refVersion() (string, error) {
 	url := schema.inner.Ref.GetUrl()
 	pathParts := strings.FieldsFunc(url.Path, isURLPathSeparator)
 
@@ -167,7 +168,7 @@ func (schema GoJSONSchema) RefVersion() (string, error) {
 	return "", nil
 }
 
-func (schema GoJSONSchema) RefIsResource() bool {
+func (schema GoJSONSchema) refIsResource() bool {
 	url := schema.inner.Ref.GetUrl()
 	fragmentParts := strings.FieldsFunc(url.Fragment, isURLPathSeparator)
 

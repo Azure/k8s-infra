@@ -86,7 +86,6 @@ func (extractor *typeExtractor) extractTypes(
 }
 
 func (extractor *typeExtractor) resourceNameFromOperationPath(packageName string, operationPath string) (astmodel.TypeName, error) {
-	// infer name from path
 	_, name, err := inferNameFromURLPath(operationPath)
 	if err != nil {
 		return astmodel.TypeName{}, errors.Wrapf(err, "unable to infer name from path")
