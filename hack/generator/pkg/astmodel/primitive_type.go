@@ -37,8 +37,8 @@ func (prim *PrimitiveType) AsType(codeGenerationContext *CodeGenerationContext) 
 	return ast.NewIdent(prim.name)
 }
 
-func (prim *PrimitiveType) AsDeclarations(CodeGenerationContext *CodeGenerationContext, name TypeName, description *string) []ast.Decl {
-	return AsSimpleDeclarations(CodeGenerationContext, name, description, prim)
+func (prim *PrimitiveType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
+	return AsSimpleDeclarations(codeGenerationContext, name, description, prim)
 }
 
 // RequiredImports returns a list of package required by this

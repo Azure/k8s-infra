@@ -490,7 +490,7 @@ func generateDefinitionsFor(
 	}
 
 	description := fmt.Sprintf("Generated from: %s", url.String())
-	definition := astmodel.MakeTypeDefinition(typeName, result).WithDescription(&description)
+	definition := astmodel.MakeTypeDefinition(typeName, result).WithDescription(description)
 
 	scanner.addTypeDefinition(definition)
 

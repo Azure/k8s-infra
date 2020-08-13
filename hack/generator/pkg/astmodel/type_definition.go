@@ -13,7 +13,7 @@ import (
 // TypeDefinition is a name paired with a type
 type TypeDefinition struct {
 	name        TypeName
-	description *string
+	description []string
 	theType     Type
 }
 
@@ -32,15 +32,22 @@ func (std TypeDefinition) Type() Type {
 }
 
 // Description returns the description to be attached to this type definition (as a comment)
-func (std TypeDefinition) Description() *string {
-	return std.description
+// We return a new slice to preserve immutability
+func (std TypeDefinition) Description() []string {
+	var result []string
+	for _, s := range std.description {
+		result = append(result, s)
+	}
+
+	return result
 }
 
 func (std TypeDefinition) References() TypeNameSet {
 	return std.theType.References()
 }
 
-func (std TypeDefinition) WithDescription(desc *string) TypeDefinition {
+// WithDescription replaces the description of the definition with a new one (if any)
+func (std TypeDefinition) WithDescription(desc ...string) TypeDefinition {
 	std.description = desc
 	return std
 }
@@ -64,11 +71,11 @@ func (std TypeDefinition) AsDeclarations(codeGenerationContext *CodeGenerationCo
 }
 
 // AsSimpleDeclarations is a helper for types that only require a simple name/alias to be defined
-func AsSimpleDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description *string, theType Type) []ast.Decl {
+func AsSimpleDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string, theType Type) []ast.Decl {
 	var docComments *ast.CommentGroup
-	if description != nil {
+	if len(description) > 0 {
 		docComments = &ast.CommentGroup{}
-		addDocComment(&docComments.List, *description, 120)
+		addDocComments(&docComments.List, description, 120)
 	}
 
 	return []ast.Decl{

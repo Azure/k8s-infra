@@ -22,12 +22,12 @@ func nameTypesForCRD(idFactory astmodel.IdentifierFactory) PipelineStage {
 			result := make(astmodel.Types)
 
 			// this is a little bit of a hack, better way to do it?
-			getDescription := func(typeName astmodel.TypeName) *string {
+			getDescription := func(typeName astmodel.TypeName) []string {
 				if typeDef, ok := types[typeName]; ok {
 					return typeDef.Description()
 				}
 
-				return nil
+				return []string{}
 			}
 
 			for typeName, typeDef := range types {
@@ -50,7 +50,7 @@ func nameTypesForCRD(idFactory astmodel.IdentifierFactory) PipelineStage {
 func nameInnerTypes(
 	def astmodel.TypeDefinition,
 	idFactory astmodel.IdentifierFactory,
-	getDescription func(astmodel.TypeName) *string) []astmodel.TypeDefinition {
+	getDescription func(typeName astmodel.TypeName) []string) []astmodel.TypeDefinition {
 
 	var resultTypes []astmodel.TypeDefinition
 
@@ -63,7 +63,7 @@ func nameInnerTypes(
 		enumName := astmodel.MakeTypeName(def.Name().PackageReference, idFactory.CreateEnumIdentifier(nameHint))
 
 		namedEnum := astmodel.MakeTypeDefinition(enumName, it)
-		namedEnum = namedEnum.WithDescription(getDescription(enumName))
+		namedEnum = namedEnum.WithDescription(getDescription(enumName)...)
 
 		resultTypes = append(resultTypes, namedEnum)
 
@@ -83,7 +83,7 @@ func nameInnerTypes(
 		objectName := astmodel.MakeTypeName(def.Name().PackageReference, nameHint)
 
 		namedObjectType := astmodel.MakeTypeDefinition(objectName, it.WithProperties(props...))
-		namedObjectType = namedObjectType.WithDescription(getDescription(objectName))
+		namedObjectType = namedObjectType.WithDescription(getDescription(objectName)...)
 
 		resultTypes = append(resultTypes, namedObjectType)
 
@@ -103,7 +103,7 @@ func nameInnerTypes(
 		resourceName := astmodel.MakeTypeName(def.Name().PackageReference, nameHint)
 
 		resource := astmodel.MakeTypeDefinition(resourceName, astmodel.NewResourceType(spec, status))
-		resource = resource.WithDescription(getDescription(resourceName))
+		resource = resource.WithDescription(getDescription(resourceName)...)
 
 		resultTypes = append(resultTypes, resource)
 
