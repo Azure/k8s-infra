@@ -17,7 +17,7 @@ type PipelineStage struct {
 	// Unique identifier used to manipulate the pipeline from code
 	id string
 	// Description of the stage to use when logging
-	description   string
+	description string
 	// Stage implementation
 	Action func(context.Context, astmodel.Types) (astmodel.Types, error)
 }
@@ -26,7 +26,7 @@ type PipelineStage struct {
 func MakePipelineStage(
 	id string,
 	description string,
-	action func(context.Context, astmodel.Types) (astmodel.Types, error)	) PipelineStage {
+	action func(context.Context, astmodel.Types) (astmodel.Types, error)) PipelineStage {
 	return PipelineStage{
 		id:          id,
 		description: description,
