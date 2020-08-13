@@ -146,7 +146,7 @@ func inferNameFromURLPath(operationPath string) (string, string, error) {
 		}
 	}
 
-	if reading == false {
+	if !reading {
 		return "", "", errors.Errorf("no group name (‘Microsoft…’ = %q) found", group)
 	}
 
@@ -158,4 +158,4 @@ func inferNameFromURLPath(operationPath string) (string, string, error) {
 }
 
 // based on: https://github.com/Azure/autorest/blob/85de19623bdce3ccc5000bae5afbf22a49bc4665/core/lib/pipeline/metadata-generation.ts#L25
-var swaggerGroupRegex = regexp.MustCompile("[Mm]icrosoft\\.[^/\\\\]+")
+var swaggerGroupRegex = regexp.MustCompile(`[Mm]icrosoft\.[^/\\]+`)

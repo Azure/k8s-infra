@@ -125,7 +125,7 @@ func makeStatusVisitor() astmodel.TypeVisitor {
 	return visitor
 }
 
-var swaggerVersionRegex = regexp.MustCompile("\\d{4}-\\d{2}-\\d{2}(-preview)?")
+var swaggerVersionRegex = regexp.MustCompile(`\d{4}-\d{2}-\d{2}(-preview)?`)
 
 type swaggerTypes struct {
 	resources  astmodel.Types
