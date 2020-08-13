@@ -170,10 +170,7 @@ func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema *g
 		return nil, errors.Wrapf(err, "Unable to extract group for schema")
 	}
 
-	rootVersion, err := versionOf(url)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to extract version for schema")
-	}
+	rootVersion := versionOf(url)
 
 	rootPackage := astmodel.MakeLocalPackageReference(
 		scanner.idFactory.CreateGroupName(rootGroup),
@@ -416,21 +413,13 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema *gojsonschem
 
 	url := schema.Ref.GetUrl()
 
-	// make a new topic based on the ref URL
-	name, err := objectTypeOf(url)
-	if err != nil {
-		return nil, err
-	}
-
 	group, err := groupOf(url)
 	if err != nil {
 		return nil, err
 	}
 
-	version, err := versionOf(url)
-	if err != nil {
-		return nil, err
-	}
+	name := objectTypeOf(url)
+	version := versionOf(url)
 
 	// produce a usable name:
 	typeName := astmodel.MakeTypeName(
@@ -793,10 +782,10 @@ func isURLPathSeparator(c rune) bool {
 }
 
 // Extract the name of an object from the supplied schema URL
-func objectTypeOf(url *url.URL) (string, error) {
+func objectTypeOf(url *url.URL) string {
 	fragmentParts := strings.FieldsFunc(url.Fragment, isURLPathSeparator)
 
-	return fragmentParts[len(fragmentParts)-1], nil
+	return fragmentParts[len(fragmentParts)-1]
 }
 
 // Extract the 'group' (here filename) of an object from the supplied schemaURL
@@ -826,17 +815,17 @@ func isResource(url *url.URL) bool {
 var versionRegex = regexp.MustCompile(`\d{4}-\d{2}-\d{2}`)
 
 // Extract the name of an object from the supplied schema URL
-func versionOf(url *url.URL) (string, error) {
+func versionOf(url *url.URL) string {
 	pathParts := strings.FieldsFunc(url.Path, isURLPathSeparator)
 
 	for _, p := range pathParts {
 		if versionRegex.MatchString(p) {
-			return p, nil
+			return p
 		}
 	}
 
 	// No version found, that's fine
-	return "", nil
+	return ""
 }
 
 func appendIfUniqueType(slice []astmodel.Type, item astmodel.Type) []astmodel.Type {
