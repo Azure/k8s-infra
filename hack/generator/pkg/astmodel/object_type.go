@@ -87,9 +87,7 @@ func (objectType *ObjectType) generateInterfaceDecls(codeGenerationContext *Code
 			funcNames = append(funcNames, funcName)
 		}
 
-		sort.Slice(funcNames, func(i int, j int) bool {
-			return funcNames[i] < funcNames[j]
-		})
+		sort.Strings(funcNames)
 
 		for _, methodName := range funcNames {
 			function := iface.functions[methodName]

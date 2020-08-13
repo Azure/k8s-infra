@@ -186,7 +186,6 @@ func (builder *convertFromArmBuilder) ownerPropertyHandler() propertyConversionH
 		finder: func(toProp *astmodel.PropertyDefinition, _ *astmodel.ObjectType) (bool, *astmodel.PropertyDefinition) {
 
 			if toProp.PropertyName() == astmodel.PropertyName("Owner") && builder.isResource {
-				// This property doesn't exist on the fromType, so we fabricate one (it's not actually used but we need to match)
 				return true, nil
 			}
 			return false, nil
@@ -234,8 +233,7 @@ func (builder *convertFromArmBuilder) propertiesWithSameNameAndTypeHandler() pro
 }
 
 func (builder *convertFromArmBuilder) propertiesWithSameNameButDifferentTypeHandler() propertyConversionHandler {
-	temp := false
-	definedErrVar := &temp
+	definedErrVar := false
 
 	return propertyConversionHandler{
 		finder: func(toProp *astmodel.PropertyDefinition, fromType *astmodel.ObjectType) (bool, *astmodel.PropertyDefinition) {
@@ -248,11 +246,11 @@ func (builder *convertFromArmBuilder) propertiesWithSameNameButDifferentTypeHand
 		matchHandler: func(toProp *astmodel.PropertyDefinition, fromProp *astmodel.PropertyDefinition) []ast.Stmt {
 			var result []ast.Stmt
 
-			if !*definedErrVar {
+			if !definedErrVar {
 				result = append(
 					result,
 					astbuilder.SimpleVariableDeclaration(ast.NewIdent("err"), ast.NewIdent("error")))
-				*definedErrVar = true
+				definedErrVar = true
 			}
 
 			complexConversion := builder.fromArmComplexPropertyConversion(
@@ -384,7 +382,11 @@ func (builder *convertFromArmBuilder) convertComplexArrayProperty(
 		},
 	}
 	results = append(results, result)
-	if depth > 0 {
+
+	// If we have an assignment handler, we need to make sure to call it. This only happens in the case of nested
+	// maps/arrays, where we need to make sure we generate the map assignment/array append before returning (otherwise
+	// the "actual" assignment will just end up being to an empty array/map).
+	if params.assignmentHandler != nil {
 		results = append(results, params.assignmentHandler(params.destination, actualDestination))
 	}
 
@@ -465,7 +467,10 @@ func (builder *convertFromArmBuilder) convertComplexMapProperty(
 		},
 	}
 
-	if depth > 0 {
+	// If we have an assignment handler, we need to make sure to call it. This only happens in the case of nested
+	// maps/arrays, where we need to make sure we generate the map assignment/array append before returning (otherwise
+	// the "actual" assignment will just end up being to an empty array/map).
+	if params.assignmentHandler != nil {
 		result.Body.List = append(result.Body.List, params.assignmentHandler(params.destination, actualDestination))
 	}
 

@@ -186,6 +186,10 @@ func (params complexPropertyConversionParameters) withAssignmentHandler(
 	return result
 }
 
+// countArraysAndMapsInConversionContext returns the number of arrays/maps which are in the conversion context.
+// This is to aid in situations where there are deeply nested conversions (i.e. array of map of maps). In these contexts,
+// just using a simple assignment such as "elem := ..." isn't sufficient because elem my already have been defined above by
+// an enclosing map/array conversion context. We use the depth to do "elem1 := ..." or "elem7 := ...".
 func (params complexPropertyConversionParameters) countArraysAndMapsInConversionContext() int {
 	result := 0
 	for _, t := range params.conversionContext {
