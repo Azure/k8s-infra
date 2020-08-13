@@ -17,7 +17,7 @@ import (
 
 // OpenAPISchema implements the Schema abstraction for go-openapi
 type OpenAPISchema struct {
-	schema    spec.Schema
+	inner     spec.Schema
 	root      spec.Swagger
 	fileName  string
 	groupName string
@@ -49,38 +49,38 @@ func MakeOpenAPISchema(
 	return &OpenAPISchema{schema, root, fileName, groupName, version, cache}
 }
 
-func (it *OpenAPISchema) withNewSchema(newSchema spec.Schema) Schema {
+func (schema *OpenAPISchema) withNewSchema(newSchema spec.Schema) Schema {
 	return &OpenAPISchema{
 		newSchema,
-		it.root,
-		it.fileName,
-		it.groupName,
-		it.version,
-		it.cache,
+		schema.root,
+		schema.fileName,
+		schema.groupName,
+		schema.version,
+		schema.cache,
 	}
 }
 
 var _ Schema = &OpenAPISchema{}
 
-func (it *OpenAPISchema) transformOpenAPISlice(slice []spec.Schema) []Schema {
+func (schema *OpenAPISchema) transformOpenAPISlice(slice []spec.Schema) []Schema {
 	result := make([]Schema, len(slice))
 	for i := range slice {
-		result[i] = it.withNewSchema(slice[i])
+		result[i] = schema.withNewSchema(slice[i])
 	}
 
 	return result
 }
 
-func (it *OpenAPISchema) Title() *string {
-	if len(it.schema.Title) == 0 {
+func (schema *OpenAPISchema) Title() *string {
+	if len(schema.inner.Title) == 0 {
 		return nil // translate to optional
 	}
 
-	return &it.schema.Title
+	return &schema.inner.Title
 }
 
-func (it *OpenAPISchema) URL() *url.URL {
-	url, err := url.Parse(it.schema.ID)
+func (schema *OpenAPISchema) URL() *url.URL {
+	url, err := url.Parse(schema.inner.ID)
 	if err != nil {
 		return nil
 	}
@@ -88,83 +88,83 @@ func (it *OpenAPISchema) URL() *url.URL {
 	return url
 }
 
-func (it *OpenAPISchema) HasType(schemaType SchemaType) bool {
-	return it.schema.Type.Contains(string(schemaType))
+func (schema *OpenAPISchema) HasType(schemaType SchemaType) bool {
+	return schema.inner.Type.Contains(string(schemaType))
 }
 
-func (it *OpenAPISchema) HasAllOf() bool {
-	return len(it.schema.AllOf) > 0
+func (schema *OpenAPISchema) HasAllOf() bool {
+	return len(schema.inner.AllOf) > 0
 }
 
-func (it *OpenAPISchema) AllOf() []Schema {
-	return it.transformOpenAPISlice(it.schema.AllOf)
+func (schema *OpenAPISchema) AllOf() []Schema {
+	return schema.transformOpenAPISlice(schema.inner.AllOf)
 }
 
-func (it *OpenAPISchema) HasAnyOf() bool {
-	return len(it.schema.AnyOf) > 0
+func (schema *OpenAPISchema) HasAnyOf() bool {
+	return len(schema.inner.AnyOf) > 0
 }
 
-func (it *OpenAPISchema) AnyOf() []Schema {
-	return it.transformOpenAPISlice(it.schema.AnyOf)
+func (schema *OpenAPISchema) AnyOf() []Schema {
+	return schema.transformOpenAPISlice(schema.inner.AnyOf)
 }
 
-func (it *OpenAPISchema) HasOneOf() bool {
-	return len(it.schema.OneOf) > 0
+func (schema *OpenAPISchema) HasOneOf() bool {
+	return len(schema.inner.OneOf) > 0
 }
 
-func (it *OpenAPISchema) OneOf() []Schema {
-	return it.transformOpenAPISlice(it.schema.OneOf)
+func (schema *OpenAPISchema) OneOf() []Schema {
+	return schema.transformOpenAPISlice(schema.inner.OneOf)
 }
 
-func (it *OpenAPISchema) RequiredProperties() []string {
-	return it.schema.Required
+func (schema *OpenAPISchema) RequiredProperties() []string {
+	return schema.inner.Required
 }
 
-func (it *OpenAPISchema) Properties() map[string]Schema {
+func (schema *OpenAPISchema) Properties() map[string]Schema {
 	result := make(map[string]Schema)
-	for propName, propSchema := range it.schema.Properties {
-		result[propName] = it.withNewSchema(propSchema)
+	for propName, propSchema := range schema.inner.Properties {
+		result[propName] = schema.withNewSchema(propSchema)
 	}
 
 	return result
 }
 
-func (it *OpenAPISchema) Description() *string {
-	if len(it.schema.Description) == 0 {
+func (schema *OpenAPISchema) Description() *string {
+	if len(schema.inner.Description) == 0 {
 		return nil
 	}
 
-	return &it.schema.Description
+	return &schema.inner.Description
 }
 
-func (it *OpenAPISchema) Items() []Schema {
-	if it.schema.Items.Schema != nil {
-		return []Schema{it.withNewSchema(*it.schema.Items.Schema)}
+func (schema *OpenAPISchema) Items() []Schema {
+	if schema.inner.Items.Schema != nil {
+		return []Schema{schema.withNewSchema(*schema.inner.Items.Schema)}
 	}
 
-	return it.transformOpenAPISlice(it.schema.Items.Schemas)
+	return schema.transformOpenAPISlice(schema.inner.Items.Schemas)
 }
 
-func (it *OpenAPISchema) AdditionalPropertiesAllowed() bool {
-	return it.schema.AdditionalProperties == nil || it.schema.AdditionalProperties.Allows
+func (schema *OpenAPISchema) AdditionalPropertiesAllowed() bool {
+	return schema.inner.AdditionalProperties == nil || schema.inner.AdditionalProperties.Allows
 }
 
-func (it *OpenAPISchema) AdditionalPropertiesSchema() Schema {
-	if it.schema.AdditionalProperties == nil {
+func (schema *OpenAPISchema) AdditionalPropertiesSchema() Schema {
+	if schema.inner.AdditionalProperties == nil {
 		return nil
 	}
 
-	result := it.schema.AdditionalProperties.Schema
+	result := schema.inner.AdditionalProperties.Schema
 	if result == nil {
 		return nil
 	}
 
-	return it.withNewSchema(*result)
+	return schema.withNewSchema(*result)
 }
 
-func (it *OpenAPISchema) EnumValues() []string {
-	result := make([]string, len(it.schema.Enum))
-	for i, enumValue := range it.schema.Enum {
+func (schema *OpenAPISchema) EnumValues() []string {
+	result := make([]string, len(schema.inner.Enum))
+	for i, enumValue := range schema.inner.Enum {
 		if enumString, ok := enumValue.(string); ok {
 			result[i] = fmt.Sprintf("%q", enumString)
 		} else if enumStringer, ok := enumValue.(fmt.Stringer); ok {
@@ -179,8 +179,8 @@ func (it *OpenAPISchema) EnumValues() []string {
 	return result
 }
 
-func (it *OpenAPISchema) IsRef() bool {
-	return it.schema.Ref.GetURL() != nil
+func (schema *OpenAPISchema) IsRef() bool {
+	return schema.inner.Ref.GetURL() != nil
 }
 
 type filePathAndSwagger struct {
@@ -189,7 +189,7 @@ type filePathAndSwagger struct {
 }
 
 // fetchFileRelative fetches the schema for the relative path created by combining 'baseFileName' and 'url'
-// if multiple requests for the same file come in at the same time, only one request will hit the disk
+// if multiple requests for the same file come in at the same time, only one request will hschema the disk
 func (fileCache *OpenAPISchemaCache) fetchFileRelative(baseFileName string, url *url.URL) (filePathAndSwagger, error) {
 	result := filePathAndSwagger{}
 	if url.IsAbs() {
@@ -208,7 +208,7 @@ func (fileCache *OpenAPISchemaCache) fetchFileRelative(baseFileName string, url 
 }
 
 // fetchFileAbsolute fetches the schema for the absolute path specified
-// if multiple requests for the same file come in at the same time, only one request will hit the disk
+// if multiple requests for the same file come in at the same time, only one request will hschema the disk
 func (fileCache *OpenAPISchemaCache) fetchFileAbsolute(filePath string) (spec.Swagger, error) {
 	if swagger, ok := fileCache.files[filePath]; ok {
 		return swagger, nil
@@ -231,11 +231,11 @@ func (fileCache *OpenAPISchemaCache) fetchFileAbsolute(filePath string) (spec.Sw
 	return swagger, err
 }
 
-func (it *OpenAPISchema) RefSchema() Schema {
+func (schema *OpenAPISchema) RefSchema() Schema {
 	var fileName string
 	var root spec.Swagger
-	if !it.schema.Ref.HasFragmentOnly {
-		loaded, err := it.cache.fetchFileRelative(it.fileName, it.schema.Ref.GetURL())
+	if !schema.inner.Ref.HasFragmentOnly {
+		loaded, err := schema.cache.fetchFileRelative(schema.fileName, schema.inner.Ref.GetURL())
 		if err != nil {
 			panic(err)
 		}
@@ -243,12 +243,12 @@ func (it *OpenAPISchema) RefSchema() Schema {
 		root = loaded.swagger
 		fileName = loaded.filePath
 	} else {
-		root = it.root
-		fileName = it.fileName
+		root = schema.root
+		fileName = schema.fileName
 	}
 
-	reffed := objectNameFromPointer(it.schema.Ref.GetPointer())
-	if result, ok := root.Definitions[reffed]; !ok {
+	reffed := objectNameFromPointer(schema.inner.Ref.GetPointer())
+	if result, ok := root.Definschemaions[reffed]; !ok {
 		panic(fmt.Sprintf("couldn't find: %s in %s", reffed, fileName))
 	} else {
 		return &OpenAPISchema{
@@ -258,37 +258,37 @@ func (it *OpenAPISchema) RefSchema() Schema {
 			// Note that we preserve the groupName and version that were input at the start,
 			// even if we are reading a file from a different group or version. this is intentional;
 			// essentially all imported types are copied into the target group/version, which avoids
-			// issues with types from the 'common-types' files which have no group and a version of 'v1'.
-			it.groupName,
-			it.version,
-			it.cache,
+			// issues wschemah types from the 'common-types' files which have no group and a version of 'v1'.
+			schema.groupName,
+			schema.version,
+			schema.cache,
 		}
 	}
 }
 
-func (it *OpenAPISchema) RefVersion() (string, error) {
-	return it.version, nil
+func (schema *OpenAPISchema) RefVersion() (string, error) {
+	return schema.version, nil
 }
 
-func (it *OpenAPISchema) RefGroupName() (string, error) {
-	return it.groupName, nil
+func (schema *OpenAPISchema) RefGroupName() (string, error) {
+	return schema.groupName, nil
 }
 
-func (it *OpenAPISchema) RefObjectName() (string, error) {
-	return objectNameFromPointer(it.schema.Ref.GetPointer()), nil
+func (schema *OpenAPISchema) RefObjectName() (string, error) {
+	return objectNameFromPointer(schema.inner.Ref.GetPointer()), nil
 }
 
 func objectNameFromPointer(ptr *jsonpointer.Pointer) string {
-	// turns a fragment like "#/definitions/Name" into "Name"
+	// turns a fragment like "#/definschemaions/Name" into "Name"
 	tokens := ptr.DecodedTokens()
-	if len(tokens) != 2 || tokens[0] != "definitions" {
-		// this condition is never violated by the swagger files
+	if len(tokens) != 2 || tokens[0] != "definschemaions" {
+		// this condschemaion is never violated by the swagger files
 		panic(fmt.Sprintf("not understood: %v", tokens))
 	}
 
 	return tokens[1]
 }
 
-func (it *OpenAPISchema) RefIsResource() bool {
+func (schema *OpenAPISchema) RefIsResource() bool {
 	return false
 }
