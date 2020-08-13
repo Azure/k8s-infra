@@ -8,6 +8,7 @@ package jsonast
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/devigned/tab"
@@ -31,9 +32,6 @@ type (
 		Schema  Schema
 		Filters []string
 	}
-
-	// A BuilderOption is used to provide custom configuration for our scanner
-	BuilderOption func(scanner *SchemaScanner) error
 
 	// A SchemaScanner is used to scan a JSON Schema extracting and collecting type definitions
 	SchemaScanner struct {
@@ -81,7 +79,7 @@ func (use *UnknownSchemaError) Error() string {
 func NewSchemaScanner(idFactory astmodel.IdentifierFactory, configuration *config.Configuration) *SchemaScanner {
 	return &SchemaScanner{
 		definitions:   make(map[astmodel.TypeName]*astmodel.TypeDefinition),
-		TypeHandlers:  DefaultTypeHandlers(),
+		TypeHandlers:  defaultTypeHandlers(),
 		configuration: configuration,
 		idFactory:     idFactory,
 	}
@@ -137,19 +135,10 @@ func (scanner *SchemaScanner) RunHandlerForSchema(ctx context.Context, schema Sc
 // 							- ARM specific resources. I'm not 100% sure why...
 //
 // 		allOf acts like composition which composites each schema from the child oneOf with the base reference from allOf.
-func (scanner *SchemaScanner) GenerateDefinitions(
-	ctx context.Context,
-	schema Schema,
-	opts ...BuilderOption) (astmodel.Types, error) {
+func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema Schema) (astmodel.Types, error) {
 
 	ctx, span := tab.StartSpan(ctx, "GenerateDefinitions")
 	defer span.End()
-
-	for _, opt := range opts {
-		if err := opt(scanner); err != nil {
-			return nil, err
-		}
-	}
 
 	// get initial topic from ID and Title:
 	title := schema.title()
@@ -176,12 +165,11 @@ func (scanner *SchemaScanner) GenerateDefinitions(
 
 	rootTypeName := astmodel.MakeTypeName(rootPackage, rootName)
 
-	_, err = generateDefinitionsFor(ctx, scanner, rootTypeName, false, schema)
+	_, err = generateDefinitionsFor(ctx, scanner, rootTypeName, schema)
 	if err != nil {
 		return nil, err
 	}
 
-	// produce the results
 	return scanner.Definitions(), nil
 }
 
@@ -205,8 +193,8 @@ func (scanner *SchemaScanner) Definitions() astmodel.Types {
 	return defs
 }
 
-// DefaultTypeHandlers will create a default map of JSONType to AST transformers
-func DefaultTypeHandlers() map[SchemaType]TypeHandler {
+// defaultTypeHandlers will create a default map of JSONType to AST transformers
+func defaultTypeHandlers() map[SchemaType]TypeHandler {
 	return map[SchemaType]TypeHandler{
 		Array:  arrayHandler,
 		OneOf:  oneOfHandler,
@@ -325,8 +313,13 @@ func generatePropertyDefinition(ctx context.Context, scanner *SchemaScanner, raw
 	return property, nil
 }
 
-func getProperties(ctx context.Context, scanner *SchemaScanner, schema Schema) ([]*astmodel.PropertyDefinition, error) {
+func getProperties(
+	ctx context.Context,
+	scanner *SchemaScanner,
+	schema Schema) ([]*astmodel.PropertyDefinition, error) {
+
 	ctx, span := tab.StartSpan(ctx, "getProperties")
+
 	defer span.End()
 
 	var properties []*astmodel.PropertyDefinition
@@ -436,8 +429,6 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (ast
 		return nil, err
 	}
 
-	isResource := schema.refIsResource()
-
 	// produce a usable name:
 	typeName := astmodel.MakeTypeName(
 		astmodel.MakeLocalPackageReference(
@@ -448,7 +439,7 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (ast
 	// Prune the graph according to the configuration
 	shouldPrune, because := scanner.configuration.ShouldPrune(typeName)
 	if shouldPrune == config.Prune {
-		klog.V(2).Infof("Skipping %s because %s", typeName, because)
+		klog.V(3).Infof("Skipping %s because %s", typeName, because)
 		return nil, nil // Skip entirely
 	}
 
@@ -459,20 +450,23 @@ func refHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (ast
 		return transformation, nil
 	}
 
-	return generateDefinitionsFor(ctx, scanner, typeName, isResource, schema.refSchema())
+	return generateDefinitionsFor(ctx, scanner, typeName, schema.refSchema())
 }
 
 func generateDefinitionsFor(
 	ctx context.Context,
 	scanner *SchemaScanner,
 	typeName astmodel.TypeName,
-	isResource bool,
+	//isResource bool,
 	schema Schema) (astmodel.Type, error) {
 
 	schemaType, err := getSubSchemaType(schema)
 	if err != nil {
 		return nil, err
 	}
+
+	url := schema.url()
+	isResource := isResource(url)
 
 	// see if we already generated something for this ref
 	if _, ok := scanner.findTypeDefinition(typeName); ok {
@@ -551,7 +545,7 @@ func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (a
 		case *astmodel.ResourceType:
 			// it is a little strange to merge one resource into another with allOf,
 			// but it is done and therefore we have to support it.
-			// (an example is Microsoft.VisualStudio’s Project type)
+			// (an example is the Microsoft.VisualStudio Project type)
 			// at the moment we will just take the spec type:
 			return handleType(properties, concreteType.SpecType())
 
@@ -795,4 +789,16 @@ func appendIfUniqueType(slice []astmodel.Type, item astmodel.Type) []astmodel.Ty
 	}
 
 	return append(slice, item)
+}
+
+func isResource(url *url.URL) bool {
+	fragmentParts := strings.FieldsFunc(url.Fragment, isURLPathSeparator)
+
+	for _, fragmentPart := range fragmentParts {
+		if fragmentPart == "resourceDefinitions" {
+			return true
+		}
+	}
+
+	return false
 }

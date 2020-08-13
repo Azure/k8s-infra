@@ -167,16 +167,3 @@ func (schema GoJSONSchema) refVersion() (string, error) {
 	// No version found, that's fine
 	return "", nil
 }
-
-func (schema GoJSONSchema) refIsResource() bool {
-	url := schema.inner.Ref.GetUrl()
-	fragmentParts := strings.FieldsFunc(url.Fragment, isURLPathSeparator)
-
-	for _, fragmentPart := range fragmentParts {
-		if fragmentPart == "resourceDefinitions" {
-			return true
-		}
-	}
-
-	return false
-}

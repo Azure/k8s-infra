@@ -46,7 +46,7 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 				return types, nil
 			}
 
-			klog.V(1).Info("Loading Swagger data from %q", config.Status.SchemaRoot)
+			klog.V(1).Infof("Loading Swagger data from %q", config.Status.SchemaRoot)
 
 			swaggerTypes, err := loadSwaggerData(ctx, idFactory, config)
 			if err != nil {

@@ -58,9 +58,11 @@ func corePipelineStages(idFactory astmodel.IdentifierFactory, configuration *con
 	return []PipelineStage{
 		augmentResourcesWithStatus(idFactory, configuration),
 		nameTypesForCRD(idFactory),
+		removeTypeAliases(),
 		improveResourcePluralization(),
 		applyExportFilters(configuration),
 		stripUnreferencedTypeDefinitions(),
+		checkForAnyType(),
 	}
 }
 

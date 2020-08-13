@@ -49,8 +49,7 @@ func runGoldenTest(t *testing.T, path string) {
 			// The golden files always generate a top-level Test type - mark
 			// that as the root.
 			roots := astmodel.NewTypeNameSet(astmodel.MakeTypeName(
-				astmodel.MakePackageReference(
-					"github.com/Azure/k8s-infra/hack/generator/apis/test/v20200101"),
+				astmodel.MakeLocalPackageReference("test", "v20200101"),
 				"Test",
 			))
 			defs, err := StripUnusedDefinitions(roots, defs)
@@ -65,6 +64,10 @@ func runGoldenTest(t *testing.T, path string) {
 	exportPackagesTestPipelineStage := PipelineStage{
 		Name: "Export packages for test",
 		Action: func(ctx context.Context, defs astmodel.Types) (astmodel.Types, error) {
+			if len(defs) == 0 {
+				t.Fatalf("defs was empty")
+			}
+
 			var pr astmodel.PackageReference
 			var ds []astmodel.TypeDefinition
 			for _, def := range defs {
@@ -72,12 +75,26 @@ func runGoldenTest(t *testing.T, path string) {
 				pr = def.Name().PackageReference
 			}
 
+			// Fabricate a single package definition
+			pkgs := make(map[astmodel.PackageReference]*astmodel.PackageDefinition)
+
+			groupName, packageName, err := pr.GroupAndPackage()
+			if err != nil {
+				t.Fatalf("couldnt extract group and package name from package reference: %v", err)
+			}
+
+			packageDefinition := astmodel.NewPackageDefinition(groupName, packageName, "1")
+			for _, def := range defs {
+				packageDefinition.AddDefinition(def)
+			}
+			pkgs[pr] = packageDefinition
+
 			// put all definitions in one file, regardless.
 			// the package reference isn't really used here.
-			fileDef := astmodel.NewFileDefinition(pr, ds...)
+			fileDef := astmodel.NewFileDefinition(pr, ds, pkgs)
 
 			buf := &bytes.Buffer{}
-			err := fileDef.SaveToWriter(path, buf)
+			err = fileDef.SaveToWriter(path, buf)
 			if err != nil {
 				t.Fatalf("could not generate file: %v", err)
 			}
@@ -102,6 +119,8 @@ func runGoldenTest(t *testing.T, path string) {
 		if strings.HasPrefix(stage.Name, "Load and walk schema") {
 			pipeline = append(pipeline, loadSchemaIntoTypes(idFactory, config, testSchemaLoader))
 		} else if strings.HasPrefix(stage.Name, "Delete generated code from") {
+			continue // Skip this
+		} else if strings.HasPrefix(stage.Name, "Check for rogue AnyTypes") {
 			continue // Skip this
 		} else if strings.HasPrefix(stage.Name, "Export packages") {
 			pipeline = append(pipeline, exportPackagesTestPipelineStage)

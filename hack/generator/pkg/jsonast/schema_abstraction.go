@@ -46,7 +46,6 @@ type Schema interface {
 
 	// ref things
 	isRef() bool
-	refIsResource() bool
 	refGroupName() (string, error)
 	refObjectName() (string, error)
 	refVersion() (string, error)

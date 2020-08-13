@@ -194,7 +194,6 @@ type filePathAndSwagger struct {
 }
 
 // fetchFileRelative fetches the schema for the relative path created by combining 'baseFileName' and 'url'
-// if multiple requests for the same file come in at the same time, only one request will hschema the disk
 func (fileCache *OpenAPISchemaCache) fetchFileRelative(baseFileName string, url *url.URL) (filePathAndSwagger, error) {
 	result := filePathAndSwagger{}
 	if url.IsAbs() {
@@ -213,7 +212,6 @@ func (fileCache *OpenAPISchemaCache) fetchFileRelative(baseFileName string, url 
 }
 
 // fetchFileAbsolute fetches the schema for the absolute path specified
-// if multiple requests for the same file come in at the same time, only one request will hschema the disk
 func (fileCache *OpenAPISchemaCache) fetchFileAbsolute(filePath string) (spec.Swagger, error) {
 	if swagger, ok := fileCache.files[filePath]; ok {
 		return swagger, nil
@@ -263,7 +261,7 @@ func (schema *OpenAPISchema) refSchema() Schema {
 			// Note that we preserve the groupName and version that were input at the start,
 			// even if we are reading a file from a different group or version. this is intentional;
 			// essentially all imported types are copied into the target group/version, which avoids
-			// issues wschemah types from the 'common-types' files which have no group and a version of 'v1'.
+			// issues with types from the 'common-types' files which have no group and a version of 'v1'.
 			schema.groupName,
 			schema.version,
 			schema.cache,
@@ -284,18 +282,12 @@ func (schema *OpenAPISchema) refObjectName() (string, error) {
 }
 
 func objectNameFromPointer(ptr *jsonpointer.Pointer) string {
-	// turns a fragment like "#/definschemaions/Name" into "Name"
+	// turns a fragment like "#/definitions/Name" into "Name"
 	tokens := ptr.DecodedTokens()
 	if len(tokens) != 2 || tokens[0] != "definitions" {
-		// this condschemaion is never violated by the swagger files
+		// this condition is never violated by the swagger files
 		panic(fmt.Sprintf("not understood: %v", tokens))
 	}
 
 	return tokens[1]
-}
-
-func (schema *OpenAPISchema) refIsResource() bool {
-	// the swagger schema types will never identify a resource;
-	// we create those “by hand”
-	return false
 }
