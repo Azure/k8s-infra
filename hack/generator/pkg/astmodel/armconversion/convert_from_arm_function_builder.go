@@ -46,9 +46,9 @@ func newConvertFromArmFunctionBuilder(
 	}
 
 	result.propertyConversionHandlers = []propertyConversionHandler{
-		result.namePropertyHandler(),
-		result.ownerPropertyHandler(),
-		result.propertiesWithSameNameAndTypeHandler(),
+		result.namePropertyHandler,
+		result.ownerPropertyHandler,
+		result.propertiesWithSameNameAndTypeHandler,
 		result.propertiesWithSameNameButDifferentTypeHandler(),
 	}
 
@@ -140,138 +140,120 @@ func (builder *convertFromArmBuilder) assertInputTypeIsArm() []ast.Stmt {
 // Conversion handlers
 //////////////////////
 
-func (builder *convertFromArmBuilder) namePropertyHandler() propertyConversionHandler {
+func (builder *convertFromArmBuilder) namePropertyHandler(
+	toProp *astmodel.PropertyDefinition,
+	fromType *astmodel.ObjectType) []ast.Stmt {
 
-	return propertyConversionHandler{
-		finder: func(toProp *astmodel.PropertyDefinition, fromType *astmodel.ObjectType) (bool, *astmodel.PropertyDefinition) {
-			if !toProp.Equals(GetAzureNameProperty(builder.idFactory)) || !builder.isResource {
-				return false, nil
-			}
-
-			// Check to make sure that the ARM object has a "Name" property (which matches our "AzureName")
-			fromProperty, ok := fromType.Property(astmodel.PropertyName("Name"))
-			if !ok {
-				panic("Arm resource missing property 'Name'")
-			}
-			return true, fromProperty
-		},
-		matchHandler: func(toProp *astmodel.PropertyDefinition, fromProp *astmodel.PropertyDefinition) []ast.Stmt {
-			result := astbuilder.SimpleAssignment(
-				&ast.SelectorExpr{
-					X:   builder.receiverIdent,
-					Sel: ast.NewIdent(string(toProp.PropertyName())),
-				},
-				token.ASSIGN,
-				&ast.CallExpr{
-					Fun: &ast.SelectorExpr{
-						X:   ast.NewIdent(astmodel.GenRuntimePackageName),
-						Sel: ast.NewIdent("ExtractKubernetesResourceNameFromArmName"),
-					},
-					Args: []ast.Expr{
-						&ast.SelectorExpr{
-							X:   builder.typedInputIdent,
-							Sel: ast.NewIdent(string(fromProp.PropertyName())),
-						},
-					},
-				})
-
-			return []ast.Stmt{result}
-		},
+	if !toProp.Equals(GetAzureNameProperty(builder.idFactory)) || !builder.isResource {
+		return nil
 	}
-}
 
-func (builder *convertFromArmBuilder) ownerPropertyHandler() propertyConversionHandler {
-
-	return propertyConversionHandler{
-		finder: func(toProp *astmodel.PropertyDefinition, _ *astmodel.ObjectType) (bool, *astmodel.PropertyDefinition) {
-
-			if toProp.PropertyName() == astmodel.PropertyName("Owner") && builder.isResource {
-				return true, nil
-			}
-			return false, nil
-		},
-		matchHandler: func(toProp *astmodel.PropertyDefinition, _ *astmodel.PropertyDefinition) []ast.Stmt {
-
-			result := astbuilder.SimpleAssignment(
-				&ast.SelectorExpr{
-					X:   builder.receiverIdent,
-					Sel: ast.NewIdent(string(toProp.PropertyName())),
-				},
-				token.ASSIGN,
-				ast.NewIdent("owner"))
-			return []ast.Stmt{result}
-		},
+	// Check to make sure that the ARM object has a "Name" property (which matches our "AzureName")
+	fromProp, ok := fromType.Property(astmodel.PropertyName("Name"))
+	if !ok {
+		panic("Arm resource missing property 'Name'")
 	}
-}
-
-func (builder *convertFromArmBuilder) propertiesWithSameNameAndTypeHandler() propertyConversionHandler {
-
-	return propertyConversionHandler{
-		finder: func(toProp *astmodel.PropertyDefinition, fromType *astmodel.ObjectType) (bool, *astmodel.PropertyDefinition) {
-
-			fromProp, ok := fromType.Property(toProp.PropertyName())
-			if ok && toProp.PropertyType().Equals(fromProp.PropertyType()) {
-				return true, fromProp
-			}
-			return false, nil
+	result := astbuilder.SimpleAssignment(
+		&ast.SelectorExpr{
+			X:   builder.receiverIdent,
+			Sel: ast.NewIdent(string(toProp.PropertyName())),
 		},
-		matchHandler: func(toProp *astmodel.PropertyDefinition, fromProp *astmodel.PropertyDefinition) []ast.Stmt {
-
-			result := astbuilder.SimpleAssignment(
-				&ast.SelectorExpr{
-					X:   builder.receiverIdent,
-					Sel: ast.NewIdent(string(fromProp.PropertyName())),
-				},
-				token.ASSIGN,
+		token.ASSIGN,
+		&ast.CallExpr{
+			Fun: &ast.SelectorExpr{
+				X:   ast.NewIdent(astmodel.GenRuntimePackageName),
+				Sel: ast.NewIdent("ExtractKubernetesResourceNameFromArmName"),
+			},
+			Args: []ast.Expr{
 				&ast.SelectorExpr{
 					X:   builder.typedInputIdent,
-					Sel: ast.NewIdent(string(toProp.PropertyName())),
-				})
-			return []ast.Stmt{result}
-		},
+					Sel: ast.NewIdent(string(fromProp.PropertyName())),
+				},
+			},
+		})
+
+	return []ast.Stmt{result}
+
+}
+
+func (builder *convertFromArmBuilder) ownerPropertyHandler(
+	toProp *astmodel.PropertyDefinition,
+	_ *astmodel.ObjectType) []ast.Stmt {
+
+	if toProp.PropertyName() != astmodel.PropertyName("Owner") || !builder.isResource {
+		return nil
 	}
+
+	result := astbuilder.SimpleAssignment(
+		&ast.SelectorExpr{
+			X:   builder.receiverIdent,
+			Sel: ast.NewIdent(string(toProp.PropertyName())),
+		},
+		token.ASSIGN,
+		ast.NewIdent("owner"))
+	return []ast.Stmt{result}
+}
+
+func (builder *convertFromArmBuilder) propertiesWithSameNameAndTypeHandler(
+	toProp *astmodel.PropertyDefinition,
+	fromType *astmodel.ObjectType) []ast.Stmt {
+
+	fromProp, ok := fromType.Property(toProp.PropertyName())
+
+	if !ok || !toProp.PropertyType().Equals(fromProp.PropertyType()) {
+		return nil
+	}
+
+	result := astbuilder.SimpleAssignment(
+		&ast.SelectorExpr{
+			X:   builder.receiverIdent,
+			Sel: ast.NewIdent(string(fromProp.PropertyName())),
+		},
+		token.ASSIGN,
+		&ast.SelectorExpr{
+			X:   builder.typedInputIdent,
+			Sel: ast.NewIdent(string(toProp.PropertyName())),
+		})
+	return []ast.Stmt{result}
 }
 
 func (builder *convertFromArmBuilder) propertiesWithSameNameButDifferentTypeHandler() propertyConversionHandler {
 	definedErrVar := false
 
-	return propertyConversionHandler{
-		finder: func(toProp *astmodel.PropertyDefinition, fromType *astmodel.ObjectType) (bool, *astmodel.PropertyDefinition) {
-			fromProp, ok := fromType.Property(toProp.PropertyName())
-			if ok && !toProp.PropertyType().Equals(fromProp.PropertyType()) {
-				return true, fromProp
-			}
-			return false, nil
-		},
-		matchHandler: func(toProp *astmodel.PropertyDefinition, fromProp *astmodel.PropertyDefinition) []ast.Stmt {
-			var result []ast.Stmt
+	return func (toProp *astmodel.PropertyDefinition, fromType *astmodel.ObjectType) []ast.Stmt {
+		fromProp, ok := fromType.Property(toProp.PropertyName())
 
-			if !definedErrVar {
-				result = append(
-					result,
-					astbuilder.SimpleVariableDeclaration(ast.NewIdent("err"), ast.NewIdent("error")))
-				definedErrVar = true
-			}
+		if !ok || toProp.PropertyType().Equals(fromProp.PropertyType()) {
+			return nil
+		}
 
-			complexConversion := builder.fromArmComplexPropertyConversion(
-				complexPropertyConversionParameters{
-					source: &ast.SelectorExpr{
-						X:   builder.typedInputIdent,
-						Sel: ast.NewIdent(string(fromProp.PropertyName())),
-					},
-					destination: &ast.SelectorExpr{
-						X:   builder.receiverIdent,
-						Sel: ast.NewIdent(string(toProp.PropertyName())),
-					},
-					destinationType:   toProp.PropertyType(),
-					nameHint:          string(toProp.PropertyName()),
-					conversionContext: nil,
-					assignmentHandler: nil,
-				})
+		var result []ast.Stmt
 
-			result = append(result, complexConversion...)
-			return result
-		},
+		if !definedErrVar {
+			result = append(
+				result,
+				astbuilder.SimpleVariableDeclaration(ast.NewIdent("err"), ast.NewIdent("error")))
+			definedErrVar = true
+		}
+
+		complexConversion := builder.fromArmComplexPropertyConversion(
+			complexPropertyConversionParameters{
+				source: &ast.SelectorExpr{
+					X:   builder.typedInputIdent,
+					Sel: ast.NewIdent(string(fromProp.PropertyName())),
+				},
+				destination: &ast.SelectorExpr{
+					X:   builder.receiverIdent,
+					Sel: ast.NewIdent(string(toProp.PropertyName())),
+				},
+				destinationType:   toProp.PropertyType(),
+				nameHint:          string(toProp.PropertyName()),
+				conversionContext: nil,
+				assignmentHandler: nil,
+			})
+
+		result = append(result, complexConversion...)
+		return result
 	}
 }
 

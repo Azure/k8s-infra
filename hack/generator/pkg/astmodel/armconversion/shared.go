@@ -30,21 +30,16 @@ func (builder conversionBuilder) propertyConversionHandler(
 	fromType *astmodel.ObjectType) []ast.Stmt {
 
 	for _, conversionHandler := range builder.propertyConversionHandlers {
-		matched, matchedProperty := conversionHandler.finder(toProp, fromType)
-		if matched {
-			return conversionHandler.matchHandler(toProp, matchedProperty)
+		stmts :=  conversionHandler(toProp, fromType)
+		if len(stmts) > 0 {
+			return stmts
 		}
 	}
 
 	panic(fmt.Sprintf("No property found for %s", toProp.PropertyName()))
 }
 
-type propertyMatchHandlerFunc = func(toProp *astmodel.PropertyDefinition, fromProp *astmodel.PropertyDefinition) []ast.Stmt
-
-type propertyConversionHandler struct {
-	finder       func(toProp *astmodel.PropertyDefinition, fromType *astmodel.ObjectType) (bool, *astmodel.PropertyDefinition)
-	matchHandler propertyMatchHandlerFunc
-}
+type propertyConversionHandler = func(toProp *astmodel.PropertyDefinition, fromType *astmodel.ObjectType) []ast.Stmt
 
 var once sync.Once
 var azureNameProperty *astmodel.PropertyDefinition
