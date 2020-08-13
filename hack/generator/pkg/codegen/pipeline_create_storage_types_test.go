@@ -1,9 +1,15 @@
+/*
+ * Copyright (c) Microsoft Corporation.
+ * Licensed under the MIT license.
+ */
+
 package codegen
 
 import (
+	"testing"
+
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	. "github.com/onsi/gomega"
-	"testing"
 )
 
 const (
@@ -108,7 +114,7 @@ func createObjectDefinitionForTest(objectName astmodel.TypeName) astmodel.TypeDe
 }
 
 func createEnumDefinitionForTest(enumName astmodel.TypeName, options ...string) astmodel.TypeDefinition {
-	var	opts []astmodel.EnumValue
+	var opts []astmodel.EnumValue
 	for _, o := range options {
 		opts = append(opts, astmodel.EnumValue{Identifier: o, Value: o})
 	}

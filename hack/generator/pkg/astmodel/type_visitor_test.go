@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) Microsoft Corporation.
+ * Licensed under the MIT license.
+ */
+
 package astmodel
 
 import (
@@ -22,9 +27,9 @@ func Test_Visit_GivenCountingTypeVisitor_ReturnsExpectedCounts(t *testing.T) {
 	resType := NewResourceType(objType, StringType)
 
 	cases := []struct {
-		name      string
+		name     string
 		theType  Type
-		expected  int
+		expected int
 	}{
 		// Simple types get visited once
 		{"Strings are visited once", StringType, 1},

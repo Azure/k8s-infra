@@ -1,7 +1,13 @@
+/*
+ * Copyright (c) Microsoft Corporation.
+ * Licensed under the MIT license.
+ */
+
 package astmodel
 
 import (
 	"fmt"
+
 	"k8s.io/klog"
 )
 
