@@ -6,7 +6,6 @@
 package jsonast
 
 import (
-	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -126,23 +125,25 @@ func isURLPathSeparator(c rune) bool {
 }
 
 func (schema GoJSONSchema) refObjectName() (string, error) {
-	url := schema.inner.Ref.GetUrl()
+	return objectTypeOf(schema.inner.Ref.GetUrl())
+}
+
+func objectTypeOf(url *url.URL) (string, error) {
 	fragmentParts := strings.FieldsFunc(url.Fragment, isURLPathSeparator)
 
 	if len(fragmentParts) == 0 {
-		panic(fmt.Sprintf("no fragment extracted from %s", url.String()))
+		return "", errors.Errorf("unexpected URL format: no fragment parts extracted from %q", url.String())
 	}
 
 	return fragmentParts[len(fragmentParts)-1], nil
 }
 
 func (schema GoJSONSchema) refGroupName() (string, error) {
-	url := schema.inner.Ref.GetUrl()
-	pathParts := strings.FieldsFunc(url.Path, isURLPathSeparator)
+	return groupOf(schema.inner.Ref.GetUrl())
+}
 
-	if len(pathParts) == 0 {
-		panic(fmt.Sprintf("no fields extracted from %s", url.String()))
-	}
+func groupOf(url *url.URL) (string, error) {
+	pathParts := strings.FieldsFunc(url.Path, isURLPathSeparator)
 
 	file := pathParts[len(pathParts)-1]
 	if !strings.HasSuffix(file, ".json") {
@@ -155,7 +156,10 @@ func (schema GoJSONSchema) refGroupName() (string, error) {
 var versionRegex = regexp.MustCompile(`\d{4}-\d{2}-\d{2}(-preview)?`)
 
 func (schema GoJSONSchema) refVersion() (string, error) {
-	url := schema.inner.Ref.GetUrl()
+	return versionOf(schema.inner.Ref.GetUrl())
+}
+
+func versionOf(url *url.URL) (string, error) {
 	pathParts := strings.FieldsFunc(url.Path, isURLPathSeparator)
 
 	for _, p := range pathParts {

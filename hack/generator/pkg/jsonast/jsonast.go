@@ -140,7 +140,6 @@ func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema Sc
 	ctx, span := tab.StartSpan(ctx, "GenerateDefinitions")
 	defer span.End()
 
-	// get initial topic from ID and Title:
 	title := schema.title()
 
 	if title == nil {
@@ -149,12 +148,14 @@ func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema Sc
 
 	rootName := *title
 
-	rootGroup, err := schema.refGroupName()
+	rootURL := schema.url()
+
+	rootGroup, err := groupOf(rootURL)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to extract group for schema")
 	}
 
-	rootVersion, err := schema.refVersion()
+	rootVersion, err := versionOf(rootURL)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to extract version for schema")
 	}
