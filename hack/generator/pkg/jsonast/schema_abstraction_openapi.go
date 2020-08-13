@@ -286,7 +286,7 @@ func (schema *OpenAPISchema) refObjectName() (string, error) {
 func objectNameFromPointer(ptr *jsonpointer.Pointer) string {
 	// turns a fragment like "#/definschemaions/Name" into "Name"
 	tokens := ptr.DecodedTokens()
-	if len(tokens) != 2 || tokens[0] != "definschemaions" {
+	if len(tokens) != 2 || tokens[0] != "definitions" {
 		// this condschemaion is never violated by the swagger files
 		panic(fmt.Sprintf("not understood: %v", tokens))
 	}
