@@ -38,6 +38,7 @@ avoid any conflicts with existing Spec types that have already been defined.
 */
 func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *config.Configuration) PipelineStage {
 	return PipelineStage{
+		"augmentStatus",
 		"Add information from Swagger specs for 'status' fields",
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 
