@@ -22,49 +22,49 @@ func MakeTypeDefinition(name TypeName, theType Type) TypeDefinition {
 }
 
 // Name returns the name being associated with the type
-func (std TypeDefinition) Name() TypeName {
-	return std.name
+func (def TypeDefinition) Name() TypeName {
+	return def.name
 }
 
 // Type returns the type being associated with the name
-func (std TypeDefinition) Type() Type {
-	return std.theType
+func (def TypeDefinition) Type() Type {
+	return def.theType
 }
 
 // Description returns the description to be attached to this type definition (as a comment)
 // We return a new slice to preserve immutability
-func (std TypeDefinition) Description() []string {
+func (def TypeDefinition) Description() []string {
 	var result []string
-	result = append(result, std.description...)
+	result = append(result, def.description...)
 	return result
 }
 
-func (std TypeDefinition) References() TypeNameSet {
-	return std.theType.References()
+func (def TypeDefinition) References() TypeNameSet {
+	return def.theType.References()
 }
 
 // WithDescription replaces the description of the definition with a new one (if any)
-func (std TypeDefinition) WithDescription(desc ...string) TypeDefinition {
-	std.description = desc
-	return std
+func (def TypeDefinition) WithDescription(desc ...string) TypeDefinition {
+	def.description = desc
+	return def
 }
 
 // WithType returns an updated TypeDefinition with the specified type
-func (std TypeDefinition) WithType(t Type) TypeDefinition {
-	result := std
+func (def TypeDefinition) WithType(t Type) TypeDefinition {
+	result := def
 	result.theType = t
 	return result
 }
 
 // WithName returns an updated TypeDefinition with the specified name
-func (std TypeDefinition) WithName(typeName TypeName) TypeDefinition {
-	result := std
+func (def TypeDefinition) WithName(typeName TypeName) TypeDefinition {
+	result := def
 	result.name = typeName
 	return result
 }
 
-func (std TypeDefinition) AsDeclarations(codeGenerationContext *CodeGenerationContext) []ast.Decl {
-	return std.theType.AsDeclarations(codeGenerationContext, std.name, std.description)
+func (def TypeDefinition) AsDeclarations(codeGenerationContext *CodeGenerationContext) []ast.Decl {
+	return def.theType.AsDeclarations(codeGenerationContext, def.name, def.description)
 }
 
 // AsSimpleDeclarations is a helper for types that only require a simple name/alias to be defined
@@ -90,8 +90,8 @@ func AsSimpleDeclarations(codeGenerationContext *CodeGenerationContext, name Typ
 }
 
 // RequiredImports returns a list of packages required by this type
-func (std TypeDefinition) RequiredImports() []PackageReference {
-	return std.theType.RequiredImports()
+func (def TypeDefinition) RequiredImports() []PackageReference {
+	return def.theType.RequiredImports()
 }
 
 // FileNameHint returns what a file that contains this name (if any) should be called
