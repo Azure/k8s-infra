@@ -6,6 +6,7 @@
 package astmodel
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -41,6 +42,91 @@ func Test_NewPropertyDefinition_GivenValues_ReturnsInstanceWithExpectedGetters(t
 
 	g.Expect(field.PropertyName()).To(Equal(fieldName))
 	g.Expect(field.PropertyType()).To(Equal(fieldType))
+}
+
+/*
+ * Tag tests
+ */
+func Test_PropertyDefinition_TagsAdded_TagsAreRenderedAsExpected(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
+	updated := original.WithTag("key", "value")
+
+	g.Expect(updated).NotTo(Equal(original))
+	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\" key:\"value\"", fieldJsonName)))
+}
+
+func Test_PropertyDefinition_MultipleTagsAdded_TagsAreRenderedCommaSeparated(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
+	updated := original.WithTag("key", "value").WithTag("key", "value2").WithTag("key", "value3")
+
+	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\" key:\"value,value2,value3\"", fieldJsonName)))
+}
+
+func Test_PropertyDefinition_ExistingTagAdded_TagsAreNotDuplicated(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
+	updated := original.WithTag("json", fieldJsonName)
+
+	g.Expect(updated).To(Equal(original))
+	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\"", fieldJsonName)))
+}
+
+func Test_PropertyDefinition_TagKeyRemoved_TagIsNotRendered(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
+	updated := original.WithoutTag("json", "")
+
+	g.Expect(updated).NotTo(Equal(original))
+	g.Expect(updated.renderedTags()).To(Equal(""))
+}
+
+func Test_PropertyDefinition_LastTagValueRemoved_TagIsNotRendered(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
+	updated := original.WithoutTag("json", fieldJsonName)
+
+	g.Expect(updated).NotTo(Equal(original))
+	g.Expect(updated.renderedTags()).To(Equal(""))
+}
+
+func Test_PropertyDefinition_TagValueRemoved_RemainingTagsAreRenderedAsExpected(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType).
+		WithTag("key", "value1").
+		WithTag("key", "value2").
+		WithTag("key", "value3")
+	updated := original.WithoutTag("key", "value2")
+
+	g.Expect(updated).NotTo(Equal(original))
+	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\" key:\"value1,value3\"", fieldJsonName)))
+}
+
+func Test_PropertyDefinition_NonExistentTagKeyRemoved_TagsAreRenderedAsExpected(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
+	updated := original.WithoutTag("doesntexist", "")
+
+	g.Expect(updated).To(Equal(original))
+	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\"", fieldJsonName)))
+}
+
+func Test_PropertyDefinition_NonExistentTagValueRemoved_TagsAreRenderedAsExpected(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
+	updated := original.WithoutTag("doesntexist", "val")
+
+	g.Expect(updated).To(Equal(original))
+	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\"", fieldJsonName)))
 }
 
 /*
@@ -151,6 +237,7 @@ func Test_PropertyDefinitionMakeRequired_WhenOptional_ReturnsDifferentReference(
 	field := original.MakeRequired()
 
 	g.Expect(field).NotTo(BeIdenticalTo(original))
+	g.Expect(field.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\"", fieldJsonName)))
 }
 
 func TestPropertyDefinitionMakeRequired_WhenOptional_ReturnsTypeWithMandatoryValidation(t *testing.T) {
@@ -204,6 +291,8 @@ func Test_PropertyDefinitionMakeRequired_PropertyTypeArrayAndMap(t *testing.T) {
 			g.Expect(field).NotTo(BeIdenticalTo(original))
 			g.Expect(field.validations).To(ContainElement(ValidateRequired()))
 			g.Expect(field.propertyType).To(BeIdenticalTo(original.propertyType))
+
+			g.Expect(field.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\"", fieldJsonName)))
 		})
 	}
 }
@@ -219,6 +308,7 @@ func TestPropertyDefinitionMakeOptional_WhenRequired_ReturnsDifferentReference(t
 	field := original.MakeOptional()
 
 	g.Expect(field).NotTo(BeIdenticalTo(original))
+	g.Expect(field.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s,omitempty\"", fieldJsonName)))
 }
 
 func TestPropertyDefinitionMakeOptional_WhenRequired_ReturnsTypeWithoutMandatoryValidation(t *testing.T) {
@@ -276,11 +366,13 @@ func Test_PropertyDefinitionMakeOptional_PropertyTypeArrayAndMap(t *testing.T) {
 				g.Expect(field).NotTo(BeIdenticalTo(original))
 				g.Expect(field.validations).NotTo(ContainElement(ValidateRequired()))
 				g.Expect(field.propertyType).To(BeIdenticalTo(required.propertyType))
+				g.Expect(field.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s,omitempty\"", fieldJsonName)))
 			} else {
 				original := NewPropertyDefinition(fieldName, fieldJsonName, c.propertyType)
 				field := original.MakeOptional()
 
-				g.Expect(field).To(BeIdenticalTo(original))
+				g.Expect(field).NotTo(Equal(original))
+				g.Expect(field.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s,omitempty\"", fieldJsonName)))
 			}
 		})
 	}

@@ -22,7 +22,7 @@ type PropertyDefinition struct {
 	propertyType Type
 	description  string
 	validations  []Validation
-	tags         map[string][]string
+	tags         map[string][]string // TODO: it might be easier if this were a map[string]map[string]struct{}?
 }
 
 // NewPropertyDefinition is a factory method for creating a new PropertyDefinition
@@ -103,16 +103,91 @@ func (property *PropertyDefinition) WithTag(key string, value string) *PropertyD
 	for k, v := range property.tags {
 		result.tags[k] = v
 	}
-	result.tags[key] = append(result.tags[key], value)
+	// Check if exists
+	found := false
+	for _, v := range result.tags[key] {
+		if v == value {
+			found = true
+		}
+	}
+
+	if !found {
+		result.tags[key] = append(result.tags[key], value)
+	}
+
 	return &result
+}
+
+// WithoutTag removes the given tag (or value of tag) from the field. If value is empty, remove the entire tag.
+// if value is not empty, remove just that value.
+func (property *PropertyDefinition) WithoutTag(key string, value string) *PropertyDefinition {
+	result := *property
+	// Have to copy the map here
+	result.tags = make(map[string][]string)
+	for k, v := range property.tags {
+		result.tags[k] = v
+	}
+
+	if value != "" {
+		// Find the value and remove it
+		//TODO: Do we want a generic helper that does this?
+		var tagsWithoutValue []string
+		for _, item := range result.tags[key] {
+			if item == value {
+				continue
+			}
+			tagsWithoutValue = append(tagsWithoutValue, item)
+		}
+
+		if len(tagsWithoutValue) == 0 {
+			delete(result.tags, key)
+		} else {
+			result.tags[key] = tagsWithoutValue
+		}
+	} else {
+		delete(result.tags, key)
+	}
+
+	return &result
+}
+
+// HasTag returns true if the property has the specified tag
+func (property *PropertyDefinition) HasTag(key string) bool {
+	_, ok := property.tags[key]
+	return ok
+}
+
+// HasTagValue returns true if the property has the specified tag value
+func (property *PropertyDefinition) HasTagValue(key string, value string) bool {
+	values, ok := property.tags[key]
+	if ok {
+		for _, item := range values {
+			if item == value {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (property *PropertyDefinition) hasJsonOmitEmpty() bool {
+	return property.HasTagValue("json", "omitempty")
+}
+
+func (property *PropertyDefinition) withJsonOmitEmpty() *PropertyDefinition {
+	return property.WithTag("json", "omitempty")
+}
+
+func (property *PropertyDefinition) withoutJsonOmitEmpty() *PropertyDefinition {
+	return property.WithoutTag("json", "omitempty")
 }
 
 // MakeRequired returns a new PropertyDefinition that is marked as required
 func (property *PropertyDefinition) MakeRequired() *PropertyDefinition {
-	if !property.hasOptionalType() && property.HasRequiredValidation() {
+	if !property.hasOptionalType() && property.HasRequiredValidation() && !property.hasJsonOmitEmpty() {
 		return property
 	}
-
 	result := *property
 
 	if property.hasOptionalType() {
@@ -125,12 +200,14 @@ func (property *PropertyDefinition) MakeRequired() *PropertyDefinition {
 		result = *result.WithValidation(ValidateRequired())
 	}
 
+	result = *result.withoutJsonOmitEmpty()
+
 	return &result
 }
 
 // MakeOptional returns a new PropertyDefinition that has an optional value
 func (property *PropertyDefinition) MakeOptional() *PropertyDefinition {
-	if isTypeOptional(property.propertyType) && !property.HasRequiredValidation() {
+	if isTypeOptional(property.propertyType) && !property.HasRequiredValidation() && property.hasJsonOmitEmpty() {
 		// No change required
 		return property
 	}
@@ -156,6 +233,8 @@ func (property *PropertyDefinition) MakeOptional() *PropertyDefinition {
 
 		result.validations = validations
 	}
+
+	result = *result.withJsonOmitEmpty()
 
 	return &result
 }
