@@ -154,8 +154,8 @@ func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema Sc
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to extract group for schema")
 	}
-  
-	rootVersion := versionOf(url)
+
+	rootVersion := versionOf(rootURL)
 
 	rootPackage := astmodel.MakeLocalPackageReference(
 		scanner.idFactory.CreateGroupName(rootGroup),
@@ -490,7 +490,7 @@ func generateDefinitionsFor(
 	}
 
 	description := []string{
-    fmt.Sprintf("Generated from: %s", schema.url().String()),
+		fmt.Sprintf("Generated from: %s", schema.url().String()),
 	}
 	definition := astmodel.MakeTypeDefinition(typeName, result).WithDescription(description)
 

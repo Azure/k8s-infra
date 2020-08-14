@@ -156,18 +156,18 @@ func groupOf(url *url.URL) (string, error) {
 var versionRegex = regexp.MustCompile(`\d{4}-\d{2}-\d{2}(-preview)?`)
 
 func (schema GoJSONSchema) refVersion() (string, error) {
-	return versionOf(schema.inner.Ref.GetUrl())
+	return versionOf(schema.inner.Ref.GetUrl()), nil
 }
 
-func versionOf(url *url.URL) (string, error) {
+func versionOf(url *url.URL) string {
 	pathParts := strings.FieldsFunc(url.Path, isURLPathSeparator)
 
 	for _, p := range pathParts {
 		if versionRegex.MatchString(p) {
-			return p, nil
+			return p
 		}
 	}
 
 	// No version found, that's fine
-	return "", nil
+	return ""
 }
