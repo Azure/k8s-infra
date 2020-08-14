@@ -44,8 +44,9 @@ func (def TypeDefinition) References() TypeNameSet {
 }
 
 // WithDescription replaces the description of the definition with a new one (if any)
-func (def TypeDefinition) WithDescription(desc ...string) TypeDefinition {
-	def.description = desc
+func (def TypeDefinition) WithDescription(desc []string) TypeDefinition {
+	var d []string
+	def.description = append(d, desc...)
 	return def
 }
 
