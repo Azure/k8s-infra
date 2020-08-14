@@ -489,7 +489,7 @@ func generateDefinitionsFor(
 		result = astmodel.NewResourceType(result, nil)
 	}
 
-	description := []string {
+	description := []string{
 		fmt.Sprintf("Generated from: %s", url.String()),
 	}
 	definition := astmodel.MakeTypeDefinition(typeName, result).WithDescription(description)
