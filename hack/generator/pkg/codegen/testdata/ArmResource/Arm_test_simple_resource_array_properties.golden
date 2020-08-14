@@ -27,7 +27,7 @@ type FakeResourceSpecArm struct {
 	Type          FakeResourceSpecType       `json:"type"`
 }
 
-/*Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/Color*/
+//Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/Color
 
 // +kubebuilder:validation:Enum={"blue","green","red"}
 type Color string

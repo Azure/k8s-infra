@@ -10,86 +10,51 @@ import (
 )
 
 // +kubebuilder:object:root=true
-//Generated from: https://test.test/schemas/2020-01-01/test.json#/resourceDefinitions/DependentResource
-type DependentResource struct {
+//Generated from: https://test.test/schemas/2020-01-01/test.json#/resourceDefinitions/A
+type A struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              DependentResourceSpec `json:"spec,omitempty"`
+	Spec              ASpec `json:"spec,omitempty"`
 }
 
-type DependentResourceSpecArm struct {
-	ApiVersion DependentResourceSpecApiVersion `json:"apiVersion"`
-	Name       string                          `json:"name"`
-	Type       DependentResourceSpecType       `json:"type"`
+type ASpecArm struct {
+	ApiVersion ASpecApiVersion `json:"apiVersion"`
+	Name       string          `json:"name"`
+	Type       ASpecType       `json:"type"`
 }
 
 // +kubebuilder:object:root=true
-//Generated from: https://test.test/schemas/2020-01-01/test.json#/resourceDefinitions/FakeResource
-type FakeResource struct {
+//Generated from: https://test.test/schemas/2020-01-01/test.json#/resourceDefinitions/B
+type B struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              FakeResourceSpec `json:"spec,omitempty"`
+	Spec              BSpec `json:"spec,omitempty"`
 }
 
-type FakeResourceSpecArm struct {
-	ApiVersion FakeResourceSpecApiVersion `json:"apiVersion"`
-	Name       string                     `json:"name"`
-	Type       FakeResourceSpecType       `json:"type"`
+type BSpecArm struct {
+	ApiVersion BSpecApiVersion `json:"apiVersion"`
+	Name       string          `json:"name"`
+	Type       BSpecType       `json:"type"`
 }
 
-type DependentResourceSpec struct {
+// +kubebuilder:object:root=true
+//Generated from: https://test.test/schemas/2020-01-01/test.json#/resourceDefinitions/C
+type C struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              CSpec `json:"spec,omitempty"`
+}
+
+type CSpecArm struct {
+	ApiVersion CSpecApiVersion `json:"apiVersion"`
+	Name       string          `json:"name"`
+	Type       CSpecType       `json:"type"`
+}
+
+type ASpec struct {
 
 	// +kubebuilder:validation:Required
-	ApiVersion DependentResourceSpecApiVersion `json:"apiVersion"`
-
-	//AzureName: The name of the resource in Azure. This is often the same as the name
-	//of the resource in Kubernetes but it doesn't have to be.
-	AzureName string `json:"azureName"`
-
-	// +kubebuilder:validation:Required
-	Owner genruntime.KnownResourceReference `group:"test" json:"owner" kind:"FakeResource"`
-}
-
-var _ genruntime.ArmTransformer = &DependentResourceSpec{}
-
-// FromArm converts from an Azure ARM object to a Kubernetes CRD object
-func (dependentResourceSpec *DependentResourceSpec) FromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(DependentResourceSpecArm)
-	if !ok {
-		return fmt.Errorf("unexpected type supplied for FromArm function. Expected DependentResourceSpecArm, got %T", armInput)
-	}
-	dependentResourceSpec.ApiVersion = typedInput.ApiVersion
-	dependentResourceSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
-	dependentResourceSpec.Owner = owner
-	return nil
-}
-
-// ToArm converts from a Kubernetes CRD object to an ARM object
-func (dependentResourceSpec *DependentResourceSpec) ToArm(owningName string) (interface{}, error) {
-	if dependentResourceSpec == nil {
-		return nil, nil
-	}
-	result := DependentResourceSpecArm{}
-	result.ApiVersion = dependentResourceSpec.ApiVersion
-	result.Name = genruntime.CreateArmResourceNameForDeployment(owningName, dependentResourceSpec.AzureName)
-	result.Type = DependentResourceSpecTypeMicrosoftAzureFakeResource
-	return result, nil
-}
-
-// +kubebuilder:validation:Enum={"2020-06-01"}
-type DependentResourceSpecApiVersion string
-
-const DependentResourceSpecApiVersion20200601 = DependentResourceSpecApiVersion("2020-06-01")
-
-// +kubebuilder:validation:Enum={"Microsoft.Azure/FakeResource"}
-type DependentResourceSpecType string
-
-const DependentResourceSpecTypeMicrosoftAzureFakeResource = DependentResourceSpecType("Microsoft.Azure/FakeResource")
-
-type FakeResourceSpec struct {
-
-	// +kubebuilder:validation:Required
-	ApiVersion FakeResourceSpecApiVersion `json:"apiVersion"`
+	ApiVersion ASpecApiVersion `json:"apiVersion"`
 
 	//AzureName: The name of the resource in Azure. This is often the same as the name
 	//of the resource in Kubernetes but it doesn't have to be.
@@ -99,42 +64,140 @@ type FakeResourceSpec struct {
 	Owner genruntime.KnownResourceReference `group:"microsoft.resources" json:"owner" kind:"ResourceGroup"`
 }
 
-var _ genruntime.ArmTransformer = &FakeResourceSpec{}
+var _ genruntime.ArmTransformer = &ASpec{}
 
 // FromArm converts from an Azure ARM object to a Kubernetes CRD object
-func (fakeResourceSpec *FakeResourceSpec) FromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(FakeResourceSpecArm)
+func (aSpec *ASpec) FromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(ASpecArm)
 	if !ok {
-		return fmt.Errorf("unexpected type supplied for FromArm function. Expected FakeResourceSpecArm, got %T", armInput)
+		return fmt.Errorf("unexpected type supplied for FromArm function. Expected ASpecArm, got %T", armInput)
 	}
-	fakeResourceSpec.ApiVersion = typedInput.ApiVersion
-	fakeResourceSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
-	fakeResourceSpec.Owner = owner
+	aSpec.ApiVersion = typedInput.ApiVersion
+	aSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
+	aSpec.Owner = owner
 	return nil
 }
 
 // ToArm converts from a Kubernetes CRD object to an ARM object
-func (fakeResourceSpec *FakeResourceSpec) ToArm(owningName string) (interface{}, error) {
-	if fakeResourceSpec == nil {
+func (aSpec *ASpec) ToArm(owningName string) (interface{}, error) {
+	if aSpec == nil {
 		return nil, nil
 	}
-	result := FakeResourceSpecArm{}
-	result.ApiVersion = fakeResourceSpec.ApiVersion
-	result.Name = genruntime.CreateArmResourceNameForDeployment(owningName, fakeResourceSpec.AzureName)
-	result.Type = FakeResourceSpecTypeMicrosoftAzureFakeResource
+	result := ASpecArm{}
+	result.ApiVersion = aSpec.ApiVersion
+	result.Name = genruntime.CreateArmResourceNameForDeployment(owningName, aSpec.AzureName)
+	result.Type = ASpecTypeMicrosoftAzureA
 	return result, nil
 }
 
 // +kubebuilder:validation:Enum={"2020-06-01"}
-type FakeResourceSpecApiVersion string
+type ASpecApiVersion string
 
-const FakeResourceSpecApiVersion20200601 = FakeResourceSpecApiVersion("2020-06-01")
+const ASpecApiVersion20200601 = ASpecApiVersion("2020-06-01")
 
-// +kubebuilder:validation:Enum={"Microsoft.Azure/FakeResource"}
-type FakeResourceSpecType string
+// +kubebuilder:validation:Enum={"Microsoft.Azure/A"}
+type ASpecType string
 
-const FakeResourceSpecTypeMicrosoftAzureFakeResource = FakeResourceSpecType("Microsoft.Azure/FakeResource")
+const ASpecTypeMicrosoftAzureA = ASpecType("Microsoft.Azure/A")
+
+type BSpec struct {
+
+	// +kubebuilder:validation:Required
+	ApiVersion BSpecApiVersion `json:"apiVersion"`
+
+	//AzureName: The name of the resource in Azure. This is often the same as the name
+	//of the resource in Kubernetes but it doesn't have to be.
+	AzureName string `json:"azureName"`
+
+	// +kubebuilder:validation:Required
+	Owner genruntime.KnownResourceReference `group:"test" json:"owner" kind:"A"`
+}
+
+var _ genruntime.ArmTransformer = &BSpec{}
+
+// FromArm converts from an Azure ARM object to a Kubernetes CRD object
+func (bSpec *BSpec) FromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(BSpecArm)
+	if !ok {
+		return fmt.Errorf("unexpected type supplied for FromArm function. Expected BSpecArm, got %T", armInput)
+	}
+	bSpec.ApiVersion = typedInput.ApiVersion
+	bSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
+	bSpec.Owner = owner
+	return nil
+}
+
+// ToArm converts from a Kubernetes CRD object to an ARM object
+func (bSpec *BSpec) ToArm(owningName string) (interface{}, error) {
+	if bSpec == nil {
+		return nil, nil
+	}
+	result := BSpecArm{}
+	result.ApiVersion = bSpec.ApiVersion
+	result.Name = genruntime.CreateArmResourceNameForDeployment(owningName, bSpec.AzureName)
+	result.Type = BSpecTypeMicrosoftAzureB
+	return result, nil
+}
+
+// +kubebuilder:validation:Enum={"2020-06-01"}
+type BSpecApiVersion string
+
+const BSpecApiVersion20200601 = BSpecApiVersion("2020-06-01")
+
+// +kubebuilder:validation:Enum={"Microsoft.Azure/B"}
+type BSpecType string
+
+const BSpecTypeMicrosoftAzureB = BSpecType("Microsoft.Azure/B")
+
+type CSpec struct {
+
+	// +kubebuilder:validation:Required
+	ApiVersion CSpecApiVersion `json:"apiVersion"`
+
+	//AzureName: The name of the resource in Azure. This is often the same as the name
+	//of the resource in Kubernetes but it doesn't have to be.
+	AzureName string `json:"azureName"`
+
+	// +kubebuilder:validation:Required
+	Owner genruntime.KnownResourceReference `group:"test" json:"owner" kind:"B"`
+}
+
+var _ genruntime.ArmTransformer = &CSpec{}
+
+// FromArm converts from an Azure ARM object to a Kubernetes CRD object
+func (cSpec *CSpec) FromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(CSpecArm)
+	if !ok {
+		return fmt.Errorf("unexpected type supplied for FromArm function. Expected CSpecArm, got %T", armInput)
+	}
+	cSpec.ApiVersion = typedInput.ApiVersion
+	cSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
+	cSpec.Owner = owner
+	return nil
+}
+
+// ToArm converts from a Kubernetes CRD object to an ARM object
+func (cSpec *CSpec) ToArm(owningName string) (interface{}, error) {
+	if cSpec == nil {
+		return nil, nil
+	}
+	result := CSpecArm{}
+	result.ApiVersion = cSpec.ApiVersion
+	result.Name = genruntime.CreateArmResourceNameForDeployment(owningName, cSpec.AzureName)
+	result.Type = CSpecTypeMicrosoftAzureC
+	return result, nil
+}
+
+// +kubebuilder:validation:Enum={"2020-06-01"}
+type CSpecApiVersion string
+
+const CSpecApiVersion20200601 = CSpecApiVersion("2020-06-01")
+
+// +kubebuilder:validation:Enum={"Microsoft.Azure/C"}
+type CSpecType string
+
+const CSpecTypeMicrosoftAzureC = CSpecType("Microsoft.Azure/C")
 
 func init() {
-	SchemeBuilder.Register(&DependentResource{}, &FakeResource{})
+	SchemeBuilder.Register(&A{}, &B{}, &C{})
 }

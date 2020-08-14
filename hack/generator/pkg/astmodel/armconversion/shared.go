@@ -145,20 +145,6 @@ func (params complexPropertyConversionParameters) withAdditionalConversionContex
 	return result
 }
 
-func (params complexPropertyConversionParameters) withSource(source ast.Expr) complexPropertyConversionParameters {
-	result := params.copy()
-	result.source = source
-
-	return result
-}
-
-func (params complexPropertyConversionParameters) withNameHint(nameHint string) complexPropertyConversionParameters {
-	result := params.copy()
-	result.nameHint = nameHint
-
-	return result
-}
-
 func (params complexPropertyConversionParameters) withDestination(destination ast.Expr) complexPropertyConversionParameters {
 	result := params.copy()
 	result.destination = destination

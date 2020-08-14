@@ -330,12 +330,14 @@ func (builder *convertToArmBuilder) convertComplexArrayProperty(
 	}
 
 	innerStatements := builder.toArmComplexPropertyConversion(
-		params.withSource(itemIdent).
-			withDestination(typedVarIdent).
-			withDestinationType(tempVarType).
-			withNameHint(elemIdent.Name).
-			withAdditionalConversionContext(destinationType).
-			withAssignmentHandler(assignmentHandlerDefine))
+		complexPropertyConversionParameters{
+			source:            itemIdent,
+			destination:       typedVarIdent,
+			destinationType:   tempVarType,
+			nameHint:          elemIdent.Name,
+			conversionContext: append(params.conversionContext, destinationType),
+			assignmentHandler: assignmentHandlerDefine,
+		})
 
 	// Append the final statement
 	innerStatements = append(innerStatements, astbuilder.AppendList(params.destination, typedVarIdent))
@@ -386,12 +388,14 @@ func (builder *convertToArmBuilder) convertComplexMapProperty(
 	}
 
 	innerStatements := builder.toArmComplexPropertyConversion(
-		params.withSource(valueIdent).
-			withDestination(typedVarIdent).
-			withDestinationType(destinationType.ValueType()).
-			withNameHint(elemIdent.Name).
-			withAdditionalConversionContext(destinationType).
-			withAssignmentHandler(assignmentHandlerDefine))
+		complexPropertyConversionParameters{
+			source:            valueIdent,
+			destination:       typedVarIdent,
+			destinationType:   destinationType.ValueType(),
+			nameHint:          elemIdent.Name,
+			conversionContext: append(params.conversionContext, destinationType),
+			assignmentHandler: assignmentHandlerDefine,
+		})
 
 	// Append the final statement
 	innerStatements = append(innerStatements, astbuilder.InsertMap(params.destination, keyIdent, typedVarIdent))

@@ -355,12 +355,14 @@ func (builder *convertFromArmBuilder) convertComplexArrayProperty(
 		Tok:   token.DEFINE,
 		Body: &ast.BlockStmt{
 			List: builder.fromArmComplexPropertyConversion(
-				params.withSource(itemIdent).
-					withDestination(actualDestination).
-					withDestinationType(elemType).
-					withNameHint(elemIdent.Name).
-					withAdditionalConversionContext(destinationType).
-					withAssignmentHandler(astbuilder.AppendList)),
+				complexPropertyConversionParameters{
+					source:            itemIdent,
+					destination:       actualDestination,
+					destinationType:   elemType,
+					nameHint:          elemIdent.Name,
+					conversionContext: append(params.conversionContext, destinationType),
+					assignmentHandler: astbuilder.AppendList,
+				}),
 		},
 	}
 	results = append(results, result)
@@ -426,12 +428,14 @@ func (builder *convertFromArmBuilder) convertComplexMapProperty(
 		Tok:   token.DEFINE,
 		Body: &ast.BlockStmt{
 			List: builder.fromArmComplexPropertyConversion(
-				params.withSource(valueIdent).
-					withDestination(actualDestination).
-					withDestinationType(destinationType.ValueType()).
-					withNameHint(elemIdent.Name).
-					withAdditionalConversionContext(destinationType).
-					withAssignmentHandler(handler)),
+				complexPropertyConversionParameters{
+					source:            valueIdent,
+					destination:       actualDestination,
+					destinationType:   destinationType.ValueType(),
+					nameHint:          elemIdent.Name,
+					conversionContext: append(params.conversionContext, destinationType),
+					assignmentHandler: handler,
+				}),
 		},
 	}
 

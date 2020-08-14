@@ -1,19 +1,22 @@
 {
-    "$comment": "Test that a simple ARM resource renders spec and other fields properly",
+    "$comment": "Test that an ARM resource graph with various owners renders each resource properly. In this test, A owns B which owns C",
     "id": "https://test.test/schemas/2020-01-01/test.json",
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Test",
     "type": "object",
     "properties": {
-        "test": {
-            "$ref": "#/resourceDefinitions/FakeResource"
+        "a": {
+            "$ref": "#/resourceDefinitions/A"
         },
-        "dependent": {
-            "$ref": "#/resourceDefinitions/DependentResource"
+        "b": {
+            "$ref": "#/resourceDefinitions/B"
+        },
+        "c": {
+            "$ref": "#/resourceDefinitions/C"
         }
     },
     "resourceDefinitions": {
-        "DependentResource": {
+        "C": {
             "type": "object",
             "properties": {
                 "name": {
@@ -22,7 +25,7 @@
                 "type": {
                     "type": "string",
                     "enum": [
-                        "Microsoft.Azure/FakeResource"
+                        "Microsoft.Azure/C"
                     ]
                 },
                 "apiVersion": {
@@ -38,7 +41,7 @@
                 "apiVersion"
             ]
         },
-        "FakeResource": {
+        "B": {
             "type": "object",
             "properties": {
                 "name": {
@@ -47,7 +50,7 @@
                 "type": {
                     "type": "string",
                     "enum": [
-                        "Microsoft.Azure/FakeResource"
+                        "Microsoft.Azure/B"
                     ]
                 },
                 "apiVersion": {
@@ -61,7 +64,42 @@
                     "items": {
                         "oneOf": [
                             {
-                                "$ref": "#/resourceDefinitions/DependentResource"
+                                "$ref": "#/resourceDefinitions/C"
+                            }
+                        ]
+                    }
+                }
+            },
+            "required": [
+                "name",
+                "type",
+                "apiVersion"
+            ]
+        },
+        "A": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "Microsoft.Azure/A"
+                    ]
+                },
+                "apiVersion": {
+                    "type": "string",
+                    "enum": [
+                        "2020-06-01"
+                    ]
+                },
+                "resources": {
+                    "type": "array",
+                    "items": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/resourceDefinitions/B"
                             }
                         ]
                     }

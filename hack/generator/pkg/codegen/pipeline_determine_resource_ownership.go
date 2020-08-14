@@ -94,8 +94,8 @@ func extractChildResourcePropertyTypeDef(
 
 	// We're looking for a magical "Resources" property - if we don't find
 	// one just move on
-	resourcesProp := findResourcesProperty(specType)
-	if resourcesProp == nil {
+	resourcesProp, ok := specType.Property(resourcesPropertyName)
+	if !ok {
 		return nil, nil
 	}
 
@@ -113,7 +113,7 @@ func extractChildResourcePropertyTypeDef(
 	resourcesPropertyTypeName, ok := resourcesPropArray.Element().(astmodel.TypeName)
 	if !ok {
 		return nil, errors.Errorf(
-			"Resource %s has spec %s with Resources property whose type is array but whose inner type is not TypeName, instead it is %T",
+			"Resource %s has spec %s with Resources property of type array but whose inner type is not TypeName, instead being %T",
 			resourceName,
 			resourceSpecName,
 			resourcesPropArray.Element())
@@ -134,7 +134,6 @@ func resolveResourcesTypeNames(
 
 	// Each property type is a subresource type
 	for _, prop := range resourcesPropertyType.Properties() {
-		// TODO: Do we need a recursive function here since this can also be a OneOf?
 		optionalType, ok := prop.PropertyType().(*astmodel.OptionalType)
 		if !ok {
 			return nil, errors.Errorf(
@@ -196,7 +195,7 @@ func updateChildResourceDefinitionsWithOwner(
 		// TODO: I think for these we will need to walk the graph of types and do a structural
 		// TODO: equality check to find the name of the actual resource, but we can't do that check
 		// TODO: now because these types allOf inherit from resourceBase and the actual resources
-		// TODO: being referenced do not. See:
+		// TODO: being referenced do not. See: https://github.com/Azure/k8s-infra/issues/211
 		if typeName.Name() == "VirtualMachinesSpec_Resources" || // Uses allof inheritance
 			typeName.Name() == "AccountSpec_Resources" || // Uses allof inheritance
 			typeName.Name() == "SitesSpec_Resources" || // Uses allof inheritance
@@ -222,12 +221,7 @@ func updateChildResourceDefinitionsWithOwner(
 		}
 
 		childResourceDef = childResourceDef.WithType(childResource.WithOwner(&owningResourceName))
-
-		// There can be overwrites here because updatedDefs contains all resources we're processing and it's possible
-		// to have a resource graph where A owns B owns C, but we process B first, resulting in B having the "Resources" property
-		// removed and being put into the updatedDefs, and then we process A which will try to add an owner to B which is already
-		// in updatedDefs. Because order doesn't matter here we're okay with an overwrite.
-		updatedDefs[typeName] = childResourceDef
+		updatedDefs.Add(childResourceDef)
 	}
 
 	return nil
@@ -239,7 +233,7 @@ func setResourceGroupOwnerForResourcesWithNoOwner(
 
 	// Go over all of the resource types and flag any that don't have an owner as having resource group as their owner
 	for _, def := range definitions {
-		// Check if we've already modified this type
+		// Check if we've already modified this type - we need to use the already modified value
 		if updatedDef, ok := updatedDefs[def.Name()]; ok {
 			def = updatedDef
 		}
@@ -280,14 +274,4 @@ func combineNewAndExistingDefs(definitions astmodel.Types, updatedDefs astmodel.
 	}
 
 	return results
-}
-
-func findResourcesProperty(resourceSpec *astmodel.ObjectType) *astmodel.PropertyDefinition {
-	for _, prop := range resourceSpec.Properties() {
-		if prop.PropertyName() == resourcesPropertyName {
-			return prop
-		}
-	}
-
-	return nil
 }

@@ -72,6 +72,11 @@ func (property *PropertyDefinition) WithType(newType Type) *PropertyDefinition {
 	return &result
 }
 
+// HasName returns true if the property has the given name
+func (property *PropertyDefinition) HasName(name PropertyName) bool {
+	return property.propertyName == name
+}
+
 // WithValidation adds the given validation to the property's set of validations
 func (property *PropertyDefinition) WithValidation(validation Validation) *PropertyDefinition {
 	result := *property
