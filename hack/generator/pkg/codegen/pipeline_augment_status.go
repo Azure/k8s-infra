@@ -133,14 +133,6 @@ type swaggerTypes struct {
 	otherTypes astmodel.Types
 }
 
-// TODO: is there, perhaps, a way to detect these without hardcoding these paths?
-var skipDirectories = []string{
-	"/examples/",
-	"/quickstart-templates/",
-	"/control-plane/",
-	"/data-plane/",
-}
-
 func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, config *config.Configuration) (swaggerTypes, error) {
 
 	result := swaggerTypes{
@@ -190,9 +182,27 @@ func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, 
 	return result, nil
 }
 
+// TODO: is there, perhaps, a way to detect these without hardcoding these paths?
+var skipDirectories = []string{
+	"/examples/",
+	"/quickstart-templates/",
+	"/control-plane/",
+	"/data-plane/",
+}
+
+func shouldSkipDir(filePath string) bool {
+	for _, skipDir := range skipDirectories {
+		if strings.Contains(filePath, skipDir) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // loadAllSchemas walks all .json files in the given rootPath in directories
 // of the form "Microsoft.GroupName/…/2000-01-01/…" (excluding those matching
-// skipDirectories), and returns those files in a map of path→swagger spec.
+// shouldSkipDir), and returns those files in a map of path→swagger spec.
 func loadAllSchemas(
 	ctx context.Context,
 	rootPath string) (map[string]spec.Swagger, error) {
@@ -212,10 +222,8 @@ func loadAllSchemas(
 			return ctx.Err()
 		}
 
-		for _, skipDir := range skipDirectories {
-			if strings.Contains(filePath, skipDir) {
-				return filepath.SkipDir // this is a magic error
-			}
+		if shouldSkipDir(filePath) {
+			return filepath.SkipDir // this is a magic error
 		}
 
 		if !fileInfo.IsDir() &&
