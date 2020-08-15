@@ -188,27 +188,24 @@ func (schema *OpenAPISchema) isRef() bool {
 	return schema.inner.Ref.GetURL() != nil
 }
 
-type filePathAndSwagger struct {
-	filePath string
-	swagger  spec.Swagger
-}
-
 // fetchFileRelative fetches the schema for the relative path created by combining 'baseFileName' and 'url'
-func (fileCache *OpenAPISchemaCache) fetchFileRelative(baseFileName string, url *url.URL) (filePathAndSwagger, error) {
-	result := filePathAndSwagger{}
+func (fileCache *OpenAPISchemaCache) fetchFileRelative(baseFileName string, url *url.URL) (string, spec.Swagger, error) {
+	path := ""
+	swagger := spec.Swagger{}
+
 	if url.IsAbs() {
-		return result, errors.Errorf("only relative URLs can be handled")
+		return path, swagger, errors.Errorf("only relative URLs can be handled")
 	}
 
 	fileURL, err := url.Parse("file://" + baseFileName)
 	if err != nil {
-		return result, errors.Wrapf(err, "cannot convert filename to file URI")
+		return path, swagger, errors.Wrapf(err, "cannot convert filename to file URI")
 	}
 
-	result.filePath = fileURL.ResolveReference(url).Path
-	result.swagger, err = fileCache.fetchFileAbsolute(result.filePath)
+	path = fileURL.ResolveReference(url).Path
+	swagger, err = fileCache.fetchFileAbsolute(path)
 
-	return result, err
+	return path, swagger, err
 }
 
 // fetchFileAbsolute fetches the schema for the absolute path specified
@@ -237,17 +234,15 @@ func (fileCache *OpenAPISchemaCache) fetchFileAbsolute(filePath string) (spec.Sw
 func (schema *OpenAPISchema) refSchema() Schema {
 	var fileName string
 	var root spec.Swagger
+	var err error
+
 	if !schema.inner.Ref.HasFragmentOnly {
-		loaded, err := schema.cache.fetchFileRelative(schema.fileName, schema.inner.Ref.GetURL())
+		fileName, root, err = schema.cache.fetchFileRelative(schema.fileName, schema.inner.Ref.GetURL())
 		if err != nil {
 			panic(err)
 		}
-
-		root = loaded.swagger
-		fileName = loaded.filePath
 	} else {
-		root = schema.root
-		fileName = schema.fileName
+		fileName, root = schema.fileName, schema.root
 	}
 
 	reffed := objectNameFromPointer(schema.inner.Ref.GetPointer())
