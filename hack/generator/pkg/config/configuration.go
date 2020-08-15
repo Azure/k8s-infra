@@ -43,7 +43,7 @@ func LoadConfiguration(configurationFile string) (*Configuration, error) {
 
 	err = yaml.Unmarshal(data, result)
 	if err != nil {
-		return nil, errors.Wrapf(err, "configuration file loaded from %q is invalid", configurationFile)
+		return nil, errors.Wrapf(err, "configuration file loaded from %q is not valid YAML", configurationFile)
 	}
 
 	err = result.initialize(configurationFile)
