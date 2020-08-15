@@ -145,7 +145,7 @@ func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, 
 		return swaggerTypes{}, err
 	}
 
-	cache := jsonast.MakeOpenAPISchemaCache(schemas)
+	cache := jsonast.NewOpenAPISchemaCache(schemas)
 
 	for schemaPath, schema := range schemas {
 		// these have already been tested in the loadAllSchemas function so are guaranteed to match

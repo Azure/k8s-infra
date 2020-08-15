@@ -26,23 +26,6 @@ type OpenAPISchema struct {
 	cache *OpenAPISchemaCache
 }
 
-// OpenAPISchemaCache is a cache of schema that have been loaded,
-// identified by file path
-type OpenAPISchemaCache struct {
-	files map[string]spec.Swagger
-}
-
-// MakeOpenAPISchemaCache creates an OpenAPISchemaCache with the initial
-// file path → spec mapping
-func MakeOpenAPISchemaCache(specs map[string]spec.Swagger) *OpenAPISchemaCache {
-	files := make(map[string]spec.Swagger)
-	for specPath, spec := range specs {
-		files[specPath] = spec
-	}
-
-	return &OpenAPISchemaCache{files}
-}
-
 // MakeOpenAPISchema wrapes a spec.Swagger to conform to the Schema abstraction
 func MakeOpenAPISchema(
 	schema spec.Schema,
@@ -188,49 +171,6 @@ func (schema *OpenAPISchema) isRef() bool {
 	return schema.inner.Ref.GetURL() != nil
 }
 
-// fetchFileRelative fetches the schema for the relative path created by combining 'baseFileName' and 'url'
-func (fileCache *OpenAPISchemaCache) fetchFileRelative(baseFileName string, url *url.URL) (string, spec.Swagger, error) {
-	path := ""
-	swagger := spec.Swagger{}
-
-	if url.IsAbs() {
-		return path, swagger, errors.Errorf("only relative URLs can be handled")
-	}
-
-	fileURL, err := url.Parse("file://" + baseFileName)
-	if err != nil {
-		return path, swagger, errors.Wrapf(err, "cannot convert filename to file URI")
-	}
-
-	path = fileURL.ResolveReference(url).Path
-	swagger, err = fileCache.fetchFileAbsolute(path)
-
-	return path, swagger, err
-}
-
-// fetchFileAbsolute fetches the schema for the absolute path specified
-func (fileCache *OpenAPISchemaCache) fetchFileAbsolute(filePath string) (spec.Swagger, error) {
-	if swagger, ok := fileCache.files[filePath]; ok {
-		return swagger, nil
-	}
-
-	var swagger spec.Swagger
-
-	fileContent, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return swagger, errors.Wrap(err, "unable to read swagger file")
-	}
-
-	err = swagger.UnmarshalJSON(fileContent)
-	if err != nil {
-		return swagger, errors.Wrap(err, "unable to parse swagger file")
-	}
-
-	fileCache.files[filePath] = swagger
-
-	return swagger, err
-}
-
 func (schema *OpenAPISchema) refSchema() Schema {
 	var fileName string
 	var root spec.Swagger
@@ -285,4 +225,64 @@ func objectNameFromPointer(ptr *jsonpointer.Pointer) string {
 	}
 
 	return tokens[1]
+}
+
+// OpenAPISchemaCache is a cache of schema that have been loaded,
+// identified by file path
+type OpenAPISchemaCache struct {
+	files map[string]spec.Swagger
+}
+
+// NewOpenAPISchemaCache creates an OpenAPISchemaCache with the initial
+// file path → spec mapping
+func NewOpenAPISchemaCache(specs map[string]spec.Swagger) *OpenAPISchemaCache {
+	files := make(map[string]spec.Swagger)
+	for specPath, spec := range specs {
+		files[specPath] = spec
+	}
+
+	return &OpenAPISchemaCache{files}
+}
+
+// fetchFileRelative fetches the schema for the relative path created by combining 'baseFileName' and 'url'
+func (fileCache *OpenAPISchemaCache) fetchFileRelative(baseFileName string, url *url.URL) (string, spec.Swagger, error) {
+	path := ""
+	swagger := spec.Swagger{}
+
+	if url.IsAbs() {
+		return path, swagger, errors.Errorf("only relative URLs can be handled")
+	}
+
+	fileURL, err := url.Parse("file://" + baseFileName)
+	if err != nil {
+		return path, swagger, errors.Wrapf(err, "cannot convert filename to file URI")
+	}
+
+	path = fileURL.ResolveReference(url).Path
+	swagger, err = fileCache.fetchFileAbsolute(path)
+
+	return path, swagger, err
+}
+
+// fetchFileAbsolute fetches the schema for the absolute path specified
+func (fileCache *OpenAPISchemaCache) fetchFileAbsolute(filePath string) (spec.Swagger, error) {
+	if swagger, ok := fileCache.files[filePath]; ok {
+		return swagger, nil
+	}
+
+	var swagger spec.Swagger
+
+	fileContent, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return swagger, errors.Wrap(err, "unable to read swagger file")
+	}
+
+	err = swagger.UnmarshalJSON(fileContent)
+	if err != nil {
+		return swagger, errors.Wrap(err, "unable to parse swagger file")
+	}
+
+	fileCache.files[filePath] = swagger
+
+	return swagger, err
 }
