@@ -78,7 +78,7 @@ func (extractor *typeExtractor) extractTypes(
 	}
 
 	for _, def := range scanner.Definitions() {
-		// get generated-aside definitions too
+		// now add in the additional type definitions required by the resources
 		if existingDef, ok := otherTypes[def.Name()]; ok {
 			if !astmodel.TypeEquals(existingDef.Type(), def.Type()) {
 				klog.Errorf("type already defined differently: %v", def.Name())
