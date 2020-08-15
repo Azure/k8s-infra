@@ -20,6 +20,7 @@ import (
 	"github.com/Azure/k8s-infra/hack/generator/pkg/jsonast"
 	"github.com/go-openapi/spec"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 	"k8s.io/klog/v2"
 )
 
@@ -196,11 +197,10 @@ func loadAllSchemas(
 	ctx context.Context,
 	rootPath string) (map[string]spec.Swagger, error) {
 
-	var wg sync.WaitGroup
+	var eg errgroup.Group
 
 	var mutex sync.Mutex
 	schemas := make(map[string]spec.Swagger)
-	var sharedErr error
 
 	err := filepath.Walk(rootPath, func(filePath string, fileInfo os.FileInfo, err error) error {
 
@@ -224,46 +224,38 @@ func loadAllSchemas(
 			swaggerVersionRegex.MatchString(filePath) {
 
 			// all files are loaded in parallel to speed this up
-			wg.Add(1)
-			go func() {
-				fileContent, err := ioutil.ReadFile(filePath)
-
+			eg.Go(func() error {
 				var swagger spec.Swagger
+
+				fileContent, err := ioutil.ReadFile(filePath)
 				if err != nil {
-					err = errors.Wrap(err, "unable to read swagger file")
-				} else {
-					err = swagger.UnmarshalJSON(fileContent)
-					if err != nil {
-						err = errors.Wrap(err, "unable to parse swagger file")
-					}
+					return errors.Wrap(err, "unable to read swagger file")
+				}
+
+				err = swagger.UnmarshalJSON(fileContent)
+				if err != nil {
+					return errors.Wrap(err, "unable to parse swagger file")
 				}
 
 				mutex.Lock()
-				if err != nil {
-					// first error wins
-					if sharedErr == nil {
-						sharedErr = err
-					}
-				} else {
-					schemas[filePath] = swagger
-				}
-				mutex.Unlock() // not using defer as mutex must be unlocked before wg.Done() is invoked
+				schemas[filePath] = swagger
+				mutex.Unlock()
 
-				wg.Done()
-			}()
+				return nil
+			})
 		}
 
 		return nil
 	})
 
-	wg.Wait() // for files to finish loading
+	egErr := eg.Wait() // for files to finish loading
 
 	if err != nil {
 		return nil, err
 	}
 
-	if sharedErr != nil {
-		return nil, sharedErr
+	if egErr != nil {
+		return nil, egErr
 	}
 
 	return schemas, nil
