@@ -32,6 +32,11 @@ type Configuration struct {
 	TypeTransformers []*TypeTransformer `yaml:"typeTransformers"`
 }
 
+// NewConfiguration returns a new empty Configuration
+func NewConfiguration() *Configuration {
+	return &Configuration{}
+}
+
 // LoadConfiguration loads a `Configuration` from the specified file
 func LoadConfiguration(configurationFile string) (*Configuration, error) {
 	data, err := ioutil.ReadFile(configurationFile)
