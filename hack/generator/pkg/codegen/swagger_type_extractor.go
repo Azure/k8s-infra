@@ -64,14 +64,16 @@ func (extractor *typeExtractor) extractTypes(
 			continue // TODO: make fatal
 		}
 
-		if resourceType != nil {
-			if existingResource, ok := resources[resourceName]; ok {
-				if !astmodel.TypeEquals(existingResource.Type(), resourceType) {
-					klog.Errorf("RESOURCE already defined differently 😱: %v (%s)", resourceName, filePath)
-				}
-			} else {
-				resources.Add(astmodel.MakeTypeDefinition(resourceName, resourceType))
+		if resourceType == nil {
+			continue
+		}
+
+		if existingResource, ok := resources[resourceName]; ok {
+			if !astmodel.TypeEquals(existingResource.Type(), resourceType) {
+				klog.Errorf("RESOURCE already defined differently 😱: %v (%s)", resourceName, filePath)
 			}
+		} else {
+			resources.Add(astmodel.MakeTypeDefinition(resourceName, resourceType))
 		}
 	}
 
