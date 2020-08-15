@@ -471,10 +471,6 @@ func generateDefinitionsFor(
 		return typeName, nil
 	}
 
-	if typeName.Name() == "SwaggerCustomDynamicProperties" {
-		fmt.Printf("%v\n", typeName)
-	}
-
 	// Add a placeholder to avoid recursive calls
 	// we will overwrite this later (this is checked below)
 	scanner.addEmptyTypeDefinition(typeName)
