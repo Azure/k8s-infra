@@ -246,12 +246,12 @@ func loadAllSchemas(
 
 				fileContent, err := ioutil.ReadFile(filePath)
 				if err != nil {
-					return errors.Wrap(err, "unable to read swagger file")
+					return errors.Wrapf(err, "unable to read swagger file %q", filePath)
 				}
 
 				err = swagger.UnmarshalJSON(fileContent)
 				if err != nil {
-					return errors.Wrap(err, "unable to parse swagger file")
+					return errors.Wrapf(err, "unable to parse swagger file %q", filePath)
 				}
 
 				mutex.Lock()

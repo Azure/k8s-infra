@@ -273,12 +273,12 @@ func (fileCache OpenAPISchemaCache) fetchFileAbsolute(filePath string) (spec.Swa
 
 	fileContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return swagger, errors.Wrap(err, "unable to read swagger file")
+		return swagger, errors.Wrapf(err, "unable to read swagger file %q", filePath)
 	}
 
 	err = swagger.UnmarshalJSON(fileContent)
 	if err != nil {
-		return swagger, errors.Wrap(err, "unable to parse swagger file")
+		return swagger, errors.Wrapf(err, "unable to parse swagger file %q", filePath)
 	}
 
 	fileCache.files[filePath] = swagger
