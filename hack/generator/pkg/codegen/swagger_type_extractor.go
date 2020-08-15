@@ -50,7 +50,7 @@ func (extractor *typeExtractor) extractTypes(
 
 		resourceName, err := extractor.resourceNameFromOperationPath(packageName, operationPath)
 		if err != nil {
-			klog.Errorf("unable to produce resource name for path %q: %v", operationPath, err)
+			klog.Error(err)
 			continue
 		}
 
@@ -94,7 +94,7 @@ func (extractor *typeExtractor) extractTypes(
 func (extractor *typeExtractor) resourceNameFromOperationPath(packageName string, operationPath string) (astmodel.TypeName, error) {
 	_, name, err := inferNameFromURLPath(operationPath)
 	if err != nil {
-		return astmodel.TypeName{}, errors.Wrapf(err, "unable to infer name from path")
+		return astmodel.TypeName{}, errors.Wrapf(err, "unable to infer name from path %q", operationPath)
 	}
 
 	packageRef := astmodel.MakeLocalPackageReference(extractor.idFactory.CreateGroupName(extractor.outputGroup), packageName)
