@@ -50,7 +50,7 @@ func (extractor *typeExtractor) extractTypes(
 
 		resourceName, err := extractor.resourceNameFromOperationPath(packageName, operationPath)
 		if err != nil {
-			klog.Errorf("unable to produce resource name for path %q (in %s): %v", operationPath, filePath, err)
+			klog.Errorf("unable to produce resource name for path %q: %v", operationPath, err)
 			continue
 		}
 
@@ -60,7 +60,7 @@ func (extractor *typeExtractor) extractTypes(
 				return err
 			}
 
-			klog.Errorf("unable to produce type for %v (in %s): %v", resourceName, filePath, err)
+			klog.Errorf("unable to produce type for %v: %v", resourceName, err)
 			continue // TODO: make fatal
 		}
 
@@ -70,7 +70,7 @@ func (extractor *typeExtractor) extractTypes(
 
 		if existingResource, ok := resources[resourceName]; ok {
 			if !astmodel.TypeEquals(existingResource.Type(), resourceType) {
-				klog.Errorf("RESOURCE already defined differently 😱: %v (%s)", resourceName, filePath)
+				klog.Errorf("RESOURCE already defined differently 😱: %v", resourceName)
 			}
 		} else {
 			resources.Add(astmodel.MakeTypeDefinition(resourceName, resourceType))
@@ -81,7 +81,7 @@ func (extractor *typeExtractor) extractTypes(
 		// get generated-aside definitions too
 		if existingDef, ok := otherTypes[def.Name()]; ok {
 			if !astmodel.TypeEquals(existingDef.Type(), def.Type()) {
-				klog.Errorf("type already defined differently: %v (%s)", def.Name(), filePath)
+				klog.Errorf("type already defined differently: %v", def.Name())
 			}
 		} else {
 			otherTypes.Add(def)

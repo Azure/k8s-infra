@@ -183,7 +183,7 @@ func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, 
 
 		err := extractor.extractTypes(ctx, schemaPath, schema, result.resources, result.otherTypes)
 		if err != nil {
-			return swaggerTypes{}, err
+			return swaggerTypes{}, errors.Wrapf(err, "error processing %q", schemaPath)
 		}
 	}
 
