@@ -126,8 +126,10 @@ func (extractor *typeExtractor) resourceTypeFromOperation(
 }
 
 // inferNameFromURLPath attempts to extract a name from a Swagger operation path
-// for example "…/Microsoft.GroupName/resourceType/{resourceId}" would result
-// in the name "ResourceType".
+// for example “…/Microsoft.GroupName/resourceType/{resourceId}” would result
+// in the name “ResourceType”. Child resources are treated by converting (e.g.)
+// “…/Microsoft.GroupName/resourceType/{parameterId}/differentType/{otherId}/something/{moreId}”
+// to “ResourceTypeDifferentTypeSomething”.
 func inferNameFromURLPath(operationPath string) (string, string, error) {
 
 	group := ""
