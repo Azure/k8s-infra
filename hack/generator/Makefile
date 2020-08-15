@@ -16,12 +16,8 @@ Q = $(if $(filter 1,$V),,@)
 .PHONY: all
 all: header-check fmt test gen-arm make-generated-code
 
-.PHONY: checkout-arm-submodule
-checkout-arm-submodule: $(info $(M) checking out azure-rest-api-specs...)
-	$(Q) git submodule update --init
-
 .PHONY: gen-arm
-gen-arm: build checkout-arm-submodule ; $(info $(M) running k8sinfra-gen gen…) @ ## Running gen
+gen-arm: build ; $(info $(M) running k8sinfra-gen gen…) @ ## Running gen
 	$(Q) ./bin/$(APP) gen azure-arm.yaml
 	# Run with verbosity 4 to see a stack trace for errors.
 	# $(Q) ./bin/$(APP) gen azure-arm.yaml -v 4
