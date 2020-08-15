@@ -21,7 +21,7 @@ import (
 type typeExtractor struct {
 	idFactory astmodel.IdentifierFactory
 	config    *config.Configuration
-	cache     *jsonast.OpenAPISchemaCache
+	cache     jsonast.OpenAPISchemaCache
 	// group for output types (e.g. Microsoft.Network.Frontdoor)
 	outputGroup   string
 	outputVersion string

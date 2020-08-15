@@ -22,8 +22,7 @@ type OpenAPISchema struct {
 	fileName  string
 	groupName string
 	version   string
-
-	cache *OpenAPISchemaCache
+	cache     OpenAPISchemaCache
 }
 
 // MakeOpenAPISchema wrapes a spec.Swagger to conform to the Schema abstraction
@@ -33,7 +32,7 @@ func MakeOpenAPISchema(
 	fileName string,
 	groupName string,
 	version string,
-	cache *OpenAPISchemaCache) Schema {
+	cache OpenAPISchemaCache) Schema {
 	return &OpenAPISchema{schema, root, fileName, groupName, version, cache}
 }
 
@@ -235,17 +234,17 @@ type OpenAPISchemaCache struct {
 
 // NewOpenAPISchemaCache creates an OpenAPISchemaCache with the initial
 // file path → spec mapping
-func NewOpenAPISchemaCache(specs map[string]spec.Swagger) *OpenAPISchemaCache {
+func NewOpenAPISchemaCache(specs map[string]spec.Swagger) OpenAPISchemaCache {
 	files := make(map[string]spec.Swagger)
 	for specPath, spec := range specs {
 		files[specPath] = spec
 	}
 
-	return &OpenAPISchemaCache{files}
+	return OpenAPISchemaCache{files}
 }
 
 // fetchFileRelative fetches the schema for the relative path created by combining 'baseFileName' and 'url'
-func (fileCache *OpenAPISchemaCache) fetchFileRelative(baseFileName string, url *url.URL) (string, spec.Swagger, error) {
+func (fileCache OpenAPISchemaCache) fetchFileRelative(baseFileName string, url *url.URL) (string, spec.Swagger, error) {
 	path := ""
 	swagger := spec.Swagger{}
 
@@ -265,7 +264,7 @@ func (fileCache *OpenAPISchemaCache) fetchFileRelative(baseFileName string, url 
 }
 
 // fetchFileAbsolute fetches the schema for the absolute path specified
-func (fileCache *OpenAPISchemaCache) fetchFileAbsolute(filePath string) (spec.Swagger, error) {
+func (fileCache OpenAPISchemaCache) fetchFileAbsolute(filePath string) (spec.Swagger, error) {
 	if swagger, ok := fileCache.files[filePath]; ok {
 		return swagger, nil
 	}
