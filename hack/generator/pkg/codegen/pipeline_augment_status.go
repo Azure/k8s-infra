@@ -59,29 +59,32 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 
 			newTypes := make(astmodel.Types)
 
-			resourceLookup, otherTypes := makeStatusLookup(swaggerTypes)
-			for _, otherType := range otherTypes {
-				newTypes.Add(otherType)
-			}
+			statusTypes := generateStatusTypes(swaggerTypes)
 
 			found := 0
 			notFound := 0
 			for typeName, typeDef := range types {
+				// for resources, try to find the matching Status type
 				if resource, ok := typeDef.Type().(*astmodel.ResourceType); ok {
-					if statusDef, ok := resourceLookup[typeName]; ok {
+					if statusDef, ok := statusTypes.resourceTypes[typeName]; ok {
 						klog.V(4).Infof("Swagger information found for %v", typeName)
 						newTypes.Add(astmodel.MakeTypeDefinition(typeName, resource.WithStatus(statusDef)))
 						found++
 					} else {
-						// TODO: eventually this will be a warning
+						// TODO: eventually this will be a warning/error
 						klog.V(2).Infof("No swagger information found for %v", typeName)
 						newTypes.Add(typeDef)
 						notFound++
 					}
 				} else {
+					// other types are simply copied
 					newTypes.Add(typeDef)
 				}
 			}
+
+			// all non-resources are added regardless of whether they are used
+			// if they are not used they will be pruned off by a later pipeline stage
+			newTypes.AddAll(statusTypes.otherTypes)
 
 			klog.V(1).Infof("Found status information for %v resources", found)
 			klog.V(1).Infof("Missing status information for %v resources", notFound)
@@ -92,35 +95,41 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 	}
 }
 
-type resourceLookup map[astmodel.TypeName]astmodel.Type
+type statusTypes struct {
+	// resourceTypes maps Spec name to corresponding Status type
+	resourceTypes map[astmodel.TypeName]astmodel.Type
 
-// makeStatusLookup makes a map of old name (non-status name) to status type
-func makeStatusLookup(swaggerTypes swaggerTypes) (resourceLookup, []astmodel.TypeDefinition) {
-	statusVisitor := makeStatusVisitor()
+	// otherTypes has all other Status types renamed to avoid clashes with Spec Types
+	otherTypes []astmodel.TypeDefinition
+}
+
+// generateStatusTypes returns the statusTypes for the input swaggerTypes
+func generateStatusTypes(swaggerTypes swaggerTypes) statusTypes {
+	appendStatusToName := func(typeName astmodel.TypeName) astmodel.TypeName {
+		return astmodel.MakeTypeName(typeName.PackageReference, typeName.Name()+"_Status")
+	}
+
+	renamer := makeRenamingVisitor(appendStatusToName)
 
 	var otherTypes []astmodel.TypeDefinition
-	for typeName, typeDef := range swaggerTypes.otherTypes {
-		newName := appendStatusToName(typeName)
-		otherTypes = append(otherTypes, astmodel.MakeTypeDefinition(newName, statusVisitor.Visit(typeDef.Type(), nil)))
+	for _, typeDef := range swaggerTypes.otherTypes {
+		otherTypes = append(otherTypes, renamer.VisitDefinition(typeDef, nil))
 	}
 
-	resources := make(resourceLookup)
+	resourceLookup := make(map[astmodel.TypeName]astmodel.Type)
 	for resourceName, resourceDef := range swaggerTypes.resources {
-		resources[resourceName] = statusVisitor.Visit(resourceDef.Type(), nil)
+		// resourceName is not renamed as this is a lookup for the Spec type
+		resourceLookup[resourceName] = renamer.Visit(resourceDef.Type(), nil)
 	}
 
-	return resources, otherTypes
+	return statusTypes{resourceLookup, otherTypes}
 }
 
-func appendStatusToName(typeName astmodel.TypeName) astmodel.TypeName {
-	return astmodel.MakeTypeName(typeName.PackageReference, typeName.Name()+"_Status")
-}
-
-func makeStatusVisitor() astmodel.TypeVisitor {
+func makeRenamingVisitor(rename func(astmodel.TypeName) astmodel.TypeName) astmodel.TypeVisitor {
 	visitor := astmodel.MakeTypeVisitor()
 
 	visitor.VisitTypeName = func(this *astmodel.TypeVisitor, it astmodel.TypeName, ctx interface{}) astmodel.Type {
-		return appendStatusToName(it)
+		return rename(it)
 	}
 
 	return visitor

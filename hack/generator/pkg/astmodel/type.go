@@ -44,6 +44,13 @@ func (types Types) Add(def TypeDefinition) {
 	types[key] = def
 }
 
+// AddAll adds all specified types to the set, with checks they have not already been defined
+func (types Types) AddAll(ts []TypeDefinition) {
+	for _, t := range ts {
+		types.Add(t)
+	}
+}
+
 // TypeEquals decides if the types are the same and handles the `nil` case
 func TypeEquals(left, right Type) bool {
 	if left == nil {
@@ -92,6 +99,14 @@ func (tv *TypeVisitor) Visit(t Type, ctx interface{}) Type {
 	}
 
 	panic(fmt.Sprintf("unhandled type: (%T) %v", t, t))
+}
+
+// VisitDefinition invokes the TypeVisitor on both the name and type of the definition
+// NB: this is only valid if VisitTypeName returns a TypeName and not generally a Type
+func (tv *TypeVisitor) VisitDefinition(td TypeDefinition, ctx interface{}) TypeDefinition {
+	return MakeTypeDefinition(
+		tv.VisitTypeName(tv, td.Name(), ctx).(TypeName),
+		tv.Visit(td.Type(), ctx))
 }
 
 // MakeTypeVisitor returns a default (identity transform) visitor, which
