@@ -18,7 +18,13 @@ func Example_inferNameFromURLPath() {
 	// Output: Microsoft.GroupName: ResourceName
 }
 
-func TestInferNameFromURLPath_FailsWithMultipleParametersInARow(t *testing.T) {
+func Example_inferNameFromURLPath_ChildResources() {
+	group, name, _ := inferNameFromURLPath("/Microsoft.GroupName/resourceName/{resourceId}/someChild/{childId}")
+	fmt.Printf("%s: %s", group, name)
+	// Output: Microsoft.GroupName: ResourceNameSomeChild
+}
+
+func Test_InferNameFromURLPath_FailsWithMultipleParametersInARow(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	_, _, err := inferNameFromURLPath("/Microsoft.GroupName/resourceName/{resourceId}/{anotherParameter}")
@@ -26,7 +32,7 @@ func TestInferNameFromURLPath_FailsWithMultipleParametersInARow(t *testing.T) {
 	g.Expect(err.Error()).To(ContainSubstring("multiple parameters"))
 }
 
-func TestInferNameFromURLPath_FailsWithNoGroupName(t *testing.T) {
+func Test_InferNameFromURLPath_FailsWithNoGroupName(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	_, _, err := inferNameFromURLPath("/resourceName/{resourceId}/{anotherParameter}")
