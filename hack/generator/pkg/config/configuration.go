@@ -6,9 +6,11 @@
 package config
 
 import (
+	"io/ioutil"
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
@@ -28,6 +30,28 @@ type Configuration struct {
 	TypeFilters []*TypeFilter `yaml:"typeFilters"`
 	// Transformers used to remap types
 	TypeTransformers []*TypeTransformer `yaml:"typeTransformers"`
+}
+
+// LoadConfiguration loads a `Configuration` from the specified file
+func LoadConfiguration(configurationFile string) (*Configuration, error) {
+	data, err := ioutil.ReadFile(configurationFile)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &Configuration{}
+
+	err = yaml.Unmarshal(data, result)
+	if err != nil {
+		return nil, errors.Wrapf(err, "configuration file loaded from %q is invalid", configurationFile)
+	}
+
+	err = result.initialize(configurationFile)
+	if err != nil {
+		return nil, errors.Wrapf(err, "configuration file loaded from %q is invalid", configurationFile)
+	}
+
+	return result, nil
 }
 
 // ShouldExportResult is returned by ShouldExport to indicate whether the supplied type should be exported
@@ -50,12 +74,6 @@ const (
 	Prune ShouldPruneResult = "prune"
 )
 
-// NewConfiguration is a convenience factory for Configuration
-func NewConfiguration() *Configuration {
-	result := Configuration{}
-	return &result
-}
-
 // WithExportFilters adds the provided ExportFilters to the configurations collection of ExportFilters
 func (config *Configuration) WithExportFilters(filters ...*ExportFilter) *Configuration {
 	result := *config
@@ -64,9 +82,9 @@ func (config *Configuration) WithExportFilters(filters ...*ExportFilter) *Config
 	return &result
 }
 
-// Initialize checks for common errors and initializes structures inside the configuration
+// initialize checks for common errors and initializes structures inside the configuration
 // which need additional setup after json deserialization
-func (config *Configuration) Initialize(myLocation string) error {
+func (config *Configuration) initialize(configPath string) error {
 	if config.SchemaURL == "" {
 		return errors.New("SchemaURL missing")
 	}
@@ -99,7 +117,7 @@ func (config *Configuration) Initialize(myLocation string) error {
 	}
 
 	// make Status.SchemaRoot an absolute path
-	absLocation, err := filepath.Abs(myLocation)
+	absLocation, err := filepath.Abs(configPath)
 	if err != nil {
 		errs = append(errs, err)
 	} else {
