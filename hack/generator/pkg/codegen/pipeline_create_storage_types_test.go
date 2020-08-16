@@ -13,10 +13,10 @@ import (
 )
 
 const (
-	testGroup   = "demo"
-	testVersion = "v20200801"
+	testGroup      = "demo"
+	testVersion    = "v20200801"
 	testObjectName = "anObject"
-	testEnumName = "anEnum"
+	testEnumName   = "anEnum"
 )
 
 /*
