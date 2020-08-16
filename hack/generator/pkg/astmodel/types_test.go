@@ -87,7 +87,7 @@ func Test_TypesWhere_GivenPredicate_ReturnsExpectedSet(t *testing.T) {
 func Test_TypesExcept_GivenEmptySet_ReturnsExpectedSet(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	types := createTestTypes(alphaDefinition, betaDefinition, gammaDefinition, deltaDefinition);
+	types := createTestTypes(alphaDefinition, betaDefinition, gammaDefinition, deltaDefinition)
 	empty := make(Types)
 	set := types.Except(empty)
 
@@ -101,7 +101,7 @@ func Test_TypesExcept_GivenEmptySet_ReturnsExpectedSet(t *testing.T) {
 func Test_TypesExcept_GivenSelf_ReturnsEmptySet(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	types := createTestTypes(alphaDefinition, betaDefinition, gammaDefinition, deltaDefinition);
+	types := createTestTypes(alphaDefinition, betaDefinition, gammaDefinition, deltaDefinition)
 	set := types.Except(types)
 
 	g.Expect(len(set)).To(Equal(0))
@@ -110,8 +110,8 @@ func Test_TypesExcept_GivenSelf_ReturnsEmptySet(t *testing.T) {
 func Test_TypesExcept_GivenSubset_ReturnsExpectedSet(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	types := createTestTypes(alphaDefinition, betaDefinition, gammaDefinition, deltaDefinition);
-	subset := createTestTypes(alphaDefinition, betaDefinition);
+	types := createTestTypes(alphaDefinition, betaDefinition, gammaDefinition, deltaDefinition)
+	subset := createTestTypes(alphaDefinition, betaDefinition)
 	set := types.Except(subset)
 
 	g.Expect(len(set)).To(Equal(2))
