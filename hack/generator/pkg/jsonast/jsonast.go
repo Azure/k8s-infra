@@ -154,11 +154,8 @@ func (scanner *SchemaScanner) GenerateDefinitions(ctx context.Context, schema Sc
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to extract group for schema")
 	}
-
-	rootVersion, err := versionOf(rootURL)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to extract version for schema")
-	}
+  
+	rootVersion := versionOf(url)
 
 	rootPackage := astmodel.MakeLocalPackageReference(
 		scanner.idFactory.CreateGroupName(rootGroup),
@@ -492,8 +489,10 @@ func generateDefinitionsFor(
 		result = astmodel.NewResourceType(result, nil)
 	}
 
-	description := fmt.Sprintf("Generated from: %s", schema.url().String())
-	definition := astmodel.MakeTypeDefinition(typeName, result).WithDescription(&description)
+	description := []string{
+    fmt.Sprintf("Generated from: %s", schema.url().String()),
+	}
+	definition := astmodel.MakeTypeDefinition(typeName, result).WithDescription(description)
 
 	scanner.addTypeDefinition(definition)
 
@@ -777,9 +776,18 @@ func GetPrimitiveType(name SchemaType) (*astmodel.PrimitiveType, error) {
 		return astmodel.FloatType, nil
 	case Bool:
 		return astmodel.BoolType, nil
-	default:
+	case AllOf:
+	case AnyOf:
+	case Array:
+	case Enum:
+	case Object:
+	case OneOf:
+	case Ref:
+	case Unknown:
 		return astmodel.AnyType, errors.Errorf("%s is not a simple type and no ast.NewIdent can be created", name)
 	}
+
+	panic(fmt.Sprintf("unhandled case in getPrimitiveType: %s", name)) // this is also checked by linter
 }
 
 func appendIfUniqueType(slice []astmodel.Type, item astmodel.Type) []astmodel.Type {
