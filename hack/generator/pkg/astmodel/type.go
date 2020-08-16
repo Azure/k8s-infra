@@ -77,3 +77,10 @@ func TypeEquals(left, right Type) bool {
 
 	return left.Equals(right)
 }
+
+// Copy makes an independent copy of this set of types
+func (types Types) Copy() Types {
+	result := make(Types)
+	result.AddAll(types)
+	return result
+}
