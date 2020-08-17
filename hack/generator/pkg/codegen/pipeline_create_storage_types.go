@@ -16,7 +16,7 @@ import (
 // upgrade. This is of course a bit odd for the first release, but defining the approach from day one is useful.
 func createStorageTypes() PipelineStage {
 	return PipelineStage{
-		id: "createStorage",
+		id:          "createStorage",
 		description: "Create storage versions of CRD types",
 		Action: func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 			t := make(astmodel.Types)
