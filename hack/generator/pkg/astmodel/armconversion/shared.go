@@ -98,14 +98,14 @@ func NewArmTransformerImpl(
 	isResource bool) *astmodel.InterfaceImplementation {
 
 	funcs := map[string]astmodel.Function{
-		"ToArm": &ArmConversionFunction{
+		"ConvertToArm": &ArmConversionFunction{
 			armTypeName: armTypeName,
 			armType:     armType,
 			idFactory:   idFactory,
 			direction:   ConversionDirectionToArm,
 			isResource:  isResource,
 		},
-		"FromArm": &ArmConversionFunction{
+		"PopulateFromArm": &ArmConversionFunction{
 			armTypeName: armTypeName,
 			armType:     armType,
 			idFactory:   idFactory,

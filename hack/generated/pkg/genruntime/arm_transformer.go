@@ -14,8 +14,8 @@ import (
 type ArmTransformer interface {
 	// owningName is the "a/b/c" name for the owner. For example this would be "VNet1" when deploying subnet1
 	// or myaccount when creating Batch pool1
-	ToArm(owningName string) (interface{}, error)
-	FromArm(owner KnownResourceReference, input interface{}) error
+	ConvertToArm(owningName string) (interface{}, error)
+	PopulateFromArm(owner KnownResourceReference, input interface{}) error
 }
 
 // CreateArmResourceNameForDeployment creates a "fully qualified" resource name for use

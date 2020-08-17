@@ -59,65 +59,8 @@ type FakeResourceSpec struct {
 
 var _ genruntime.ArmTransformer = &FakeResourceSpec{}
 
-// FromArm converts from an Azure ARM object to a Kubernetes CRD object
-func (fakeResourceSpec *FakeResourceSpec) FromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(FakeResourceSpecArm)
-	if !ok {
-		return fmt.Errorf("unexpected type supplied for FromArm function. Expected FakeResourceSpecArm, got %T", armInput)
-	}
-	fakeResourceSpec.ApiVersion = typedInput.ApiVersion
-	fakeResourceSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
-	var err error
-	if typedInput.MapFoo != nil {
-		fakeResourceSpec.MapFoo = make(map[string]Foo)
-		for key, value := range typedInput.MapFoo {
-			elem := Foo{}
-			err = elem.FromArm(owner, value)
-			if err != nil {
-				return err
-			}
-			fakeResourceSpec.MapFoo[key] = elem
-		}
-	}
-	if typedInput.MapOfArrays != nil {
-		fakeResourceSpec.MapOfArrays = make(map[string][]Foo)
-		for key, value := range typedInput.MapOfArrays {
-			var elem []Foo
-			for _, item := range value {
-				elem1 := Foo{}
-				err = elem1.FromArm(owner, item)
-				if err != nil {
-					return err
-				}
-				elem = append(elem, elem1)
-			}
-			fakeResourceSpec.MapOfArrays[key] = elem
-		}
-	}
-	fakeResourceSpec.MapOfEnums = typedInput.MapOfEnums
-	if typedInput.MapOfMaps != nil {
-		fakeResourceSpec.MapOfMaps = make(map[string]map[string]Foo)
-		for key, value := range typedInput.MapOfMaps {
-			if value != nil {
-				elem := make(map[string]Foo)
-				for key, value := range value {
-					elem1 := Foo{}
-					err = elem1.FromArm(owner, value)
-					if err != nil {
-						return err
-					}
-					elem[key] = elem1
-				}
-				fakeResourceSpec.MapOfMaps[key] = elem
-			}
-		}
-	}
-	fakeResourceSpec.Owner = owner
-	return nil
-}
-
-// ToArm converts from a Kubernetes CRD object to an ARM object
-func (fakeResourceSpec *FakeResourceSpec) ToArm(owningName string) (interface{}, error) {
+// ConvertToArm converts from a Kubernetes CRD object to an ARM object
+func (fakeResourceSpec *FakeResourceSpec) ConvertToArm(owningName string) (interface{}, error) {
 	if fakeResourceSpec == nil {
 		return nil, nil
 	}
@@ -126,7 +69,7 @@ func (fakeResourceSpec *FakeResourceSpec) ToArm(owningName string) (interface{},
 	result.MapFoo = make(map[string]FooArm)
 	if fakeResourceSpec.MapFoo != nil {
 		for key, value := range fakeResourceSpec.MapFoo {
-			elem, err := value.ToArm(owningName)
+			elem, err := value.ConvertToArm(owningName)
 			if err != nil {
 				return nil, err
 			}
@@ -139,7 +82,7 @@ func (fakeResourceSpec *FakeResourceSpec) ToArm(owningName string) (interface{},
 		for key, value := range fakeResourceSpec.MapOfArrays {
 			var elemTyped []FooArm
 			for _, item := range value {
-				elem, err := item.ToArm(owningName)
+				elem, err := item.ConvertToArm(owningName)
 				if err != nil {
 					return nil, err
 				}
@@ -156,7 +99,7 @@ func (fakeResourceSpec *FakeResourceSpec) ToArm(owningName string) (interface{},
 			elemTyped := make(map[string]FooArm)
 			if value != nil {
 				for key, value := range value {
-					elem, err := value.ToArm(owningName)
+					elem, err := value.ConvertToArm(owningName)
 					if err != nil {
 						return nil, err
 					}
@@ -170,6 +113,63 @@ func (fakeResourceSpec *FakeResourceSpec) ToArm(owningName string) (interface{},
 	result.Name = genruntime.CreateArmResourceNameForDeployment(owningName, fakeResourceSpec.AzureName)
 	result.Type = FakeResourceSpecTypeMicrosoftAzureFakeResource
 	return result, nil
+}
+
+// PopulateFromArm converts from an Azure ARM object to a Kubernetes CRD object
+func (fakeResourceSpec *FakeResourceSpec) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(FakeResourceSpecArm)
+	if !ok {
+		return fmt.Errorf("unexpected type supplied for FromArm function. Expected FakeResourceSpecArm, got %T", armInput)
+	}
+	fakeResourceSpec.ApiVersion = typedInput.ApiVersion
+	fakeResourceSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
+	var err error
+	if typedInput.MapFoo != nil {
+		fakeResourceSpec.MapFoo = make(map[string]Foo)
+		for key, value := range typedInput.MapFoo {
+			elem := Foo{}
+			err = elem.PopulateFromArm(owner, value)
+			if err != nil {
+				return err
+			}
+			fakeResourceSpec.MapFoo[key] = elem
+		}
+	}
+	if typedInput.MapOfArrays != nil {
+		fakeResourceSpec.MapOfArrays = make(map[string][]Foo)
+		for key, value := range typedInput.MapOfArrays {
+			var elem []Foo
+			for _, item := range value {
+				elem1 := Foo{}
+				err = elem1.PopulateFromArm(owner, item)
+				if err != nil {
+					return err
+				}
+				elem = append(elem, elem1)
+			}
+			fakeResourceSpec.MapOfArrays[key] = elem
+		}
+	}
+	fakeResourceSpec.MapOfEnums = typedInput.MapOfEnums
+	if typedInput.MapOfMaps != nil {
+		fakeResourceSpec.MapOfMaps = make(map[string]map[string]Foo)
+		for key, value := range typedInput.MapOfMaps {
+			if value != nil {
+				elem := make(map[string]Foo)
+				for key, value := range value {
+					elem1 := Foo{}
+					err = elem1.PopulateFromArm(owner, value)
+					if err != nil {
+						return err
+					}
+					elem[key] = elem1
+				}
+				fakeResourceSpec.MapOfMaps[key] = elem
+			}
+		}
+	}
+	fakeResourceSpec.Owner = owner
+	return nil
 }
 
 // +kubebuilder:validation:Enum={"2020-06-01"}
@@ -194,24 +194,24 @@ type Foo struct {
 
 var _ genruntime.ArmTransformer = &Foo{}
 
-// FromArm converts from an Azure ARM object to a Kubernetes CRD object
-func (foo *Foo) FromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(FooArm)
-	if !ok {
-		return fmt.Errorf("unexpected type supplied for FromArm function. Expected FooArm, got %T", armInput)
-	}
-	foo.Name = typedInput.Name
-	return nil
-}
-
-// ToArm converts from a Kubernetes CRD object to an ARM object
-func (foo *Foo) ToArm(owningName string) (interface{}, error) {
+// ConvertToArm converts from a Kubernetes CRD object to an ARM object
+func (foo *Foo) ConvertToArm(owningName string) (interface{}, error) {
 	if foo == nil {
 		return nil, nil
 	}
 	result := FooArm{}
 	result.Name = foo.Name
 	return result, nil
+}
+
+// PopulateFromArm converts from an Azure ARM object to a Kubernetes CRD object
+func (foo *Foo) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(FooArm)
+	if !ok {
+		return fmt.Errorf("unexpected type supplied for FromArm function. Expected FooArm, got %T", armInput)
+	}
+	foo.Name = typedInput.Name
+	return nil
 }
 func init() {
 	SchemeBuilder.Register(&FakeResource{})

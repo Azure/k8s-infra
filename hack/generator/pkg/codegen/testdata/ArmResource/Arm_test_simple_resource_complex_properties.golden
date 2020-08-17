@@ -46,8 +46,34 @@ type FakeResourceSpec struct {
 
 var _ genruntime.ArmTransformer = &FakeResourceSpec{}
 
-// FromArm converts from an Azure ARM object to a Kubernetes CRD object
-func (fakeResourceSpec *FakeResourceSpec) FromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
+// ConvertToArm converts from a Kubernetes CRD object to an ARM object
+func (fakeResourceSpec *FakeResourceSpec) ConvertToArm(owningName string) (interface{}, error) {
+	if fakeResourceSpec == nil {
+		return nil, nil
+	}
+	result := FakeResourceSpecArm{}
+	result.ApiVersion = fakeResourceSpec.ApiVersion
+	result.Color = fakeResourceSpec.Color
+	foo, err := fakeResourceSpec.Foo.ConvertToArm(owningName)
+	if err != nil {
+		return nil, err
+	}
+	result.Foo = foo.(FooArm)
+	result.Name = genruntime.CreateArmResourceNameForDeployment(owningName, fakeResourceSpec.AzureName)
+	if fakeResourceSpec.OptionalFoo != nil {
+		optionalFoo, err := fakeResourceSpec.OptionalFoo.ConvertToArm(owningName)
+		if err != nil {
+			return nil, err
+		}
+		optionalFooTyped := optionalFoo.(FooArm)
+		result.OptionalFoo = &optionalFooTyped
+	}
+	result.Type = FakeResourceSpecTypeMicrosoftAzureFakeResource
+	return result, nil
+}
+
+// PopulateFromArm converts from an Azure ARM object to a Kubernetes CRD object
+func (fakeResourceSpec *FakeResourceSpec) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
 	typedInput, ok := armInput.(FakeResourceSpecArm)
 	if !ok {
 		return fmt.Errorf("unexpected type supplied for FromArm function. Expected FakeResourceSpecArm, got %T", armInput)
@@ -57,14 +83,14 @@ func (fakeResourceSpec *FakeResourceSpec) FromArm(owner genruntime.KnownResource
 	fakeResourceSpec.Color = typedInput.Color
 	var err error
 	foo := Foo{}
-	err = foo.FromArm(owner, typedInput.Foo)
+	err = foo.PopulateFromArm(owner, typedInput.Foo)
 	if err != nil {
 		return err
 	}
 	fakeResourceSpec.Foo = foo
 	if typedInput.OptionalFoo != nil {
 		optionalFoo := Foo{}
-		err = optionalFoo.FromArm(owner, typedInput.OptionalFoo)
+		err = optionalFoo.PopulateFromArm(owner, typedInput.OptionalFoo)
 		if err != nil {
 			return err
 		}
@@ -72,32 +98,6 @@ func (fakeResourceSpec *FakeResourceSpec) FromArm(owner genruntime.KnownResource
 	}
 	fakeResourceSpec.Owner = owner
 	return nil
-}
-
-// ToArm converts from a Kubernetes CRD object to an ARM object
-func (fakeResourceSpec *FakeResourceSpec) ToArm(owningName string) (interface{}, error) {
-	if fakeResourceSpec == nil {
-		return nil, nil
-	}
-	result := FakeResourceSpecArm{}
-	result.ApiVersion = fakeResourceSpec.ApiVersion
-	result.Color = fakeResourceSpec.Color
-	foo, err := fakeResourceSpec.Foo.ToArm(owningName)
-	if err != nil {
-		return nil, err
-	}
-	result.Foo = foo.(FooArm)
-	result.Name = genruntime.CreateArmResourceNameForDeployment(owningName, fakeResourceSpec.AzureName)
-	if fakeResourceSpec.OptionalFoo != nil {
-		optionalFoo, err := fakeResourceSpec.OptionalFoo.ToArm(owningName)
-		if err != nil {
-			return nil, err
-		}
-		optionalFooTyped := optionalFoo.(FooArm)
-		result.OptionalFoo = &optionalFooTyped
-	}
-	result.Type = FakeResourceSpecTypeMicrosoftAzureFakeResource
-	return result, nil
 }
 
 // +kubebuilder:validation:Enum={"2020-06-01"}
@@ -131,24 +131,24 @@ type Foo struct {
 
 var _ genruntime.ArmTransformer = &Foo{}
 
-// FromArm converts from an Azure ARM object to a Kubernetes CRD object
-func (foo *Foo) FromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(FooArm)
-	if !ok {
-		return fmt.Errorf("unexpected type supplied for FromArm function. Expected FooArm, got %T", armInput)
-	}
-	foo.Name = typedInput.Name
-	return nil
-}
-
-// ToArm converts from a Kubernetes CRD object to an ARM object
-func (foo *Foo) ToArm(owningName string) (interface{}, error) {
+// ConvertToArm converts from a Kubernetes CRD object to an ARM object
+func (foo *Foo) ConvertToArm(owningName string) (interface{}, error) {
 	if foo == nil {
 		return nil, nil
 	}
 	result := FooArm{}
 	result.Name = foo.Name
 	return result, nil
+}
+
+// PopulateFromArm converts from an Azure ARM object to a Kubernetes CRD object
+func (foo *Foo) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(FooArm)
+	if !ok {
+		return fmt.Errorf("unexpected type supplied for FromArm function. Expected FooArm, got %T", armInput)
+	}
+	foo.Name = typedInput.Name
+	return nil
 }
 func init() {
 	SchemeBuilder.Register(&FakeResource{})

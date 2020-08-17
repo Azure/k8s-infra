@@ -66,20 +66,8 @@ type ASpec struct {
 
 var _ genruntime.ArmTransformer = &ASpec{}
 
-// FromArm converts from an Azure ARM object to a Kubernetes CRD object
-func (aSpec *ASpec) FromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(ASpecArm)
-	if !ok {
-		return fmt.Errorf("unexpected type supplied for FromArm function. Expected ASpecArm, got %T", armInput)
-	}
-	aSpec.ApiVersion = typedInput.ApiVersion
-	aSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
-	aSpec.Owner = owner
-	return nil
-}
-
-// ToArm converts from a Kubernetes CRD object to an ARM object
-func (aSpec *ASpec) ToArm(owningName string) (interface{}, error) {
+// ConvertToArm converts from a Kubernetes CRD object to an ARM object
+func (aSpec *ASpec) ConvertToArm(owningName string) (interface{}, error) {
 	if aSpec == nil {
 		return nil, nil
 	}
@@ -88,6 +76,18 @@ func (aSpec *ASpec) ToArm(owningName string) (interface{}, error) {
 	result.Name = genruntime.CreateArmResourceNameForDeployment(owningName, aSpec.AzureName)
 	result.Type = ASpecTypeMicrosoftAzureA
 	return result, nil
+}
+
+// PopulateFromArm converts from an Azure ARM object to a Kubernetes CRD object
+func (aSpec *ASpec) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(ASpecArm)
+	if !ok {
+		return fmt.Errorf("unexpected type supplied for FromArm function. Expected ASpecArm, got %T", armInput)
+	}
+	aSpec.ApiVersion = typedInput.ApiVersion
+	aSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
+	aSpec.Owner = owner
+	return nil
 }
 
 // +kubebuilder:validation:Enum={"2020-06-01"}
@@ -115,20 +115,8 @@ type BSpec struct {
 
 var _ genruntime.ArmTransformer = &BSpec{}
 
-// FromArm converts from an Azure ARM object to a Kubernetes CRD object
-func (bSpec *BSpec) FromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(BSpecArm)
-	if !ok {
-		return fmt.Errorf("unexpected type supplied for FromArm function. Expected BSpecArm, got %T", armInput)
-	}
-	bSpec.ApiVersion = typedInput.ApiVersion
-	bSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
-	bSpec.Owner = owner
-	return nil
-}
-
-// ToArm converts from a Kubernetes CRD object to an ARM object
-func (bSpec *BSpec) ToArm(owningName string) (interface{}, error) {
+// ConvertToArm converts from a Kubernetes CRD object to an ARM object
+func (bSpec *BSpec) ConvertToArm(owningName string) (interface{}, error) {
 	if bSpec == nil {
 		return nil, nil
 	}
@@ -137,6 +125,18 @@ func (bSpec *BSpec) ToArm(owningName string) (interface{}, error) {
 	result.Name = genruntime.CreateArmResourceNameForDeployment(owningName, bSpec.AzureName)
 	result.Type = BSpecTypeMicrosoftAzureB
 	return result, nil
+}
+
+// PopulateFromArm converts from an Azure ARM object to a Kubernetes CRD object
+func (bSpec *BSpec) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(BSpecArm)
+	if !ok {
+		return fmt.Errorf("unexpected type supplied for FromArm function. Expected BSpecArm, got %T", armInput)
+	}
+	bSpec.ApiVersion = typedInput.ApiVersion
+	bSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
+	bSpec.Owner = owner
+	return nil
 }
 
 // +kubebuilder:validation:Enum={"2020-06-01"}
@@ -164,20 +164,8 @@ type CSpec struct {
 
 var _ genruntime.ArmTransformer = &CSpec{}
 
-// FromArm converts from an Azure ARM object to a Kubernetes CRD object
-func (cSpec *CSpec) FromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(CSpecArm)
-	if !ok {
-		return fmt.Errorf("unexpected type supplied for FromArm function. Expected CSpecArm, got %T", armInput)
-	}
-	cSpec.ApiVersion = typedInput.ApiVersion
-	cSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
-	cSpec.Owner = owner
-	return nil
-}
-
-// ToArm converts from a Kubernetes CRD object to an ARM object
-func (cSpec *CSpec) ToArm(owningName string) (interface{}, error) {
+// ConvertToArm converts from a Kubernetes CRD object to an ARM object
+func (cSpec *CSpec) ConvertToArm(owningName string) (interface{}, error) {
 	if cSpec == nil {
 		return nil, nil
 	}
@@ -186,6 +174,18 @@ func (cSpec *CSpec) ToArm(owningName string) (interface{}, error) {
 	result.Name = genruntime.CreateArmResourceNameForDeployment(owningName, cSpec.AzureName)
 	result.Type = CSpecTypeMicrosoftAzureC
 	return result, nil
+}
+
+// PopulateFromArm converts from an Azure ARM object to a Kubernetes CRD object
+func (cSpec *CSpec) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(CSpecArm)
+	if !ok {
+		return fmt.Errorf("unexpected type supplied for FromArm function. Expected CSpecArm, got %T", armInput)
+	}
+	cSpec.ApiVersion = typedInput.ApiVersion
+	cSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
+	cSpec.Owner = owner
+	return nil
 }
 
 // +kubebuilder:validation:Enum={"2020-06-01"}
