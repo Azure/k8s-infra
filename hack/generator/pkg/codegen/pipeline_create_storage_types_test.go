@@ -15,7 +15,8 @@ import (
 const (
 	testGroup   = "demo"
 	testVersion = "v20200801"
-	testName    = "testName"
+	testObjectName = "anObject"
+	testEnumName = "anEnum"
 )
 
 /*
@@ -25,7 +26,7 @@ const (
 func TestMapTypeName_GivenObjectReference_ReturnsNameInStoragePackage(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	objectName := createNameForTest(testName)
+	objectName := createNameForTest(testObjectName)
 	objectDefinition := createObjectDefinitionForTest(objectName)
 	types := createTypesForTest(objectDefinition)
 
@@ -33,7 +34,7 @@ func TestMapTypeName_GivenObjectReference_ReturnsNameInStoragePackage(t *testing
 
 	grp, pkg, _ := storageName.PackageReference.GroupAndPackage()
 
-	g.Expect(storageName.Name()).To(Equal(testName))
+	g.Expect(storageName.Name()).To(Equal(testObjectName))
 	g.Expect(grp).To(Equal(testGroup))
 	g.Expect(pkg).To(Equal("v20200801s"))
 }
@@ -41,7 +42,7 @@ func TestMapTypeName_GivenObjectReference_ReturnsNameInStoragePackage(t *testing
 func TestMapTypeName_GivenEnumReference_ReturnsOriginalName(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	enumName := createNameForTest(testName)
+	enumName := createNameForTest(testEnumName)
 	enumDefinition := createEnumDefinitionForTest(enumName)
 	types := createTypesForTest(enumDefinition)
 
@@ -49,7 +50,7 @@ func TestMapTypeName_GivenEnumReference_ReturnsOriginalName(t *testing.T) {
 
 	grp, pkg, _ := storageName.PackageReference.GroupAndPackage()
 
-	g.Expect(storageName.Name()).To(Equal(testName))
+	g.Expect(storageName.Name()).To(Equal(testEnumName))
 	g.Expect(grp).To(Equal(testGroup))
 	g.Expect(pkg).To(Equal(testVersion))
 }
@@ -61,7 +62,7 @@ func TestMapTypeName_GivenEnumReference_ReturnsOriginalName(t *testing.T) {
 func TestMapTypeNameForProperty_GivenNameOfObject_ReturnsMappedName(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	objectName := createNameForTest(testName)
+	objectName := createNameForTest(testObjectName)
 	objectDefinition := createObjectDefinitionForTest(objectName)
 	types := createTypesForTest(objectDefinition)
 
@@ -72,7 +73,7 @@ func TestMapTypeNameForProperty_GivenNameOfObject_ReturnsMappedName(t *testing.T
 	name := storageType.(astmodel.TypeName)
 	grp, pkg, _ := name.PackageReference.GroupAndPackage()
 
-	g.Expect(name.Name()).To(Equal(testName))
+	g.Expect(name.Name()).To(Equal(testObjectName))
 	g.Expect(grp).To(Equal(testGroup))
 	g.Expect(pkg).To(Equal("v20200801s"))
 }
@@ -80,7 +81,7 @@ func TestMapTypeNameForProperty_GivenNameOfObject_ReturnsMappedName(t *testing.T
 func TestMapTypeNameForProperty_GivenNameOfEnum_UnderlyingType(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	enumName := createNameForTest(testName)
+	enumName := createNameForTest(testEnumName)
 	enumDefinition := createEnumDefinitionForTest(enumName)
 	types := createTypesForTest(enumDefinition)
 
