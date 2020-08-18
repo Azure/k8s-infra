@@ -21,7 +21,14 @@ func (types Types) Add(def TypeDefinition) {
 }
 
 // AddAll adds multiple types to the set, with the same safety check as Add() to panic if a duplicate is included
-func (types Types) AddAll(otherTypes Types) {
+func (types Types) AddAll(otherTypes []TypeDefinition) {
+	for _, t := range otherTypes {
+		types.Add(t)
+	}
+}
+
+// AddTypes adds multiple types to the set, with the same safety check as Add() to panic if a duplicate is included
+func (types Types) AddTypes(otherTypes Types) {
 	for _, t := range otherTypes {
 		types.Add(t)
 	}
