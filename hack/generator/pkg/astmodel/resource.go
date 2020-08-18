@@ -132,15 +132,30 @@ func (resource *ResourceType) AsType(_ *CodeGenerationContext) ast.Expr {
 }
 
 // Equals returns true if the other type is also a ResourceType and has Equal fields
-func (definition *ResourceType) Equals(other Type) bool {
-	if definition == other {
+func (resource *ResourceType) Equals(other Type) bool {
+	if resource == other {
 		return true
 	}
 
+	if resource == nil || other == nil {
+		return false
+	}
+
 	if otherResource, ok := other.(*ResourceType); ok {
-		return TypeEquals(definition.spec, otherResource.spec) &&
-			TypeEquals(definition.status, otherResource.status) &&
-			definition.isStorageVersion == otherResource.isStorageVersion
+		if !TypeEquals(resource.spec, otherResource.spec) ||
+			!TypeEquals(resource.status, otherResource.status) ||
+			!resource.isStorageVersion == otherResource.isStorageVersion ||
+			len(resource.flags) != len(otherResource.flags) {
+			return false
+		}
+
+		for f := range resource.flags {
+			if _, ok := otherResource.flags[f]; !ok {
+				return false
+			}
+		}
+
+		return true
 	}
 
 	return false
