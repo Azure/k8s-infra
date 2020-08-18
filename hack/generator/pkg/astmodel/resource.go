@@ -110,13 +110,13 @@ func NewAzureResourceType(specType Type, statusType Type, typeName TypeName) *Re
 var _ Type = &ResourceType{}
 
 // SpecType returns the type used for specificiation
-func (definition *ResourceType) SpecType() Type {
-	return definition.spec
+func (resource *ResourceType) SpecType() Type {
+	return resource.spec
 }
 
 // StatusType returns the type used for current status
-func (definition *ResourceType) StatusType() Type {
-	return definition.status
+func (resource *ResourceType) StatusType() Type {
+	return resource.status
 }
 
 // WithStatus returns a new resource that has the specified status type
@@ -127,7 +127,7 @@ func (definition *ResourceType) WithStatus(statusType Type) *ResourceType {
 }
 
 // AsType converts the ResourceType to go AST Expr
-func (definition *ResourceType) AsType(_ *CodeGenerationContext) ast.Expr {
+func (resource *ResourceType) AsType(_ *CodeGenerationContext) ast.Expr {
 	panic("a resource cannot be used directly as a type")
 }
 
@@ -147,12 +147,12 @@ func (definition *ResourceType) Equals(other Type) bool {
 }
 
 // References returns the types referenced by Status or Spec parts of the resource
-func (definition *ResourceType) References() TypeNameSet {
-	spec := definition.spec.References()
+func (resource *ResourceType) References() TypeNameSet {
+	spec := resource.spec.References()
 
 	var status TypeNameSet
-	if definition.status != nil {
-		status = definition.status.References()
+	if resource.status != nil {
+		status = resource.status.References()
 	}
 
 	return SetUnion(spec, status)
@@ -164,8 +164,8 @@ func (definition *ResourceType) Owner() *TypeName {
 }
 
 // MarkAsStorageVersion marks the resource as the Kubebuilder storage version
-func (definition *ResourceType) MarkAsStorageVersion() *ResourceType {
-	result := *definition
+func (resource *ResourceType) MarkAsStorageVersion() *ResourceType {
+	result := resource.copy()
 	result.isStorageVersion = true
 	return &result
 }
@@ -178,11 +178,11 @@ func (definition *ResourceType) WithOwner(owner *TypeName) *ResourceType {
 }
 
 // RequiredImports returns a list of packages required by this
-func (definition *ResourceType) RequiredImports() []PackageReference {
-	typeImports := definition.spec.RequiredImports()
+func (resource *ResourceType) RequiredImports() []PackageReference {
+	typeImports := resource.spec.RequiredImports()
 
-	if definition.status != nil {
-		typeImports = append(typeImports, definition.status.RequiredImports()...)
+	if resource.status != nil {
+		typeImports = append(typeImports, resource.status.RequiredImports()...)
 	}
 
 	typeImports = append(typeImports, MetaV1PackageReference)
@@ -193,7 +193,7 @@ func (definition *ResourceType) RequiredImports() []PackageReference {
 }
 
 // AsDeclarations converts the resource type to a set of go declarations
-func (definition *ResourceType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
+func (resource *ResourceType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
 
 	packageName, err := codeGenerationContext.GetImportedPackageName(MetaV1PackageReference)
 	if err != nil {
@@ -213,11 +213,11 @@ func (definition *ResourceType) AsDeclarations(codeGenerationContext *CodeGenera
 	fields := []*ast.Field{
 		typeMetaField,
 		objectMetaField,
-		defineField("Spec", definition.spec.AsType(codeGenerationContext), "`json:\"spec,omitempty\"`"),
+		defineField("Spec", resource.spec.AsType(codeGenerationContext), "`json:\"spec,omitempty\"`"),
 	}
 
-	if definition.status != nil {
-		fields = append(fields, defineField("Status", definition.status.AsType(codeGenerationContext), "`json:\"spec,omitempty\"`"))
+	if resource.status != nil {
+		fields = append(fields, defineField("Status", resource.status.AsType(codeGenerationContext), "`json:\"spec,omitempty\"`"))
 	}
 
 	resourceIdentifier := ast.NewIdent(name.Name())
@@ -235,7 +235,7 @@ func (definition *ResourceType) AsDeclarations(codeGenerationContext *CodeGenera
 			},
 		}
 
-	if definition.isStorageVersion {
+	if resource.isStorageVersion {
 		comments = append(comments, &ast.Comment{
 			Text: "// +kubebuilder:storageversion\n",
 		})
