@@ -29,7 +29,7 @@ func (types Types) AddAll(otherTypes Types) {
 
 // Where returns a new set of types including only those that satisfy the predicate
 func (types Types) Where(predicate func(definition TypeDefinition) bool) Types {
-	result := make(Types, len(types))
+	result := make(Types)
 	for _, t := range types {
 		if predicate(t) {
 			result[t.Name()] = t
