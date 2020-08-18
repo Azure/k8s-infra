@@ -386,7 +386,7 @@ func getProperties(
 				return nil, err
 			}
 
-			// This can happen if the property type was prune away by a type filter.
+			// This can happen if the property type was pruned away by a type filter.
 			// There are a few options here: We can skip this property entirely, we can emit it
 			// with no type (won't compile), or we can emit with with interface{}.
 			// TODO: Currently setting this to anyType as that's easiest to deal with and will generate
