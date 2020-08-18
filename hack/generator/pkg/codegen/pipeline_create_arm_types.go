@@ -36,7 +36,7 @@ func createArmTypesAndCleanKubernetesTypes(idFactory astmodel.IdentifierFactory)
 				return nil, err
 			}
 
-			result := astmodel.TypesSetDisjointUnion(armTypes, kubeTypes)
+			result := astmodel.TypesDisjointUnion(armTypes, kubeTypes)
 			for _, def := range definitions {
 				if _, ok := result[def.Name()]; !ok {
 					result.Add(def)
