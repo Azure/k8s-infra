@@ -182,7 +182,8 @@ func (scanner *SchemaScanner) Definitions() astmodel.Types {
 		}
 
 		if defName != def.Name() {
-			panic("mismatched typenames!")
+			// this indicates a serious programming error
+			panic(fmt.Sprintf("mismatched typenames: %v != %v", defName, def.Name()))
 		}
 
 		defs.Add(*def)
