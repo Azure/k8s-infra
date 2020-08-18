@@ -39,15 +39,15 @@ func (types Types) Where(predicate func(definition TypeDefinition) bool) Types {
 	return result
 }
 
-// Except returns a new set of types including only those not present in otherTypes
+// Except returns a new set of types including only those not defined in otherTypes
 func (types Types) Except(otherTypes Types) Types {
 	return types.Where(func(def TypeDefinition) bool {
-		return !otherTypes.Contains(def)
+		return !otherTypes.Contains(def.Name())
 	})
 }
 
-// Contains returns true if the set contains the passed definition
-func (types Types) Contains(def TypeDefinition) bool {
-	_, ok := types[def.Name()]
+// Contains returns true if the set contains a definition for the specified name
+func (types Types) Contains(name TypeName) bool {
+	_, ok := types[name]
 	return ok
 }
