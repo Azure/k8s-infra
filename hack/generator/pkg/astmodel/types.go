@@ -7,7 +7,7 @@ package astmodel
 
 import "fmt"
 
-// Types is the set of all types being generated
+// Types is a map of TypeName to TypeDefinition, representing a set of types.
 type Types map[TypeName]TypeDefinition
 
 // Add adds a type to the set, with safety check that it has not already been defined
