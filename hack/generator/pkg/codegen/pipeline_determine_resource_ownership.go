@@ -68,7 +68,8 @@ func determineOwnership(ctx context.Context, definitions astmodel.Types) (astmod
 	}
 
 	setResourceGroupOwnerForResourcesWithNoOwner(definitions, updatedDefs)
-	return combineNewAndExistingDefs(definitions, updatedDefs), nil
+
+	return astmodel.TypesDisjointUnion(definitions.Except(updatedDefs), updatedDefs), nil
 }
 
 func resourceSpecTypeAsObject(resourceSpecDef astmodel.TypeDefinition) (*astmodel.ObjectType, error) {
@@ -256,22 +257,4 @@ func setResourceGroupOwnerForResourcesWithNoOwner(
 			updatedDefs[def.Name()] = def.WithType(updatedType)
 		}
 	}
-}
-
-func combineNewAndExistingDefs(definitions astmodel.Types, updatedDefs astmodel.Types) astmodel.Types {
-	results := make(astmodel.Types)
-	for _, updatedDef := range updatedDefs {
-		results.Add(updatedDef)
-	}
-
-	for name, def := range definitions {
-		_, ok := updatedDefs[name]
-		if ok {
-			continue // Already included above, so skip here to avoid duplicates
-		}
-
-		results.Add(def)
-	}
-
-	return results
 }
