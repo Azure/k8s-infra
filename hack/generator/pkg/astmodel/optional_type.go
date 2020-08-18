@@ -20,18 +20,18 @@ func NewOptionalType(element Type) Type {
 		return element
 	}
 
-	return &OptionalType{element}
+	return OptionalType{element}
 }
 
 func isTypeOptional(t Type) bool {
 	// Arrays and Maps are already "optional" as far as Go is concerned,
 	// so don't wrap them. Optional is also obviously already optional.
 	switch t.(type) {
-	case *ArrayType:
+	case ArrayType:
 		return true
-	case *MapType:
+	case MapType:
 		return true
-	case *OptionalType:
+	case OptionalType:
 		return true
 	default:
 		return false
@@ -39,14 +39,14 @@ func isTypeOptional(t Type) bool {
 }
 
 // assert we implemented Type correctly
-var _ Type = (*OptionalType)(nil)
+var _ Type = OptionalType{}
 
-func (optional *OptionalType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
+func (optional OptionalType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
 	return AsSimpleDeclarations(codeGenerationContext, name, description, optional)
 }
 
 // AsType renders the Go abstract syntax tree for an optional type
-func (optional *OptionalType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
+func (optional OptionalType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
 	// Special case interface{} as it shouldn't be a pointer
 	if optional.element == AnyType {
 		return optional.element.AsType(codeGenerationContext)
@@ -58,22 +58,22 @@ func (optional *OptionalType) AsType(codeGenerationContext *CodeGenerationContex
 }
 
 // RequiredImports returns the imports required by the 'element' type
-func (optional *OptionalType) RequiredImports() []PackageReference {
+func (optional OptionalType) RequiredImports() []PackageReference {
 	return optional.element.RequiredImports()
 }
 
 // References returns the set of types that the underlying type refers to directly.
-func (optional *OptionalType) References() TypeNameSet {
+func (optional OptionalType) References() TypeNameSet {
 	return optional.element.References()
 }
 
 // Equals returns true if this type is equal to the other type
-func (optional *OptionalType) Equals(t Type) bool {
+func (optional OptionalType) Equals(t Type) bool {
 	if optional == t {
 		return true // reference equality short-cut
 	}
 
-	if otherOptional, ok := t.(*OptionalType); ok {
+	if otherOptional, ok := t.(OptionalType); ok {
 		return optional.element.Equals(otherOptional.element)
 	}
 
@@ -81,6 +81,6 @@ func (optional *OptionalType) Equals(t Type) bool {
 }
 
 // BaseType returns the underlying type
-func (optional *OptionalType) BaseType() Type {
+func (optional OptionalType) BaseType() Type {
 	return optional.element
 }

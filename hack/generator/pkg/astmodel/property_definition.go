@@ -84,7 +84,7 @@ func (property *PropertyDefinition) MakeRequired() *PropertyDefinition {
 
 	if property.hasOptionalType() {
 		// Need to remove the optionality
-		ot := property.propertyType.(*OptionalType)
+		ot := property.propertyType.(OptionalType)
 		result.propertyType = ot.BaseType()
 	}
 
@@ -143,7 +143,7 @@ func (property *PropertyDefinition) HasRequiredValidation() bool {
 // hasOptionalType returns true if the type of this property is an optional reference to a value
 // (and might therefore be nil).
 func (property *PropertyDefinition) hasOptionalType() bool {
-	_, ok := property.propertyType.(*OptionalType)
+	_, ok := property.propertyType.(OptionalType)
 	return ok
 }
 

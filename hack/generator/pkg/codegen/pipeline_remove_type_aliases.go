@@ -57,11 +57,11 @@ func resolveTypeName(visitor *astmodel.TypeVisitor, name astmodel.TypeName, type
 		return def.Name()
 	case astmodel.PrimitiveType:
 		return visitor.Visit(concreteType, nil)
-	case *astmodel.OptionalType:
+	case astmodel.OptionalType:
 		return visitor.Visit(concreteType, nil)
-	case *astmodel.ArrayType:
+	case astmodel.ArrayType:
 		return visitor.Visit(concreteType, nil)
-	case *astmodel.MapType:
+	case astmodel.MapType:
 		return visitor.Visit(concreteType, nil)
 	default:
 		panic(fmt.Sprintf("Don't know how to resolve type %T for typeName %s", concreteType, name))

@@ -554,7 +554,7 @@ func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (a
 
 			return nil, errors.Errorf("couldn't find definition for: %v", concreteType)
 
-		case *astmodel.MapType:
+		case astmodel.MapType:
 			if concreteType.KeyType().Equals(astmodel.StringType) {
 				// move map type into 'additionalProperties' property
 				// TODO: consider privileging this as its own property on ObjectType,
