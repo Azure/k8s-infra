@@ -16,7 +16,7 @@ import (
 // EnumType represents a set of mutually exclusive predefined options
 type EnumType struct {
 	// BaseType is the underlying type used to define the values
-	baseType *PrimitiveType
+	baseType PrimitiveType
 	// Options is the set of all unique values
 	options []EnumValue
 }
@@ -25,11 +25,7 @@ type EnumType struct {
 var _ Type = (*EnumType)(nil)
 
 // NewEnumType defines a new enumeration including the legal values
-func NewEnumType(baseType *PrimitiveType, options []EnumValue) *EnumType {
-	if baseType == nil {
-		panic("baseType must be provided")
-	}
-
+func NewEnumType(baseType PrimitiveType, options []EnumValue) *EnumType {
 	sort.Slice(options, func(left int, right int) bool {
 		return options[left].Identifier < options[right].Identifier
 	})

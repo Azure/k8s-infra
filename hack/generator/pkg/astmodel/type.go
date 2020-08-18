@@ -44,8 +44,8 @@ func TypeEquals(left, right Type) bool {
 // The `ctx` argument can be used to “smuggle” additional data down the call-chain.
 type TypeVisitor struct {
 	VisitTypeName     func(this *TypeVisitor, it TypeName, ctx interface{}) Type
+	VisitPrimitive    func(this *TypeVisitor, it PrimitiveType, ctx interface{}) Type
 	VisitArrayType    func(this *TypeVisitor, it *ArrayType, ctx interface{}) Type
-	VisitPrimitive    func(this *TypeVisitor, it *PrimitiveType, ctx interface{}) Type
 	VisitObjectType   func(this *TypeVisitor, it *ObjectType, ctx interface{}) Type
 	VisitMapType      func(this *TypeVisitor, it *MapType, ctx interface{}) Type
 	VisitOptionalType func(this *TypeVisitor, it *OptionalType, ctx interface{}) Type
@@ -62,10 +62,10 @@ func (tv *TypeVisitor) Visit(t Type, ctx interface{}) Type {
 	switch it := t.(type) {
 	case TypeName:
 		return tv.VisitTypeName(tv, it, ctx)
+	case PrimitiveType:
+		return tv.VisitPrimitive(tv, it, ctx)
 	case *ArrayType:
 		return tv.VisitArrayType(tv, it, ctx)
-	case *PrimitiveType:
-		return tv.VisitPrimitive(tv, it, ctx)
 	case *ObjectType:
 		return tv.VisitObjectType(tv, it, ctx)
 	case *MapType:
@@ -100,12 +100,12 @@ func MakeTypeVisitor() TypeVisitor {
 		VisitTypeName: func(_ *TypeVisitor, it TypeName, _ interface{}) Type {
 			return it
 		},
+		VisitPrimitive: func(_ *TypeVisitor, it PrimitiveType, _ interface{}) Type {
+			return it
+		},
 		VisitArrayType: func(this *TypeVisitor, it *ArrayType, ctx interface{}) Type {
 			newElement := this.Visit(it.element, ctx)
 			return NewArrayType(newElement)
-		},
-		VisitPrimitive: func(_ *TypeVisitor, it *PrimitiveType, _ interface{}) Type {
-			return it
 		},
 		VisitObjectType: func(this *TypeVisitor, it *ObjectType, ctx interface{}) Type {
 			// just map the property types

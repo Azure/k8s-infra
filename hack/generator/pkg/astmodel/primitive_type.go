@@ -15,46 +15,46 @@ type PrimitiveType struct {
 }
 
 // IntType represents a Go integer type
-var IntType = &PrimitiveType{"int"}
+var IntType = PrimitiveType{"int"}
 
 // StringType represents the Go string type
-var StringType = &PrimitiveType{"string"}
+var StringType = PrimitiveType{"string"}
 
 // FloatType represents the Go float64 type
-var FloatType = &PrimitiveType{"float64"}
+var FloatType = PrimitiveType{"float64"}
 
 // BoolType represents the Go bool type
-var BoolType = &PrimitiveType{"bool"}
+var BoolType = PrimitiveType{"bool"}
 
 // AnyType represents the root Go interface type, permitting any object
-var AnyType = &PrimitiveType{"interface{}"}
+var AnyType = PrimitiveType{"interface{}"}
 
 // assert that we implemented Type correctly
-var _ Type = (*PrimitiveType)(nil)
+var _ Type = PrimitiveType{}
 
 // AsType implements Type for PrimitiveType returning an abstract syntax tree
-func (prim *PrimitiveType) AsType(_ *CodeGenerationContext) ast.Expr {
+func (prim PrimitiveType) AsType(_ *CodeGenerationContext) ast.Expr {
 	return ast.NewIdent(prim.name)
 }
 
-func (prim *PrimitiveType) AsDeclarations(genContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
+func (prim PrimitiveType) AsDeclarations(genContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
 	return AsSimpleDeclarations(genContext, name, description, prim)
 }
 
 // RequiredImports returns a list of package required by this
-func (prim *PrimitiveType) RequiredImports() []PackageReference {
+func (prim PrimitiveType) RequiredImports() []PackageReference {
 	return nil
 }
 
 // References always returns nil because primitive types don't refer to
 // any other types.
-func (prim *PrimitiveType) References() TypeNameSet {
+func (prim PrimitiveType) References() TypeNameSet {
 	return nil
 }
 
 // Equals returns true if the passed type is another primitive type the same name, false otherwise
-func (prim *PrimitiveType) Equals(t Type) bool {
-	if p, ok := t.(*PrimitiveType); ok {
+func (prim PrimitiveType) Equals(t Type) bool {
+	if p, ok := t.(PrimitiveType); ok {
 		return prim.name == p.name
 	}
 
@@ -62,6 +62,6 @@ func (prim *PrimitiveType) Equals(t Type) bool {
 }
 
 // Name returns the name of the primitive type
-func (prim *PrimitiveType) Name() string {
+func (prim PrimitiveType) Name() string {
 	return prim.name
 }

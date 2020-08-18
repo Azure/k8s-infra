@@ -659,7 +659,7 @@ func generateOneOfUnionType(ctx context.Context, subschemas []Schema, scanner *S
 			property := astmodel.NewPropertyDefinition(
 				propertyName, jsonName, concreteType).MakeOptional().WithDescription(propertyDescription)
 			properties = append(properties, property)
-		case *astmodel.PrimitiveType:
+		case astmodel.PrimitiveType:
 			var primitiveTypeName string
 			if concreteType == astmodel.AnyType {
 				primitiveTypeName = "anything"
@@ -764,7 +764,7 @@ func getSubSchemaType(schema Schema) (SchemaType, error) {
 }
 
 // GetPrimitiveType returns the primtive type for this schema type
-func GetPrimitiveType(name SchemaType) (*astmodel.PrimitiveType, error) {
+func GetPrimitiveType(name SchemaType) (astmodel.PrimitiveType, error) {
 	switch name {
 	case String:
 		return astmodel.StringType, nil

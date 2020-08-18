@@ -45,17 +45,17 @@ func resolveTypeName(visitor *astmodel.TypeVisitor, name astmodel.TypeName, type
 	// If this typeName definition has a type of object, enum, or resource
 	// it's okay. Everything else we want to pull up one level to remove the alias
 	switch concreteType := def.Type().(type) {
+	case astmodel.TypeName:
+		// We need to resolve further because this type is an alias
+		klog.V(3).Infof("Found type alias %s, replacing it with %s", name, concreteType)
+		return resolveTypeName(visitor, concreteType, types)
 	case *astmodel.ObjectType:
 		return def.Name()
 	case *astmodel.EnumType:
 		return def.Name()
 	case *astmodel.ResourceType:
 		return def.Name()
-	case astmodel.TypeName:
-		// We need to resolve further because this type is an alias
-		klog.V(3).Infof("Found type alias %s, replacing it with %s", name, concreteType)
-		return resolveTypeName(visitor, concreteType, types)
-	case *astmodel.PrimitiveType:
+	case astmodel.PrimitiveType:
 		return visitor.Visit(concreteType, nil)
 	case *astmodel.OptionalType:
 		return visitor.Visit(concreteType, nil)
