@@ -196,11 +196,11 @@ func updateChildResourceDefinitionsWithOwner(
 		// TODO: equality check to find the name of the actual resource, but we can't do that check
 		// TODO: now because these types allOf inherit from resourceBase and the actual resources
 		// TODO: being referenced do not. See: https://github.com/Azure/k8s-infra/issues/211
-		if typeName.Name() == "VirtualMachinesSpec_Resources" || // Uses allof inheritance
-			typeName.Name() == "AccountSpec_Resources" || // Uses allof inheritance
-			typeName.Name() == "SitesSpec_Resources" || // Uses allof inheritance
-			typeName.Name() == "NamespacesSpec_Resources" || // Uses allof inheritance
-			typeName.Name() == "VaultsSpec_Resources" || // Uses allof inheritance
+		if typeName.Name() == "VirtualMachines_Spec_Resources" || // Uses allof inheritance
+			typeName.Name() == "Account_Spec_Resources" || // Uses allof inheritance
+			typeName.Name() == "Sites_Spec_Resources" || // Uses allof inheritance
+			typeName.Name() == "Namespaces_Spec_Resources" || // Uses allof inheritance
+			typeName.Name() == "Vaults_Spec_Resources" || // Uses allof inheritance
 			// Bug in spec which there is a PR out for: https://github.com/Azure/azure-resource-manager-schemas/pull/1071
 			// TODO: remove the below once PR is merged
 			typeName.Name() == "ServersAdministrators" ||
