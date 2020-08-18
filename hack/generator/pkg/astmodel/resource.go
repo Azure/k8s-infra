@@ -254,3 +254,14 @@ func (resource *ResourceType) AsDeclarations(codeGenerationContext *CodeGenerati
 
 	return declarations
 }
+
+func (resource *ResourceType) copy() *ResourceType {
+	result := *resource
+
+	result.flags = make(map[string]struct{})
+	for k, v := range resource.flags {
+		result.flags[k] = v
+	}
+
+	return &result
+}
