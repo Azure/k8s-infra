@@ -15,10 +15,18 @@ type TypeDefinition struct {
 	name        TypeName
 	description []string
 	theType     Type
+
+	// flags are used to identify resources during processing;
+	// they have no direct representation in the generated code.
+	flags map[Flag]struct{}
 }
 
 func MakeTypeDefinition(name TypeName, theType Type) TypeDefinition {
-	return TypeDefinition{name: name, theType: theType}
+	return TypeDefinition{
+		name:    name,
+		theType: theType,
+		flags:   make(map[Flag]struct{}),
+	}
 }
 
 // Name returns the name being associated with the type
@@ -45,27 +53,40 @@ func (def TypeDefinition) References() TypeNameSet {
 
 // WithDescription replaces the description of the definition with a new one (if any)
 func (def TypeDefinition) WithDescription(desc []string) TypeDefinition {
-	var d []string
-	def.description = append(d, desc...)
-	return def
+	result := def.copy()
+	result.description = append(result.description, desc...)
+	return result
 }
 
 // WithType returns an updated TypeDefinition with the specified type
 func (def TypeDefinition) WithType(t Type) TypeDefinition {
-	result := def
+	result := def.copy()
 	result.theType = t
 	return result
 }
 
 // WithName returns an updated TypeDefinition with the specified name
 func (def TypeDefinition) WithName(typeName TypeName) TypeDefinition {
-	result := def
+	result := def.copy()
 	result.name = typeName
 	return result
 }
 
 func (def TypeDefinition) AsDeclarations(codeGenerationContext *CodeGenerationContext) []ast.Decl {
 	return def.theType.AsDeclarations(codeGenerationContext, def.name, def.description)
+}
+
+// AddFlag includes the specified flag on the resource
+func (def TypeDefinition) AddFlag(flag Flag) TypeDefinition {
+	result := def.copy()
+	result.flags[flag] = struct{}{}
+	return result
+}
+
+// HasFlag returns true if the specified flag is present on this resource
+func (def TypeDefinition) HasFlag(flag Flag) bool {
+	_, ok := def.flags[flag]
+	return ok
 }
 
 // AsSimpleDeclarations is a helper for types that only require a simple name/alias to be defined
@@ -99,4 +120,14 @@ func (def TypeDefinition) RequiredImports() []PackageReference {
 // this is not always used as we often combine multiple definitions into one file
 func FileNameHint(name TypeName) string {
 	return transformToSnakeCase(name.name)
+}
+
+// copy makes an independent deep clone of this type definition
+func (def TypeDefinition) copy() TypeDefinition {
+	result := def
+
+	result.description = make([]string, len(def.description))
+	copy(result.description, def.description)
+
+	return result
 }

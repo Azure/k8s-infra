@@ -16,6 +16,10 @@ type ObjectType struct {
 	properties map[PropertyName]*PropertyDefinition
 	functions  map[string]Function
 	interfaces map[TypeName]*InterfaceImplementation
+
+	// flags are used to identify resources during processing;
+	// they have no direct representation in the generated code.
+	flags map[Flag]struct{}
 }
 
 // EmptyObjectType is an empty object
@@ -30,7 +34,21 @@ func NewObjectType() *ObjectType {
 		properties: make(map[PropertyName]*PropertyDefinition),
 		functions:  make(map[string]Function),
 		interfaces: make(map[TypeName]*InterfaceImplementation),
+		flags:      make(map[Flag]struct{}),
 	}
+}
+
+// AddFlag includes the specified flag on the resource
+func (objectType *ObjectType) AddFlag(flag Flag) *ObjectType {
+	result := objectType.copy()
+	result.flags[flag] = struct{}{}
+	return result
+}
+
+// HasFlag returns true if the specified flag is present on this resource
+func (objectType *ObjectType) HasFlag(flag Flag) bool {
+	_, ok := objectType.flags[flag]
+	return ok
 }
 
 func (objectType *ObjectType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {

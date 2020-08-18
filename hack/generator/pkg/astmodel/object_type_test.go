@@ -207,3 +207,37 @@ func Test_WithFunction_GivenEmptyObject_ReturnsPopulatedObject(t *testing.T) {
 	g.Expect(object.functions).To(HaveLen(1))
 	g.Expect(object.functions["Activate"].Equals(fn)).To(BeTrue())
 }
+
+/*
+ * AddFlag() tests
+ */
+
+func Test_ObjectTypeAddFlag_GivenFlag_ReturnsDifferentInstance(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	obj := EmptyObjectType.WithProperties(fullName, familyName, knownAs, gender)
+	flagged := obj.AddFlag("foo")
+
+	g.Expect(flagged).NotTo(BeIdenticalTo(obj))
+}
+
+/*
+ * HasFlag() tests
+ */
+
+func Test_ObjectTypeHasFlag_GivenResourceWithFlag_ReturnsTrue(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	obj := EmptyObjectType.WithProperties(fullName, familyName, knownAs, gender).AddFlag("foo")
+
+	g.Expect(obj.HasFlag("foo")).To(BeTrue())
+}
+
+func Test_ObjectTypeHasFlag_GivenResourceWithTwoFlags_ReturnsTrueForBoth(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	obj := EmptyObjectType.WithProperties(fullName, familyName, knownAs, gender).AddFlag("foo").AddFlag("bar")
+
+	g.Expect(obj.HasFlag("foo")).To(BeTrue())
+	g.Expect(obj.HasFlag("bar")).To(BeTrue())
+}

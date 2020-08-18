@@ -21,11 +21,16 @@ type ResourceType struct {
 	status           Type
 	isStorageVersion bool
 	owner            *TypeName
+
+	// flags are used to identify resources during processing;
+	// they have no direct representation in the generated code.
+	flags map[Flag]struct{}
 }
 
 // NewResourceType defines a new resource type
 func NewResourceType(specType Type, statusType Type) *ResourceType {
-	return &ResourceType{specType, statusType, false, nil}
+	return &ResourceType{
+		specType, statusType, false, nil, make(map[Flag]struct{})}
 }
 
 // NewAzureResourceType defines a new resource type for Azure. It ensures that
@@ -137,11 +142,16 @@ func (resource *ResourceType) Equals(other Type) bool {
 		return true
 	}
 
-	if resource == nil || other == nil {
+	if resource == nil {
 		return false
 	}
 
 	if otherResource, ok := other.(*ResourceType); ok {
+
+		if otherResource == nil {
+			return false
+		}
+
 		if !TypeEquals(resource.spec, otherResource.spec) ||
 			!TypeEquals(resource.status, otherResource.status) ||
 			!resource.isStorageVersion == otherResource.isStorageVersion ||
@@ -182,7 +192,7 @@ func (definition *ResourceType) Owner() *TypeName {
 func (resource *ResourceType) MarkAsStorageVersion() *ResourceType {
 	result := resource.copy()
 	result.isStorageVersion = true
-	return &result
+	return result
 }
 
 // WithOwner updates the owner of the resource and returns a copy of the resource
@@ -190,6 +200,19 @@ func (definition *ResourceType) WithOwner(owner *TypeName) *ResourceType {
 	result := *definition
 	result.owner = owner
 	return &result
+}
+
+// AddFlag includes the specified flag on the resource
+func (resource *ResourceType) AddFlag(flag Flag) *ResourceType {
+	result := resource.copy()
+	result.flags[flag] = struct{}{}
+	return result
+}
+
+// HasFlag returns true if the specified flag is present on this resource
+func (resource *ResourceType) HasFlag(flag Flag) bool {
+	_, ok := resource.flags[flag]
+	return ok
 }
 
 // RequiredImports returns a list of packages required by this
@@ -270,10 +293,11 @@ func (resource *ResourceType) AsDeclarations(codeGenerationContext *CodeGenerati
 	return declarations
 }
 
+// copy makes an independent deep clone of this resource
 func (resource *ResourceType) copy() *ResourceType {
 	result := *resource
 
-	result.flags = make(map[string]struct{})
+	result.flags = make(map[Flag]struct{})
 	for k, v := range resource.flags {
 		result.flags[k] = v
 	}

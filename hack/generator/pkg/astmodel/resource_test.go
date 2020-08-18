@@ -33,7 +33,7 @@ func Test_ResourceEquals(t *testing.T) {
 		// nil comparisons
 		{"Two nil values are equal", nil, nil, true},
 		{"Resource and nil values are inequal", resourceA, nil, false},
-		{"Resource and nil values are inequal", nil, resourceA, false},
+		{"Nil and resource values are also inequal", nil, resourceA, false},
 		// Sensitive to value differences
 		{"Sensitive to spec type", resourceA, resourceC, false},
 		{"Sensitive to status type", resourceA, resourceB, false},
@@ -52,4 +52,37 @@ func Test_ResourceEquals(t *testing.T) {
 			g.Expect(areEqual).To(Equal(c.expectedEqual))
 		})
 	}
+}
+
+/*
+ * AddFlag() tests
+ */
+
+func Test_ResourceAddFlag_GivenFlag_ReturnsDifferentInstance(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	resource := NewResourceType(StringType, StringType)
+	flagged := resource.AddFlag("foo")
+	g.Expect(flagged).NotTo(BeIdenticalTo(resource))
+}
+
+/*
+ * HasFlag() tests
+ */
+
+func Test_ResourceHasFlag_GivenResourceWithFlag_ReturnsTrue(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	resource := NewResourceType(StringType, StringType).AddFlag("foo")
+
+	g.Expect(resource.HasFlag("foo")).To(BeTrue())
+}
+
+func Test_ResourceHasFlag_GivenResourceWithTwoFlags_ReturnsTrueForBoth(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	resource := NewResourceType(StringType, StringType).AddFlag("foo").AddFlag("bar")
+
+	g.Expect(resource.HasFlag("foo")).To(BeTrue())
+	g.Expect(resource.HasFlag("bar")).To(BeTrue())
 }

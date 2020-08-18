@@ -78,3 +78,42 @@ func createStringProperty(name string, description string) *PropertyDefinition {
 func createIntProperty(name string, description string) *PropertyDefinition {
 	return NewPropertyDefinition(PropertyName(name), name, IntType).WithDescription(description)
 }
+
+/*
+ * AddFlag() tests
+ */
+
+func Test_TypeDefinitionAddFlag_GivenFlag_ReturnsDifferentInstance(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ref := MakePackageReference("/foo/bar/baz")
+	name := MakeTypeName(ref, "MyType")
+	def := MakeTypeDefinition(name, StringType)
+	flagged := def.AddFlag("foo")
+	g.Expect(flagged).NotTo(BeIdenticalTo(def))
+}
+
+/*
+ * HasFlag() tests
+ */
+
+func Test_TypeDefinitionHasFlag_GivenResourceWithFlag_ReturnsTrue(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ref := MakePackageReference("/foo/bar/baz")
+	name := MakeTypeName(ref, "MyType")
+	def := MakeTypeDefinition(name, StringType).AddFlag("foo")
+
+	g.Expect(def.HasFlag("foo")).To(BeTrue())
+}
+
+func Test_TypeDefinitionHasFlag_GivenResourceWithTwoFlags_ReturnsTrueForBoth(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ref := MakePackageReference("/foo/bar/baz")
+	name := MakeTypeName(ref, "MyType")
+	def := MakeTypeDefinition(name, StringType).AddFlag("foo").AddFlag("bar")
+
+	g.Expect(def.HasFlag("foo")).To(BeTrue())
+	g.Expect(def.HasFlag("bar")).To(BeTrue())
+}
