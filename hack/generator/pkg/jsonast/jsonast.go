@@ -367,7 +367,8 @@ func getProperties(
 	if schema.additionalPropertiesAllowed() {
 		additionalPropSchema := schema.additionalPropertiesSchema()
 		if additionalPropSchema == nil {
-			// if not specified, any additional properties are allowed (TODO: tell all Azure teams this fact and get them to update their API definitions)
+			// if not specified, any additional properties are allowed
+			// (TODO: tell all Azure teams this fact and get them to update their API definitions!)
 			// for now we aren't following the spec 100% as it pollutes the generated code
 			// only generate this field if there are no other fields:
 			if len(properties) == 0 {
