@@ -57,7 +57,7 @@ func main() {
 	flagSet.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flagSet.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
-	flagSet.Parse(os.Args[1:])
+	flagSet.Parse(os.Args[1:]) //nolint: error will never be returned due to ExitOnError
 
 	ctrl.SetLogger(klogr.New())
 
