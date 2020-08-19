@@ -173,7 +173,7 @@ func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, 
 
 	for schemaPath, schema := range schemas {
 		// these have already been tested in the loadAllSchemas function so are guaranteed to match
-		outputGroup := swaggerGroupRegex.FindString(schemaPath)
+		outputGroup := jsonast.SwaggerGroupRegex.FindString(schemaPath)
 		outputVersion := swaggerVersionRegex.FindString(schemaPath)
 
 		// see if there is a config override for this file
@@ -189,15 +189,14 @@ func loadSwaggerData(ctx context.Context, idFactory astmodel.IdentifierFactory, 
 			}
 		}
 
-		extractor := typeExtractor{
-			outputVersion: outputVersion,
-			outputGroup:   outputGroup,
-			idFactory:     idFactory,
-			cache:         cache,
-			config:        config,
-		}
+		extractor := jsonast.NewSwaggerTypeExtractor(
+			config,
+			idFactory,
+			outputGroup,
+			outputVersion,
+			cache)
 
-		err := extractor.extractTypes(ctx, schemaPath, schema, result.resources, result.otherTypes)
+		err := extractor.ExtractTypes(ctx, schemaPath, schema, result.resources, result.otherTypes)
 		if err != nil {
 			return swaggerTypes{}, errors.Wrapf(err, "error processing %q", schemaPath)
 		}
@@ -252,7 +251,7 @@ func loadAllSchemas(
 
 		if !fileInfo.IsDir() &&
 			filepath.Ext(filePath) == ".json" &&
-			swaggerGroupRegex.MatchString(filePath) &&
+			jsonast.SwaggerGroupRegex.MatchString(filePath) &&
 			swaggerVersionRegex.MatchString(filePath) {
 
 			// all files are loaded in parallel to speed this up

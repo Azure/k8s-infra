@@ -198,6 +198,14 @@ exportFilters:
     group: microsoft.insights
     version: v20190301
     because: it generates types containing AnyType
+  - action: exclude
+    group: microsoft.apimanagement
+    version: v20190101
+    because: it generates types containing AnyType
+  - action: exclude
+    group: microsoft.powerbi
+    version: v20160129
+    because: it generates types containing AnyType
 
 typeTransformers:
   - group: definitions
