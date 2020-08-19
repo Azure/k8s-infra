@@ -305,8 +305,13 @@ func inferNameFromURLPath(operationPath string) (string, string, error) {
 	reading := false
 	skippedLast := false
 	for _, urlPart := range urlParts {
+		if len(urlPart) == 0 {
+			// skip empty parts
+			continue
+		}
+
 		if reading {
-			if len(urlPart) > 0 && urlPart[0] != '{' {
+			if urlPart[0] != '{' {
 				name += strings.ToUpper(urlPart[0:1]) + urlPart[1:]
 				skippedLast = false
 			} else {
