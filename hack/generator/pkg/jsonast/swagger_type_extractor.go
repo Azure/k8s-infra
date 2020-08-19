@@ -311,16 +311,22 @@ func inferNameFromURLPath(operationPath string) (string, string, error) {
 		}
 
 		if reading {
-			if urlPart[0] != '{' {
-				name += strings.ToUpper(urlPart[0:1]) + urlPart[1:]
-				skippedLast = false
-			} else {
+			if urlPart == "default" {
+				// skip; shouldn’t be part of name
+				// TODO: I haven’t yet found where this is done in autorest/autorest.armresource to document this
+			} else if urlPart[0] == '{' {
+				// this is a url parameter
+
 				if skippedLast {
 					// this means two {parameters} in a row
 					return "", "", errors.Errorf("multiple parameters in path")
 				}
 
 				skippedLast = true
+			} else {
+				// normal part of path, uppercase first character
+				name += strings.ToUpper(urlPart[0:1]) + urlPart[1:]
+				skippedLast = false
 			}
 		} else if SwaggerGroupRegex.MatchString(urlPart) {
 			group = urlPart
