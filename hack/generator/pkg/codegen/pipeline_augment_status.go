@@ -7,11 +7,13 @@ package codegen
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 
@@ -61,27 +63,20 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 
 			statusTypes := generateStatusTypes(swaggerTypes)
 
+			var missingStatus []astmodel.TypeName
+
 			found := 0
-			notFound := 0
 			for typeName, typeDef := range types {
 				// for resources, try to find the matching Status type
 				if resource, ok := typeDef.Type().(*astmodel.ResourceType); ok {
-					if statusDef, ok := statusTypes.resourceTypes[typeName]; ok {
+					if statusDef, ok := statusTypes.resourceTypes.tryFind(typeName); ok {
 						klog.V(4).Infof("Swagger information found for %v", typeName)
 						newTypes.Add(astmodel.MakeTypeDefinition(typeName, resource.WithStatus(statusDef)))
 						found++
 					} else {
-						lowerCased := astmodel.MakeTypeName(typeName.PackageReference, strings.ToLower(typeName.Name()))
-						if statusDef, ok := statusTypes.resourceTypes[lowerCased]; ok {
-							klog.V(4).Infof("Swagger information found (case-insensitively) for %v", typeName)
-							newTypes.Add(astmodel.MakeTypeDefinition(typeName, resource.WithStatus(statusDef)))
-							found++
-						} else {
-							// TODO: eventually this will be a warning/error
-							klog.V(2).Infof("No swagger information found for %v", typeName)
-							newTypes.Add(typeDef)
-							notFound++
-						}
+						// TODO: eventually this will be a warning/error
+						missingStatus = append(missingStatus, typeName)
+						newTypes.Add(typeDef)
 					}
 				} else {
 					// other types are simply copied
@@ -89,12 +84,20 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 				}
 			}
 
+			sort.Slice(missingStatus, func(i, j int) bool {
+				return astmodel.SortTypeName(missingStatus[i], missingStatus[j])
+			})
+
+			for _, typeName := range missingStatus {
+				klog.V(2).Infof("No swagger information found for %v", typeName)
+			}
+
 			// all non-resources are added regardless of whether they are used
 			// if they are not used they will be pruned off by a later pipeline stage
 			newTypes.AddAll(statusTypes.otherTypes)
 
 			klog.V(1).Infof("Found status information for %v resources", found)
-			klog.V(1).Infof("Missing status information for %v resources", notFound)
+			klog.V(1).Infof("Missing status information for %v resources", len(missingStatus))
 			klog.V(1).Infof("Input %v types, output %v types", len(types), len(newTypes))
 
 			return newTypes, nil
@@ -104,10 +107,31 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 
 type statusTypes struct {
 	// resourceTypes maps Spec name to corresponding Status type
-	resourceTypes map[astmodel.TypeName]astmodel.Type
+	// the typeName is lowercased to be case-insensitive
+	resourceTypes resourceLookup
 
 	// otherTypes has all other Status types renamed to avoid clashes with Spec Types
 	otherTypes []astmodel.TypeDefinition
+}
+
+type resourceLookup map[astmodel.TypeName]astmodel.Type
+
+func lowerCase(name astmodel.TypeName) astmodel.TypeName {
+	return astmodel.MakeTypeName(name.PackageReference, strings.ToLower(name.Name()))
+}
+
+func (resourceLookup resourceLookup) tryFind(name astmodel.TypeName) (astmodel.Type, bool) {
+	result, ok := resourceLookup[lowerCase(name)]
+	return result, ok
+}
+
+func (resourceLookup resourceLookup) add(name astmodel.TypeName, theType astmodel.Type) {
+	lower := lowerCase(name)
+	if _, ok := resourceLookup[lower]; ok {
+		panic(fmt.Sprintf("lowercase name collision: %v", name))
+	}
+
+	resourceLookup[lower] = theType
 }
 
 // generateStatusTypes returns the statusTypes for the input swaggerTypes
@@ -123,18 +147,10 @@ func generateStatusTypes(swaggerTypes swaggerTypes) statusTypes {
 		otherTypes = append(otherTypes, renamer.VisitDefinition(typeDef, nil))
 	}
 
-	resourceLookup := make(map[astmodel.TypeName]astmodel.Type)
+	resourceLookup := make(resourceLookup)
 	for resourceName, resourceDef := range swaggerTypes.resources {
 		// resourceName is not renamed as this is a lookup for the Spec type
-		mangled := renamer.Visit(resourceDef.Type(), nil)
-		resourceLookup[resourceName] = mangled
-
-		// we also insert under lowercase name as a fallback
-		// e.g. Swagger has Mediaservices and not MediaServices
-		lowerCased := astmodel.MakeTypeName(resourceName.PackageReference, strings.ToLower(resourceName.Name()))
-		if _, ok := resourceLookup[lowerCased]; !ok {
-			resourceLookup[lowerCased] = mangled
-		}
+		resourceLookup.add(resourceName, renamer.Visit(resourceDef.Type(), nil))
 	}
 
 	return statusTypes{resourceLookup, otherTypes}
