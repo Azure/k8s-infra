@@ -13,7 +13,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strings"
 	"sync"
 
@@ -63,8 +62,6 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 
 			statusTypes := generateStatusTypes(swaggerTypes)
 
-			var missingStatus []astmodel.TypeName
-
 			found := 0
 			for typeName, typeDef := range types {
 				// for resources, try to find the matching Status type
@@ -74,8 +71,8 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 						newTypes.Add(astmodel.MakeTypeDefinition(typeName, resource.WithStatus(statusDef)))
 						found++
 					} else {
-						// TODO: eventually this will be a warning/error
-						missingStatus = append(missingStatus, typeName)
+						// missing status is caught later in pipeline (checkForMissingStatusInformation)
+						// as we only want to report this for non-pruned types
 						newTypes.Add(typeDef)
 					}
 				} else {
@@ -84,20 +81,11 @@ func augmentResourcesWithStatus(idFactory astmodel.IdentifierFactory, config *co
 				}
 			}
 
-			sort.Slice(missingStatus, func(i, j int) bool {
-				return astmodel.SortTypeName(missingStatus[i], missingStatus[j])
-			})
-
-			for _, typeName := range missingStatus {
-				klog.V(2).Infof("No swagger information found for %v", typeName)
-			}
-
 			// all non-resources are added regardless of whether they are used
 			// if they are not used they will be pruned off by a later pipeline stage
 			newTypes.AddAll(statusTypes.otherTypes)
 
 			klog.V(1).Infof("Found status information for %v resources", found)
-			klog.V(1).Infof("Missing status information for %v resources", len(missingStatus))
 			klog.V(1).Infof("Input %v types, output %v types", len(types), len(newTypes))
 
 			return newTypes, nil
