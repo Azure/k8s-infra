@@ -476,15 +476,15 @@ func generateDefinitionsFor(
 	// Add a placeholder to avoid recursive calls
 	// we will overwrite this later (this is checked below)
 	scanner.addEmptyTypeDefinition(typeName)
-
 	result, err := scanner.RunHandler(ctx, schemaType, schema)
+
 	if err != nil {
 		scanner.removeTypeDefinition(typeName) // we weren't able to generate it, remove placeholder
 		return nil, err
 	}
 
 	if isResource {
-		result = astmodel.NewResourceType(result, nil)
+		result = astmodel.NewAzureResourceType(result, nil, typeName)
 	}
 
 	description := []string{
@@ -511,6 +511,14 @@ func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (a
 
 		d, err := scanner.RunHandlerForSchema(ctx, all)
 		if err != nil {
+			if unknownSchema, ok := err.(*UnknownSchemaError); ok {
+				if unknownSchema.Schema.description() != nil {
+					// some Swagger types (e.g. ServiceFabric Cluster) use allOf with a description-only schema
+					klog.V(2).Infof("skipping description-only schema type with description %q", *unknownSchema.Schema.description())
+					continue
+				}
+			}
+
 			return nil, err
 		}
 
@@ -684,7 +692,7 @@ func generateOneOfUnionType(ctx context.Context, subschemas []Schema, scanner *S
 
 	objectType := astmodel.NewObjectType().WithProperties(properties...)
 	objectType = objectType.WithFunction(
-		"MarshalJSON",
+		astmodel.JSONMarshalFunctionName,
 		astmodel.NewOneOfJSONMarshalFunction(objectType, scanner.idFactory))
 
 	return objectType, nil
