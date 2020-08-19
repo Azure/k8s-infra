@@ -139,7 +139,7 @@ func (property *PropertyDefinition) MakeOptional() *PropertyDefinition {
 
 	// Note that this function uses isTypeOptional while MakeRequired uses property.hasOptionalType
 	// because in this direction we care if the type behaves optionally already (Map, Array included),
-	// whereas in the MakeRequired direction we only care if the type is specifically *astmodel.Optional
+	// whereas in the MakeRequired direction we only care if the type is specifically astmodel.Optional
 	if !isTypeOptional(property.propertyType) {
 		// Need to make the type optional
 		result.propertyType = NewOptionalType(result.propertyType)

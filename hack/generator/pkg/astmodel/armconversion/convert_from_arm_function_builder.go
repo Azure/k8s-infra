@@ -7,10 +7,11 @@ package armconversion
 
 import (
 	"fmt"
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"go/ast"
 	"go/token"
+
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
 
 type convertFromArmBuilder struct {
@@ -265,11 +266,11 @@ func (builder *convertFromArmBuilder) fromArmComplexPropertyConversion(
 	params complexPropertyConversionParameters) []ast.Stmt {
 
 	switch params.destinationType.(type) {
-	case *astmodel.OptionalType:
+	case astmodel.OptionalType:
 		return builder.convertComplexOptionalProperty(params)
-	case *astmodel.ArrayType:
+	case astmodel.ArrayType:
 		return builder.convertComplexArrayProperty(params)
-	case *astmodel.MapType:
+	case astmodel.MapType:
 		return builder.convertComplexMapProperty(params)
 	case astmodel.TypeName:
 		return builder.convertComplexTypeNameProperty(params)
@@ -297,7 +298,7 @@ func (builder *convertFromArmBuilder) convertComplexOptionalProperty(
 			})
 	}
 
-	destinationType := params.destinationType.(*astmodel.OptionalType)
+	destinationType := params.destinationType.(astmodel.OptionalType)
 
 	innerStatements := builder.fromArmComplexPropertyConversion(
 		params.withDestinationType(destinationType.Element()).
@@ -334,7 +335,7 @@ func (builder *convertFromArmBuilder) convertComplexArrayProperty(
 
 	depth := params.countArraysAndMapsInConversionContext()
 
-	destinationType := params.destinationType.(*astmodel.ArrayType)
+	destinationType := params.destinationType.(astmodel.ArrayType)
 
 	elemType := destinationType.Element()
 	actualDestination := params.destination // TODO: improve name
@@ -390,9 +391,9 @@ func (builder *convertFromArmBuilder) convertComplexArrayProperty(
 func (builder *convertFromArmBuilder) convertComplexMapProperty(
 	params complexPropertyConversionParameters) []ast.Stmt {
 
-	destinationType := params.destinationType.(*astmodel.MapType)
+	destinationType := params.destinationType.(astmodel.MapType)
 
-	if _, ok := destinationType.KeyType().(*astmodel.PrimitiveType); !ok {
+	if _, ok := destinationType.KeyType().(astmodel.PrimitiveType); !ok {
 		panic(fmt.Sprintf("map had non-primitive key type: %v", destinationType.KeyType()))
 	}
 

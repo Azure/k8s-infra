@@ -7,9 +7,10 @@ package armconversion
 
 import (
 	"fmt"
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"go/ast"
 	"sync"
+
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
 
 type conversionBuilder struct {
@@ -175,9 +176,9 @@ func (params complexPropertyConversionParameters) countArraysAndMapsInConversion
 	result := 0
 	for _, t := range params.conversionContext {
 		switch t.(type) {
-		case *astmodel.MapType:
+		case astmodel.MapType:
 			result += 1
-		case *astmodel.ArrayType:
+		case astmodel.ArrayType:
 			result += 1
 		}
 	}

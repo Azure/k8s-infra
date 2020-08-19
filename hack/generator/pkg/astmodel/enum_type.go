@@ -165,7 +165,7 @@ func (enum *EnumType) CreateValidation() Validation {
 }
 
 // BaseType returns the base type of the enum
-func (enum *EnumType) BaseType() *PrimitiveType {
+func (enum *EnumType) BaseType() PrimitiveType {
 	return enum.baseType
 }
 

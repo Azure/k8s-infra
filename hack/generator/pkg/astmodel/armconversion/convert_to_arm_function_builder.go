@@ -7,10 +7,11 @@ package armconversion
 
 import (
 	"fmt"
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"go/ast"
 	"go/token"
+
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
 
 type convertToArmBuilder struct {
@@ -145,7 +146,7 @@ func (builder *convertToArmBuilder) typePropertyHandler(
 	}
 
 	propertyType := toProp.PropertyType()
-	if optionalType, ok := toProp.PropertyType().(*astmodel.OptionalType); ok {
+	if optionalType, ok := toProp.PropertyType().(astmodel.OptionalType); ok {
 		propertyType = optionalType.Element()
 	}
 
@@ -238,11 +239,11 @@ func (builder *convertToArmBuilder) toArmComplexPropertyConversion(
 	params complexPropertyConversionParameters) []ast.Stmt {
 
 	switch params.destinationType.(type) {
-	case *astmodel.OptionalType:
+	case astmodel.OptionalType:
 		return builder.convertComplexOptionalProperty(params)
-	case *astmodel.ArrayType:
+	case astmodel.ArrayType:
 		return builder.convertComplexArrayProperty(params)
-	case *astmodel.MapType:
+	case astmodel.MapType:
 		return builder.convertComplexMapProperty(params)
 	case astmodel.TypeName:
 		return builder.convertComplexTypeNameProperty(params)
@@ -268,7 +269,7 @@ func assignmentHandlerAssign(lhs ast.Expr, rhs ast.Expr) ast.Stmt {
 func (builder *convertToArmBuilder) convertComplexOptionalProperty(
 	params complexPropertyConversionParameters) []ast.Stmt {
 
-	destinationType := params.destinationType.(*astmodel.OptionalType)
+	destinationType := params.destinationType.(astmodel.OptionalType)
 
 	tempVarIdent := ast.NewIdent(builder.idFactory.CreateIdentifier(params.nameHint+"Typed", astmodel.NotExported))
 	tempVarType := destinationType.Element()
@@ -314,7 +315,7 @@ func (builder *convertToArmBuilder) convertComplexArrayProperty(
 
 	var results []ast.Stmt
 
-	destinationType := params.destinationType.(*astmodel.ArrayType)
+	destinationType := params.destinationType.(astmodel.ArrayType)
 
 	depth := params.countArraysAndMapsInConversionContext()
 	typedVarIdent := ast.NewIdent("elemTyped")
@@ -369,9 +370,9 @@ func (builder *convertToArmBuilder) convertComplexArrayProperty(
 func (builder *convertToArmBuilder) convertComplexMapProperty(
 	params complexPropertyConversionParameters) []ast.Stmt {
 
-	destinationType := params.destinationType.(*astmodel.MapType)
+	destinationType := params.destinationType.(astmodel.MapType)
 
-	if _, ok := destinationType.KeyType().(*astmodel.PrimitiveType); !ok {
+	if _, ok := destinationType.KeyType().(astmodel.PrimitiveType); !ok {
 		panic(fmt.Sprintf("map had non-primitive key type: %v", destinationType.KeyType()))
 	}
 

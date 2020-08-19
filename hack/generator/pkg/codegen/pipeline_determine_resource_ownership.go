@@ -7,9 +7,10 @@ package codegen
 
 import (
 	"context"
+	"strings"
+
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 const resourcesPropertyName = astmodel.PropertyName("Resources")
@@ -101,7 +102,7 @@ func extractChildResourcePropertyTypeDef(
 	}
 
 	// The resources property should be an array
-	resourcesPropArray, ok := resourcesProp.PropertyType().(*astmodel.ArrayType)
+	resourcesPropArray, ok := resourcesProp.PropertyType().(astmodel.ArrayType)
 	if !ok {
 		return nil, errors.Errorf(
 			"Resource %s has spec %s with Resources property whose type is %T not array",
@@ -135,10 +136,10 @@ func resolveResourcesTypeNames(
 
 	// Each property type is a subresource type
 	for _, prop := range resourcesPropertyType.Properties() {
-		optionalType, ok := prop.PropertyType().(*astmodel.OptionalType)
+		optionalType, ok := prop.PropertyType().(astmodel.OptionalType)
 		if !ok {
 			return nil, errors.Errorf(
-				"OneOf type %s property %s not of type *astmodel.OptionalType",
+				"OneOf type %s property %s not of type astmodel.OptionalType",
 				resourcesPropertyName.Name(),
 				prop.PropertyName())
 		}
