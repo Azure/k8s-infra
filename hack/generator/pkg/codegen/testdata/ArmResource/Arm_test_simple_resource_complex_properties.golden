@@ -74,21 +74,21 @@ type FakeResource_Spec struct {
 var _ genruntime.ArmTransformer = &FakeResource_Spec{}
 
 // ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (fakeResourceSpec *FakeResource_Spec) ConvertToArm(owningName string) (interface{}, error) {
+func (fakeResourceSpec *FakeResource_Spec) ConvertToArm(name string) (interface{}, error) {
 	if fakeResourceSpec == nil {
 		return nil, nil
 	}
 	result := FakeResource_SpecArm{}
 	result.ApiVersion = fakeResourceSpec.ApiVersion
 	result.Color = fakeResourceSpec.Color
-	foo, err := fakeResourceSpec.Foo.ConvertToArm(owningName)
+	foo, err := fakeResourceSpec.Foo.ConvertToArm(name)
 	if err != nil {
 		return nil, err
 	}
 	result.Foo = foo.(FooArm)
-	result.Name = genruntime.CreateArmResourceNameForDeployment(owningName, fakeResourceSpec.AzureName)
+	result.Name = name
 	if fakeResourceSpec.OptionalFoo != nil {
-		optionalFoo, err := fakeResourceSpec.OptionalFoo.ConvertToArm(owningName)
+		optionalFoo, err := fakeResourceSpec.OptionalFoo.ConvertToArm(name)
 		if err != nil {
 			return nil, err
 		}
@@ -140,7 +140,7 @@ type Foo struct {
 var _ genruntime.ArmTransformer = &Foo{}
 
 // ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (foo *Foo) ConvertToArm(owningName string) (interface{}, error) {
+func (foo *Foo) ConvertToArm(name string) (interface{}, error) {
 	if foo == nil {
 		return nil, nil
 	}

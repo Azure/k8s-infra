@@ -78,14 +78,14 @@ type FakeResource_Spec struct {
 var _ genruntime.ArmTransformer = &FakeResource_Spec{}
 
 // ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (fakeResourceSpec *FakeResource_Spec) ConvertToArm(owningName string) (interface{}, error) {
+func (fakeResourceSpec *FakeResource_Spec) ConvertToArm(name string) (interface{}, error) {
 	if fakeResourceSpec == nil {
 		return nil, nil
 	}
 	result := FakeResource_SpecArm{}
 	result.ApiVersion = fakeResourceSpec.ApiVersion
 	for _, item := range fakeResourceSpec.ArrayFoo {
-		elem, err := item.ConvertToArm(owningName)
+		elem, err := item.ConvertToArm(name)
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +95,7 @@ func (fakeResourceSpec *FakeResource_Spec) ConvertToArm(owningName string) (inte
 	for _, item := range fakeResourceSpec.ArrayOfArrays {
 		var elemTyped []FooArm
 		for _, item := range item {
-			elem, err := item.ConvertToArm(owningName)
+			elem, err := item.ConvertToArm(name)
 			if err != nil {
 				return nil, err
 			}
@@ -109,7 +109,7 @@ func (fakeResourceSpec *FakeResource_Spec) ConvertToArm(owningName string) (inte
 		elemTyped := make(map[string]FooArm)
 		if item != nil {
 			for key, value := range item {
-				elem, err := value.ConvertToArm(owningName)
+				elem, err := value.ConvertToArm(name)
 				if err != nil {
 					return nil, err
 				}
@@ -119,7 +119,7 @@ func (fakeResourceSpec *FakeResource_Spec) ConvertToArm(owningName string) (inte
 		}
 		result.ArrayOfMaps = append(result.ArrayOfMaps, elemTyped)
 	}
-	result.Name = genruntime.CreateArmResourceNameForDeployment(owningName, fakeResourceSpec.AzureName)
+	result.Name = name
 	result.Type = FakeResourceSpecTypeMicrosoftAzureFakeResource
 	return result, nil
 }
@@ -185,7 +185,7 @@ type Foo struct {
 var _ genruntime.ArmTransformer = &Foo{}
 
 // ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (foo *Foo) ConvertToArm(owningName string) (interface{}, error) {
+func (foo *Foo) ConvertToArm(name string) (interface{}, error) {
 	if foo == nil {
 		return nil, nil
 	}
