@@ -72,6 +72,11 @@ func TestObjectType_Equals_WhenGivenType_ReturnsExpectedResult(t *testing.T) {
 	differentType := NewObjectType().WithProperties(fullName, clanName, knownAs, gender)
 	mapType := NewMapType(StringType, personType)
 
+	intf := NewInterface(
+		MakeTypeName(MakePackageReference("/foo/bar/baz"),
+			"myInterface"),
+		map[string]Function{})
+
 	cases := []struct {
 		name      string
 		thisType  Type
@@ -99,6 +104,9 @@ func TestObjectType_Equals_WhenGivenType_ReturnsExpectedResult(t *testing.T) {
 		// Expect not-equal for different property (but same property count)
 		{"Not-equal when different type", personType, differentType, false},
 		{"Not-equal when different type", differentType, personType, false},
+		// Sensitive to interfaces
+		{"Not-equal when different interfaces", personType, personType.WithInterface(intf), false},
+		{"Equal when same interface added to both", personType.WithInterface(intf), personType.WithInterface(intf), true},
 	}
 
 	for _, c := range cases {
@@ -225,7 +233,7 @@ func Test_ObjectTypeAddFlag_GivenFlag_ReturnsDifferentInstance(t *testing.T) {
  * HasFlag() tests
  */
 
-func Test_ObjectTypeHasFlag_GivenResourceWithFlag_ReturnsTrue(t *testing.T) {
+func Test_ObjectTypeHasFlag_GivenObjectTypeWithFlag_ReturnsTrue(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	obj := EmptyObjectType.WithProperties(fullName, familyName, knownAs, gender).AddFlag("foo")
@@ -233,7 +241,7 @@ func Test_ObjectTypeHasFlag_GivenResourceWithFlag_ReturnsTrue(t *testing.T) {
 	g.Expect(obj.HasFlag("foo")).To(BeTrue())
 }
 
-func Test_ObjectTypeHasFlag_GivenResourceWithTwoFlags_ReturnsTrueForBoth(t *testing.T) {
+func Test_ObjectTypeHasFlag_GivenObjectTypeWithTwoFlags_ReturnsTrueForBoth(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	obj := EmptyObjectType.WithProperties(fullName, familyName, knownAs, gender).AddFlag("foo").AddFlag("bar")

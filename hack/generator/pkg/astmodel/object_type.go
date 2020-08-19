@@ -284,6 +284,21 @@ func (objectType *ObjectType) Equals(t Type) bool {
 			}
 		}
 
+		if len(objectType.interfaces) != len(st.interfaces) {
+			// Different number of interfaces, not equal
+			return false
+		}
+
+		for interfaceName := range st.interfaces {
+			_, ok := objectType.interfaces[interfaceName]
+			if !ok {
+				// Didn't find the interface, not equal
+				return false
+			}
+
+			// TODO: Compare interfaces themselves
+		}
+
 		// All properties match, equal
 		return true
 	}
