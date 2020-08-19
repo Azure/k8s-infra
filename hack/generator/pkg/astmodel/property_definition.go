@@ -142,8 +142,7 @@ func (property *PropertyDefinition) HasTag(key string) bool {
 
 // HasTagValue returns true if the property has the specified tag value
 func (property *PropertyDefinition) HasTagValue(key string, value string) bool {
-	values, ok := property.tags[key]
-	if ok {
+	if values, ok := property.tags[key]; ok {
 		for _, item := range values {
 			if item == value {
 				return true
@@ -299,7 +298,9 @@ func (property *PropertyDefinition) tagsEqual(f *PropertyDefinition) bool {
 		if !ok || len(value) != len(otherValue) {
 			return false
 		}
-
+		// Comparison here takes ordering into account because for tags like
+		// json, ordering matters - `json:"foo,omitempty"` is different than
+		// `json:"omitempty,foo`
 		for i := 0; i < len(value); i++ {
 			if value[i] != otherValue[i] {
 				return false
