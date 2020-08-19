@@ -17,13 +17,13 @@ import (
 	"time"
 )
 
-type ProvisioningState string
+type ControllerResourceProvisioningState string
 
 const (
-	SucceededProvisioningState ProvisioningState = "Succeeded"
-	FailedProvisioningState    ProvisioningState = "Failed"
-	DeletingProvisioningState  ProvisioningState = "Deleting"
-	AcceptedProvisioningState  ProvisioningState = "Accepted"
+	SucceededControllerResourceProvisioningState ControllerResourceProvisioningState = "Succeeded"
+	FailedControllerResourceProvisioningState    ControllerResourceProvisioningState = "Failed"
+	DeletingControllerResourceProvisioningState  ControllerResourceProvisioningState = "Deleting"
+	AcceptedControllerResourceProvisioningState  ControllerResourceProvisioningState = "Accepted"
 )
 
 type AnnotationKey string
@@ -33,8 +33,8 @@ const (
 	PreserveDeploymentAnnotation AnnotationKey = "x-preserve-deployment"
 )
 
-func IsTerminalProvisioningState(state ProvisioningState) bool {
-	return state == SucceededProvisioningState || state == FailedProvisioningState
+func IsTerminalProvisioningState(state ControllerResourceProvisioningState) bool {
+	return state == SucceededControllerResourceProvisioningState || state == FailedControllerResourceProvisioningState
 }
 
 func SpecSignature(metaObject genruntime.MetaObject) (string, error) {

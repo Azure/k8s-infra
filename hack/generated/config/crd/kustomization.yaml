@@ -6,6 +6,7 @@
 resources:
 # - bases/microsoft.resources.infra.azure.com_resourcegroups.yaml
 - bases/microsoft.batch.infra.azure.com_batchaccounts.yaml
+- bases/microsoft.storage.infra.azure.com_storageaccounts.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 #patchesStrategicMerge:

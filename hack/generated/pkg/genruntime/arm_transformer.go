@@ -6,55 +6,8 @@
 package genruntime
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
 	"strings"
 )
-
-type MetaObject interface {
-	runtime.Object
-	metav1.Object
-	KubernetesResource
-}
-
-type KubernetesResource interface {
-	// Owner returns the ResourceReference so that we can extract the Group/Kind for easier lookups
-	Owner() *ResourceReference
-
-	// AzureName returns the Azure name of the resource
-	AzureName() string
-}
-
-// TODO: Do we even need this?
-type ArmResourceSpec interface {
-	GetApiVersion() string // TODO: do we need this?
-
-	GetType() string
-
-	GetName() string
-
-	// Location() string // TODO: Do we need this?
-}
-
-type ArmResource interface {
-	ArmResourceSpec
-	// ArmResourceStatus TODO: ???
-
-	GetId() string
-}
-
-// TODO: I think that this is throwaway?
-type ArmResourceImpl struct {
-	ArmResourceSpec
-	Id string
-}
-
-var _ ArmResource = &ArmResourceImpl{}
-
-func (resource *ArmResourceImpl) GetId() string {
-	return resource.Id
-}
 
 // TODO: Consider ArmSpecTransformer and ArmTransformer, so we don't have to pass owningName/name through all the calls
 
@@ -65,22 +18,6 @@ type ArmTransformer interface {
 	// or myaccount when creating Batch pool1
 	ConvertToArm(name string) (interface{}, error)
 	PopulateFromArm(owner KnownResourceReference, input interface{}) error
-}
-
-func LookupOwnerGroupKind(v interface{}) (string, string) {
-	t := reflect.TypeOf(v)
-	field, _ := t.FieldByName("Owner")
-
-	group, ok := field.Tag.Lookup("group")
-	if !ok {
-		panic("Couldn't find owner group tag")
-	}
-	kind, ok := field.Tag.Lookup("kind")
-	if !ok {
-		panic("Couldn't find %s owner kind tag")
-	}
-
-	return group, kind
 }
 
 // CombineArmNames creates a "fully qualified" resource name for use

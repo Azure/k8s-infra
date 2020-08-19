@@ -20,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	batch "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.batch/v20170901"
+	storage "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.storage/v20190401"
 	"github.com/Azure/k8s-infra/hack/generated/controllers"
 	// +kubebuilder:scaffold:imports
 )
@@ -32,8 +33,10 @@ var (
 func init() {
 	klog.InitFlags(nil)
 
+	// TODO: Need to generate this
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = batch.AddToScheme(scheme)
+	_ = storage.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 

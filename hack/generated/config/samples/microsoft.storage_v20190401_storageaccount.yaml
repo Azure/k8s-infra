@@ -1,0 +1,17 @@
+apiVersion: microsoft.storage.infra.azure.com/v20190401
+kind: StorageAccount
+metadata:
+  name: matthchrkubestorage
+  namespace: default
+spec:
+  apiVersion: 2019-04-01  # TODO: Remove?
+  location: westcentralus
+  kind: BlobStorage
+  sku:
+    name: Standard_LRS
+  owner:
+    name: matthchr-rg
+  properties:
+    accessTier: Hot
+
+    # supportsHttpsTrafficOnly: true

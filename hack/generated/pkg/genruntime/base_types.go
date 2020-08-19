@@ -37,3 +37,22 @@ type ArmResourceSpec interface {
 
 	GetName() string
 }
+
+type ArmResource interface {
+	ArmResourceSpec
+	// ArmResourceStatus TODO: ???
+
+	GetId() string
+}
+
+// TODO: I think that this is throwaway?
+type ArmResourceImpl struct {
+	ArmResourceSpec
+	Id string
+}
+
+var _ ArmResource = &ArmResourceImpl{}
+
+func (resource *ArmResourceImpl) GetId() string {
+	return resource.Id
+}

@@ -28,8 +28,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	// TODO: More somehow?
+	// TODO: Code generate this section
 	batch "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.batch/v20170901"
+	storage "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.storage/v20190401"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 )
 
@@ -37,11 +38,12 @@ const (
 	// ResourceSigAnnotationKey is an annotation key which holds the value of the hash of the spec
 	ResourceSigAnnotationKey = "resource-sig.infra.azure.com"
 
-	// TODO: Delete these later
+	// TODO: Delete these later in favor of something in status?
 	DeploymentIdAnnotation = "deployment-id.infra.azure.com"
 	DeploymentNameAnnotation = "deployment-name.infra.azure.com"
 	ResourceStateAnnotation = "resource-state.infra.azure.com"
 	ResourceIdAnnotation = "resource-id.infra.azure.com"
+	ResourceErrorAnnotation = "resource-error.infra.azure.com"
 )
 
 var (
@@ -52,9 +54,11 @@ var (
 	// may directly reconcile a single object, but may indirectly watch
 	// and reconcile many Owned objects. The singular type is necessary to generically
 	// produce a reconcile function aware of concrete types, as a closure.
+
+	// TODO: Generate this
 	KnownTypes = []runtime.Object{
 		new(batch.BatchAccount),
-		// TODO: More
+		new(storage.StorageAccount),
 	}
 )
 
@@ -74,8 +78,8 @@ func RegisterAll(mgr ctrl.Manager, applier armclient.Applier, objs []runtime.Obj
 	var errs []error
 	for _, obj := range objs {
 		// TODO: What were these for?
-		//mgr := mgr
-		//obj := obj
+		// mgr := mgr
+		// obj := obj
 		if err := register(mgr, applier, obj, log, options); err != nil {
 			errs = append(errs, err)
 		}
@@ -105,6 +109,8 @@ func register(mgr ctrl.Manager, applier armclient.Applier, obj runtime.Object, l
 	if err != nil {
 		return err
 	}
+	log.V(4).Info("Registering", "GVK", gvk)
+
 	//if err := mgr.GetFieldIndexer().IndexField(obj, "status.id", func(obj runtime.Object) []string {
 	//	unObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
 	//	if err != nil {
@@ -320,7 +326,13 @@ func (gr *GenericReconciler) reconcileApply(ctx context.Context, metaObj genrunt
 	if provisioningState != nil {
 		provisioningStateStr = string(*provisioningState)
 	}
-	msg := fmt.Sprintf("resource spec for %q will be applied to Azure. Current provisioning state: %q", metaObj.GetName(), provisioningStateStr)
+
+	deploymentId := getDeploymentId(metaObj)
+	msg := fmt.Sprintf(
+		"resource spec for %q will be applied to Azure. DeploymentId: %q, Current provisioning state: %q",
+		metaObj.GetName(),
+		deploymentId,
+		provisioningStateStr)
 	gr.Recorder.Event(metaObj, v1.EventTypeNormal, "ResourceHasChanged", msg)
 	log.V(0).Info(msg) // TODO: Delete this?
 	return gr.applySpecChange(ctx, metaObj) // TODO: pass log?
@@ -382,7 +394,7 @@ func (gr *GenericReconciler) reconcileDelete(ctx context.Context, log logr.Logge
 		Id: getResourceId(metaObj),
 	}
 
-	if provisioningState != nil && *provisioningState == DeletingProvisioningState {
+	if provisioningState != nil && *provisioningState == DeletingControllerResourceProvisioningState {
 		msg := fmt.Sprintf("deleting... checking for updated state")
 		log.V(0).Info(msg)
 		gr.Recorder.Event(metaObj, v1.EventTypeNormal, "ResourceDeleteInProgress", msg)
@@ -409,7 +421,7 @@ func (gr *GenericReconciler) startDeleteOfResource(
 			}
 
 			annotations := make(map[string]string)
-			annotations[ResourceStateAnnotation] = string(DeletingProvisioningState)
+			annotations[ResourceStateAnnotation] = string(DeletingControllerResourceProvisioningState)
 			addAnnotations(metaObj, annotations)
 		} else {
 			controllerutil.RemoveFinalizer(mutMetaObject, apis.AzureInfraFinalizer)
@@ -533,10 +545,15 @@ func (gr *GenericReconciler) applySpecChange(ctx context.Context, metaObj genrun
 		annotations[ResourceSigAnnotationKey] = sig
 		annotations[DeploymentIdAnnotation] = deployment.Id
 		annotations[DeploymentNameAnnotation] = deployment.Name
+
+		// TODO: Do we want to just use Azure's annotations here? I bet we don't? We probably want to map
+		// TODO: them onto something more robust?
 		annotations[ResourceStateAnnotation] = string(deployment.Properties.ProvisioningState)
 
 		if deployment.IsTerminalProvisioningState() {
-			if len(deployment.Properties.OutputResources) == 0 {
+			if deployment.Properties.ProvisioningState == armclient.FailedProvisioningState {
+				annotations[ResourceErrorAnnotation] = deployment.Properties.Error.String()
+			} else if len(deployment.Properties.OutputResources) == 0 {
 				return errors.Errorf("Template deployment didn't have any output resources")
 			} else {
 				annotations[ResourceIdAnnotation] = deployment.Properties.OutputResources[0].ID
@@ -574,14 +591,23 @@ func hasResourceHashAnnotationChanged(metaObj genruntime.MetaObject) (bool, erro
 	return oldSig != newSig, nil
 }
 
-func getResourceProvisioningState(metaObj genruntime.MetaObject) *ProvisioningState {
+func getResourceProvisioningState(metaObj genruntime.MetaObject) *ControllerResourceProvisioningState {
 	state, ok := metaObj.GetAnnotations()[ResourceStateAnnotation]
 	if !ok {
 		return nil
 	}
 
-	result := ProvisioningState(state)
+	result := ControllerResourceProvisioningState(state)
 	return &result
+}
+
+func getDeploymentId(metaObj genruntime.MetaObject) string {
+	id, ok := metaObj.GetAnnotations()[DeploymentIdAnnotation]
+	if !ok {
+		return ""
+	}
+
+	return id
 }
 
 // TODO: Remove this when we have status

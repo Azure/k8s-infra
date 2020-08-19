@@ -40,12 +40,22 @@ type (
 		ID string `json:"id,omitempty"`
 	}
 
+	// TODO: Flesh this out more -- https://docs.microsoft.com/en-us/rest/api/resources/deployments/createorupdate#errorresponse
+	DeploymentError struct {
+		Code string `json:"code,omitempty"`
+		Message string `json:"message,omitempty"`
+		Target string `json:"target,omitempty"`
+
+		Details []DeploymentError `json:"details,omitempty"`
+	}
+
 	DeploymentStatus struct {
 		ProvisioningState ProvisioningState `json:"provisioningState,omitempty"`
 		Timestamp         *date.Time        `json:"timestamp,omitempty"`
 		Duration          *duration.ISO8601 `json:"duration,omitempty"`
 		CorrelationID     string            `json:"correlationId,omitempty"`
 		Outputs           json.RawMessage   `json:"outputs,omitempty"` // TODO: What is this for?
+		Error             *DeploymentError
 		OutputResources   []OutputResource  `json:"outputResources,omitempty"`
 	}
 
@@ -142,6 +152,21 @@ func NewSubscriptionDeployment(
 			SubscriptionId: subscriptionID,
 		},
 	}
+}
+
+// TODO: restructure this file to be a bit clearer (functions by their types)
+func (deploymentErr *DeploymentError) String() string {
+	if deploymentErr == nil {
+		return ""
+	}
+
+	result, err := json.Marshal(deploymentErr)
+	if err != nil {
+		panic(err) // TODO: bad
+	}
+
+	// TODO: This is quite a hack for now:
+	return string(result)
 }
 
 func (d *Deployment) GetEntityPath() (string, error) {

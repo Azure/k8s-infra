@@ -24,8 +24,6 @@ type (
 		DeleteDeployment(ctx context.Context, deploymentId string) error
 		NewDeployment(resourceGroup string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment
 
-		// TODO: Commented these out for now
-
 		BeginDeleteResource(ctx context.Context, res genruntime.ArmResource) (genruntime.ArmResource, error)
 		//GetResource(ctx context.Context, res genruntime.ArmResource) (genruntime.ArmResource, error)
 		HeadResource(ctx context.Context, res genruntime.ArmResource) (bool, error)
