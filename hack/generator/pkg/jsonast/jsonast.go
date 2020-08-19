@@ -693,7 +693,8 @@ func generateOneOfUnionType(ctx context.Context, subschemas []Schema, scanner *S
 	objectType := astmodel.NewObjectType().WithProperties(properties...)
 	objectType = objectType.WithFunction(
 		astmodel.JSONMarshalFunctionName,
-		astmodel.NewOneOfJSONMarshalFunction(objectType, scanner.idFactory))
+		astmodel.NewOneOfJSONMarshalFunction(objectType, scanner.idFactory)).
+		AddFlag(astmodel.OneOfFlag)
 
 	return objectType, nil
 }

@@ -168,16 +168,11 @@ func extractChildResourceTypeNames(resourcesPropertyTypeDef astmodel.TypeDefinit
 	}
 
 	// Determine if this is a OneOf/AllOf
-	// TODO: Checking for the presence of the JSON marshal function is a bit of a hack...
-	if isObject && isObjectOneOfObject(resourcesPropertyTypeAsObject) {
+	if isObject && resourcesPropertyTypeAsObject.HasFlag(astmodel.OneOfFlag) {
 		return resolveResourcesTypeNames(resourcesPropertyTypeDef.Name(), resourcesPropertyTypeAsObject)
-	} else {
-		return []astmodel.TypeName{resourcesPropertyTypeDef.Name()}, nil
 	}
-}
 
-func isObjectOneOfObject(o *astmodel.ObjectType) bool {
-	return o.HasFunctionWithName(astmodel.JSONMarshalFunctionName)
+	return []astmodel.TypeName{resourcesPropertyTypeDef.Name()}, nil
 }
 
 func updateChildResourceDefinitionsWithOwner(
