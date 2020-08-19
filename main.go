@@ -35,7 +35,6 @@ var (
 )
 
 func init() {
-	klog.InitFlags(nil)
 
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = microsoftresourcesv20191001.AddToScheme(scheme)
@@ -49,6 +48,10 @@ func init() {
 }
 
 func main() {
+	// don’t do this in init() or it conflicts with other calls to InitFlags when used with coverpkg
+	// see: https://github.com/golang/go/issues/27336
+	klog.InitFlags(nil)
+
 	var metricsAddr string
 	var enableLeaderElection bool
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
