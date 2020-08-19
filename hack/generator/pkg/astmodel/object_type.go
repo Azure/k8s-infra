@@ -29,7 +29,7 @@ func NewObjectType() *ObjectType {
 	return &ObjectType{
 		properties:           make(map[PropertyName]*PropertyDefinition),
 		functions:            make(map[string]Function),
-		InterfaceImplementer: InterfaceImplementer{},
+		InterfaceImplementer: MakeInterfaceImplementer(),
 	}
 }
 

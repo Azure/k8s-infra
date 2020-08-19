@@ -16,6 +16,11 @@ type InterfaceImplementer struct { // TODO: Do we like this name?
 	interfaces map[TypeName]*InterfaceImplementation
 }
 
+// MakeInterfaceImplementer returns an interface implementer
+func MakeInterfaceImplementer() InterfaceImplementer {
+	return InterfaceImplementer{}
+}
+
 // WithInterface creates a new ObjectType with a function (method) attached to it
 func (interfaceImplementer InterfaceImplementer) WithInterface(iface *InterfaceImplementation) InterfaceImplementer {
 	result := interfaceImplementer.copy()
