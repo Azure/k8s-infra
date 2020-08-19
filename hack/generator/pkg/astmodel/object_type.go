@@ -349,28 +349,32 @@ func (objectType *ObjectType) WithFunction(name string, function Function) *Obje
 // WithInterface creates a new ObjectType with a function (method) attached to it
 func (objectType *ObjectType) WithInterface(iface *InterfaceImplementation) *ObjectType {
 	// Create a copy of objectType to preserve immutability
-	result := *objectType
-
-	// Copy contents of old map into new map
-	result.interfaces = make(map[TypeName]*InterfaceImplementation)
-	for key, value := range objectType.interfaces {
-		result.interfaces[key] = value
-	}
-
+	result := objectType.copy()
 	result.interfaces[iface.Name()] = iface
-
-	return &result
+	return result
 }
 
 func (objectType *ObjectType) copy() *ObjectType {
 	result := NewObjectType()
 
+	// Copy properties
 	for key, value := range objectType.properties {
 		result.properties[key] = value
 	}
 
+	// Copy functions
 	for key, value := range objectType.functions {
 		result.functions[key] = value
+	}
+
+	// Copy interfaces
+	for key, value := range objectType.interfaces {
+		result.interfaces[key] = value
+	}
+
+	// Copy flags (including value in case we later give that meaning)
+	for flag, value := range objectType.flags {
+		result.flags[flag] = value
 	}
 
 	return result
