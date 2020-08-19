@@ -95,7 +95,7 @@ func (extractor *SwaggerTypeExtractor) ExtractTypes(
 
 			if existingResource, ok := resources[resourceName]; ok {
 				if !astmodel.TypeEquals(existingResource.Type(), resourceType) {
-					klog.Errorf("RESOURCE already defined differently 😱: %v", resourceName)
+					return errors.Errorf("resource already defined differently: %v", resourceName)
 				}
 			} else {
 				resources.Add(astmodel.MakeTypeDefinition(resourceName, resourceType))
