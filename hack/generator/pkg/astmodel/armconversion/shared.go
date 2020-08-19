@@ -114,7 +114,7 @@ func NewArmTransformerImpl(
 		},
 	}
 
-	result := astmodel.NewInterface(
+	result := astmodel.NewInterfaceImplementation(
 		astmodel.MakeTypeName(astmodel.MakeGenRuntimePackageReference(), "ArmTransformer"),
 		funcs)
 
