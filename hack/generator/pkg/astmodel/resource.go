@@ -218,7 +218,7 @@ func (definition *ResourceType) AsDeclarations(codeGenerationContext *CodeGenera
 	}
 
 	if definition.status != nil {
-		fields = append(fields, defineField("Status", definition.status.AsType(codeGenerationContext), "`json:\"spec,omitempty\"`"))
+		fields = append(fields, defineField("Status", definition.status.AsType(codeGenerationContext), "`json:\"status,omitempty\"`"))
 	}
 
 	resourceIdentifier := ast.NewIdent(name.Name())
