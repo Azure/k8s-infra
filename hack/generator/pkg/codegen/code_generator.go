@@ -50,8 +50,9 @@ func corePipelineStages(idFactory astmodel.IdentifierFactory, configuration *con
 		augmentResourcesWithStatus(idFactory, configuration),
 		applyExportFilters(configuration), // should come after status types are loaded
 		stripUnreferencedTypeDefinitions(),
+		convertAllOfAndOneOfToObjects(idFactory),
 		nameTypesForCRD(idFactory),
-		applyPropertyRewrites(configuration), // must come after nameTypesForCRD so that objects are all expanded
+		applyPropertyRewrites(configuration), // must come after nameTypesForCRD and convertAllOfAndOneOf so that objects are all expanded
 		determineResourceOwnership(),
 		removeTypeAliases(),
 		improveResourcePluralization(),

@@ -7,9 +7,11 @@ package codegen
 
 import (
 	"context"
+	"strings"
+
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/pkg/errors"
-	"strings"
+	"k8s.io/klog/v2"
 )
 
 const resourcesPropertyName = astmodel.PropertyName("Resources")
@@ -197,15 +199,10 @@ func updateChildResourceDefinitionsWithOwner(
 		// TODO: equality check to find the name of the actual resource, but we can't do that check
 		// TODO: now because these types allOf inherit from resourceBase and the actual resources
 		// TODO: being referenced do not. See: https://github.com/Azure/k8s-infra/issues/211
-		if typeName.Name() == "VirtualMachines_Spec_Resources" || // Uses allof inheritance
-			typeName.Name() == "Account_Spec_Resources" || // Uses allof inheritance
-			typeName.Name() == "Sites_Spec_Resources" || // Uses allof inheritance
-			typeName.Name() == "Namespaces_Spec_Resources" || // Uses allof inheritance
-			typeName.Name() == "Vaults_Spec_Resources" || // Uses allof inheritance
+		if typeName.Name() == "ServersAdministrators" ||
+			typeName.Name() == "ExtensionsChild" {
 			// Bug in spec which there is a PR out for: https://github.com/Azure/azure-resource-manager-schemas/pull/1071
 			// TODO: remove the below once PR is merged
-			typeName.Name() == "ServersAdministrators" ||
-			typeName.Name() == "ExtensionsChild" {
 			continue
 		}
 
@@ -218,7 +215,8 @@ func updateChildResourceDefinitionsWithOwner(
 		// Update the definition of the child resource type to point to its owner
 		childResource, ok := childResourceDef.Type().(*astmodel.ResourceType)
 		if !ok {
-			return errors.Errorf("child resource %s not of type *astmodel.ResourceType, instead %T", typeName, childResourceDef.Type())
+			klog.Errorf("child resource %s not of type *astmodel.ResourceType, instead %T", typeName, childResourceDef.Type())
+			continue
 		}
 
 		childResourceDef = childResourceDef.WithType(childResource.WithOwner(&owningResourceName))

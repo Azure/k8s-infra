@@ -7,6 +7,7 @@ package astmodel
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -16,6 +17,8 @@ import (
 // The `ctx` argument can be used to “smuggle” additional data down the call-chain.
 type TypeVisitor struct {
 	VisitTypeName     func(this *TypeVisitor, it TypeName, ctx interface{}) (Type, error)
+	VisitOneOfType    func(this *TypeVisitor, it OneOfType, ctx interface{}) (Type, error)
+	VisitAllOfType    func(this *TypeVisitor, it AllOfType, ctx interface{}) (Type, error)
 	VisitArrayType    func(this *TypeVisitor, it *ArrayType, ctx interface{}) (Type, error)
 	VisitPrimitive    func(this *TypeVisitor, it *PrimitiveType, ctx interface{}) (Type, error)
 	VisitObjectType   func(this *TypeVisitor, it *ObjectType, ctx interface{}) (Type, error)
@@ -34,6 +37,10 @@ func (tv *TypeVisitor) Visit(t Type, ctx interface{}) (Type, error) {
 	switch it := t.(type) {
 	case TypeName:
 		return tv.VisitTypeName(tv, it, ctx)
+	case OneOfType:
+		return tv.VisitOneOfType(tv, it, ctx)
+	case AllOfType:
+		return tv.VisitAllOfType(tv, it, ctx)
 	case *ArrayType:
 		return tv.VisitArrayType(tv, it, ctx)
 	case *PrimitiveType:
@@ -115,6 +122,32 @@ func MakeTypeVisitor() TypeVisitor {
 			}
 
 			return it.WithProperties(newProps...), nil
+		},
+		VisitOneOfType: func(this *TypeVisitor, it OneOfType, ctx interface{}) (Type, error) {
+			var newTypes []Type
+			for _, oneOf := range it.Types() {
+				newType, err := this.Visit(oneOf, ctx)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to visit oneOf")
+				}
+
+				newTypes = append(newTypes, newType)
+			}
+
+			return MakeOneOfType(newTypes), nil
+		},
+		VisitAllOfType: func(this *TypeVisitor, it AllOfType, ctx interface{}) (Type, error) {
+			var newTypes []Type
+			for _, allOf := range it.Types() {
+				newType, err := this.Visit(allOf, ctx)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to visit allOf")
+				}
+
+				newTypes = append(newTypes, newType)
+			}
+
+			return MakeAllOfType(newTypes), nil
 		},
 		VisitMapType: func(this *TypeVisitor, it *MapType, ctx interface{}) (Type, error) {
 			visitedKey, err := this.Visit(it.key, ctx)
