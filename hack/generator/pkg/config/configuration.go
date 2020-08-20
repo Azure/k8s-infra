@@ -176,14 +176,61 @@ func (config *Configuration) ShouldPrune(typeName astmodel.TypeName) (result Sho
 // If no transformation is performed, nil is returned
 func (config *Configuration) TransformType(name astmodel.TypeName) (astmodel.Type, string) {
 	for _, transformer := range config.TypeTransformers {
-		result := transformer.TransformTypeName(name)
-		if result != nil {
-			return result, transformer.Because
+		if transformer.propertyRegex == nil { // exclude property transformers
+			result := transformer.TransformTypeName(name)
+			if result != nil {
+				return result, transformer.Because
+			}
 		}
 	}
 
 	// No matches, return nil
 	return nil, ""
+}
+
+// PropertyTransformResult is the result of applying a property type transform
+type PropertyTransformResult struct {
+	NewType         *astmodel.ObjectType
+	Property        astmodel.PropertyName
+	NewPropertyType astmodel.Type
+	Because         string
+}
+
+// TransformTypeProperties applies any property transformers to the type
+func (config *Configuration) TransformTypeProperties(name astmodel.TypeName, objectType *astmodel.ObjectType) *PropertyTransformResult {
+
+	for _, transformer := range config.TypeTransformers {
+		if transformer.propertyRegex != nil { // exclude non-property transformers
+			if transformer.AppliesToType(name) {
+				found := false
+				var propName astmodel.PropertyName
+				var newProps []*astmodel.PropertyDefinition
+
+				for _, prop := range objectType.Properties() {
+					if transformer.propertyNameMatches(prop.PropertyName()) {
+						found = true
+						propName = prop.PropertyName()
+
+						newProps = append(newProps, prop.WithType(transformer.targetType))
+					} else {
+						newProps = append(newProps, prop)
+					}
+				}
+
+				if found {
+					return &PropertyTransformResult{
+						NewType:         objectType.WithProperties(newProps...),
+						Property:        propName,
+						NewPropertyType: transformer.targetType,
+						Because:         transformer.Because,
+					}
+				}
+			}
+
+		}
+	}
+
+	return nil
 }
 
 // StatusConfiguration provides configuration options for the
