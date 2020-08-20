@@ -153,3 +153,30 @@ func Test_TransformWithMissingMapValue_ReportsError(t *testing.T) {
 	g.Expect(err).To(Not(BeNil()))
 	g.Expect(err.Error()).To(ContainSubstring("no target type found in target/map/value/map/key"))
 }
+
+func Test_TransformWithMissingTargetType_ReportsError(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	transformer := config.TypeTransformer{
+		TypeMatcher: config.TypeMatcher{Name: "tutor"},
+	}
+
+	err := transformer.Initialize()
+	g.Expect(err).To(Not(BeNil()))
+	g.Expect(err.Error()).To(ContainSubstring("no target type found"))
+}
+
+func Test_TransformWithNonExistentPrimitive_ReportsError(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	transformer := config.TypeTransformer{
+		TypeMatcher: config.TypeMatcher{Name: "tutor"},
+		Target: config.TransformTarget{
+			Name: "nemo",
+		},
+	}
+
+	err := transformer.Initialize()
+	g.Expect(err).To(Not(BeNil()))
+	g.Expect(err.Error()).To(ContainSubstring("unknown primitive type transformation target: nemo"))
+}
