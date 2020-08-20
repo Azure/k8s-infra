@@ -41,17 +41,28 @@ type TypeTransformer struct {
 }
 
 func produceTargetType(target TransformTarget, descriptor string) (astmodel.Type, error) {
+	var result astmodel.Type
+
 	if target.Name != "" {
 		if target.PackagePath == "" {
-			return primitiveTypeTarget(target.Name)
-		}
+			primitive, err := primitiveTypeTarget(target.Name)
+			if err != nil {
+				return nil, err
+			}
 
-		return astmodel.MakeTypeName(
-			astmodel.MakePackageReference(target.PackagePath),
-			target.Name), nil
+			result = primitive
+		} else {
+			result = astmodel.MakeTypeName(
+				astmodel.MakePackageReference(target.PackagePath),
+				target.Name)
+		}
 	}
 
 	if target.Map != nil {
+		if result != nil {
+			return nil, errors.Errorf("multiple target types defined")
+		}
+
 		keyType, err := produceTargetType(target.Map.Key, descriptor+"/map/key")
 		if err != nil {
 			return nil, err
@@ -62,11 +73,14 @@ func produceTargetType(target TransformTarget, descriptor string) (astmodel.Type
 			return nil, err
 		}
 
-		return astmodel.NewMapType(keyType, valueType), nil
+		result = astmodel.NewMapType(keyType, valueType)
+	}
+
+	if result != nil {
+		return result, nil
 	}
 
 	return nil, errors.Errorf("no target type found in %s", descriptor)
-
 }
 
 func (transformer *TypeTransformer) Initialize() error {

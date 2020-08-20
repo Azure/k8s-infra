@@ -166,6 +166,29 @@ func Test_TransformWithMissingTargetType_ReportsError(t *testing.T) {
 	g.Expect(err.Error()).To(ContainSubstring("no target type found"))
 }
 
+func Test_TransformWithMultipleTargets_ReportsError(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	transformer := config.TypeTransformer{
+		TypeMatcher: config.TypeMatcher{Name: "tutor"},
+		Target: config.TransformTarget{
+			Name: "int",
+			Map: &config.MapType{
+				Key: config.TransformTarget{
+					Name: "string",
+				},
+				Value: config.TransformTarget{
+					Name: "string",
+				},
+			},
+		},
+	}
+
+	err := transformer.Initialize()
+	g.Expect(err).To(Not(BeNil()))
+	g.Expect(err.Error()).To(ContainSubstring("multiple target types defined"))
+}
+
 func Test_TransformWithNonExistentPrimitive_ReportsError(t *testing.T) {
 	g := NewGomegaWithT(t)
 
