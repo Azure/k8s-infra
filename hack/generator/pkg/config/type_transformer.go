@@ -52,12 +52,12 @@ func produceTargetType(target TransformTarget, descriptor string) (astmodel.Type
 	}
 
 	if target.Map != nil {
-		keyType, err := produceTargetType(target.Map.Key, descriptor+"/map/value")
+		keyType, err := produceTargetType(target.Map.Key, descriptor+"/map/key")
 		if err != nil {
 			return nil, err
 		}
 
-		valueType, err := produceTargetType(target.Map.Value, descriptor+"/map/key")
+		valueType, err := produceTargetType(target.Map.Value, descriptor+"/map/value")
 		if err != nil {
 			return nil, err
 		}
