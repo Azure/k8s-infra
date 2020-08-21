@@ -19,7 +19,7 @@ import (
 func applyPropertyRewrites(config *config.Configuration) PipelineStage {
 
 	return MakePipelineStage(
-		"property-rewrites",
+		"propertyRewrites",
 		"Applying type transformers to properties",
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 
