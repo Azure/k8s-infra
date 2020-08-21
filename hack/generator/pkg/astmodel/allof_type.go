@@ -6,7 +6,9 @@
 package astmodel
 
 import (
+	"fmt"
 	"go/ast"
+	"strings"
 )
 
 // AllOfType represents something that is the union
@@ -126,4 +128,15 @@ func (allOf AllOfType) Equals(t Type) bool {
 	}
 
 	return true
+}
+
+// String implements fmt.Stringer
+func (allOf AllOfType) String() string {
+
+	var subStrings []string
+	for _, t := range allOf.Types() {
+		subStrings = append(subStrings, t.String())
+	}
+
+	return fmt.Sprintf("(allOf: %s)", strings.Join(subStrings, ", "))
 }

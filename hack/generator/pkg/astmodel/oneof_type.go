@@ -6,7 +6,9 @@
 package astmodel
 
 import (
+	"fmt"
 	"go/ast"
+	"strings"
 )
 
 // OneOfType represents something that can be any
@@ -109,4 +111,15 @@ func (oneOf OneOfType) Equals(t Type) bool {
 	}
 
 	return true
+}
+
+// String implements fmt.Stringer
+func (oneOf OneOfType) String() string {
+
+	var subStrings []string
+	for _, t := range oneOf.Types() {
+		subStrings = append(subStrings, t.String())
+	}
+
+	return fmt.Sprintf("(oneOf: %s)", strings.Join(subStrings, ", "))
 }
