@@ -7,12 +7,13 @@ package jsonast
 
 import (
 	"fmt"
-	"github.com/go-openapi/jsonpointer"
-	"github.com/go-openapi/spec"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/url"
 	"path/filepath"
+
+	"github.com/go-openapi/jsonpointer"
+	"github.com/go-openapi/spec"
+	"github.com/pkg/errors"
 )
 
 // OpenAPISchema implements the Schema abstraction for go-openapi
