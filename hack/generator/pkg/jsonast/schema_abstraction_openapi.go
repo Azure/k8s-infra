@@ -7,12 +7,12 @@ package jsonast
 
 import (
 	"fmt"
-	"io/ioutil"
-	"net/url"
-
 	"github.com/go-openapi/jsonpointer"
 	"github.com/go-openapi/spec"
 	"github.com/pkg/errors"
+	"io/ioutil"
+	"net/url"
+	"path/filepath"
 )
 
 // OpenAPISchema implements the Schema abstraction for go-openapi
@@ -273,7 +273,8 @@ func (fileCache OpenAPISchemaCache) fetchFileRelative(baseFileName string, url *
 		return path, swagger, errors.Errorf("only relative URLs can be handled")
 	}
 
-	fileURL, err := url.Parse("file://" + baseFileName)
+	fileURL, err := url.Parse("file://" + filepath.ToSlash(baseFileName))
+
 	if err != nil {
 		return path, swagger, errors.Wrapf(err, "cannot convert filename to file URI")
 	}
