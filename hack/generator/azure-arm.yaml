@@ -131,8 +131,6 @@ anyTypePackages:
   - microsoft.storage/v20190601
   - microsoft.streamanalytics/v20160301
   - microsoft.vmwarecloudsimple/v20190401
-  - microsoft.web/v20140601
-  - microsoft.web/v20150801
   - microsoft.web/v20160601
   - microsoft.web/v20180201
   - microsoft.web/v20181101
