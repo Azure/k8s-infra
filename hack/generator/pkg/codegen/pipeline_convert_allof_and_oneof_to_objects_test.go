@@ -80,6 +80,7 @@ func TestMergeMapObject(t *testing.T) {
 	g.Expect(synth.intersectTypes(oneProp, newMap)).To(Equal(expected))
 }
 
+// merging two objects results in the union of their properties
 func TestMergeObjectObject(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -95,6 +96,7 @@ func TestMergeObjectObject(t *testing.T) {
 	g.Expect(synth.intersectTypes(obj2, obj1)).To(Equal(expected))
 }
 
+// merging two enums results in the intersection of their values
 func TestMergeEnumEnum(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -107,6 +109,7 @@ func TestMergeEnumEnum(t *testing.T) {
 	g.Expect(synth.intersectTypes(enum2, enum1)).To(Equal(expected))
 }
 
+// cannot merge enums with different base types
 func TestMergeBadEnums(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -122,6 +125,7 @@ func TestMergeBadEnums(t *testing.T) {
 	g.Expect(err.Error()).To(ContainSubstring("differing base types"))
 }
 
+// merging an enum with its base type results in the enum
 func TestMergeEnumBaseType(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -131,6 +135,7 @@ func TestMergeEnumBaseType(t *testing.T) {
 	g.Expect(synth.intersectTypes(astmodel.StringType, enum)).To(Equal(enum))
 }
 
+// cannot merge an enum with another non-base type
 func TestMergeEnumWrongBaseType(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -145,6 +150,7 @@ func TestMergeEnumWrongBaseType(t *testing.T) {
 	g.Expect(err.Error()).To(ContainSubstring("don't know how to merge enum type"))
 }
 
+// merging two optionals merges their contents
 func TestMergeOptionalOptional(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -157,6 +163,8 @@ func TestMergeOptionalOptional(t *testing.T) {
 	g.Expect(synth.intersectTypes(enum2, enum1)).To(Equal(expected))
 }
 
+// merging an optional with something else that it can be merged with results in that result
+// TODO: dubious?
 func TestMergeOptionalEnum(t *testing.T) {
 	// this feels a bit wrong but it seems to be expected in real life specs
 
@@ -171,6 +179,7 @@ func TestMergeOptionalEnum(t *testing.T) {
 	g.Expect(synth.intersectTypes(enum2, enum1)).To(Equal(expected))
 }
 
+// merging objects with common properties merges the types of those properties
 func TestMergeObjectObjectCommonProperties(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -187,6 +196,7 @@ func TestMergeObjectObjectCommonProperties(t *testing.T) {
 	g.Expect(synth.intersectTypes(obj2, obj1)).To(Equal(expected))
 }
 
+// merging a oneOf with a type that is in the oneOf results in that type
 func TestMergeOneOf(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -196,6 +206,7 @@ func TestMergeOneOf(t *testing.T) {
 	g.Expect(synth.intersectTypes(astmodel.BoolType, oneOf)).To(Equal(astmodel.BoolType))
 }
 
+// wooh!
 func TestMergeOneOfEnum(t *testing.T) {
 	// this is based on a real-world example
 	g := NewGomegaWithT(t)
