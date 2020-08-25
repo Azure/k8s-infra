@@ -37,13 +37,15 @@ func defineEnum(strings ...string) astmodel.Type {
 		values)
 }
 
-func TestMergeEquals(t *testing.T) {
+// any type merged with AnyType is just the type
+func TestMergeWithAny(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	g.Expect(synth.intersectTypes(astmodel.StringType, astmodel.AnyType)).To(Equal(astmodel.StringType))
 	g.Expect(synth.intersectTypes(astmodel.AnyType, astmodel.StringType)).To(Equal(astmodel.StringType))
 }
 
+// merging maps is merging their keys and values
 func TestMergeMaps(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -53,17 +55,15 @@ func TestMergeMaps(t *testing.T) {
 	g.Expect(synth.intersectTypes(mapStringInterface, mapInterfaceString)).To(Equal(mapStringString))
 }
 
+// merging a map with string keys with an empty object results in the map
 func TestMergeMapEmptyObject(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	expected := astmodel.NewObjectType().WithProperties(
-		astmodel.NewPropertyDefinition("additionalProperties", "additionalProperties", mapStringString),
-	)
-
-	g.Expect(synth.intersectTypes(mapStringString, emptyObject)).To(Equal(expected))
-	g.Expect(synth.intersectTypes(emptyObject, mapStringString)).To(Equal(expected))
+	g.Expect(synth.intersectTypes(mapStringString, emptyObject)).To(Equal(mapStringString))
+	g.Expect(synth.intersectTypes(emptyObject, mapStringString)).To(Equal(mapStringString))
 }
 
+// merging a map with an object puts the map into 'additionalProperties'
 func TestMergeMapObject(t *testing.T) {
 	g := NewGomegaWithT(t)
 

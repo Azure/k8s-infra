@@ -432,6 +432,12 @@ func (synthesizer) handleMapObject(left astmodel.Type, right astmodel.Type) (ast
 	if leftMap, ok := left.(*astmodel.MapType); ok {
 		if leftMap.KeyType().Equals(astmodel.StringType) {
 			if rightObj, ok := right.(*astmodel.ObjectType); ok {
+				if len(rightObj.Properties()) == 0 {
+					// no properties, treat as map
+					// TODO: there could be other things in the object to check?
+					return leftMap, nil
+				}
+
 				additionalProps := astmodel.NewPropertyDefinition("additionalProperties", "additionalProperties", leftMap)
 				return rightObj.WithProperties(additionalProps), nil
 			}
