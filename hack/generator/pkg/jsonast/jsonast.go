@@ -541,7 +541,8 @@ func generateDefinitionsFor(
 	}
 
 	if isResource {
-		//result = astmodel.NewAzureResourceType(result, nil, typeName)
+		// TODO: consider removing this and having it driven from the jsonast entrypoint
+		result = astmodel.NewAzureResourceType(result, nil, typeName)
 	}
 
 	description := []string{
@@ -718,16 +719,6 @@ func GetPrimitiveType(name SchemaType) (*astmodel.PrimitiveType, error) {
 	}
 
 	panic(fmt.Sprintf("unhandled case in getPrimitiveType: %s", name)) // this is also checked by linter
-}
-
-func appendIfUniqueType(slice []astmodel.Type, item astmodel.Type) []astmodel.Type {
-	for _, r := range slice {
-		if r.Equals(item) {
-			return slice
-		}
-	}
-
-	return append(slice, item)
 }
 
 func isResource(url *url.URL) bool {

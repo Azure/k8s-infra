@@ -7,9 +7,10 @@ package armconversion
 
 import (
 	"fmt"
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"go/ast"
 	"sync"
+
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
 
 type conversionBuilder struct {
@@ -36,7 +37,8 @@ func (builder conversionBuilder) propertyConversionHandler(
 		}
 	}
 
-	panic(fmt.Sprintf("No property found for %s", toProp.PropertyName()))
+	return nil // TODO!!!
+	//panic(fmt.Sprintf("No property found for %s", toProp.PropertyName()))
 }
 
 type propertyConversionHandler = func(toProp *astmodel.PropertyDefinition, fromType *astmodel.ObjectType) []ast.Stmt

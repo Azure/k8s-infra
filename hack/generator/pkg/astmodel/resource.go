@@ -127,6 +127,13 @@ func (definition *ResourceType) StatusType() Type {
 	return definition.status
 }
 
+// WithStatus returns a new resource that has the specified spec type
+func (definition *ResourceType) WithSpec(specType Type) *ResourceType {
+	result := *definition
+	result.spec = specType
+	return &result
+}
+
 // WithStatus returns a new resource that has the specified status type
 func (definition *ResourceType) WithStatus(statusType Type) *ResourceType {
 	result := *definition

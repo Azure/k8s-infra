@@ -8,9 +8,11 @@ package codegen
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/pkg/errors"
+	"k8s.io/klog/v2"
 )
 
 // convertAllOfAndOneOfToObjects reduces the AllOfType and OneOfType to ObjectType
@@ -27,39 +29,16 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 
 			const flattenOneOf = "flattenOneOf"
 
-			visitor.VisitTypeName = func(this *astmodel.TypeVisitor, it astmodel.TypeName, ctx interface{}) astmodel.Type {
-				if ctx != flattenOneOf {
-					return it
-				}
-
-				resolved, err := synthesizer.fullyResolve(it)
+			//originalVisitAllOf := visitor.VisitAllOfType
+			visitor.VisitAllOfType = func(this *astmodel.TypeVisitor, it astmodel.AllOfType, _ interface{}) astmodel.Type {
+				// process children first
+				object, err := synthesizer.allOfObject(it)
 				if err != nil {
 					panic(err)
 				}
 
-				if _, ok := resolved.(astmodel.OneOfType); ok {
-					return resolved
-				}
-
-				return it
-			}
-
-			originalVisitAllOf := visitor.VisitAllOfType
-			visitor.VisitAllOfType = func(this *astmodel.TypeVisitor, it astmodel.AllOfType, _ interface{}) astmodel.Type {
-				// process children first
-				result := originalVisitAllOf(this, it, flattenOneOf)
-
-				if resultAllOf, ok := result.(astmodel.AllOfType); ok {
-					object, err := synthesizer.allOfObject(resultAllOf)
-					if err != nil {
-						panic(err)
-					}
-
-					result = object
-				}
-
 				// we might end up with something that requires re-visiting
-				return this.Visit(result, flattenOneOf)
+				return this.Visit(object, flattenOneOf)
 			}
 
 			originalVisitOneOf := visitor.VisitOneOfType
@@ -79,32 +58,6 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 				return this.Visit(result, nil)
 			}
 
-			// these all pass nil context since we only want flattening inside AllOf
-			originalVisitObject := visitor.VisitObjectType
-			visitor.VisitObjectType = func(this *astmodel.TypeVisitor, it *astmodel.ObjectType, _ interface{}) astmodel.Type {
-				return originalVisitObject(this, it, nil)
-			}
-
-			originalVisitArray := visitor.VisitArrayType
-			visitor.VisitArrayType = func(this *astmodel.TypeVisitor, it *astmodel.ArrayType, _ interface{}) astmodel.Type {
-				return originalVisitArray(this, it, nil)
-			}
-
-			originalVisitOptional := visitor.VisitOptionalType
-			visitor.VisitOptionalType = func(this *astmodel.TypeVisitor, it *astmodel.OptionalType, _ interface{}) astmodel.Type {
-				return originalVisitOptional(this, it, nil)
-			}
-
-			originalVisitMap := visitor.VisitMapType
-			visitor.VisitMapType = func(this *astmodel.TypeVisitor, it *astmodel.MapType, _ interface{}) astmodel.Type {
-				return originalVisitMap(this, it, nil)
-			}
-
-			originalVisitResource := visitor.VisitResourceType
-			visitor.VisitResourceType = func(this *astmodel.TypeVisitor, it *astmodel.ResourceType, _ interface{}) astmodel.Type {
-				return originalVisitResource(this, it, nil)
-			}
-
 			// convert any panics we threw above back to errs
 			// this sets the named error type in the result
 			defer func() {
@@ -119,7 +72,8 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 
 			result = make(astmodel.Types)
 			for _, def := range defs {
-				result.Add(visitor.VisitDefinition(def, nil))
+				transformed := visitor.VisitDefinition(def, nil)
+				result.Add(transformed)
 			}
 
 			return // result, err named return types
@@ -196,171 +150,310 @@ func (synthesizer synthesizer) oneOfObject(oneOf astmodel.OneOfType) (astmodel.T
 	return objectType, nil
 }
 
-// converts a type that might be a typeName into something that isn't a typeName
-func (synthesizer synthesizer) fullyResolve(t astmodel.Type) (astmodel.Type, error) {
-	tName, ok := t.(astmodel.TypeName)
-	for ok {
-		tDef, found := synthesizer.defs[tName]
-		if !found {
-			return nil, errors.Errorf("couldn't find definition for %v", tName)
+func (synthesizer synthesizer) intersectTypes(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	for _, handler := range intersectHandlers {
+		result, err := handler(synthesizer, left, right)
+		if err != nil {
+			return nil, err
 		}
 
-		t = tDef.Type()
-		tName, ok = t.(astmodel.TypeName)
+		if result != nil {
+			return result, nil
+		}
 	}
 
-	return t, nil
+	return nil, errors.Errorf("don't know how to intersect types: %s and %s", left, right)
+}
+
+// intersectHandler knows how to do intersection for one case only
+// it is biased to examine the LHS type (but some are symmetric and handle both sides at once)
+type intersectHandler = func(synthesizer, astmodel.Type, astmodel.Type) (astmodel.Type, error)
+
+// handles the same case for the right hand side
+func flip(f intersectHandler) intersectHandler {
+	return func(s synthesizer, left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+		return f(s, right, left)
+	}
+}
+
+var intersectHandlers []intersectHandler
+
+func init() {
+	intersectHandlers = []intersectHandler{
+		synthesizer.handleEqualTypes, // equality is symmetric
+		synthesizer.handleAnyType, flip(synthesizer.handleAnyType),
+		synthesizer.handleAllOfType, flip(synthesizer.handleAllOfType),
+		synthesizer.handleTypeName, flip(synthesizer.handleTypeName),
+		synthesizer.handleOneOf, flip(synthesizer.handleOneOf),
+		synthesizer.handleOptionalOptional,                           // symmetric
+		synthesizer.handleOptional, flip(synthesizer.handleOptional), // needs to be before Enum
+		synthesizer.handleEnumEnum, // symmetric
+		synthesizer.handleEnum, flip(synthesizer.handleEnum),
+		synthesizer.handleObjectObject, // symmetric
+		synthesizer.handleMapMap,       // symmetric
+		synthesizer.handleMapObject, flip(synthesizer.handleMapObject),
+		synthesizer.handleResourceType, flip(synthesizer.handleResourceType),
+	}
+}
+
+func (synthesizer synthesizer) handleOptional(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	if leftOptional, ok := left.(*astmodel.OptionalType); ok {
+		// is this wrong? it feels wrong, but needed for {optional{enum}, string}
+		return synthesizer.intersectTypes(leftOptional.Element(), right)
+	}
+
+	return nil, nil
+}
+
+func (synthesizer synthesizer) handleResourceType(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	if leftResource, ok := left.(*astmodel.ResourceType); ok {
+		if _, ok := right.(*astmodel.ResourceType); ok {
+			return nil, errors.Errorf("cannot combine two resource types") // safety check
+		}
+
+		newSpec, err := synthesizer.intersectTypes(leftResource.SpecType(), right)
+		if err != nil {
+			return nil, err
+		}
+
+		// TODO: think about status
+		return leftResource.WithSpec(newSpec), nil
+	}
+
+	return nil, nil
+}
+
+func (synthesizer synthesizer) handleOptionalOptional(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	// if both optional merge their contents and put back in an optional
+	if leftOptional, ok := left.(*astmodel.OptionalType); ok {
+		if rightOptional, ok := right.(*astmodel.OptionalType); ok {
+			result, err := synthesizer.intersectTypes(leftOptional.Element(), rightOptional.Element())
+			if err != nil {
+				return nil, err
+			}
+
+			return astmodel.NewOptionalType(result), nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (synthesizer synthesizer) handleMapMap(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+
+	if leftMap, ok := left.(*astmodel.MapType); ok {
+		if rightMap, ok := right.(*astmodel.MapType); ok {
+			keyType, err := synthesizer.intersectTypes(leftMap.KeyType(), rightMap.KeyType())
+			if err != nil {
+				return nil, err
+			}
+
+			valueType, err := synthesizer.intersectTypes(leftMap.ValueType(), rightMap.ValueType())
+			if err != nil {
+				return nil, err
+			}
+
+			return astmodel.NewMapType(keyType, valueType), nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (synthesizer synthesizer) handleObjectObject(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	if leftObj, ok := left.(*astmodel.ObjectType); ok {
+		if rightObj, ok := right.(*astmodel.ObjectType); ok {
+			mergedProps := make(map[astmodel.PropertyName]*astmodel.PropertyDefinition)
+
+			for _, p := range leftObj.Properties() {
+				mergedProps[p.PropertyName()] = p
+			}
+
+			for _, p := range rightObj.Properties() {
+				if existingProp, ok := mergedProps[p.PropertyName()]; ok {
+					newType, err := synthesizer.intersectTypes(existingProp.PropertyType(), p.PropertyType())
+					if err != nil {
+						klog.Errorf("unable to combine properties: %s (%v)", p.PropertyName(), err)
+						continue
+						//return nil, err
+					}
+
+					// TODO: need to handle merging requiredness and tags and...
+					mergedProps[p.PropertyName()] = existingProp.WithType(newType)
+				} else {
+					mergedProps[p.PropertyName()] = p
+				}
+			}
+
+			// flatten
+			var properties []*astmodel.PropertyDefinition
+			for _, p := range mergedProps {
+				properties = append(properties, p)
+			}
+
+			// TODO: need to handle merging other bits of objects
+			return leftObj.WithProperties(properties...), nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (synthesizer synthesizer) handleEnumEnum(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+
+	if leftEnum, ok := left.(*astmodel.EnumType); ok {
+		// if both are enums then the elements must be common
+		if rightEnum, ok := right.(*astmodel.EnumType); ok {
+			if !leftEnum.BaseType().Equals(rightEnum.BaseType()) {
+				return nil, errors.Errorf("cannot merge enums with differing base types")
+			}
+
+			var inBoth []astmodel.EnumValue
+
+			for _, option := range leftEnum.Options() {
+				for _, otherOption := range rightEnum.Options() {
+					if option == otherOption {
+						inBoth = append(inBoth, option)
+						break
+					}
+				}
+			}
+
+			return astmodel.NewEnumType(leftEnum.BaseType(), inBoth), nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (synthesizer synthesizer) handleEnum(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	if leftEnum, ok := left.(*astmodel.EnumType); ok {
+		// we can restrict from a (maybe optional) base type to an enum type
+		if leftEnum.BaseType().Equals(right) ||
+			astmodel.NewOptionalType(leftEnum.BaseType()).Equals(right) {
+			return leftEnum, nil
+		}
+
+		var strs []string
+		for _, enumValue := range leftEnum.Options() {
+			strs = append(strs, enumValue.String())
+		}
+
+		return nil, errors.Errorf("don't know how to merge enum type (%s) with %s", strings.Join(strs, ", "), right)
+	}
+
+	return nil, nil
+}
+
+func (synthesizer synthesizer) handleAllOfType(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	if leftAllOf, ok := left.(astmodel.AllOfType); ok {
+		result, err := synthesizer.allOfObject(leftAllOf)
+		if err != nil {
+			return nil, err
+		}
+
+		return synthesizer.intersectTypes(result, right)
+	}
+
+	return nil, nil
+}
+
+// if combining a type with a oneOf that contains that type, the result is that type
+func (synthesizer synthesizer) handleOneOf(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	if leftOneOf, ok := left.(astmodel.OneOfType); ok {
+		// if there is an equal case, use that:
+		for _, lType := range leftOneOf.Types() {
+			if lType.Equals(right) {
+				return lType, nil
+			}
+		}
+
+		// otherwise intersect with each type:
+		var newTypes []astmodel.Type
+		for _, lType := range leftOneOf.Types() {
+			newType, err := synthesizer.intersectTypes(lType, right)
+			if err != nil {
+				return nil, err
+			}
+
+			newTypes = append(newTypes, newType)
+		}
+
+		return astmodel.MakeOneOfType(newTypes), nil
+	}
+
+	return nil, nil
+}
+
+func (synthesizer synthesizer) handleTypeName(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	if leftName, ok := left.(astmodel.TypeName); ok {
+		if found, ok := synthesizer.defs[leftName]; !ok {
+			panic(fmt.Sprintf("couldn't find type %s", leftName))
+		} else {
+			result, err := synthesizer.intersectTypes(found.Type(), right)
+			if err != nil {
+				return nil, err
+			}
+
+			// TODO: can we somehow process these pointed-to types first,
+			// so that their innards are resolved already and we can retain
+			// the names?
+
+			if result.Equals(found.Type()) {
+				// if we got back the same thing we are referencing, preserve the reference
+				return leftName, nil
+			}
+
+			return result, nil
+		}
+	}
+
+	return nil, nil
+}
+
+// any type always disappears when intersected with another type
+func (synthesizer) handleAnyType(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	if left.Equals(astmodel.AnyType) {
+		return right, nil
+	}
+
+	return nil, nil
+}
+
+// two identical types can become the same type
+func (synthesizer) handleEqualTypes(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	if left.Equals(right) {
+		return left, nil
+	}
+
+	return nil, nil
+}
+
+// a string map and object can be combined with the map type becoming additionalProperties
+func (synthesizer) handleMapObject(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	if leftMap, ok := left.(*astmodel.MapType); ok {
+		if leftMap.KeyType().Equals(astmodel.StringType) {
+			if rightObj, ok := right.(*astmodel.ObjectType); ok {
+				additionalProps := astmodel.NewPropertyDefinition("additionalProperties", "additionalProperties", leftMap)
+				return rightObj.WithProperties(additionalProps), nil
+			}
+		}
+	}
+
+	return nil, nil
 }
 
 // makes an ObjectType for an AllOf type
 func (synthesizer synthesizer) allOfObject(allOf astmodel.AllOfType) (astmodel.Type, error) {
 
-	props, err := synthesizer.extractAllOfProperties(allOf)
-	if err != nil {
-		return nil, err
-	}
-
-	return astmodel.NewObjectType().WithProperties(props...), nil
-
-	// see if any of the inner ones are a oneOf:
-	var oneOfs []astmodel.OneOfType
-	var noneOneOfs []astmodel.Type
+	var intersection astmodel.Type = astmodel.AnyType
 	for _, t := range allOf.Types() {
-		tResolved, err := synthesizer.fullyResolve(t)
+		var err error
+		intersection, err = synthesizer.intersectTypes(intersection, t)
 		if err != nil {
 			return nil, err
 		}
-
-		if oneOf, ok := tResolved.(astmodel.OneOfType); ok {
-			oneOf, err := synthesizer.flattenOneOf(oneOf)
-			if err != nil {
-				return nil, err
-			}
-
-			oneOfs = append(oneOfs, astmodel.MakeOneOfType(oneOf).(astmodel.OneOfType)) // guaranteed to be of correct type
-		} else {
-			// do _not_ use tResolved here as we want to preserve TypeNames that
-			// do not point to a OneOf
-			noneOneOfs = append(noneOneOfs, t)
-		}
 	}
 
-	if len(oneOfs) > 1 {
-		panic("cannot handle multiple oneOfs in allOf")
-	}
-
-	// If there's more than one option, synthesize a type.
-	var properties []*astmodel.PropertyDefinition
-
-	for _, t := range noneOneOfs {
-		// unpack the contents of what we got from subhandlers:
-		ps, err := synthesizer.extractAllOfProperties(t)
-		if err != nil {
-			return nil, err
-		}
-
-		properties = append(properties, ps...)
-	}
-
-	if len(oneOfs) == 0 {
-		result := astmodel.NewObjectType().WithProperties(properties...)
-		return result, nil
-	}
-
-	// if we have an allOf over a oneOf then we want to push
-	// the allOf into the oneOf
-	// so:
-	// 	allOf { x, y, oneOf {a, b} }
-	// becomes:
-	//  oneOf { allOf {x, y, a}, allOf {x, y, b} }
-	// the latter is much easier to model
-
-	var newOneOfTypes []astmodel.Type
-	for _, oneOfType := range oneOfs[0].Types() {
-		// unpack the
-		unpackedOneOf, err := synthesizer.extractAllOfProperties(oneOfType)
-		if err != nil {
-			return nil, err
-		}
-
-		newOneOfType := astmodel.NewObjectType().WithProperties(append(properties, unpackedOneOf...)...)
-		newOneOfTypes = append(newOneOfTypes, newOneOfType)
-	}
-
-	return astmodel.MakeOneOfType(newOneOfTypes), nil
-}
-
-// flattenOneOf flattens a OneOf so that it does not contain any nested OneOfs,
-// including via TypeName indirection
-func (synthesizer synthesizer) flattenOneOf(oneOfType astmodel.OneOfType) ([]astmodel.Type, error) {
-	var types []astmodel.Type
-
-	for _, t := range oneOfType.Types() {
-		tResolved, err := synthesizer.fullyResolve(t)
-		if err != nil {
-			return nil, err
-		}
-
-		if tOneOf, ok := tResolved.(astmodel.OneOfType); ok {
-			types = append(types, tOneOf.Types()...)
-		} else {
-			// do _not_ use tResolved here as we want to preserve TypeNames
-			// that do not point to OneOfs
-			types = append(types, t)
-		}
-	}
-
-	return types, nil
-}
-
-// extractAllOfProperties pulls out all the properties to be put into the destination object type
-func (synthesizer synthesizer) extractAllOfProperties(st astmodel.Type) ([]*astmodel.PropertyDefinition, error) {
-	switch concreteType := st.(type) {
-	case *astmodel.ObjectType:
-		// if it's an object type get all its properties:
-		return concreteType.Properties(), nil
-
-	case *astmodel.ResourceType:
-		// it is a little strange to merge one resource into another with allOf,
-		// but it is done and therefore we have to support it.
-		// (an example is the Microsoft.VisualStudio Project type)
-		// at the moment we will just take the spec type:
-		return synthesizer.extractAllOfProperties(concreteType.SpecType())
-
-	case astmodel.TypeName:
-		if def, ok := synthesizer.defs[concreteType]; ok {
-			return synthesizer.extractAllOfProperties(def.Type())
-		}
-
-		return nil, errors.Errorf("couldn't find definition for: %v", concreteType)
-
-	case *astmodel.MapType:
-		if concreteType.KeyType().Equals(astmodel.StringType) {
-			// move map type into 'additionalProperties' property
-			// TODO: consider privileging this as its own property on ObjectType,
-			// since it has special behaviour and we need to handle it differently
-			// for JSON serialization
-			newProp := astmodel.NewPropertyDefinition(
-				"additionalProperties",
-				"additionalProperties",
-				concreteType)
-
-			return []*astmodel.PropertyDefinition{newProp}, nil
-		}
-
-	case astmodel.AllOfType:
-		var properties []*astmodel.PropertyDefinition
-		for _, t := range concreteType.Types() {
-			props, err := synthesizer.extractAllOfProperties(t)
-			if err != nil {
-				return nil, err
-			}
-
-			properties = append(properties, props...)
-		}
-
-		return properties, nil
-	}
-
-	return nil, errors.Errorf("unable to handle type in allOf: %#v\n", st)
+	return intersection, nil
 }

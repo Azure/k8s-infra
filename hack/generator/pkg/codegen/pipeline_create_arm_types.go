@@ -225,12 +225,14 @@ func getResourceSpecDefinition(
 		return astmodel.TypeDefinition{}, errors.Errorf("spec was not of type TypeName, instead: %T", resourceType.SpecType())
 	}
 
-	resourceSpecDef, ok := definitions[specName]
-	if !ok {
-		return astmodel.TypeDefinition{}, errors.Errorf("couldn't find spec")
+	// remove any intermediary typenames:
+	resolvedType, err := definitions.FullyResolve(specName)
+	if err != nil {
+		return astmodel.TypeDefinition{}, err
 	}
 
-	return resourceSpecDef, nil
+	// preserve the outermost typename here:
+	return astmodel.MakeTypeDefinition(specName, resolvedType), nil
 }
 
 func createArmResourceSpecDefinition(

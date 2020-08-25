@@ -7,10 +7,12 @@ package armconversion
 
 import (
 	"fmt"
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"go/ast"
 	"go/token"
+
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
+	"k8s.io/klog/v2"
 )
 
 const nameParameterString = "name"
@@ -147,7 +149,10 @@ func (builder *convertToArmBuilder) typePropertyHandler(
 
 	enumTypeName, ok := propertyType.(astmodel.TypeName)
 	if !ok {
-		panic(fmt.Sprintf("Type property was not an enum, was %T", toProp.PropertyName()))
+		// panic(fmt.Sprintf("'Type' property was not an enum, was %s", toProp.PropertyType()))
+		//TODO!!!
+		klog.Errorf("'Type' property was not an enum, was %s", toProp.PropertyType())
+		return nil
 	}
 
 	def, err := builder.codeGenerationContext.GetImportedDefinition(enumTypeName)
