@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) Microsoft Corporation.
+ * Licensed under the MIT license.
+ */
+
 package genruntime
 
 import (
@@ -5,12 +10,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// MetaObject represents an arbitrary k8s-infra custom resource
 type MetaObject interface {
 	runtime.Object
 	metav1.Object
 	KubernetesResource
 }
 
+// KubernetesResource is an Azure resource. This interface contains the common set of
+// methods that apply to all k8s-infra resources.
 type KubernetesResource interface {
 	// Owner returns the ResourceReference of the owner, or nil if there is no owner
 	Owner() *ResourceReference

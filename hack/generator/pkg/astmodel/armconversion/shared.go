@@ -45,12 +45,11 @@ var once sync.Once
 var azureNameProperty *astmodel.PropertyDefinition
 
 func initializeAzureName(idFactory astmodel.IdentifierFactory) {
-	azureName := "azureName"
 	azureNameFieldDescription := "The name of the resource in Azure. This is often the same as" +
 		" the name of the resource in Kubernetes but it doesn't have to be."
 	azureNameProperty = astmodel.NewPropertyDefinition(
-		idFactory.CreatePropertyName(azureName, astmodel.Exported),
-		azureName,
+		idFactory.CreatePropertyName(astmodel.AzureNameProperty, astmodel.Exported),
+		idFactory.CreateIdentifier(astmodel.AzureNameProperty, astmodel.NotExported),
 		astmodel.StringType).WithDescription(azureNameFieldDescription)
 }
 

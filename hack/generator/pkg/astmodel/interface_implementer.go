@@ -11,8 +11,7 @@ import (
 	"sort"
 )
 
-// TODO: need to add tests for this probably
-type InterfaceImplementer struct { // TODO: Do we like this name?
+type InterfaceImplementer struct {
 	interfaces map[TypeName]*InterfaceImplementation
 }
 
@@ -22,20 +21,16 @@ func MakeInterfaceImplementer() InterfaceImplementer {
 }
 
 // WithInterface creates a new ObjectType with a function (method) attached to it
-func (interfaceImplementer InterfaceImplementer) WithInterface(iface *InterfaceImplementation) InterfaceImplementer {
-	result := interfaceImplementer.copy()
+func (i InterfaceImplementer) WithInterface(iface *InterfaceImplementation) InterfaceImplementer {
+	result := i.copy()
 	result.interfaces[iface.Name()] = iface
 
 	return result
 }
 
-//func (interfaceImplementer *InterfaceImplementer) Interfaces() {
-//	panic("TODO")
-//}
-
-func (interfaceImplementer InterfaceImplementer) References() TypeNameSet {
+func (i InterfaceImplementer) References() TypeNameSet {
 	var results TypeNameSet
-	for _, iface := range interfaceImplementer.interfaces {
+	for _, iface := range i.interfaces {
 		for ref := range iface.References() {
 			results = results.Add(ref)
 		}
@@ -44,11 +39,7 @@ func (interfaceImplementer InterfaceImplementer) References() TypeNameSet {
 	return results
 }
 
-func (interfaceImplementer InterfaceImplementer) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
-	panic("InterfaceImplementer cannot be used as a standalone type")
-}
-
-func (interfaceImplementer InterfaceImplementer) AsDeclarations(
+func (i InterfaceImplementer) AsDeclarations(
 	codeGenerationContext *CodeGenerationContext,
 	typeName TypeName,
 	_ []string) []ast.Decl {
@@ -57,7 +48,7 @@ func (interfaceImplementer InterfaceImplementer) AsDeclarations(
 
 	// First interfaces must be ordered by name for deterministic output
 	var ifaceNames []TypeName
-	for ifaceName := range interfaceImplementer.interfaces {
+	for ifaceName := range i.interfaces {
 		ifaceNames = append(ifaceNames, ifaceName)
 	}
 
@@ -66,9 +57,9 @@ func (interfaceImplementer InterfaceImplementer) AsDeclarations(
 	})
 
 	for _, ifaceName := range ifaceNames {
-		iface := interfaceImplementer.interfaces[ifaceName]
+		iface := i.interfaces[ifaceName]
 
-		result = append(result, interfaceImplementer.generateInterfaceImplAssertion(codeGenerationContext, iface, typeName))
+		result = append(result, i.generateInterfaceImplAssertion(codeGenerationContext, iface, typeName))
 
 		var funcNames []string
 		for funcName := range iface.functions {
@@ -86,19 +77,14 @@ func (interfaceImplementer InterfaceImplementer) AsDeclarations(
 	return result
 }
 
-func (interfaceImplementer InterfaceImplementer) Equals(t Type) bool {
+func (i InterfaceImplementer) Equals(other InterfaceImplementer) bool {
 
-	otherInterfaceImplementer, ok := t.(InterfaceImplementer)
-	if !ok {
+	if len(i.interfaces) != len(other.interfaces) {
 		return false
 	}
 
-	if len(interfaceImplementer.interfaces) != len(otherInterfaceImplementer.interfaces) {
-		return false
-	}
-
-	for ifaceName, iface := range interfaceImplementer.interfaces {
-		otherIface, ok := otherInterfaceImplementer.interfaces[ifaceName]
+	for ifaceName, iface := range i.interfaces {
+		otherIface, ok := other.interfaces[ifaceName]
 		if !ok {
 			return false
 		}
@@ -111,21 +97,17 @@ func (interfaceImplementer InterfaceImplementer) Equals(t Type) bool {
 	return true
 }
 
-// TODO: Do we actually want to impl this - I kinda feel like we actually don't?
-// TODO: maybe we want an interface with _most_ of these methods but not AsType?
-var _ Type = InterfaceImplementer{}
-
-func (interfaceImplementer InterfaceImplementer) RequiredImports() []PackageReference {
+func (i InterfaceImplementer) RequiredImports() []PackageReference {
 	var result []PackageReference
 
-	for _, i := range interfaceImplementer.interfaces {
+	for _, i := range i.interfaces {
 		result = append(result, i.RequiredImports()...)
 	}
 
 	return result
 }
 
-func (interfaceImplementer InterfaceImplementer) generateInterfaceImplAssertion(
+func (i InterfaceImplementer) generateInterfaceImplAssertion(
 	codeGenerationContext *CodeGenerationContext,
 	iface *InterfaceImplementation,
 	typeName TypeName) ast.Decl {
@@ -161,11 +143,11 @@ func (interfaceImplementer InterfaceImplementer) generateInterfaceImplAssertion(
 	return typeAssertion
 }
 
-func (interfaceImplementer InterfaceImplementer) copy() InterfaceImplementer {
-	result := interfaceImplementer
+func (i InterfaceImplementer) copy() InterfaceImplementer {
+	result := i
 
-	result.interfaces = make(map[TypeName]*InterfaceImplementation, len(interfaceImplementer.interfaces))
-	for k, v := range interfaceImplementer.interfaces {
+	result.interfaces = make(map[TypeName]*InterfaceImplementation, len(i.interfaces))
+	for k, v := range i.interfaces {
 		result.interfaces[k] = v
 	}
 

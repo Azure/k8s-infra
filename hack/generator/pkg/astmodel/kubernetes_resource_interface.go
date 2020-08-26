@@ -6,24 +6,43 @@
 package astmodel
 
 import (
-	"fmt"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
+	"github.com/pkg/errors"
 	"go/ast"
 	"go/token"
+)
+
+// These are some magical field names which we're going to use or generate
+const (
+	AzureNameProperty = "AzureName"
+	OwnerProperty     = "Owner"
 )
 
 // NewArmTransformerImpl creates a new interface with the specified ARM conversion functions
 func NewKubernetesResourceInterfaceImpl(
 	idFactory IdentifierFactory,
-	spec *ObjectType) *InterfaceImplementation {
+	spec *ObjectType) (*InterfaceImplementation, error) {
+
+	// Check the spec first to ensure it looks how we expect
+	ownerProperty := idFactory.CreatePropertyName(OwnerProperty, Exported)
+	_, ok := spec.Property(ownerProperty)
+	if !ok {
+		return nil, errors.Errorf("Resource spec doesn't have %q property", ownerProperty)
+	}
+
+	azureNameProperty := idFactory.CreatePropertyName(AzureNameProperty, Exported)
+	_, ok = spec.Property(azureNameProperty)
+	if !ok {
+		return nil, errors.Errorf("Resource spec doesn't have %q property", azureNameProperty)
+	}
 
 	funcs := map[string]Function{
-		"Owner": &kubernetesResourceFunction{
+		OwnerProperty: &kubernetesResourceFunction{
 			spec:      spec,
 			idFactory: idFactory,
 			asFunc:    ownerFunction,
 		},
-		"AzureName": &kubernetesResourceFunction{
+		AzureNameProperty: &kubernetesResourceFunction{
 			spec:      spec,
 			idFactory: idFactory,
 			asFunc:    azureNameFunction,
@@ -33,8 +52,7 @@ func NewKubernetesResourceInterfaceImpl(
 	result := NewInterfaceImplementation(
 		MakeTypeName(MakeGenRuntimePackageReference(), "KubernetesResource"),
 		funcs)
-
-	return result
+	return result, nil
 }
 
 type kubernetesResourceFunction struct {
@@ -73,12 +91,6 @@ func (k *kubernetesResourceFunction) Equals(f Function) bool {
 func ownerFunction(k *kubernetesResourceFunction, codeGenerationContext *CodeGenerationContext, receiver TypeName, methodName string) *ast.FuncDecl {
 	receiverIdent := ast.NewIdent(k.idFactory.CreateIdentifier(receiver.Name(), NotExported))
 	receiverType := receiver.AsType(codeGenerationContext)
-
-	// We need to ensure spec has an owner, then we want to return that
-	_, ok := k.spec.Property("Owner")
-	if !ok {
-		panic(fmt.Sprintf("Resource spec %q doesn't have owner property", receiver))
-	}
 
 	specSelector := &ast.SelectorExpr{
 		X:   receiverIdent,
@@ -147,6 +159,7 @@ func createResourceReference(
 	groupIdent *ast.Ident,
 	kindIdent *ast.Ident,
 	specSelector *ast.SelectorExpr) ast.Expr {
+
 	return astbuilder.AddrOf(
 		&ast.CompositeLit{
 			Type: &ast.SelectorExpr{
@@ -159,7 +172,7 @@ func createResourceReference(
 					Value: &ast.SelectorExpr{
 						X: &ast.SelectorExpr{
 							X:   specSelector,
-							Sel: ast.NewIdent("Owner"),
+							Sel: ast.NewIdent(OwnerProperty),
 						},
 						Sel: ast.NewIdent("Name"),
 					},
@@ -204,7 +217,7 @@ func azureNameFunction(k *kubernetesResourceFunction, codeGenerationContext *Cod
 					Results: []ast.Expr{
 						&ast.SelectorExpr{
 							X:   specSelector,
-							Sel: ast.NewIdent("AzureName"),
+							Sel: ast.NewIdent(AzureNameProperty),
 						},
 					},
 				},

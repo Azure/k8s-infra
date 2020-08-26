@@ -8,6 +8,7 @@ package codegen
 import (
 	"context"
 	"github.com/pkg/errors"
+	"k8s.io/klog/v2"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
@@ -39,9 +40,16 @@ func applyKubernetesResourceInterface(idFactory astmodel.IdentifierFactory) Pipe
 						return nil, errors.Errorf("Spec %q was not of type ObjectType, instead %T", specName, spec.Type())
 					}
 
-					typeWithInterfaceImpl := resource.WithInterface(
-						astmodel.NewKubernetesResourceInterfaceImpl(idFactory, specObject))
-					newDef := typeDef.WithType(typeWithInterfaceImpl)
+					iface, err := astmodel.NewKubernetesResourceInterfaceImpl(idFactory, specObject)
+					if err != nil {
+						// TODO: This should be changed to an error once we handle oneOf/allOf better
+						// return nil, errors.Wrapf(err, "Couldn't implement Kubernetes resource interface for %q", spec.Name())
+						klog.Warningf("Couldn't implement Kubernetes resource interface for %q, due to: %v", spec.Name(), err)
+						result.Add(typeDef)
+						continue
+					}
+
+					newDef := typeDef.WithType(resource.WithInterface(iface))
 					result.Add(newDef)
 				} else {
 					result.Add(typeDef)
