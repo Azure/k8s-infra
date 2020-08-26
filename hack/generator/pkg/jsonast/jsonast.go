@@ -185,7 +185,12 @@ func (scanner *SchemaScanner) GenerateDefinitionsFromDeploymentTemplate(ctx cont
 
 		resourceDef, ok := scanner.findTypeDefinition(resourceRef)
 		if !ok {
-			return nil, errors.Errorf("unable to resolve resource object type")
+			return nil, errors.Errorf("unable to resolve resource definition for %v", resourceRef)
+		}
+
+		if _, ok := resourceDef.Type().(*astmodel.ResourceType); !ok {
+			// safety check
+			return nil, errors.Errorf("resource reference %v in deployment template did not resolve to resource type", resourceRef)
 		}
 
 		//klog.V(2).Infof("Editing resource %v", resourceRef)
@@ -725,7 +730,8 @@ func isResource(url *url.URL) bool {
 	fragmentParts := strings.FieldsFunc(url.Fragment, isURLPathSeparator)
 
 	for _, fragmentPart := range fragmentParts {
-		if fragmentPart == "resourceDefinitions" {
+		if fragmentPart == "resourceDefinitions" ||
+			fragmentPart == "unknown_resourceDefinitions" { // EventGrid does this, unsure why
 			return true
 		}
 	}

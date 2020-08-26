@@ -22,32 +22,39 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 		"Convert allOf and oneOf to object types",
 		func(ctx context.Context, defs astmodel.Types) (result astmodel.Types, err error) {
 			visitor := astmodel.MakeTypeVisitor()
-			synthesizer := synthesizer{idFactory, defs}
 
-			// the context here is whether or not to flatten OneOf types
-			// we only want this inside AllOfType, so it should only go down one level
-
-			const flattenOneOf = "flattenOneOf"
+			// the context here is whether we are selecting spec or status fields
 
 			//originalVisitAllOf := visitor.VisitAllOfType
-			visitor.VisitAllOfType = func(this *astmodel.TypeVisitor, it astmodel.AllOfType, _ interface{}) astmodel.Type {
-				// process children first
-				object, err := synthesizer.allOfObject(it)
+			visitor.VisitAllOfType = func(this *astmodel.TypeVisitor, it astmodel.AllOfType, ctx interface{}) astmodel.Type {
+				synth := synthesizer{
+					resourceSelector: ctx.(resourceSelector),
+					defs:             defs,
+					idFactory:        idFactory,
+				}
+
+				object, err := synth.allOfObject(it)
 				if err != nil {
 					panic(err)
 				}
 
 				// we might end up with something that requires re-visiting
-				return this.Visit(object, flattenOneOf)
+				return this.Visit(object, ctx)
 			}
 
 			originalVisitOneOf := visitor.VisitOneOfType
-			visitor.VisitOneOfType = func(this *astmodel.TypeVisitor, it astmodel.OneOfType, _ interface{}) astmodel.Type {
+			visitor.VisitOneOfType = func(this *astmodel.TypeVisitor, it astmodel.OneOfType, ctx interface{}) astmodel.Type {
 				// process children first
-				result := originalVisitOneOf(this, it, nil)
+				result := originalVisitOneOf(this, it, ctx)
 
 				if resultOneOf, ok := result.(astmodel.OneOfType); ok {
-					object, err := synthesizer.oneOfObject(resultOneOf)
+					synth := synthesizer{
+						resourceSelector: ctx.(resourceSelector),
+						defs:             defs,
+						idFactory:        idFactory,
+					}
+
+					object, err := synth.oneOfObject(resultOneOf)
 					if err != nil {
 						panic(err)
 					}
@@ -55,15 +62,31 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 					result = object
 				}
 
-				return this.Visit(result, nil)
+				return this.Visit(result, ctx)
 			}
+
+			var specSelector resourceSelector = func(r *astmodel.ResourceType) astmodel.Type {
+				return r.SpecType()
+			}
+
+			var statusSelector resourceSelector = func(r *astmodel.ResourceType) astmodel.Type {
+				return r.StatusType()
+			}
+
+			visitor.VisitResourceType = func(this *astmodel.TypeVisitor, it *astmodel.ResourceType, ctx interface{}) astmodel.Type {
+				spec := this.Visit(it.SpecType(), specSelector)
+				status := this.Visit(it.StatusType(), statusSelector)
+				return it.WithSpec(spec).WithStatus(status)
+			}
+
+			var processing astmodel.TypeName
 
 			// convert any panics we threw above back to errs
 			// this sets the named error type in the result
 			defer func() {
 				if caught := recover(); caught != nil {
 					if e, ok := caught.(error); ok {
-						err = e
+						err = errors.Wrapf(e, "error while visiting %v", processing)
 					} else {
 						panic(caught)
 					}
@@ -72,7 +95,15 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 
 			result = make(astmodel.Types)
 			for _, def := range defs {
-				transformed := visitor.VisitDefinition(def, nil)
+				resourceUpdater := specSelector
+				// TODO: we need flags
+				if strings.HasSuffix(def.Name().Name(), "_Status") {
+					resourceUpdater = statusSelector
+				}
+
+				processing = def.Name()
+
+				transformed := visitor.VisitDefinition(def, resourceUpdater)
 				result.Add(transformed)
 			}
 
@@ -80,9 +111,11 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 		})
 }
 
+type resourceSelector func(*astmodel.ResourceType) astmodel.Type
 type synthesizer struct {
-	idFactory astmodel.IdentifierFactory
-	defs      astmodel.Types
+	resourceSelector resourceSelector
+	idFactory        astmodel.IdentifierFactory
+	defs             astmodel.Types
 }
 
 func (s synthesizer) oneOfObject(oneOf astmodel.OneOfType) (astmodel.Type, error) {
@@ -90,64 +123,80 @@ func (s synthesizer) oneOfObject(oneOf astmodel.OneOfType) (astmodel.Type, error
 	// Note that this is required because Kubernetes CRDs do not support OneOf the same way
 	// OpenAPI does, see https://github.com/Azure/k8s-infra/issues/71
 	var properties []*astmodel.PropertyDefinition
+
 	propertyDescription := "mutually exclusive with all other properties"
-
 	for i, t := range oneOf.Types() {
-		switch concreteType := t.(type) {
-		case astmodel.TypeName:
-			propertyName := s.idFactory.CreatePropertyName(concreteType.Name(), astmodel.Exported)
-
-			// JSON name is unimportant here because we will implement the JSON marshaller anyway,
-			// but we still need it for controller-gen
-			jsonName := s.idFactory.CreateIdentifier(concreteType.Name(), astmodel.NotExported)
-			property := astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType).MakeOptional().WithDescription(propertyDescription)
-			properties = append(properties, property)
-		case *astmodel.EnumType:
-			// TODO: This name sucks but what alternative do we have?
-			name := fmt.Sprintf("enum%v", i)
-			propertyName := s.idFactory.CreatePropertyName(name, astmodel.Exported)
-
-			// JSON name is unimportant here because we will implement the JSON marshaller anyway,
-			// but we still need it for controller-gen
-			jsonName := s.idFactory.CreateIdentifier(name, astmodel.NotExported)
-			property := astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType).MakeOptional().WithDescription(propertyDescription)
-			properties = append(properties, property)
-		case *astmodel.ObjectType:
-			// TODO: This name sucks but what alternative do we have?
-			name := fmt.Sprintf("object%v", i)
-			propertyName := s.idFactory.CreatePropertyName(name, astmodel.Exported)
-
-			// JSON name is unimportant here because we will implement the JSON marshaller anyway,
-			// but we still need it for controller-gen
-			jsonName := s.idFactory.CreateIdentifier(name, astmodel.NotExported)
-			property := astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType).MakeOptional().WithDescription(propertyDescription)
-			properties = append(properties, property)
-		case *astmodel.PrimitiveType:
-			var primitiveTypeName string
-			if concreteType == astmodel.AnyType {
-				primitiveTypeName = "anything"
-			} else {
-				primitiveTypeName = concreteType.Name()
-			}
-
-			// TODO: This name sucks but what alternative do we have?
-			name := fmt.Sprintf("%v%v", primitiveTypeName, i)
-			propertyName := s.idFactory.CreatePropertyName(name, astmodel.Exported)
-
-			// JSON name is unimportant here because we will implement the JSON marshaller anyway,
-			// but we still need it for controller-gen
-			jsonName := s.idFactory.CreateIdentifier(name, astmodel.NotExported)
-			property := astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType).MakeOptional().WithDescription(propertyDescription)
-			properties = append(properties, property)
-		default:
-			return nil, errors.Errorf("unexpected oneOf member, type: %T", t)
+		prop, err := s.extractOneOfProperties(i, t)
+		if err != nil {
+			return nil, err
 		}
+
+		prop = prop.MakeOptional()
+		prop = prop.WithDescription(propertyDescription)
+
+		properties = append(properties, prop)
 	}
 
 	objectType := astmodel.NewObjectType().WithProperties(properties...)
 	objectType = objectType.WithFunction(astmodel.JSONMarshalFunctionName, astmodel.NewOneOfJSONMarshalFunction(objectType, s.idFactory))
 
 	return objectType, nil
+}
+
+func (s synthesizer) extractOneOfProperties(i int, from astmodel.Type) (*astmodel.PropertyDefinition, error) {
+	switch concreteType := from.(type) {
+	case astmodel.TypeName:
+		propertyName := s.idFactory.CreatePropertyName(concreteType.Name(), astmodel.Exported)
+
+		// JSON name is unimportant here because we will implement the JSON marshaller anyway,
+		// but we still need it for controller-gen
+		jsonName := s.idFactory.CreateIdentifier(concreteType.Name(), astmodel.NotExported)
+		return astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType), nil
+	case *astmodel.EnumType:
+		// TODO: This name sucks but what alternative do we have?
+		name := fmt.Sprintf("enum%v", i)
+		propertyName := s.idFactory.CreatePropertyName(name, astmodel.Exported)
+
+		// JSON name is unimportant here because we will implement the JSON marshaller anyway,
+		// but we still need it for controller-gen
+		jsonName := s.idFactory.CreateIdentifier(name, astmodel.NotExported)
+		return astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType), nil
+	case *astmodel.ObjectType:
+		// TODO: This name sucks but what alternative do we have?
+		name := fmt.Sprintf("object%v", i)
+		propertyName := s.idFactory.CreatePropertyName(name, astmodel.Exported)
+
+		// JSON name is unimportant here because we will implement the JSON marshaller anyway,
+		// but we still need it for controller-gen
+		jsonName := s.idFactory.CreateIdentifier(name, astmodel.NotExported)
+		return astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType), nil
+	case *astmodel.PrimitiveType:
+		var primitiveTypeName string
+		if concreteType == astmodel.AnyType {
+			primitiveTypeName = "anything"
+		} else {
+			primitiveTypeName = concreteType.Name()
+		}
+
+		// TODO: This name sucks but what alternative do we have?
+		name := fmt.Sprintf("%v%v", primitiveTypeName, i)
+		propertyName := s.idFactory.CreatePropertyName(name, astmodel.Exported)
+
+		// JSON name is unimportant here because we will implement the JSON marshaller anyway,
+		// but we still need it for controller-gen
+		jsonName := s.idFactory.CreateIdentifier(name, astmodel.NotExported)
+		return astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType).MakeOptional(), nil
+
+	case *astmodel.ResourceType:
+		// a resource nested inside another type
+		// need to see if we are processing status or spec types
+		selectedType := s.resourceSelector(concreteType)
+		return s.extractOneOfProperties(i, selectedType) // no resource prefix?
+
+	default:
+		return nil, errors.Errorf("unexpected oneOf member, type: %T", from)
+	}
+
 }
 
 func (s synthesizer) intersectTypes(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
@@ -211,13 +260,8 @@ func (s synthesizer) handleResourceType(left astmodel.Type, right astmodel.Type)
 			return nil, errors.Errorf("cannot combine two resource types") // safety check
 		}
 
-		newSpec, err := s.intersectTypes(leftResource.SpecType(), right)
-		if err != nil {
-			return nil, err
-		}
-
-		// TODO: think about status
-		return leftResource.WithSpec(newSpec), nil
+		// resourceSelector picks the right spec/status for us
+		return s.intersectTypes(s.resourceSelector(leftResource), right)
 	}
 
 	return nil, nil
