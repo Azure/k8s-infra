@@ -14,7 +14,8 @@ import (
 )
 
 var synth synthesizer = synthesizer{
-	defs: make(astmodel.Types),
+	defs:      make(astmodel.Types),
+	idFactory: astmodel.NewIdentifierFactory(),
 }
 
 var mapStringInterface = astmodel.NewStringMapType(astmodel.AnyType)
@@ -222,4 +223,28 @@ func TestMergeOneOfEnum(t *testing.T) {
 
 	g.Expect(synth.intersectTypes(oneOf, enum)).To(Equal(expected))
 	g.Expect(synth.intersectTypes(enum, oneOf)).To(Equal(expected))
+}
+
+func TestOneOfResourceSpec(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	r := astmodel.NewResourceType(astmodel.StringType, astmodel.IntType)
+	oneOf := astmodel.MakeOneOfType([]astmodel.Type{astmodel.BoolType, r}).(astmodel.OneOfType)
+
+	synth.resourceSelector = func(t *astmodel.ResourceType) astmodel.Type {
+		return t.SpecType()
+	}
+
+	expected := astmodel.NewObjectType().WithProperties(
+		astmodel.NewPropertyDefinition(astmodel.PropertyName("Bool0"), "bool0", astmodel.BoolType).
+			MakeOptional().WithDescription("mutually exclusive with all other properties"),
+		astmodel.NewPropertyDefinition(astmodel.PropertyName("String1"), "string1", astmodel.StringType).MakeOptional().
+			MakeOptional().WithDescription("mutually exclusive with all other properties"),
+	)
+
+	result, err := synth.oneOfObject(oneOf)
+	g.Expect(err).To(BeNil())
+
+	result = astmodel.NewObjectType().WithProperties(result.(*astmodel.ObjectType).Properties()...)
+	g.Expect(result).To(Equal(expected))
 }
