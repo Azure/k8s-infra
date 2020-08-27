@@ -56,6 +56,7 @@ jobs:
           go test -tags=noexit -race -covermode atomic -coverprofile=cover.out -coverpkg=./... ./...
           set PATH=%PATH%;%USERPROFILE%\go\bin
           gcov2lcov  -infile cover.out -outfile coverage.lcov
+          EXIT /B %ERRORLEVEL%
       - name: Coverall
         uses: coverallsapp/github-action@master
         with:
