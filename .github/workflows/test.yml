@@ -28,7 +28,7 @@ jobs:
     strategy:
       matrix:
         go-version: [1.14.x]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install Go
@@ -39,14 +39,24 @@ jobs:
         uses: actions/checkout@v2
         with: 
           submodules: 'true'
-      - name: Make test generator
+      - name: Run generator CI (Linux)
+        if: ${{ runner.os == "Linux" }} 
         run: make -C ./hack/generator ci
-      - name: Coveralls
+      - name: Test generator (Windows)
+        if: ${{ runner.os == "Windows" }}
+        # Makefile not supported. Linux will run lints so
+        # we will just run the tests here:
+        run: |
+          cd hack\generator
+          go get github.com/jandelgado/gcov2lcov@v1.0.2
+          go test -tags=noexit -race -covermode atomic -coverprofile=cover.out -coverpkg=./... ./...
+          gcov2lcov  -infile cover.out -outfile coverage.lcov
+      - name: Coverall
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.github_token }}
           path-to-lcov: ./hack/generator/coverage.lcov
-          flag-name: generator
+          flag-name: generator-${{ runner.os }}
           parallel: true
   test-controller:
     strategy:
