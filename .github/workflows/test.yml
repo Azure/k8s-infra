@@ -54,9 +54,10 @@ jobs:
           cd hack\generator
           go get github.com/jandelgado/gcov2lcov@v1.0.2
           go test -tags=noexit -race -covermode atomic -coverprofile=cover.out -coverpkg=./... ./...
+          set exitcode=%ERRORLEVEL%
           set PATH=%PATH%;%USERPROFILE%\go\bin
           gcov2lcov  -infile cover.out -outfile coverage.lcov
-          EXIT /B %ERRORLEVEL%
+          EXIT /B %exitcode%
       - name: Coverall
         uses: coverallsapp/github-action@master
         with:
