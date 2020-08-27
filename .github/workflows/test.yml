@@ -35,6 +35,9 @@ jobs:
         uses: actions/setup-go@v1
         with:
           go-version: ${{ matrix.go-version }}
+      - name: Enable long path support for git # sigh
+        if: ${{ runner.os == 'Windows' }}
+        run: git config --global core.longpaths true
       - name: Checkout code
         uses: actions/checkout@v2
         with: 
