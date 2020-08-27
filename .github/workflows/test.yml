@@ -40,10 +40,10 @@ jobs:
         with: 
           submodules: 'true'
       - name: Run generator CI (Linux)
-        if: ${{ runner.os == "Linux" }} 
+        if: ${{ runner.os == 'Linux' }} 
         run: make -C ./hack/generator ci
       - name: Test generator (Windows)
-        if: ${{ runner.os == "Windows" }}
+        if: ${{ runner.os == 'Windows' }}
         # Makefile not supported. Linux will run lints so
         # we will just run the tests here:
         run: |
