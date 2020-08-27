@@ -8,14 +8,47 @@ package astmodel
 import (
 	"fmt"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
+	"github.com/pkg/errors"
 	"go/ast"
 )
+
+const (
+	ApiVersionProperty = "ApiVersion"
+	TypeProperty       = "Type"
+	NameProperty       = "Name"
+)
+
+func checkPropertyPresence(o *ObjectType, name PropertyName) error {
+	_, ok := o.Property(name)
+	if !ok {
+		return errors.Errorf("Resource spec doesn't have %q property", name)
+	}
+
+	return nil
+}
 
 // NewArmSpecInterfaceImpl creates a new interface implementation with the functions required to implement the
 // genruntime.ArmResourceSpec interface
 func NewArmSpecInterfaceImpl(
 	idFactory IdentifierFactory,
-	spec *ObjectType) *InterfaceImplementation {
+	spec *ObjectType) (*InterfaceImplementation, error) {
+
+	// Check the spec first to ensure it looks how we expect
+	apiVersionProperty := idFactory.CreatePropertyName(ApiVersionProperty, Exported)
+	err := checkPropertyPresence(spec, apiVersionProperty)
+	if err != nil {
+		return nil, err
+	}
+	typeProperty := idFactory.CreatePropertyName(TypeProperty, Exported)
+	err = checkPropertyPresence(spec, typeProperty)
+	if err != nil {
+		return nil, err
+	}
+	nameProperty := idFactory.CreatePropertyName(NameProperty, Exported)
+	err = checkPropertyPresence(spec, nameProperty)
+	if err != nil {
+		return nil, err
+	}
 
 	funcs := map[string]Function{
 		"GetName": &objectFunction{
@@ -39,7 +72,7 @@ func NewArmSpecInterfaceImpl(
 		MakeTypeName(MakeGenRuntimePackageReference(), "ArmResourceSpec"),
 		funcs)
 
-	return result
+	return result, nil
 }
 
 func getNameFunction(k *objectFunction, codeGenerationContext *CodeGenerationContext, receiver TypeName, methodName string) *ast.FuncDecl {

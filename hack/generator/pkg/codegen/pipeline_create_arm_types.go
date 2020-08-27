@@ -246,7 +246,7 @@ func createArmResourceSpecDefinition(
 
 	armTypeDef, err := createArmTypeDefinition(definitions, resourceSpecDef)
 	if err != nil {
-		return astmodel.TypeDefinition{}, astmodel.TypeName{}, nil
+		return astmodel.TypeDefinition{}, astmodel.TypeName{}, err
 	}
 
 	// ARM specs have a special interface that they need to implement, go ahead and create that here
@@ -256,7 +256,12 @@ func createArmResourceSpecDefinition(
 			"Arm spec %q isn't of type ObjectType, instead: %T", armTypeDef.Name(), armTypeDef.Type())
 	}
 
-	updatedSpec := armSpecObj.WithInterface(astmodel.NewArmSpecInterfaceImpl(idFactory, armSpecObj))
+	iface, err := astmodel.NewArmSpecInterfaceImpl(idFactory, armSpecObj)
+	if err != nil {
+		return astmodel.TypeDefinition{}, astmodel.TypeName{}, err
+	}
+
+	updatedSpec := armSpecObj.WithInterface(iface)
 	armTypeDef = armTypeDef.WithType(updatedSpec)
 
 	return armTypeDef, resourceSpecDef.Name(), nil
