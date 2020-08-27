@@ -49,6 +49,7 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         # Makefile not supported. Linux will run lints so
         # we will just run the tests here:
+        shell: cmd
         run: |
           cd hack\generator
           go get github.com/jandelgado/gcov2lcov@v1.0.2
