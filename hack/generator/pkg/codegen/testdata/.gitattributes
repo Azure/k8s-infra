@@ -1,0 +1,2 @@
+# golden files need the platform’s line endings:
+*.golden text
