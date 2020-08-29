@@ -27,11 +27,11 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 	return MakePipelineStage(
 		"allof-anyof-objects",
 		"Convert allOf and oneOf to object types",
-		func(ctx context.Context, defs astmodel.Types) (result astmodel.Types, err error) {
+		func(ctx context.Context, defs astmodel.Types) (astmodel.Types, error) {
 			visitor := astmodel.MakeTypeVisitor()
 
 			// the context here is whether we are selecting spec or status fields
-			visitor.VisitAllOfType = func(this *astmodel.TypeVisitor, it astmodel.AllOfType, ctx interface{}) astmodel.Type {
+			visitor.VisitAllOfType = func(this *astmodel.TypeVisitor, it astmodel.AllOfType, ctx interface{}) (astmodel.Type, error) {
 				synth := synthesizer{
 					specOrStatus: ctx.(specOrStatus),
 					defs:         defs,
@@ -40,7 +40,7 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 
 				object, err := synth.allOfObject(it)
 				if err != nil {
-					panic(err)
+					return nil, err
 				}
 
 				// we might end up with something that requires re-visiting
@@ -48,9 +48,12 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 			}
 
 			originalVisitOneOf := visitor.VisitOneOfType
-			visitor.VisitOneOfType = func(this *astmodel.TypeVisitor, it astmodel.OneOfType, ctx interface{}) astmodel.Type {
+			visitor.VisitOneOfType = func(this *astmodel.TypeVisitor, it astmodel.OneOfType, ctx interface{}) (astmodel.Type, error) {
 				// process children first so that allOfs are resolved
-				result := originalVisitOneOf(this, it, ctx)
+				result, err := originalVisitOneOf(this, it, ctx)
+				if err != nil {
+					return nil, err
+				}
 
 				if resultOneOf, ok := result.(astmodel.OneOfType); ok {
 					synth := synthesizer{
@@ -67,30 +70,26 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 					result = object
 				}
 
+				// we might end up with something that requires re-visiting
 				return this.Visit(result, ctx)
 			}
 
-			visitor.VisitResourceType = func(this *astmodel.TypeVisitor, it *astmodel.ResourceType, ctx interface{}) astmodel.Type {
-				spec := this.Visit(it.SpecType(), chooseSpec)
-				status := this.Visit(it.StatusType(), chooseStatus)
-				return it.WithSpec(spec).WithStatus(status)
+			visitor.VisitResourceType = func(this *astmodel.TypeVisitor, it *astmodel.ResourceType, ctx interface{}) (astmodel.Type, error) {
+				spec, err := this.Visit(it.SpecType(), chooseSpec)
+				if err != nil {
+					return nil, err
+				}
+
+				status, err := this.Visit(it.StatusType(), chooseStatus)
+				if err != nil {
+					return nil, err
+				}
+
+				return it.WithSpec(spec).WithStatus(status), nil
 			}
 
-			var processing astmodel.TypeName
+			result := make(astmodel.Types)
 
-			// convert any panics we threw above back to errs
-			// this sets the named error type in the result
-			defer func() {
-				if caught := recover(); caught != nil {
-					if e, ok := caught.(error); ok {
-						err = errors.Wrapf(e, "error while visiting %v", processing)
-					} else {
-						panic(caught)
-					}
-				}
-			}()
-
-			result = make(astmodel.Types)
 			for _, def := range defs {
 				resourceUpdater := chooseSpec
 				// TODO: we need flags
@@ -98,13 +97,15 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 					resourceUpdater = chooseStatus
 				}
 
-				processing = def.Name()
+				transformed, err := visitor.VisitDefinition(def, resourceUpdater)
+				if err != nil {
+					return nil, errors.Wrapf(err, "error processing type %v", def.Name())
+				}
 
-				transformed := visitor.VisitDefinition(def, resourceUpdater)
-				result.Add(transformed)
+				result.Add(*transformed)
 			}
 
-			return // result, err named return types
+			return result, nil
 		})
 }
 

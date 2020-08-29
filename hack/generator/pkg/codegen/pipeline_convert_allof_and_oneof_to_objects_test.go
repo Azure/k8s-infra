@@ -236,7 +236,7 @@ func TestOneOfResourceSpec(t *testing.T) {
 	expected := astmodel.NewObjectType().WithProperties(
 		astmodel.NewPropertyDefinition(astmodel.PropertyName("Bool0"), "bool0", astmodel.BoolType).
 			MakeOptional().WithDescription("mutually exclusive with all other properties"),
-		astmodel.NewPropertyDefinition(astmodel.PropertyName("String1"), "string1", astmodel.StringType).MakeOptional().
+		astmodel.NewPropertyDefinition(astmodel.PropertyName("Resource1"), "resource1", r).MakeOptional().
 			MakeOptional().WithDescription("mutually exclusive with all other properties"),
 	)
 
