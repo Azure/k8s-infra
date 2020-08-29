@@ -15,6 +15,13 @@ import (
 	"k8s.io/klog/v2"
 )
 
+type specOrStatus string
+
+var (
+	chooseSpec   specOrStatus = "Spec"
+	chooseStatus specOrStatus = "Status"
+)
+
 // convertAllOfAndOneOfToObjects reduces the AllOfType and OneOfType to ObjectType
 func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) PipelineStage {
 	return MakePipelineStage(
@@ -28,9 +35,9 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 			//originalVisitAllOf := visitor.VisitAllOfType
 			visitor.VisitAllOfType = func(this *astmodel.TypeVisitor, it astmodel.AllOfType, ctx interface{}) astmodel.Type {
 				synth := synthesizer{
-					resourceSelector: ctx.(resourceSelector),
-					defs:             defs,
-					idFactory:        idFactory,
+					specOrStatus: ctx.(specOrStatus),
+					defs:         defs,
+					idFactory:    idFactory,
 				}
 
 				object, err := synth.allOfObject(it)
@@ -49,9 +56,9 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 
 				if resultOneOf, ok := result.(astmodel.OneOfType); ok {
 					synth := synthesizer{
-						resourceSelector: ctx.(resourceSelector),
-						defs:             defs,
-						idFactory:        idFactory,
+						specOrStatus: ctx.(specOrStatus),
+						defs:         defs,
+						idFactory:    idFactory,
 					}
 
 					object, err := synth.oneOfObject(resultOneOf)
@@ -65,17 +72,9 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 				return this.Visit(result, ctx)
 			}
 
-			var specSelector resourceSelector = func(r *astmodel.ResourceType) astmodel.Type {
-				return r.SpecType()
-			}
-
-			var statusSelector resourceSelector = func(r *astmodel.ResourceType) astmodel.Type {
-				return r.StatusType()
-			}
-
 			visitor.VisitResourceType = func(this *astmodel.TypeVisitor, it *astmodel.ResourceType, ctx interface{}) astmodel.Type {
-				spec := this.Visit(it.SpecType(), specSelector)
-				status := this.Visit(it.StatusType(), statusSelector)
+				spec := this.Visit(it.SpecType(), chooseSpec)
+				status := this.Visit(it.StatusType(), chooseStatus)
 				return it.WithSpec(spec).WithStatus(status)
 			}
 
@@ -95,10 +94,10 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 
 			result = make(astmodel.Types)
 			for _, def := range defs {
-				resourceUpdater := specSelector
+				resourceUpdater := chooseSpec
 				// TODO: we need flags
 				if strings.HasSuffix(def.Name().Name(), "_Status") {
-					resourceUpdater = statusSelector
+					resourceUpdater = chooseStatus
 				}
 
 				processing = def.Name()
@@ -113,9 +112,9 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 
 type resourceSelector func(*astmodel.ResourceType) astmodel.Type
 type synthesizer struct {
-	resourceSelector resourceSelector
-	idFactory        astmodel.IdentifierFactory
-	defs             astmodel.Types
+	specOrStatus specOrStatus
+	idFactory    astmodel.IdentifierFactory
+	defs         astmodel.Types
 }
 
 func (s synthesizer) oneOfObject(oneOf astmodel.OneOfType) (astmodel.Type, error) {
@@ -190,8 +189,14 @@ func (s synthesizer) extractOneOfProperties(i int, from astmodel.Type) (*astmode
 	case *astmodel.ResourceType:
 		// a resource nested inside another type
 		// need to see if we are processing status or spec types
-		selectedType := s.resourceSelector(concreteType)
-		return s.extractOneOfProperties(i, selectedType) // no resource prefix?
+		// TODO: consider adding "resource_" prefix
+		if s.specOrStatus == chooseSpec {
+			return s.extractOneOfProperties(i, concreteType.SpecType())
+		} else if s.specOrStatus == chooseStatus {
+			return s.extractOneOfProperties(i, concreteType.StatusType())
+		} else {
+			panic("invalid specOrStatus")
+		}
 
 	default:
 		return nil, errors.Errorf("unexpected oneOf member, type: %T", from)
@@ -260,8 +265,23 @@ func (s synthesizer) handleResourceType(left astmodel.Type, right astmodel.Type)
 			return nil, errors.Errorf("cannot combine two resource types") // safety check
 		}
 
-		// resourceSelector picks the right spec/status for us
-		return s.intersectTypes(s.resourceSelector(leftResource), right)
+		if s.specOrStatus == chooseStatus {
+			newT, err := s.intersectTypes(leftResource.StatusType(), right)
+			if err != nil {
+				return nil, err
+			}
+
+			return leftResource.WithStatus(newT), nil
+		} else if s.specOrStatus == chooseSpec {
+			newT, err := s.intersectTypes(leftResource.SpecType(), right)
+			if err != nil {
+				return nil, err
+			}
+
+			return leftResource.WithSpec(newT), nil
+		} else {
+			panic("invalid specOrStatus")
+		}
 	}
 
 	return nil, nil

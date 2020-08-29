@@ -231,9 +231,7 @@ func TestOneOfResourceSpec(t *testing.T) {
 	r := astmodel.NewResourceType(astmodel.StringType, astmodel.IntType)
 	oneOf := astmodel.MakeOneOfType([]astmodel.Type{astmodel.BoolType, r}).(astmodel.OneOfType)
 
-	synth.resourceSelector = func(t *astmodel.ResourceType) astmodel.Type {
-		return t.SpecType()
-	}
+	synth.specOrStatus = chooseSpec
 
 	expected := astmodel.NewObjectType().WithProperties(
 		astmodel.NewPropertyDefinition(astmodel.PropertyName("Bool0"), "bool0", astmodel.BoolType).
