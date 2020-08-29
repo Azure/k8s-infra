@@ -79,6 +79,7 @@ func (tv *TypeVisitor) VisitDefinition(td TypeDefinition, ctx interface{}) (*Typ
 	}
 
 	def := MakeTypeDefinition(name, visitedType)
+	def = def.WithDescription(td.Description())
 	return &def, nil
 }
 
