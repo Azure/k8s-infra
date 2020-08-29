@@ -188,18 +188,17 @@ func (scanner *SchemaScanner) GenerateDefinitionsFromDeploymentTemplate(ctx cont
 			return nil, errors.Errorf("unable to resolve resource definition for %v", resourceRef)
 		}
 
-		if _, ok := resourceDef.Type().(*astmodel.ResourceType); !ok {
+		if resourceType, ok := resourceDef.Type().(*astmodel.ResourceType); !ok {
 			// safety check
 			return nil, errors.Errorf("resource reference %v in deployment template did not resolve to resource type", resourceRef)
+		} else {
+			// now we will remove the existing resource definition and replace it with a new one that includes the base type
+			// first, reconstruct the allof with an anonymous type instead of the typename
+			specType := astmodel.MakeAllOfType([]astmodel.Type{objectBase, resourceType.SpecType()})
+			// now replace it
+			scanner.removeTypeDefinition(resourceRef)
+			scanner.addTypeDefinition(resourceDef.WithType(astmodel.NewAzureResourceType(specType, nil, resourceDef.Name())))
 		}
-
-		//klog.V(2).Infof("Editing resource %v", resourceRef)
-
-		// now we will remove the existing resource definition and replace it with a new one that includes the base type
-		// first, reconstruct the allof with an anonymous type instead of the reference
-		specType := astmodel.MakeAllOfType([]astmodel.Type{objectBase, resourceDef.Type()})
-		scanner.removeTypeDefinition(resourceRef)
-		scanner.addTypeDefinition(resourceDef.WithType(astmodel.NewResourceType(specType, nil)))
 	}
 
 	return scanner.Definitions(), nil
@@ -731,7 +730,8 @@ func isResource(url *url.URL) bool {
 
 	for _, fragmentPart := range fragmentParts {
 		if fragmentPart == "resourceDefinitions" ||
-			fragmentPart == "unknown_resourceDefinitions" { // EventGrid does this, unsure why
+			fragmentPart == "unknown_resourceDefinitions" || // EventGrid does this, unsure why
+			strings.HasSuffix(strings.ToLower(fragmentPart), "resourcebase") { // anything inheriting from resource bases is a resource
 			return true
 		}
 	}
