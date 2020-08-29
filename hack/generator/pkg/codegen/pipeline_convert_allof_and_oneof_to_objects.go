@@ -31,8 +31,6 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 			visitor := astmodel.MakeTypeVisitor()
 
 			// the context here is whether we are selecting spec or status fields
-
-			//originalVisitAllOf := visitor.VisitAllOfType
 			visitor.VisitAllOfType = func(this *astmodel.TypeVisitor, it astmodel.AllOfType, ctx interface{}) astmodel.Type {
 				synth := synthesizer{
 					specOrStatus: ctx.(specOrStatus),
@@ -51,7 +49,7 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 
 			originalVisitOneOf := visitor.VisitOneOfType
 			visitor.VisitOneOfType = func(this *astmodel.TypeVisitor, it astmodel.OneOfType, ctx interface{}) astmodel.Type {
-				// process children first
+				// process children first so that allOfs are resolved
 				result := originalVisitOneOf(this, it, ctx)
 
 				if resultOneOf, ok := result.(astmodel.OneOfType); ok {
@@ -187,16 +185,10 @@ func (s synthesizer) extractOneOfProperties(i int, from astmodel.Type) (*astmode
 		return astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType).MakeOptional(), nil
 
 	case *astmodel.ResourceType:
-		// a resource nested inside another type
-		// need to see if we are processing status or spec types
-		// TODO: consider adding "resource_" prefix
-		if s.specOrStatus == chooseSpec {
-			return s.extractOneOfProperties(i, concreteType.SpecType())
-		} else if s.specOrStatus == chooseStatus {
-			return s.extractOneOfProperties(i, concreteType.StatusType())
-		} else {
-			panic("invalid specOrStatus")
-		}
+		name := fmt.Sprintf("resource%v", i)
+		propertyName := s.idFactory.CreatePropertyName(name, astmodel.Exported)
+		jsonName := s.idFactory.CreateIdentifier(name, astmodel.NotExported)
+		return astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType).MakeOptional(), nil
 
 	default:
 		return nil, errors.Errorf("unexpected oneOf member, type: %T", from)
@@ -261,8 +253,27 @@ func (s synthesizer) handleOptional(left astmodel.Type, right astmodel.Type) (as
 
 func (s synthesizer) handleResourceType(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
 	if leftResource, ok := left.(*astmodel.ResourceType); ok {
-		if _, ok := right.(*astmodel.ResourceType); ok {
-			return nil, errors.Errorf("cannot combine two resource types") // safety check
+		if rightResource, ok := right.(*astmodel.ResourceType); ok {
+			// merge two resources: merge spec/status
+
+			spec, err := s.intersectTypes(leftResource.SpecType(), rightResource.SpecType())
+			if err != nil {
+				return nil, err
+			}
+
+			var status astmodel.Type
+			if leftResource.StatusType() != nil && rightResource.StatusType() != nil {
+				status, err = s.intersectTypes(leftResource.StatusType(), rightResource.StatusType())
+				if err != nil {
+					return nil, err
+				}
+			} else if leftResource.StatusType() != nil {
+				status = leftResource.StatusType()
+			} else {
+				status = rightResource.StatusType()
+			}
+
+			return leftResource.WithSpec(spec).WithStatus(status), nil
 		}
 
 		if s.specOrStatus == chooseStatus {
