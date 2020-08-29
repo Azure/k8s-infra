@@ -9,68 +9,86 @@ import (
 	"context"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
+	"github.com/pkg/errors"
 )
 
-// convertAllOfAndOneOfToObjects reduces the AllOfType and OneOfType to ObjectType
+// flattenResources flattens any resources directly inside other resources
 func flattenResources() PipelineStage {
 	return MakePipelineStage(
 		"flatten-resources",
 		"Flatten nested resource types",
 		func(ctx context.Context, defs astmodel.Types) (astmodel.Types, error) {
 
-			var flattenResource func(astmodel.TypeDefinition) (astmodel.TypeDefinition, error)
-			flattenResource = func(def astmodel.TypeDefinition) (astmodel.TypeDefinition, error) {
-				if resource, ok := def.Type().(*astmodel.ResourceType); ok {
-
-					changed := false
-
-					// resolve spec
-					{
-						specType, err := defs.FullyResolve(resource.SpecType())
-						if err != nil {
-							return astmodel.TypeDefinition{}, err
-						}
-
-						if specResource, ok := specType.(*astmodel.ResourceType); ok {
-							resource = resource.WithSpec(specResource.SpecType())
-							changed = true
-						}
-					}
-
-					// resolve status
-					{
-						statusType, err := defs.FullyResolve(resource.StatusType())
-						if err != nil {
-							return astmodel.TypeDefinition{}, err
-						}
-
-						if statusResource, ok := statusType.(*astmodel.ResourceType); ok {
-							resource = resource.WithStatus(statusResource.StatusType())
-							changed = true
-						}
-					}
-
-					if changed {
-						def = def.WithType(resource)
-						// do it again, can be multiply nested
-						return flattenResource(def)
-					}
-				}
-
-				return def, nil
-			}
-
-			result := make(astmodel.Types)
-
-			for _, def := range defs {
-				newDef, err := flattenResource(def)
+			v := astmodel.MakeTypeVisitor()
+			originalVisitResource := v.VisitResourceType
+			v.VisitResourceType = func(this *astmodel.TypeVisitor, it *astmodel.ResourceType, ctx interface{}) (astmodel.Type, error) {
+				// visit inner types:
+				visited, err := originalVisitResource(this, it, ctx)
 				if err != nil {
 					return nil, err
 				}
 
-				result.Add(newDef)
+				newResource, err := flattenResource(defs, visited)
+				if err != nil {
+					return nil, err
+				}
+
+				return newResource, nil
 			}
 
-			return result, nil
+			results := make(astmodel.Types)
+
+			for _, def := range defs {
+
+				result, err := v.VisitDefinition(def, nil)
+				if err != nil {
+					return nil, errors.Wrapf(err, "error processing type %v", def.Name())
+				}
+
+				results.Add(*result)
+			}
+
+			return results, nil
 		})
+}
+
+func flattenResource(defs astmodel.Types, t astmodel.Type) (astmodel.Type, error) {
+	if resource, ok := t.(*astmodel.ResourceType); ok {
+
+		changed := false
+
+		// resolve spec
+		{
+			specType, err := defs.FullyResolve(resource.SpecType())
+			if err != nil {
+				return nil, err
+			}
+
+			if specResource, ok := specType.(*astmodel.ResourceType); ok {
+				resource = resource.WithSpec(specResource.SpecType())
+				changed = true
+			}
+		}
+
+		// resolve status
+		{
+			statusType, err := defs.FullyResolve(resource.StatusType())
+			if err != nil {
+				return nil, err
+			}
+
+			if statusResource, ok := statusType.(*astmodel.ResourceType); ok {
+				resource = resource.WithStatus(statusResource.StatusType())
+				changed = true
+			}
+		}
+
+		if changed {
+			t = resource
+			// do it again, can be multiply nested
+			return flattenResource(defs, t)
+		}
+	}
+
+	return t, nil
 }
