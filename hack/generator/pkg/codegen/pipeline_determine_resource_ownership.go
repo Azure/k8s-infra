@@ -11,7 +11,6 @@ import (
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/pkg/errors"
-	"k8s.io/klog/v2"
 )
 
 const resourcesPropertyName = astmodel.PropertyName("Resources")
@@ -215,8 +214,7 @@ func updateChildResourceDefinitionsWithOwner(
 		// Update the definition of the child resource type to point to its owner
 		childResource, ok := childResourceDef.Type().(*astmodel.ResourceType)
 		if !ok {
-			klog.Errorf("child resource %s not of type *astmodel.ResourceType, instead %T", typeName, childResourceDef.Type())
-			continue
+			return errors.Errorf("child resource %s not of type *astmodel.ResourceType, instead %T", typeName, childResourceDef.Type())
 		}
 
 		childResourceDef = childResourceDef.WithType(childResource.WithOwner(&owningResourceName))
