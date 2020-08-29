@@ -109,7 +109,6 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 		})
 }
 
-type resourceSelector func(*astmodel.ResourceType) astmodel.Type
 type synthesizer struct {
 	specOrStatus specOrStatus
 	idFactory    astmodel.IdentifierFactory

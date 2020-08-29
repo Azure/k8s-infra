@@ -543,7 +543,7 @@ func generateDefinitionsFor(
 		return nil, err
 	}
 
-	if isResource(url, result) {
+	if isResource(url) {
 		result = astmodel.NewAzureResourceType(result, nil, typeName)
 	}
 
@@ -723,7 +723,7 @@ func GetPrimitiveType(name SchemaType) (*astmodel.PrimitiveType, error) {
 	panic(fmt.Sprintf("unhandled case in getPrimitiveType: %s", name)) // this is also checked by linter
 }
 
-func isResource(url *url.URL, t astmodel.Type) bool {
+func isResource(url *url.URL) bool {
 	fragmentParts := strings.FieldsFunc(url.Fragment, isURLPathSeparator)
 
 	for _, fragmentPart := range fragmentParts {
