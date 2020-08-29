@@ -51,9 +51,19 @@ func corePipelineStages(idFactory astmodel.IdentifierFactory, configuration *con
 		applyExportFilters(configuration), // should come after status types are loaded
 		stripUnreferencedTypeDefinitions(),
 		convertAllOfAndOneOfToObjects(idFactory),
+
+		// Flatten out any nested resources created by allOf, etc. we want to do this before naming types or things
+		// get named with names like Resource_Spec_Spec_Spec:
+		flattenResources(), stripUnreferencedTypeDefinitions(),
+
 		nameTypesForCRD(idFactory),
 		applyPropertyRewrites(configuration), // must come after nameTypesForCRD and convertAllOfAndOneOf so that objects are all expanded
-		flattenResources(),
+
+		// Flatten out any nested resources created by naming.
+		// These need to be flattened for determineResourceOwnership,
+		// and there are only a few cases (for child resources):
+		flattenResources(), stripUnreferencedTypeDefinitions(),
+
 		determineResourceOwnership(),
 		removeTypeAliases(),
 		improveResourcePluralization(),
