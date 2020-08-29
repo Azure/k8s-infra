@@ -527,7 +527,6 @@ func generateDefinitionsFor(
 	}
 
 	url := schema.url()
-	isResource := isResource(url)
 
 	// see if we already generated something for this ref
 	if _, ok := scanner.findTypeDefinition(typeName); ok {
@@ -544,8 +543,7 @@ func generateDefinitionsFor(
 		return nil, err
 	}
 
-	if isResource {
-		// TODO: consider removing this and having it driven from the jsonast entrypoint
+	if isResource(url, result) {
 		result = astmodel.NewAzureResourceType(result, nil, typeName)
 	}
 
@@ -725,13 +723,19 @@ func GetPrimitiveType(name SchemaType) (*astmodel.PrimitiveType, error) {
 	panic(fmt.Sprintf("unhandled case in getPrimitiveType: %s", name)) // this is also checked by linter
 }
 
-func isResource(url *url.URL) bool {
+func isResource(url *url.URL, t astmodel.Type) bool {
 	fragmentParts := strings.FieldsFunc(url.Fragment, isURLPathSeparator)
 
 	for _, fragmentPart := range fragmentParts {
 		if fragmentPart == "resourceDefinitions" ||
-			fragmentPart == "unknown_resourceDefinitions" || // EventGrid does this, unsure why
-			strings.HasSuffix(strings.ToLower(fragmentPart), "resourcebase") { // anything inheriting from resource bases is a resource
+
+			// EventGrid does this, unsure why:
+			fragmentPart == "unknown_resourceDefinitions" ||
+
+			// Treat all resourceBase things as resources so that "resourceness"
+			// is inherited:
+			strings.Contains(strings.ToLower(fragmentPart), "resourcebase") {
+
 			return true
 		}
 	}
