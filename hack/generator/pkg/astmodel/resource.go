@@ -106,9 +106,6 @@ func NewAzureResourceType(specType Type, statusType Type, typeName TypeName) *Re
 			objectType = objectType.WithProperty(typeProperty)
 		}
 		specType = objectType
-	} else {
-		klog.Warningf("expected a struct type for resource: %v, got %T", typeName, specType)
-		// TODO: handle this better, only Kusto does it
 	}
 
 	return NewResourceType(specType, statusType)
