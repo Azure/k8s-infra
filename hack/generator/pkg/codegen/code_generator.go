@@ -53,6 +53,7 @@ func corePipelineStages(idFactory astmodel.IdentifierFactory, configuration *con
 		convertAllOfAndOneOfToObjects(idFactory),
 		nameTypesForCRD(idFactory),
 		applyPropertyRewrites(configuration), // must come after nameTypesForCRD and convertAllOfAndOneOf so that objects are all expanded
+		flattenResources(),
 		determineResourceOwnership(),
 		removeTypeAliases(),
 		improveResourcePluralization(),
