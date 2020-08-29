@@ -58,12 +58,6 @@ func corePipelineStages(idFactory astmodel.IdentifierFactory, configuration *con
 
 		nameTypesForCRD(idFactory),
 		applyPropertyRewrites(configuration), // must come after nameTypesForCRD and convertAllOfAndOneOf so that objects are all expanded
-
-		// Flatten out any nested resources created by naming.
-		// These need to be flattened for determineResourceOwnership,
-		// and there are only a few cases (for child resources):
-		flattenResources(), stripUnreferencedTypeDefinitions(),
-
 		determineResourceOwnership(),
 		removeTypeAliases(),
 		improveResourcePluralization(),
