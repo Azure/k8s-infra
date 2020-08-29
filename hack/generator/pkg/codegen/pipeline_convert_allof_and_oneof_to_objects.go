@@ -278,12 +278,16 @@ func (s synthesizer) handleResourceType(left astmodel.Type, right astmodel.Type)
 		}
 
 		if s.specOrStatus == chooseStatus {
-			newT, err := s.intersectTypes(leftResource.StatusType(), right)
-			if err != nil {
-				return nil, err
-			}
+			if leftResource.StatusType() != nil {
+				newT, err := s.intersectTypes(leftResource.StatusType(), right)
+				if err != nil {
+					return nil, err
+				}
 
-			return leftResource.WithStatus(newT), nil
+				return leftResource.WithStatus(newT), nil
+			} else {
+				return leftResource.WithStatus(right), nil
+			}
 		} else if s.specOrStatus == chooseSpec {
 			newT, err := s.intersectTypes(leftResource.SpecType(), right)
 			if err != nil {
