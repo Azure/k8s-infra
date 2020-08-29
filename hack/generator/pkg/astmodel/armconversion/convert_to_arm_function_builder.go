@@ -456,6 +456,20 @@ func (builder *convertToArmBuilder) convertComplexTypeNameProperty(
 		Type: ast.NewIdent(destinationType.Name()),
 	}
 
+	if !destinationType.PackageReference.Equals(builder.codeGenerationContext.CurrentPackage()) {
+		// needs to be qualified
+		packageName, err := builder.codeGenerationContext.GetImportedPackageName(destinationType.PackageReference)
+		if err != nil {
+			panic(err)
+		}
+
+		typeAssertExpr.Type =
+			&ast.SelectorExpr{
+				X:   ast.NewIdent(packageName),
+				Sel: ast.NewIdent(destinationType.Name()),
+			}
+	}
+
 	results = append(results, params.assignmentHandler(params.destination, typeAssertExpr))
 
 	return results
