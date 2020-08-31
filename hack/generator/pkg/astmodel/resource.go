@@ -47,7 +47,6 @@ func NewAzureResourceType(specType Type, statusType Type, typeName TypeName) *Re
 		var apiVersionProperty *PropertyDefinition
 		isNameOptional := false
 		isTypeOptional := false
-		apiVersionOptional := false
 		for _, property := range objectType.Properties() {
 			if property.HasName(NameProperty) {
 				nameProperty = property
@@ -65,9 +64,6 @@ func NewAzureResourceType(specType Type, statusType Type, typeName TypeName) *Re
 
 			if property.HasName(ApiVersionProperty) {
 				apiVersionProperty = property
-				if _, ok := property.PropertyType().(*OptionalType); ok {
-					apiVersionOptional = true
-				}
 			}
 		}
 
@@ -93,14 +89,12 @@ func NewAzureResourceType(specType Type, statusType Type, typeName TypeName) *Re
 			objectType = objectType.WithProperty(nameProperty)
 		}
 
-		// Fix APIVersion to be optional. Technically this isn't due to a bad specification, but in our
+		// Fix APIVersion to be required. Technically this isn't due to a bad specification, but in our
 		// case forcing it to required makes our lives simpler (and the vast majority of resources specify
 		// it as required anyway). The only time it's allowed to be optional is if you set apiProfile on
 		// the ARM template instead, which we never do.
-		if apiVersionOptional {
-			apiVersionProperty = apiVersionProperty.MakeRequired()
-			objectType = objectType.WithProperty(apiVersionProperty)
-		}
+		apiVersionProperty = apiVersionProperty.MakeRequired()
+		objectType = objectType.WithProperty(apiVersionProperty)
 
 		// If the name is not a string, force it to be -- there are a good number
 		// of resources which define name as an enum with a limited set of values.
