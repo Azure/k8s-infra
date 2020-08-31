@@ -23,8 +23,16 @@ type KubernetesResource interface {
 	// Owner returns the ResourceReference of the owner, or nil if there is no owner
 	Owner() *ResourceReference
 
+	// TODO: I think we need this?
+	// KnownOwner() *KnownResourceReference
+
 	// AzureName returns the Azure name of the resource
 	AzureName() string
+
+	// TODO: GetAPIVersion here?
+
+	// TODO: I think we need this
+	// SetStatus(status interface{})
 }
 
 // ArmResourceSpec is an ARM resource specification. This interface contains
@@ -38,21 +46,43 @@ type ArmResourceSpec interface {
 	GetName() string
 }
 
-type ArmResource interface {
-	ArmResourceSpec
-	// ArmResourceStatus TODO: ???
+// ArmResourceStatus is an ARM resource status
+type ArmResourceStatus interface {
+	// GetId() string
+}
 
-	GetId() string
+type ArmResource interface {
+	Spec() ArmResourceSpec
+	Status() ArmResourceStatus
+
+	GetId() string // TODO: ?
+}
+
+func NewArmResource(spec ArmResourceSpec, status ArmResourceStatus, id string) ArmResource {
+	return &armResourceImpl{
+		spec: spec,
+		status: status,
+		Id: id,
+	}
 }
 
 // TODO: I think that this is throwaway?
-type ArmResourceImpl struct {
-	ArmResourceSpec
+type armResourceImpl struct {
+	spec ArmResourceSpec
+	status ArmResourceStatus
 	Id string
 }
 
-var _ ArmResource = &ArmResourceImpl{}
+var _ ArmResource = &armResourceImpl{}
 
-func (resource *ArmResourceImpl) GetId() string {
+func (resource *armResourceImpl) Spec() ArmResourceSpec {
+	return resource.spec
+}
+
+func (resource *armResourceImpl) Status() ArmResourceStatus {
+	return resource.status
+}
+
+func (resource *armResourceImpl) GetId() string {
 	return resource.Id
 }

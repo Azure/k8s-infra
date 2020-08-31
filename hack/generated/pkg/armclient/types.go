@@ -74,8 +74,6 @@ type (
 		ARMMeta    `json:",inline"`
 		Scope      DeploymentScope `json:"-"`
 		Properties *DeploymentProperties
-
-		PreserveDeployment      bool `json:"-"`
 	}
 )
 

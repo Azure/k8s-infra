@@ -1,3 +1,8 @@
+/*
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT license.
+*/
+
 package controllers
 
 import (
@@ -5,7 +10,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -13,29 +17,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"reflect"
 	"time"
 )
-
-type ControllerResourceProvisioningState string
-
-const (
-	SucceededControllerResourceProvisioningState ControllerResourceProvisioningState = "Succeeded"
-	FailedControllerResourceProvisioningState    ControllerResourceProvisioningState = "Failed"
-	DeletingControllerResourceProvisioningState  ControllerResourceProvisioningState = "Deleting"
-	AcceptedControllerResourceProvisioningState  ControllerResourceProvisioningState = "Accepted"
-)
-
-type AnnotationKey string
-
-const (
-	// PreserveDeploymentAnnotation is the key which tells the applier to keep or delete the deployment
-	PreserveDeploymentAnnotation AnnotationKey = "x-preserve-deployment"
-)
-
-func IsTerminalProvisioningState(state ControllerResourceProvisioningState) bool {
-	return state == SucceededControllerResourceProvisioningState || state == FailedControllerResourceProvisioningState
-}
 
 func SpecSignature(metaObject genruntime.MetaObject) (string, error) {
 	// Convert the resource to unstructured for easier comparison later.
@@ -73,79 +56,7 @@ func CreateDeploymentName() (string, error) {
 	return deploymentName, nil
 }
 
-func ResourceSpecToArmResourceSpec(gr *GenericReconciler, metaObject genruntime.MetaObject) (string, genruntime.ArmResourceSpec, error) {
-
-	metaObjReflector := reflect.Indirect(reflect.ValueOf(metaObject))
-	if !metaObjReflector.IsValid() {
-		return "", nil, errors.Errorf("couldn't indirect %T", metaObject)
-	}
-
-	specField := metaObjReflector.FieldByName("Spec")
-	if !specField.IsValid() {
-		return "", nil, errors.Errorf("couldn't find spec field on type %T", metaObject)
-	}
-
-	// Spec fields are values, we want a ptr
-	specFieldPtr := reflect.New(specField.Type())
-	specFieldPtr.Elem().Set(specField)
-
-	// TODO: how to check that this doesn't fail
-	spec := specFieldPtr.Interface()
-
-	armTransformer, ok := spec.(genruntime.ArmTransformer)
-	if !ok {
-		return "", nil, errors.Errorf("spec was of type %T which doesn't implement genruntime.ArmTransformer", spec)
-	}
-
-	resourceGroupName, azureName, err := GetFullAzureNameAndResourceGroup(metaObject, gr)
-	if err != nil {
-		return "", nil, err
-	}
-
-	armSpec, err := armTransformer.ConvertToArm(azureName)
-	if err != nil {
-		return "", nil, errors.Wrapf(err, "failed to transform resource %s to ARM", metaObject.GetName())
-	}
-
-	typedArmSpec, ok := armSpec.(genruntime.ArmResourceSpec)
-	if !ok {
-		return "", nil, errors.Errorf("failed to cast armSpec of type %T to genruntime.ArmResourceSpec", armSpec)
-	}
-
-	return resourceGroupName, typedArmSpec, nil
-}
-
-func ResourceSpecToDeployment(gr *GenericReconciler, metaObject genruntime.MetaObject) (*armclient.Deployment, error) {
-	resourceGroupName, typedArmSpec, err := ResourceSpecToArmResourceSpec(gr, metaObject)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: get other deployment details from status and avoid creating a new deployment
-	deploymentId, deploymentIdOk := metaObject.GetAnnotations()[DeploymentIdAnnotation]
-	deploymentName, deploymentNameOk := metaObject.GetAnnotations()[DeploymentNameAnnotation]
-	if deploymentIdOk != deploymentNameOk {
-		return nil, errors.Errorf(
-			"deploymentIdOk: %t, deploymentNameOk: %t expected to match, but didn't",
-			deploymentIdOk,
-			deploymentNameOk)
-	}
-
-	var deployment *armclient.Deployment
-	if deploymentIdOk && deploymentNameOk {
-		deployment = gr.Applier.NewDeployment(resourceGroupName, deploymentName, typedArmSpec)
-		deployment.Id = deploymentId
-	} else {
-		deploymentName, err := CreateDeploymentName()
-		if err != nil {
-			return nil, err
-		}
-		deployment = gr.Applier.NewDeployment(resourceGroupName, deploymentName, typedArmSpec)
-	}
-	return deployment, nil
-}
-
-// TODO: Remove this when we have proper AzureName defaulting on hte way in
+// TODO: Remove this when we have proper AzureName defaulting on the way in
 func GetAzureName(r genruntime.MetaObject) string {
 	if r.AzureName() == "" {
 		return r.GetName()

@@ -20,13 +20,15 @@ import (
 type (
 	// TODO: Naming?
 	Applier interface {
-		ApplyDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error)
+		CreateDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error)
 		DeleteDeployment(ctx context.Context, deploymentId string) error
+		GetDeployment(ctx context.Context, deploymentId string) (*Deployment, error)
 		NewDeployment(resourceGroup string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment
 
-		BeginDeleteResource(ctx context.Context, res genruntime.ArmResource) (genruntime.ArmResource, error)
-		//GetResource(ctx context.Context, res genruntime.ArmResource) (genruntime.ArmResource, error)
-		HeadResource(ctx context.Context, res genruntime.ArmResource) (bool, error)
+		// TODO: Are we ok with the signature where the "result" is really a ptr to the last parameter?
+		BeginDeleteResource(ctx context.Context, id string, apiVersion string, status genruntime.ArmResourceStatus) error
+		GetResource(ctx context.Context, id string, apiVersion string, status genruntime.ArmResourceStatus) error
+		HeadResource(ctx context.Context, id string, apiVersion string) (bool, error)
 	}
 
 	AzureTemplateClient struct {
@@ -153,104 +155,39 @@ func NewAzureTemplateClient(opts ...AzureTemplateClientOption) (*AzureTemplateCl
 	}, nil
 }
 
-//func (atc *AzureTemplateClient) GetResource(ctx context.Context, id string, res genruntime.ArmResource) error {
-//	if id == "" {
-//		return errors.Errorf("resource ID cannot be empty")
-//	}
-//
-//	path := fmt.Sprintf("%s?api-version%s", res.ID, res.APIVersion)
-//	err := atc.RawClient.GetResource(ctx, path, &res) // TODO: is this right?
-//	return err
-//}
-
-// TODO: Not sure that this logic makes sense in the template client -- move into controller?
-// ApplyDeployment deploys a resource to Azure via a deployment template
-func (atc *AzureTemplateClient) ApplyDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error) {
-	switch {
-	case deployment.Properties.ProvisioningState == DeletingProvisioningState:
-		return deployment, errors.Errorf("resource is currently deleting; it can not be applied")
-	case IsTerminalProvisioningState(deployment.Properties.ProvisioningState):
-		// terminal state, if deploymentID is set, then clean up the deployment
-		return atc.cleanupDeployment(ctx, deployment)
-	case deployment.Id != "":
-		// existing deployment is already going, so let's get an updated status
-		return atc.updateFromExistingDeployment(ctx, deployment)
-	default:
-		// no provisioning state and no deployment ID, so we need to start a new deployment
-		return atc.startNewDeploy(ctx, deployment)
+func (atc *AzureTemplateClient) GetResource(ctx context.Context, id string, apiVersion string, status genruntime.ArmResourceStatus) error {
+	if id == "" {
+		return errors.Errorf("resource ID cannot be empty")
 	}
+
+	path := fmt.Sprintf("%s?api-version=%s", id, apiVersion)
+	err := atc.RawClient.GetResource(ctx, path, &status) // TODO: is this right?
+	return err
 }
 
-func (atc *AzureTemplateClient) updateFromExistingDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error) {
-	de, err := atc.getDeployment(ctx, deployment.Id)
-	if err != nil {
-		return deployment, err
-	}
-
-	if !de.IsTerminalProvisioningState() {
-		// we are not done, so just return and wait for apply to be called again
-		return de, nil
-	}
-
-	// we have hit a terminal state, so clean up the deployment
-	return atc.cleanupDeployment(ctx, de)
+// CreateDeployment deploys a resource to Azure via a deployment template
+func (atc *AzureTemplateClient) CreateDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error) {
+	return atc.RawClient.PutDeployment(ctx, deployment)
 }
 
-func (atc *AzureTemplateClient) startNewDeploy(ctx context.Context, deployment *Deployment) (*Deployment, error) {
-	// TODO: may need to do this elsewhere...?
-	//names := strings.Split(res.Name, "/")
-	//formattedNames := make([]string, len(names))
-	//for i, name := range names {
-	//	formattedNames[i] = fmt.Sprintf("'%s'", name)
-	//}
-
-	//resourceIdTemplateFunction := fmt.Sprintf("resourceId('%s', %s)", res.Type, strings.Join(formattedNames, ", "))
-	//objectRef := fmt.Sprintf("reference(%s, '%s', 'Full')", resourceIdTemplateFunction, res.APIVersion)
-	//idRef := fmt.Sprintf("json(concat('{ \"id\": \"', %s, '\"}'))", resourceIdTemplateFunction)
-	//deployment.Properties.Template.Outputs = map[string]Output{
-	//	"resource": {
-	//		Type:  "object",
-	//		Value: fmt.Sprintf("[union(%s, %s)]", objectRef, idRef),
-	//	},
-	//}
-
-	de, err := atc.RawClient.PutDeployment(ctx, deployment)
-	if err != nil {
-		return nil, fmt.Errorf("apply failed with: %w", err)
-	}
-
-	if !de.IsTerminalProvisioningState() {
-		// we are not done, so just return and wait for apply to be called again
-		return de, nil
-	}
-	//
-	//// we have hit a terminal state, so clean up the deployment
-	return atc.cleanupDeployment(ctx, de) // TODO: I feel like this should be in the controller too?
-}
-
+// DeleteDeployment deletes a deployment. If the deployment doesn't exist it does not return an error
 func (atc *AzureTemplateClient) DeleteDeployment(ctx context.Context, deploymentId string) error {
-	return atc.RawClient.DeleteResource(ctx, idWithAPIVersion(deploymentId), nil)
+	err := atc.RawClient.DeleteResource(ctx, idWithAPIVersion(deploymentId), nil)
+
+	// NotFound is a success
+	if IsNotFound(err) {
+		return nil
+	}
+
+	return err
 }
 
-func (atc *AzureTemplateClient) getDeployment(ctx context.Context, deploymentId string) (*Deployment, error) {
+func (atc *AzureTemplateClient) GetDeployment(ctx context.Context, deploymentId string) (*Deployment, error) {
 	var deployment Deployment
 	if err := atc.RawClient.GetResource(ctx, idWithAPIVersion(deploymentId), &deployment); err != nil {
 		return &deployment, err
 	}
 	return &deployment, nil
-}
-
-func (atc *AzureTemplateClient) cleanupDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error) {
-	if deployment.Id != "" && !deployment.PreserveDeployment {
-		if err := atc.DeleteDeployment(ctx, deployment.Id); err != nil {
-			if !IsNotFound(err) {
-				return deployment, err
-			}
-		}
-		deployment.Id = "" // TODO: It's awkward that clearing this is what we have to watch for?
-		return deployment, nil
-	}
-	return deployment, nil
 }
 
 func (atc *AzureTemplateClient) NewDeployment(resourceGroup string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment {
@@ -277,17 +214,23 @@ func (atc *AzureTemplateClient) NewDeployment(resourceGroup string, deploymentNa
 	return deployment
 }
 
-func (atc *AzureTemplateClient) BeginDeleteResource(ctx context.Context, res genruntime.ArmResource) (genruntime.ArmResource, error) {
-	if res.GetId() == "" {
-		return nil, errors.Errorf("resource ID cannot be empty")
+func (atc *AzureTemplateClient) BeginDeleteResource(
+	ctx context.Context,
+	id string,
+	apiVersion string,
+	status genruntime.ArmResourceStatus) error {
+
+
+	if id == "" {
+		return errors.Errorf("resource ID cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s?api-version=%s", res.GetId(), res.GetApiVersion())
-	if err := atc.RawClient.DeleteResource(ctx, path, &res); err != nil {
-		return res, errors.Wrapf(err, "failed deleting %s", res.GetType())
+	path := fmt.Sprintf("%s?api-version=%s", id, apiVersion)
+	if err := atc.RawClient.DeleteResource(ctx, path, &status); err != nil {
+		return errors.Wrapf(err, "failed deleting %s", id)
 	}
 
-	return res, nil
+	return nil
 }
 
 // HeadResource checks to see if the resource exists
@@ -295,12 +238,12 @@ func (atc *AzureTemplateClient) BeginDeleteResource(ctx context.Context, res gen
 // Note: this doesn't actually use HTTP HEAD as Azure Resource Manager does not uniformly implement HEAD for all
 // all resources. Also, ARM returns a 400 rather than 405 when requesting HEAD for a resource which the Resource
 // Provider does not implement HEAD. For these reasons, we use an HTTP GET
-func (atc *AzureTemplateClient) HeadResource(ctx context.Context, res genruntime.ArmResource) (bool, error) {
-	if res.GetId() == "" {
+func (atc *AzureTemplateClient) HeadResource(ctx context.Context, id string, apiVersion string) (bool, error) {
+	if id == "" {
 		return false, fmt.Errorf("resource ID cannot be empty")
 	}
 
-	idAndAPIVersion := res.GetId() + fmt.Sprintf("?api-version=%s", res.GetApiVersion())
+	idAndAPIVersion := id + fmt.Sprintf("?api-version=%s", apiVersion)
 	err := atc.RawClient.GetResource(ctx, idAndAPIVersion, nil, nil)
 	switch {
 	case IsNotFound(err):
