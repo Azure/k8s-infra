@@ -126,3 +126,11 @@ func GetFullAzureNameAndResourceGroup(r genruntime.MetaObject, gr *GenericReconc
 			r.GetObjectKind().GroupVersionKind()))
 }
 
+// TODO: is there some helper that does this?
+func StringPtrToString(s *string) string {
+	if s == nil {
+		return "nil"
+	}
+
+	return *s
+}

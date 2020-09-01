@@ -6,6 +6,7 @@ Licensed under the MIT license.
 package controllers
 
 import (
+	"fmt"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 	"github.com/pkg/errors"
 	"reflect"
@@ -63,10 +64,14 @@ func NewEmptyArmResourceStatus(metaObject genruntime.MetaObject) (genruntime.Arm
 		return nil, err
 	}
 
+	// TODO: Do we actually want to return a ptr here, not a value?
 	// No need to actually pass name here (we're going to populate this entity from ARM anyway)
 	armStatus, err := kubeStatus.ConvertToArm("")
 
-	castArmStatus, ok := armStatus.(genruntime.ArmResourceStatus)
+	// TODO: Some reflect hackery here to make sure that this is a ptr not a value
+
+	armStatusPtr := NewPtrFromValue(armStatus)
+	castArmStatus, ok := armStatusPtr.(genruntime.ArmResourceStatus)
 	if !ok {
 		// TODO: Should these be panics instead - they aren't really recoverable?
 		return nil, errors.Errorf("resource status %T did not implement genruntime.ArmResourceStatus", armStatus)
@@ -104,8 +109,30 @@ func SetStatus(metaObj genruntime.MetaObject, status interface{}) error {
 	}
 
 	field := val.FieldByName("Status")
-	statusVal := reflect.ValueOf(status)
+	statusVal := reflect.ValueOf(status).Elem()
 	field.Set(statusVal)
 
 	return nil
+}
+
+// Here be dragons... use carefully as it may not work for everything?
+func NewPtrFromValue(value interface{}) interface{} {
+	v := reflect.ValueOf(value)
+
+	// Spec fields are values, we want a ptr
+	ptr := reflect.New(v.Type())
+	ptr.Elem().Set(v)
+
+	// TODO: how to check that this doesn't fail
+	return ptr.Interface()
+}
+
+func ValueOfPtr(ptr interface{}) interface{} {
+	v := reflect.ValueOf(ptr)
+	if v.Kind() != reflect.Ptr {
+		panic(fmt.Sprintf("Can't get value of pointer for non-pointer type %T", ptr))
+	}
+	val := reflect.Indirect(v)
+
+	return val.Interface()
 }
