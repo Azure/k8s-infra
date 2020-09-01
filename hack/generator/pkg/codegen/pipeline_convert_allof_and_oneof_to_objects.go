@@ -233,12 +233,12 @@ func init() {
 		synthesizer.handleOneOf, flip(synthesizer.handleOneOf),
 		synthesizer.handleOptionalOptional,                           // symmetric
 		synthesizer.handleOptional, flip(synthesizer.handleOptional), // needs to be before Enum
+		synthesizer.handleResourceType, flip(synthesizer.handleResourceType),
 		synthesizer.handleEnumEnum, // symmetric
 		synthesizer.handleEnum, flip(synthesizer.handleEnum),
 		synthesizer.handleObjectObject, // symmetric
 		synthesizer.handleMapMap,       // symmetric
 		synthesizer.handleMapObject, flip(synthesizer.handleMapObject),
-		synthesizer.handleResourceType, flip(synthesizer.handleResourceType),
 	}
 }
 
