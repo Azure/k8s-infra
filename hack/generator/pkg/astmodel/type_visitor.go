@@ -27,6 +27,7 @@ type TypeVisitor struct {
 	VisitEnumType     func(this *TypeVisitor, it *EnumType, ctx interface{}) (Type, error)
 	VisitResourceType func(this *TypeVisitor, it *ResourceType, ctx interface{}) (Type, error)
 	VisitArmType      func(this *TypeVisitor, it *ArmType, ctx interface{}) (Type, error)
+	VisitStorageType  func(this *TypeVisitor, it *StorageType, ctx interface{}) (Type, error)
 }
 
 // Visit invokes the appropriate VisitX on TypeVisitor
@@ -58,6 +59,8 @@ func (tv *TypeVisitor) Visit(t Type, ctx interface{}) (Type, error) {
 		return tv.VisitResourceType(tv, it, ctx)
 	case *ArmType:
 		return tv.VisitArmType(tv, it, ctx)
+	case *StorageType:
+		return tv.VisitStorageType(tv, it, ctx)
 	}
 
 	panic(fmt.Sprintf("unhandled type: (%T) %v", t, t))
@@ -85,6 +88,26 @@ func (tv *TypeVisitor) VisitDefinition(td TypeDefinition, ctx interface{}) (*Typ
 	return &def, nil
 }
 
+func (tv *TypeVisitor) VisitDefinitions(definitions Types, ctx interface{}) (Types, error) {
+	result := make(Types)
+	var errs []error
+	for _, d := range definitions {
+		def, err := tv.VisitDefinition(d, ctx)
+		if err != nil {
+			errs = append(errs, err)
+		} else {
+			result[def.Name()] = *def
+		}
+	}
+
+	if len(errs) > 0 {
+		err := kerrors.NewAggregate(errs)
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // MakeTypeVisitor returns a default (identity transform) visitor, which
 // visits every type in the tree. If you want to actually do something you will
 // need to override the properties on the returned TypeVisitor.
@@ -104,6 +127,7 @@ func MakeTypeVisitor() TypeVisitor {
 		VisitArmType:      IdentityVisitOfArmType,
 		VisitOneOfType:    IdentityVisitOfOneOfType,
 		VisitAllOfType:    IdentityVisitOfAllOfType,
+		VisitStorageType:  IdentityVisitOfStorageType,
 	}
 }
 
@@ -237,4 +261,18 @@ func IdentityVisitOfAllOfType(this *TypeVisitor, it AllOfType, ctx interface{}) 
 	}
 
 	return MakeAllOfType(newTypes...), nil
+}
+
+func IdentityVisitOfStorageType(this *TypeVisitor, st *StorageType, ctx interface{}) (Type, error) {
+	newType, err := this.Visit(&st.objectType, ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to visit storage type %v", st.objectType)
+	}
+
+	ot, ok := newType.(*ObjectType)
+	if !ok {
+		return nil, errors.Errorf("expected transformation of Storage type %v to return ObjectType, not %v", st.objectType, ot)
+	}
+
+	return MakeStorageType(*ot), nil
 }
