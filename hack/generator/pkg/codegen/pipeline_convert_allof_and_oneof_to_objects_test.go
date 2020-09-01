@@ -197,6 +197,31 @@ func TestMergeObjectObjectCommonProperties(t *testing.T) {
 	g.Expect(synth.intersectTypes(obj2, obj1)).To(Equal(expected))
 }
 
+// merging resources merges their spec & status
+func TestMergeResourceResource(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	r1 := astmodel.NewResourceType(defineEnum("a", "b"), defineEnum("x", "y"))
+	r2 := astmodel.NewResourceType(defineEnum("b", "c"), defineEnum("y", "z"))
+
+	expected := astmodel.NewResourceType(defineEnum("b"), defineEnum("y"))
+
+	g.Expect(synth.intersectTypes(r1, r2)).To(Equal(expected))
+	g.Expect(synth.intersectTypes(r2, r1)).To(Equal(expected))
+}
+
+func TestMergeResourceMissingStatus(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	r1 := astmodel.NewResourceType(defineEnum("a", "b"), defineEnum("x", "y"))
+	r2 := astmodel.NewResourceType(defineEnum("b", "c"), nil)
+
+	expected := astmodel.NewResourceType(defineEnum("b"), defineEnum("x", "y"))
+
+	g.Expect(synth.intersectTypes(r1, r2)).To(Equal(expected))
+	g.Expect(synth.intersectTypes(r2, r1)).To(Equal(expected))
+}
+
 // merging a oneOf with a type that is in the oneOf results in that type
 func TestMergeOneOf(t *testing.T) {
 	g := NewGomegaWithT(t)
