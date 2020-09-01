@@ -64,7 +64,7 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 
 					object, err := synth.oneOfObject(resultOneOf)
 					if err != nil {
-						panic(err)
+						return nil, err
 					}
 
 					result = object
@@ -465,7 +465,7 @@ func (s synthesizer) handleOneOf(left astmodel.Type, right astmodel.Type) (astmo
 func (s synthesizer) handleTypeName(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
 	if leftName, ok := left.(astmodel.TypeName); ok {
 		if found, ok := s.defs[leftName]; !ok {
-			panic(fmt.Sprintf("couldn't find type %s", leftName))
+			return nil, errors.Errorf("couldn't find type %s", leftName)
 		} else {
 			result, err := s.intersectTypes(found.Type(), right)
 			if err != nil {
