@@ -74,7 +74,7 @@ func (tv *TypeVisitor) VisitDefinition(td TypeDefinition, ctx interface{}) (*Typ
 		return nil, errors.Wrapf(err, "visit of type of %q failed", td.Name())
 	}
 
-	def := MakeTypeDefinition(name, visitedType)
+	def := MakeTypeDefinition(name, visitedType).WithDescription(td.description)
 	return &def, nil
 }
 
