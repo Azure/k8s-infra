@@ -7,6 +7,7 @@ package codegen
 
 import (
 	"context"
+
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel/armconversion"
 	"github.com/pkg/errors"
@@ -197,6 +198,10 @@ type conversionHandler = func(t *astmodel.ObjectType) (*astmodel.ObjectType, err
 func transformTypeDefinition(
 	def astmodel.TypeDefinition,
 	handlers []conversionHandler) (astmodel.TypeDefinition, error) {
+
+	if !astmodel.IsObjectType(def.Type()) {
+		return astmodel.TypeDefinition{}, errors.Errorf("input type %q (%T) did not contain expected type Object", def.Name(), def.Type())
+	}
 
 	visitor := astmodel.MakeTypeVisitor()
 	visitor.VisitObjectType = func(this *astmodel.TypeVisitor, it *astmodel.ObjectType, ctx interface{}) (astmodel.Type, error) {

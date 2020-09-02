@@ -10,7 +10,7 @@ import (
 	"go/ast"
 )
 
-// ArmType wraps an existing type to indicate that it is an ARM targetted variation
+// ArmType wraps an existing type to indicate that it is an ARM targeted variation
 type ArmType struct {
 	objectType ObjectType
 }
@@ -18,7 +18,7 @@ type ArmType struct {
 // ArmType is a Type
 var _ Type = &ArmType{}
 
-// MakeArmType wraps an object type to indicate it's an ARM focussed variation
+// MakeArmType wraps an object type to indicate it's an ARM targeted variation
 func MakeArmType(object ObjectType) ArmType {
 	return ArmType{
 		objectType: object,
@@ -65,8 +65,6 @@ func (at ArmType) ObjectType() ObjectType {
 }
 
 // IsArmType returns true if the passed type is a Arm type; false otherwise.
-// We need to handle cases where it might be wrapped, so this isn't just a simple type check, we need to walk the top
-// of the type tree to do the check.
 func IsArmType(t Type) bool {
 	_, ok := t.(ArmType)
 	return ok
