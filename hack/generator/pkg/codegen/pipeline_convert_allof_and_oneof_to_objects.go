@@ -123,7 +123,7 @@ func (s synthesizer) oneOfObject(oneOf astmodel.OneOfType) (astmodel.Type, error
 
 	propertyDescription := "mutually exclusive with all other properties"
 	for i, t := range oneOf.Types() {
-		prop, err := s.extractOneOfProperties(i, t)
+		prop, err := s.convertToOneOfProperty(i, t)
 		if err != nil {
 			return nil, err
 		}
@@ -140,7 +140,7 @@ func (s synthesizer) oneOfObject(oneOf astmodel.OneOfType) (astmodel.Type, error
 	return objectType, nil
 }
 
-func (s synthesizer) extractOneOfProperties(i int, from astmodel.Type) (*astmodel.PropertyDefinition, error) {
+func (s synthesizer) convertToOneOfProperty(propIndex int, from astmodel.Type) (*astmodel.PropertyDefinition, error) {
 	switch concreteType := from.(type) {
 	case astmodel.TypeName:
 		propertyName := s.idFactory.CreatePropertyName(concreteType.Name(), astmodel.Exported)
@@ -151,7 +151,7 @@ func (s synthesizer) extractOneOfProperties(i int, from astmodel.Type) (*astmode
 		return astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType), nil
 	case *astmodel.EnumType:
 		// TODO: This name sucks but what alternative do we have?
-		name := fmt.Sprintf("enum%v", i)
+		name := fmt.Sprintf("enum%v", propIndex)
 		propertyName := s.idFactory.CreatePropertyName(name, astmodel.Exported)
 
 		// JSON name is unimportant here because we will implement the JSON marshaller anyway,
@@ -160,7 +160,7 @@ func (s synthesizer) extractOneOfProperties(i int, from astmodel.Type) (*astmode
 		return astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType), nil
 	case *astmodel.ObjectType:
 		// TODO: This name sucks but what alternative do we have?
-		name := fmt.Sprintf("object%v", i)
+		name := fmt.Sprintf("object%v", propIndex)
 		propertyName := s.idFactory.CreatePropertyName(name, astmodel.Exported)
 
 		// JSON name is unimportant here because we will implement the JSON marshaller anyway,
@@ -176,7 +176,7 @@ func (s synthesizer) extractOneOfProperties(i int, from astmodel.Type) (*astmode
 		}
 
 		// TODO: This name sucks but what alternative do we have?
-		name := fmt.Sprintf("%v%v", primitiveTypeName, i)
+		name := fmt.Sprintf("%v%v", primitiveTypeName, propIndex)
 		propertyName := s.idFactory.CreatePropertyName(name, astmodel.Exported)
 
 		// JSON name is unimportant here because we will implement the JSON marshaller anyway,
@@ -185,7 +185,7 @@ func (s synthesizer) extractOneOfProperties(i int, from astmodel.Type) (*astmode
 		return astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType).MakeOptional(), nil
 
 	case *astmodel.ResourceType:
-		name := fmt.Sprintf("resource%v", i)
+		name := fmt.Sprintf("resource%v", propIndex)
 		propertyName := s.idFactory.CreatePropertyName(name, astmodel.Exported)
 		jsonName := s.idFactory.CreateIdentifier(name, astmodel.NotExported)
 		return astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType).MakeOptional(), nil
