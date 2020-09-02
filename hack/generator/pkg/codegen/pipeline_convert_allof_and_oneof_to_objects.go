@@ -211,8 +211,9 @@ func (s synthesizer) intersectTypes(left astmodel.Type, right astmodel.Type) (as
 	return nil, errors.Errorf("don't know how to intersect types: %s and %s", left, right)
 }
 
-// intersectHandler knows how to do intersection for one case only
-// it is biased to examine the LHS type (but some are symmetric and handle both sides at once)
+// intersectHandler knows how to do intersection for one case only. It is biased to examine
+// the LHS type (but some are symmetric and handle both sides at once). The handler can return
+// nil,nil which indicates it doesn't apply to this combination of types.
 type intersectHandler = func(synthesizer, astmodel.Type, astmodel.Type) (astmodel.Type, error)
 
 // handles the same case for the right hand side
@@ -233,6 +234,7 @@ func init() {
 		synthesizer.handleOneOf, flip(synthesizer.handleOneOf),
 		synthesizer.handleOptionalOptional,                           // symmetric
 		synthesizer.handleOptional, flip(synthesizer.handleOptional), // needs to be before Enum
+		synthesizer.handleResourceResource, // symmetric
 		synthesizer.handleResourceType, flip(synthesizer.handleResourceType),
 		synthesizer.handleEnumEnum, // symmetric
 		synthesizer.handleEnum, flip(synthesizer.handleEnum),
@@ -243,249 +245,281 @@ func init() {
 }
 
 func (s synthesizer) handleOptional(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
-	if leftOptional, ok := left.(*astmodel.OptionalType); ok {
-		// is this wrong? it feels wrong, but needed for {optional{enum}, string}
-		return s.intersectTypes(leftOptional.Element(), right)
+	leftOptional, ok := left.(*astmodel.OptionalType)
+	if !ok {
+		return nil, nil
 	}
 
-	return nil, nil
+	// is this wrong? it feels wrong, but needed for {optional{enum}, string}
+	return s.intersectTypes(leftOptional.Element(), right)
+}
+
+func (s synthesizer) handleResourceResource(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	leftResource, ok := left.(*astmodel.ResourceType)
+	if !ok {
+		return nil, nil
+	}
+
+	rightResource, ok := right.(*astmodel.ResourceType)
+	if !ok {
+		return nil, nil
+	}
+
+	// merge two resources: merge spec/status
+	spec, err := s.intersectTypes(leftResource.SpecType(), rightResource.SpecType())
+	if err != nil {
+		return nil, err
+	}
+
+	// handle combinations of nil statuses
+	var status astmodel.Type
+	if leftResource.StatusType() != nil && rightResource.StatusType() != nil {
+		status, err = s.intersectTypes(leftResource.StatusType(), rightResource.StatusType())
+		if err != nil {
+			return nil, err
+		}
+	} else if leftResource.StatusType() != nil {
+		status = leftResource.StatusType()
+	} else {
+		status = rightResource.StatusType()
+	}
+
+	return leftResource.WithSpec(spec).WithStatus(status), nil
 }
 
 func (s synthesizer) handleResourceType(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
-	if leftResource, ok := left.(*astmodel.ResourceType); ok {
-		if rightResource, ok := right.(*astmodel.ResourceType); ok {
-			// merge two resources: merge spec/status
+	leftResource, ok := left.(*astmodel.ResourceType)
+	if !ok {
+		return nil, nil
+	}
 
-			spec, err := s.intersectTypes(leftResource.SpecType(), rightResource.SpecType())
+	if s.specOrStatus == chooseStatus {
+		if leftResource.StatusType() != nil {
+			newT, err := s.intersectTypes(leftResource.StatusType(), right)
 			if err != nil {
 				return nil, err
 			}
 
-			var status astmodel.Type
-			if leftResource.StatusType() != nil && rightResource.StatusType() != nil {
-				status, err = s.intersectTypes(leftResource.StatusType(), rightResource.StatusType())
-				if err != nil {
-					return nil, err
-				}
-			} else if leftResource.StatusType() != nil {
-				status = leftResource.StatusType()
-			} else {
-				status = rightResource.StatusType()
-			}
-
-			return leftResource.WithSpec(spec).WithStatus(status), nil
-		}
-
-		if s.specOrStatus == chooseStatus {
-			if leftResource.StatusType() != nil {
-				newT, err := s.intersectTypes(leftResource.StatusType(), right)
-				if err != nil {
-					return nil, err
-				}
-
-				return leftResource.WithStatus(newT), nil
-			} else {
-				return leftResource.WithStatus(right), nil
-			}
-		} else if s.specOrStatus == chooseSpec {
-			newT, err := s.intersectTypes(leftResource.SpecType(), right)
-			if err != nil {
-				return nil, err
-			}
-
-			return leftResource.WithSpec(newT), nil
+			return leftResource.WithStatus(newT), nil
 		} else {
-			panic("invalid specOrStatus")
+			return leftResource.WithStatus(right), nil
 		}
-	}
-
-	return nil, nil
-}
-
-func (s synthesizer) handleOptionalOptional(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
-	// if both optional merge their contents and put back in an optional
-	if leftOptional, ok := left.(*astmodel.OptionalType); ok {
-		if rightOptional, ok := right.(*astmodel.OptionalType); ok {
-			result, err := s.intersectTypes(leftOptional.Element(), rightOptional.Element())
-			if err != nil {
-				return nil, err
-			}
-
-			return astmodel.NewOptionalType(result), nil
-		}
-	}
-
-	return nil, nil
-}
-
-func (s synthesizer) handleMapMap(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
-	if leftMap, ok := left.(*astmodel.MapType); ok {
-		if rightMap, ok := right.(*astmodel.MapType); ok {
-			keyType, err := s.intersectTypes(leftMap.KeyType(), rightMap.KeyType())
-			if err != nil {
-				return nil, err
-			}
-
-			valueType, err := s.intersectTypes(leftMap.ValueType(), rightMap.ValueType())
-			if err != nil {
-				return nil, err
-			}
-
-			return astmodel.NewMapType(keyType, valueType), nil
-		}
-	}
-
-	return nil, nil
-}
-
-func (s synthesizer) handleObjectObject(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
-	if leftObj, ok := left.(*astmodel.ObjectType); ok {
-		if rightObj, ok := right.(*astmodel.ObjectType); ok {
-			mergedProps := make(map[astmodel.PropertyName]*astmodel.PropertyDefinition)
-
-			for _, p := range leftObj.Properties() {
-				mergedProps[p.PropertyName()] = p
-			}
-
-			for _, p := range rightObj.Properties() {
-				if existingProp, ok := mergedProps[p.PropertyName()]; ok {
-					newType, err := s.intersectTypes(existingProp.PropertyType(), p.PropertyType())
-					if err != nil {
-						klog.Errorf("unable to combine properties: %s (%v)", p.PropertyName(), err)
-						continue
-						//return nil, err
-					}
-
-					// TODO: need to handle merging requiredness and tags and...
-					mergedProps[p.PropertyName()] = existingProp.WithType(newType)
-				} else {
-					mergedProps[p.PropertyName()] = p
-				}
-			}
-
-			// flatten
-			var properties []*astmodel.PropertyDefinition
-			for _, p := range mergedProps {
-				properties = append(properties, p)
-			}
-
-			// TODO: need to handle merging other bits of objects
-			return leftObj.WithProperties(properties...), nil
-		}
-	}
-
-	return nil, nil
-}
-
-func (s synthesizer) handleEnumEnum(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
-	if leftEnum, ok := left.(*astmodel.EnumType); ok {
-		// if both are enums then the elements must be common
-		if rightEnum, ok := right.(*astmodel.EnumType); ok {
-			if !leftEnum.BaseType().Equals(rightEnum.BaseType()) {
-				return nil, errors.Errorf("cannot merge enums with differing base types")
-			}
-
-			var inBoth []astmodel.EnumValue
-
-			for _, option := range leftEnum.Options() {
-				for _, otherOption := range rightEnum.Options() {
-					if option == otherOption {
-						inBoth = append(inBoth, option)
-						break
-					}
-				}
-			}
-
-			return astmodel.NewEnumType(leftEnum.BaseType(), inBoth), nil
-		}
-	}
-
-	return nil, nil
-}
-
-func (s synthesizer) handleEnum(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
-	if leftEnum, ok := left.(*astmodel.EnumType); ok {
-		// we can restrict from a (maybe optional) base type to an enum type
-		if leftEnum.BaseType().Equals(right) ||
-			astmodel.NewOptionalType(leftEnum.BaseType()).Equals(right) {
-			return leftEnum, nil
-		}
-
-		var strs []string
-		for _, enumValue := range leftEnum.Options() {
-			strs = append(strs, enumValue.String())
-		}
-
-		return nil, errors.Errorf("don't know how to merge enum type (%s) with %s", strings.Join(strs, ", "), right)
-	}
-
-	return nil, nil
-}
-
-func (s synthesizer) handleAllOfType(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
-	if leftAllOf, ok := left.(astmodel.AllOfType); ok {
-		result, err := s.allOfObject(leftAllOf)
+	} else if s.specOrStatus == chooseSpec {
+		newT, err := s.intersectTypes(leftResource.SpecType(), right)
 		if err != nil {
 			return nil, err
 		}
 
-		return s.intersectTypes(result, right)
+		return leftResource.WithSpec(newT), nil
+	} else {
+		panic("invalid specOrStatus")
+	}
+}
+
+func (s synthesizer) handleOptionalOptional(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	// if both optional merge their contents and put back in an optional
+	leftOptional, ok := left.(*astmodel.OptionalType)
+	if !ok {
+		return nil, nil
 	}
 
-	return nil, nil
+	rightOptional, ok := right.(*astmodel.OptionalType)
+	if !ok {
+		return nil, nil
+	}
+
+	result, err := s.intersectTypes(leftOptional.Element(), rightOptional.Element())
+	if err != nil {
+		return nil, err
+	}
+
+	return astmodel.NewOptionalType(result), nil
+}
+
+func (s synthesizer) handleMapMap(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	leftMap, ok := left.(*astmodel.MapType)
+	if !ok {
+		return nil, nil
+	}
+
+	rightMap, ok := right.(*astmodel.MapType)
+	if !ok {
+		return nil, nil
+	}
+
+	keyType, err := s.intersectTypes(leftMap.KeyType(), rightMap.KeyType())
+	if err != nil {
+		return nil, err
+	}
+
+	valueType, err := s.intersectTypes(leftMap.ValueType(), rightMap.ValueType())
+	if err != nil {
+		return nil, err
+	}
+
+	return astmodel.NewMapType(keyType, valueType), nil
+}
+
+func (s synthesizer) handleObjectObject(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	leftObj, ok := left.(*astmodel.ObjectType)
+	if !ok {
+		return nil, nil
+	}
+
+	rightObj, ok := right.(*astmodel.ObjectType)
+	if !ok {
+		return nil, nil
+	}
+
+	mergedProps := make(map[astmodel.PropertyName]*astmodel.PropertyDefinition)
+
+	for _, p := range leftObj.Properties() {
+		mergedProps[p.PropertyName()] = p
+	}
+
+	for _, p := range rightObj.Properties() {
+		if existingProp, ok := mergedProps[p.PropertyName()]; ok {
+			newType, err := s.intersectTypes(existingProp.PropertyType(), p.PropertyType())
+			if err != nil {
+				klog.Errorf("unable to combine properties: %s (%v)", p.PropertyName(), err)
+				continue
+				//return nil, err
+			}
+
+			// TODO: need to handle merging requiredness and tags and...
+			mergedProps[p.PropertyName()] = existingProp.WithType(newType)
+		} else {
+			mergedProps[p.PropertyName()] = p
+		}
+	}
+
+	// flatten
+	var properties []*astmodel.PropertyDefinition
+	for _, p := range mergedProps {
+		properties = append(properties, p)
+	}
+
+	// TODO: need to handle merging other bits of objects
+	return leftObj.WithProperties(properties...), nil
+}
+
+func (s synthesizer) handleEnumEnum(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	leftEnum, ok := left.(*astmodel.EnumType)
+	if !ok {
+		return nil, nil
+	}
+
+	// if both are enums then the elements must be common
+	rightEnum, ok := right.(*astmodel.EnumType)
+	if !ok {
+		return nil, nil
+	}
+
+	if !leftEnum.BaseType().Equals(rightEnum.BaseType()) {
+		return nil, errors.Errorf("cannot merge enums with differing base types")
+	}
+
+	var inBoth []astmodel.EnumValue
+
+	for _, option := range leftEnum.Options() {
+		for _, otherOption := range rightEnum.Options() {
+			if option == otherOption {
+				inBoth = append(inBoth, option)
+				break
+			}
+		}
+	}
+
+	return astmodel.NewEnumType(leftEnum.BaseType(), inBoth), nil
+}
+
+func (s synthesizer) handleEnum(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	leftEnum, ok := left.(*astmodel.EnumType)
+	if !ok {
+		return nil, nil
+	}
+
+	// we can restrict from a (maybe optional) base type to an enum type
+	if leftEnum.BaseType().Equals(right) ||
+		astmodel.NewOptionalType(leftEnum.BaseType()).Equals(right) {
+		return leftEnum, nil
+	}
+
+	var strs []string
+	for _, enumValue := range leftEnum.Options() {
+		strs = append(strs, enumValue.String())
+	}
+
+	return nil, errors.Errorf("don't know how to merge enum type (%s) with %s", strings.Join(strs, ", "), right)
+}
+
+func (s synthesizer) handleAllOfType(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
+	leftAllOf, ok := left.(astmodel.AllOfType)
+	if !ok {
+		return nil, nil
+	}
+
+	result, err := s.allOfObject(leftAllOf)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.intersectTypes(result, right)
 }
 
 // if combining a type with a oneOf that contains that type, the result is that type
 func (s synthesizer) handleOneOf(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
-	if leftOneOf, ok := left.(astmodel.OneOfType); ok {
-		// if there is an equal case, use that:
-		for _, lType := range leftOneOf.Types() {
-			if lType.Equals(right) {
-				return lType, nil
-			}
-		}
-
-		// otherwise intersect with each type:
-		var newTypes []astmodel.Type
-		for _, lType := range leftOneOf.Types() {
-			newType, err := s.intersectTypes(lType, right)
-			if err != nil {
-				return nil, err
-			}
-
-			newTypes = append(newTypes, newType)
-		}
-
-		return astmodel.MakeOneOfType(newTypes), nil
+	leftOneOf, ok := left.(astmodel.OneOfType)
+	if !ok {
+		return nil, nil
 	}
 
-	return nil, nil
+	// if there is an equal case, use that:
+	for _, lType := range leftOneOf.Types() {
+		if lType.Equals(right) {
+			return lType, nil
+		}
+	}
+
+	// otherwise intersect with each type:
+	var newTypes []astmodel.Type
+	for _, lType := range leftOneOf.Types() {
+		newType, err := s.intersectTypes(lType, right)
+		if err != nil {
+			return nil, err
+		}
+
+		newTypes = append(newTypes, newType)
+	}
+
+	return astmodel.MakeOneOfType(newTypes), nil
 }
 
 func (s synthesizer) handleTypeName(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
-	if leftName, ok := left.(astmodel.TypeName); ok {
-		if found, ok := s.defs[leftName]; !ok {
-			return nil, errors.Errorf("couldn't find type %s", leftName)
-		} else {
-			result, err := s.intersectTypes(found.Type(), right)
-			if err != nil {
-				return nil, err
-			}
-
-			// TODO: can we somehow process these pointed-to types first,
-			// so that their innards are resolved already and we can retain
-			// the names?
-
-			if result.Equals(found.Type()) {
-				// if we got back the same thing we are referencing, preserve the reference
-				return leftName, nil
-			}
-
-			return result, nil
-		}
+	leftName, ok := left.(astmodel.TypeName)
+	if !ok {
+		return nil, nil
 	}
 
-	return nil, nil
+	if found, ok := s.defs[leftName]; !ok {
+		return nil, errors.Errorf("couldn't find type %s", leftName)
+	} else {
+		result, err := s.intersectTypes(found.Type(), right)
+		if err != nil {
+			return nil, err
+		}
+
+		// TODO: can we somehow process these pointed-to types first,
+		// so that their innards are resolved already and we can retain
+		// the names?
+
+		if result.Equals(found.Type()) {
+			// if we got back the same thing we are referencing, preserve the reference
+			return leftName, nil
+		}
+
+		return result, nil
+	}
 }
 
 // any type always disappears when intersected with another type
