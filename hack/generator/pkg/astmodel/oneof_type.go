@@ -42,16 +42,6 @@ func MakeOneOfType(types []Type) Type {
 	return OneOfType{uniqueTypes}
 }
 
-func appendIfUniqueType(slice []Type, item Type) []Type {
-	for _, r := range slice {
-		if r.Equals(item) {
-			return slice
-		}
-	}
-
-	return append(slice, item)
-}
-
 var _ Type = OneOfType{}
 
 // Types returns what types the OneOf can be
