@@ -74,19 +74,19 @@ type (
 		    }
 	*/
 	TemplateResourceObjectOutput struct {
-		APIVersion            string                     `json:"apiVersion,omitempty"`
-		Location              string                     `json:"location,omitempty"`
-		Properties            interface{}                `json:"properties,omitempty"`
-		SubscriptionID        string                     `json:"subscriptionId,omitempty"`
-		Scope                 string                     `json:"scope,omitempty"`
-		ID                    string                     `json:"id,omitempty"`
-		ResourceID            string                     `json:"resourceId,omitempty"`
-		ReferenceAPIVersion   string                     `json:"referenceApiVersion,omitempty"`
-		Condition             *bool                      `json:"condition,omitempty"`
-		IsCondition           *bool                      `json:"isConditionTrue,omitempty"`
-		IsTemplateResource    *bool                      `json:"isTemplateResource,omitempty"`
-		IsAction              *bool                      `json:"isAction,omitempty"`
-		ProvisioningOperation string                     `json:"provisioningOperation,omitempty"`
+		APIVersion            string      `json:"apiVersion,omitempty"`
+		Location              string      `json:"location,omitempty"`
+		Properties            interface{} `json:"properties,omitempty"`
+		SubscriptionID        string      `json:"subscriptionId,omitempty"`
+		Scope                 string      `json:"scope,omitempty"`
+		ID                    string      `json:"id,omitempty"`
+		ResourceID            string      `json:"resourceId,omitempty"`
+		ReferenceAPIVersion   string      `json:"referenceApiVersion,omitempty"`
+		Condition             *bool       `json:"condition,omitempty"`
+		IsCondition           *bool       `json:"isConditionTrue,omitempty"`
+		IsTemplateResource    *bool       `json:"isTemplateResource,omitempty"`
+		IsAction              *bool       `json:"isAction,omitempty"`
+		ProvisioningOperation string      `json:"provisioningOperation,omitempty"`
 	}
 
 	TemplateOutput struct {
@@ -206,7 +206,7 @@ func (atc *AzureTemplateClient) NewDeployment(resourceGroup string, deploymentNa
 	resourceIdTemplateFunction := fmt.Sprintf("resourceId('%s', %s)", resourceSpec.GetType(), strings.Join(formattedNames, ", "))
 	deployment.Properties.Template.Outputs = map[string]Output{
 		"resourceId": {
-			Type: "string",
+			Type:  "string",
 			Value: fmt.Sprintf("[%s]", resourceIdTemplateFunction),
 		},
 	}
@@ -219,7 +219,6 @@ func (atc *AzureTemplateClient) BeginDeleteResource(
 	id string,
 	apiVersion string,
 	status genruntime.ArmResourceStatus) error {
-
 
 	if id == "" {
 		return errors.Errorf("resource ID cannot be empty")

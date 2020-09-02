@@ -10,12 +10,33 @@ KIND_CLUSTER_NAME = k8sinfra-generated
 include ../../tools.mk
 
 CRD_OPTIONS     ?= "crd:crdVersions=v1,allowDangerousTypes=true"
+GO_DIRS         := $(shell $(GO) list -f '{{.Dir}}' ./...)
 
 V = 0
 Q = $(if $(filter 1,$V),,@)
 
 .PHONY: all
-all: generate build
+all: generate header-check fmt build test
+
+.PHONY: lint
+lint: $(GOLANGCI_LINT) ; $(info $(M) running golangci configured linters…) ## Lint codebase
+	$(Q) $(GOLANGCI_LINT) run -v
+
+.PHONY: lint-full
+lint-full: $(GOLANGCI_LINT) ; $(info $(M) running golangci configured linters…) ## Run slower linters to detect possible issues
+	$(Q) $(GOLANGCI_LINT) run -v --fast=false
+
+.PHONY: fmt
+fmt: ; $(info $(M) running gofmt…) @ ## Run gofmt on all source files
+	$(Q) $(GOFMT) -l -s -w $(GO_DIRS)
+
+.PHONY: tidy
+tidy: ; $(info $(M) running tidy…) @ ## Run tidy
+	$Q $(GO) mod tidy
+
+.PHONY: test
+test: ; $(info $(M) running go test…)
+	$(Q) $(GO) test ./... -tags=noexit
 
 .PHONY: generate
 generate: $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code
@@ -36,7 +57,6 @@ generate: $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code
 	@echo "Executing controller-gen to generate CRDs"
 	$(Q) $(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./apis/..." output:crd:artifacts:config=config/crd/bases
 
-# TODO: Right now this is just proving that the packages can be built - we don't have any executable consuming them yet so no binary is produced
 .PHONY: build
 build:
 	$(Q) $(GO) build -o ./bin/$(APP)
@@ -44,6 +64,7 @@ build:
 ## --------------------------------------
 ## Development
 ## --------------------------------------
+
 
 .PHONY: kind-delete
 kind-delete: $(KIND) ## Destroys the "k8sinfra" kind cluster.

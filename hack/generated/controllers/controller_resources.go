@@ -12,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-
 // KnownTypes defines an array of runtime.Objects to be reconciled, where each
 // object in the array will generate a controller. If the concrete type
 // implements the owner interface, the generated controllers will inject the

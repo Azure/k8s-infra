@@ -42,9 +42,9 @@ type (
 
 	// TODO: Flesh this out more -- https://docs.microsoft.com/en-us/rest/api/resources/deployments/createorupdate#errorresponse
 	DeploymentError struct {
-		Code string `json:"code,omitempty"`
+		Code    string `json:"code,omitempty"`
 		Message string `json:"message,omitempty"`
-		Target string `json:"target,omitempty"`
+		Target  string `json:"target,omitempty"`
 
 		Details []DeploymentError `json:"details,omitempty"`
 	}
@@ -56,7 +56,7 @@ type (
 		CorrelationID     string            `json:"correlationId,omitempty"`
 		Outputs           json.RawMessage   `json:"outputs,omitempty"` // TODO: What is this for?
 		Error             *DeploymentError
-		OutputResources   []OutputResource  `json:"outputResources,omitempty"`
+		OutputResources   []OutputResource `json:"outputResources,omitempty"`
 	}
 
 	DeploymentSpec struct {
@@ -98,7 +98,7 @@ func NewResourceGroupDeployment(
 	subscriptionId string,
 	groupName string,
 	deploymentName string,
-	resources ...interface{}) *Deployment{
+	resources ...interface{}) *Deployment {
 
 	return &Deployment{
 		Scope: ResourceGroupScope,

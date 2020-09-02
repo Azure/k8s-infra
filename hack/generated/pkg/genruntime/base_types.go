@@ -60,17 +60,17 @@ type ArmResource interface {
 
 func NewArmResource(spec ArmResourceSpec, status ArmResourceStatus, id string) ArmResource {
 	return &armResourceImpl{
-		spec: spec,
+		spec:   spec,
 		status: status,
-		Id: id,
+		Id:     id,
 	}
 }
 
 // TODO: I think that this is throwaway?
 type armResourceImpl struct {
-	spec ArmResourceSpec
+	spec   ArmResourceSpec
 	status ArmResourceStatus
-	Id string
+	Id     string
 }
 
 var _ ArmResource = &armResourceImpl{}

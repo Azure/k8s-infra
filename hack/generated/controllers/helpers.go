@@ -75,7 +75,7 @@ func GetFullAzureNameAndResourceGroup(r genruntime.MetaObject, gr *GenericReconc
 	if owner != nil {
 		var ownerGvk schema.GroupVersionKind
 		found := false
-		for gvk, _ := range gr.Scheme.AllKnownTypes() {
+		for gvk := range gr.Scheme.AllKnownTypes() {
 			if gvk.Group == owner.Group && gvk.Kind == owner.Kind {
 				if !found {
 					ownerGvk = gvk
@@ -98,7 +98,7 @@ func GetFullAzureNameAndResourceGroup(r genruntime.MetaObject, gr *GenericReconc
 
 		ownerNamespacedName := types.NamespacedName{
 			Namespace: r.GetNamespace(), // TODO: Assumption that resource ownership is not cross namespace
-			Name: owner.Name,
+			Name:      owner.Name,
 		}
 
 		ownerObj, err := gr.GetObject(ownerNamespacedName, ownerGvk)

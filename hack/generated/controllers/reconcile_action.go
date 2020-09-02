@@ -18,20 +18,20 @@ import (
 type ReconcileAction string
 
 const (
-	ReconcileActionNoAction          = ReconcileAction("NoAction")
-	ReconcileActionBeginDeployment   = ReconcileAction("BeginDeployment")
-	ReconcileActionWatchDeployment   = ReconcileAction("WatchDeployment")
-	ReconcileActionBeginDelete       = ReconcileAction("BeginDelete")
-	ReconcileActionWatchDelete       = ReconcileAction("WatchDelete")
+	ReconcileActionNoAction        = ReconcileAction("NoAction")
+	ReconcileActionBeginDeployment = ReconcileAction("BeginDeployment")
+	ReconcileActionWatchDeployment = ReconcileAction("WatchDeployment")
+	ReconcileActionBeginDelete     = ReconcileAction("BeginDelete")
+	ReconcileActionWatchDelete     = ReconcileAction("WatchDelete")
 )
 
 // TODO: Naming
 type ReconcileMetadata struct {
-	log logr.Logger
-	metaObj genruntime.MetaObject
+	log                       logr.Logger
+	metaObj                   genruntime.MetaObject
 	resourceProvisioningState *armclient.ProvisioningState
-	preserveDeployment bool
-	deploymentId string
+	preserveDeployment        bool
+	deploymentId              string
 }
 
 func NewReconcileMetadata(metaObj genruntime.MetaObject, log logr.Logger) *ReconcileMetadata {
@@ -40,11 +40,11 @@ func NewReconcileMetadata(metaObj genruntime.MetaObject, log logr.Logger) *Recon
 	// TODO: clean generic way to do that in go and also don't know perf impact of doing it all up
 	// TODO: front like we are now
 	return &ReconcileMetadata{
-		metaObj: metaObj,
-		log: log,
+		metaObj:                   metaObj,
+		log:                       log,
 		resourceProvisioningState: getResourceProvisioningState(metaObj),
-		preserveDeployment: getShouldPreserveDeployment(metaObj),
-		deploymentId: getDeploymentId(metaObj),
+		preserveDeployment:        getShouldPreserveDeployment(metaObj),
+		deploymentId:              getDeploymentId(metaObj),
 	}
 }
 

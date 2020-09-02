@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
-	"github.com/Azure/k8s-infra/pkg/util/patch"
+	"github.com/Azure/k8s-infra/hack/generated/pkg/util/patch"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"strconv"
@@ -37,11 +37,11 @@ const (
 	ResourceSigAnnotationKey = "resource-sig.infra.azure.com"
 
 	// TODO: Delete these later in favor of something in status?
-	DeploymentIdAnnotation = "deployment-id.infra.azure.com"
+	DeploymentIdAnnotation   = "deployment-id.infra.azure.com"
 	DeploymentNameAnnotation = "deployment-name.infra.azure.com"
-	ResourceStateAnnotation = "resource-state.infra.azure.com"
-	ResourceIdAnnotation = "resource-id.infra.azure.com"
-	ResourceErrorAnnotation = "resource-error.infra.azure.com"
+	ResourceStateAnnotation  = "resource-state.infra.azure.com"
+	ResourceIdAnnotation     = "resource-id.infra.azure.com"
+	ResourceErrorAnnotation  = "resource-error.infra.azure.com"
 	// PreserveDeploymentAnnotation is the key which tells the applier to keep or delete the deployment
 	PreserveDeploymentAnnotation = "x-preserve-deployment"
 
@@ -208,13 +208,6 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, fmt.Errorf("object is not a genruntime.MetaObject: %+v - type: %T", obj, obj)
 	}
 
-	// TODO: Consider making this a big switch (with clean cases)
-
-	// Like this!:
-	// 1. Extract useful fields... put into struct?
-	// 2. Call "DetermineObjectAction" on struct
-	// 3. Switch on object action
-
 	reconcileData := NewReconcileMetadata(metaObj, log)
 	action, err := reconcileData.DetermineReconcileAction()
 	if err != nil {
@@ -224,6 +217,7 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	var result ctrl.Result
 	var eventMsg string
+
 	// TODO: Action could be a function here if we wanted?
 	switch action {
 	case ReconcileActionNoAction:
@@ -262,7 +256,7 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	if err != nil {
-		log.Error(err, "Error during reconcile",  "action", action)
+		log.Error(err, "Error during reconcile", "action", action)
 		return result, err
 	}
 
@@ -317,6 +311,10 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return result, err
 }
 
+func (gr *GenericReconciler) LogAndEvent() {
+
+}
+
 // TODO: ??
 //func (gr *GenericReconciler) isResourceGroupReady(ctx context.Context, grouped azcorev1.Grouped) (bool, error) {
 //	// has a resource group, so check if the resource group is already provisioned
@@ -347,7 +345,6 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 //
 //	return zips.ProvisioningState(status) == zips.SucceededProvisioningState, nil
 //}
-
 
 func (gr *GenericReconciler) reconcileDelete(
 	ctx context.Context,
@@ -441,7 +438,7 @@ func (gr *GenericReconciler) updateFromNonTerminalDeleteState(
 	return ctrl.Result{}, err
 }
 
-func (gr *GenericReconciler) getStatus(ctx context.Context,	id string, data *ReconcileMetadata) (genruntime.ArmTransformer, error) {
+func (gr *GenericReconciler) getStatus(ctx context.Context, id string, data *ReconcileMetadata) (genruntime.ArmTransformer, error) {
 	_, typedArmSpec, err := ResourceSpecToArmResourceSpec(gr, data.metaObj)
 	if err != nil {
 		return nil, err
@@ -550,6 +547,12 @@ func (gr *GenericReconciler) createDeployment(ctx context.Context, data *Reconci
 
 		return nil
 	}); err != nil {
+		// This is a superfluous error as per https://github.com/kubernetes-sigs/controller-runtime/issues/377
+		// The correct handling is just to ignore it and we will get an event shortly with the updated version to patch
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+
 		return ctrl.Result{}, errors.Wrap(err, "failed to patch")
 	}
 
@@ -573,7 +576,7 @@ func (gr *GenericReconciler) watchDeployment(ctx context.Context, data *Reconcil
 	if err := patcher(ctx, gr.Client, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
 		deployment, err = gr.ARMClient.GetDeployment(ctx, deployment.Id)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed getting deployment %q from ARM", deployment.Id)
 		}
 
 		var status genruntime.ArmTransformer
@@ -585,7 +588,7 @@ func (gr *GenericReconciler) watchDeployment(ctx context.Context, data *Reconcil
 
 			status, err = gr.getStatus(ctx, deployment.Properties.OutputResources[0].ID, data)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "Failed getting status from ARM")
 			}
 		}
 
@@ -600,11 +603,17 @@ func (gr *GenericReconciler) watchDeployment(ctx context.Context, data *Reconcil
 
 		err = gr.updateMetaObject(data.metaObj, deployment, status)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed updating metaObj")
 		}
 
 		return nil
 	}); err != nil {
+		// This is a superfluous error as per https://github.com/kubernetes-sigs/controller-runtime/issues/377
+		// The correct handling is just to ignore it and we will get an event shortly with the updated version to patch
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+
 		return ctrl.Result{}, errors.Wrap(err, "failed to patch")
 	}
 
@@ -733,7 +742,7 @@ func patcher(ctx context.Context, c client.Client, metaObj genruntime.MetaObject
 	}
 
 	if err := patchHelper.Patch(ctx, metaObj); err != nil {
-		return err
+		return errors.Wrap(err, "patchHelper patch failed")
 	}
 
 	// fill resourcer with patched updates since patch will copy resourcer
