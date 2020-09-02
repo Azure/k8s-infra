@@ -11,6 +11,7 @@ include ../../tools.mk
 
 CRD_OPTIONS     ?= "crd:crdVersions=v1,allowDangerousTypes=true"
 GO_DIRS         := $(shell $(GO) list -f '{{.Dir}}' ./...)
+GO_DIRS_TO_TEST := $(shell $(GO) list -f '{{.Dir}}' ./... | grep -v /apis/)
 
 V = 0
 Q = $(if $(filter 1,$V),,@)
@@ -36,7 +37,7 @@ tidy: ; $(info $(M) running tidy…) @ ## Run tidy
 
 .PHONY: test
 test: ; $(info $(M) running go test…)
-	$(Q) $(GO) test ./... -tags=noexit
+	$(Q) $(GO) test $(GO_DIRS_TO_TEST) -tags=noexit
 
 .PHONY: generate
 generate: $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code
