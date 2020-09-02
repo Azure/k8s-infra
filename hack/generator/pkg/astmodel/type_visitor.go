@@ -7,6 +7,7 @@ package astmodel
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -166,7 +167,7 @@ func MakeTypeVisitor() TypeVisitor {
 
 			ot, ok := newType.(*ObjectType)
 			if !ok {
-				return nil, errors.Wrapf(err, "expected transformation of ARM underlying type %s to return ObjectType, not %v", at.objectType, ot)
+				return nil, errors.Wrapf(err, "expected transformation of ARM underlying type %v to return ObjectType, not %v", at.objectType, ot)
 			}
 
 			return MakeArmType(*ot), nil
