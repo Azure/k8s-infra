@@ -167,7 +167,7 @@ func MakeTypeVisitor() TypeVisitor {
 
 			ot, ok := newType.(*ObjectType)
 			if !ok {
-				return nil, errors.Wrapf(err, "expected transformation of ARM underlying type %v to return ObjectType, not %v", at.objectType, ot)
+				return nil, errors.Errorf("expected transformation of ARM underlying type %v to return ObjectType, not %v", at.objectType, ot)
 			}
 
 			return MakeArmType(*ot), nil

@@ -7,6 +7,7 @@ package codegen
 
 import (
 	"context"
+
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel/armconversion"
 	"github.com/pkg/errors"
@@ -210,6 +211,11 @@ func transformTypeDefinition(
 	transformed, err := visitor.VisitDefinition(def, nil)
 	if err != nil {
 		return astmodel.TypeDefinition{}, errors.Wrapf(err, "failed to transform type definition %q", def.Name())
+	}
+
+	if transformed.Type().Equals(def.Type()) &&
+		transformed.Name().Equals(def.Name()) {
+		return astmodel.TypeDefinition{}, errors.Errorf("transform type definition %q was not transformed (perhaps it doesn't contain an object)", def.Name())
 	}
 
 	return *transformed, nil
