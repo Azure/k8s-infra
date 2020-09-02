@@ -28,7 +28,7 @@ func Test_IsArmType_GivenType_ReturnsExpectedResult(t *testing.T) {
 		{"String is not ARM type", StringType, false},
 		{"Map is not ARM type", NewMapType(StringType, BoolType), false},
 		{"Object is not ARM type", objectType, false},
-		{"ARM is ARM type", armType, false},
+		{"ARM is ARM type", armType, true},
 	}
 
 	for _, c := range cases {
