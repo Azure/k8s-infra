@@ -258,6 +258,22 @@ func TestMergeOneOf(t *testing.T) {
 // wooh!
 func TestMergeOneOfEnum(t *testing.T) {
 	// this is based on a real-world example
+	// base type is defined like:
+	//
+	// 	ResourceBase { Location: oneOf{ string, enum('Global', 'USWest', 'USSouth', etc...) }
+	//
+	// derived type is defined like:
+	//
+	// 	Derived: allOf{ ResourceBase, { Location: enum('Global') } }
+	//
+	// which then reduces to:
+	//
+	// 	Derived: { Location: allOf{ oneOf{ string, enum('Global', ...) }, enum('Global') } }
+	//
+	// the Location type should be reduced to:
+	//
+	// 	Derived: { Location: enum('Global') }
+
 	g := NewGomegaWithT(t)
 
 	oneOf := astmodel.MakeOneOfType([]astmodel.Type{
