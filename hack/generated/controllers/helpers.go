@@ -20,6 +20,8 @@ import (
 	"time"
 )
 
+// SpecSignature calculates the hash of a spec. This can be used to compare specs and determine
+// if there has been a change
 func SpecSignature(metaObject genruntime.MetaObject) (string, error) {
 	// Convert the resource to unstructured for easier comparison later.
 	unObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(metaObject)
@@ -45,6 +47,7 @@ func SpecSignature(metaObject genruntime.MetaObject) (string, error) {
 	return hex.EncodeToString(hash[:]), nil
 }
 
+// CreateDeploymentName generates a unique deployment name
 func CreateDeploymentName() (string, error) {
 	// no status yet, so start provisioning
 	deploymentUUID, err := uuid.NewUUID()
@@ -57,6 +60,7 @@ func CreateDeploymentName() (string, error) {
 }
 
 // TODO: Remove this when we have proper AzureName defaulting on the way in
+// GetAzureName returns the specified AzureName, or else the name of the Kubernetes resource
 func GetAzureName(r genruntime.MetaObject) string {
 	if r.AzureName() == "" {
 		return r.GetName()
@@ -65,6 +69,9 @@ func GetAzureName(r genruntime.MetaObject) string {
 	return r.AzureName()
 }
 
+// GetFullAzureNameAndResourceGroup gets the full name for use in creating a resource. This name includes
+// the full "path" to the resource being deployed. For example, a Virtual Network Subnet's name might be:
+// "myvnet/mysubnet"
 func GetFullAzureNameAndResourceGroup(r genruntime.MetaObject, gr *GenericReconciler) (string, string, error) {
 	owner := r.Owner()
 
@@ -124,13 +131,4 @@ func GetFullAzureNameAndResourceGroup(r genruntime.MetaObject, gr *GenericReconc
 			"Can't GetOwnerAndResourceGroupDetails from %s (kind: %s), which has no owner but is not a ResourceGroup",
 			r.GetName(),
 			r.GetObjectKind().GroupVersionKind()))
-}
-
-// TODO: is there some helper that does this?
-func StringPtrToString(s *string) string {
-	if s == nil {
-		return "nil"
-	}
-
-	return *s
 }

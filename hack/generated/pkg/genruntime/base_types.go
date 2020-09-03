@@ -66,7 +66,6 @@ func NewArmResource(spec ArmResourceSpec, status ArmResourceStatus, id string) A
 	}
 }
 
-// TODO: I think that this is throwaway?
 type armResourceImpl struct {
 	spec   ArmResourceSpec
 	status ArmResourceStatus

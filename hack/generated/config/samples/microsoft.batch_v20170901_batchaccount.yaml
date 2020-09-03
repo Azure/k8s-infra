@@ -1,11 +1,11 @@
 apiVersion: microsoft.batch.infra.azure.com/v20170901
 kind: BatchAccount
 metadata:
-  name: batchaccountexample
+  name: samplekubebatch
   namespace: default
 spec:
-  apiVersion: 2017-09-01  # TODO: Remove?
+  apiVersion: 2017-09-01
   location: westcentralus
   owner:
-    name: matthchr-rg
+    name: my-rg
   properties: {} # TODO: This is awkward

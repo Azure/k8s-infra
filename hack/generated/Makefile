@@ -11,6 +11,7 @@ include ../../tools.mk
 
 CRD_OPTIONS     ?= "crd:crdVersions=v1,allowDangerousTypes=true"
 GO_DIRS         := $(shell $(GO) list -f '{{.Dir}}' ./...)
+# We exclude the apis folder because it's really large and test discovery takes a good amount of time (>10s)
 GO_DIRS_TO_TEST := $(shell $(GO) list -f '{{.Dir}}' ./... | grep -v /apis/)
 
 V = 0
@@ -66,7 +67,6 @@ build:
 ## Development
 ## --------------------------------------
 
-
 .PHONY: kind-delete
 kind-delete: $(KIND) ## Destroys the "k8sinfra" kind cluster.
 	$(KIND) delete cluster --name=$(KIND_CLUSTER_NAME) || true
@@ -84,12 +84,12 @@ kind-create:
 	# TODO: Need to use this script when we actually start installing stuff from a registry
 	# $(SCRIPTS_DIR)/kind-with-registry.sh
 
+# TODO: We may want this later
 #.PHONY: apply-certs-and-secrets
 #apply-certs-and-secrets: $(KUBECTL) ## Apply certificate manager and manager secrets into cluster
 #	$(SCRIPTS_DIR)/apply_cert_and_secrets.sh
 
 .PHONY: run
-# run: export KUBECONFIG = $(KIND_KUBECONFIG)
 run: export ENVIRONMENT = development
 run: kind-create install ## Run a development cluster using kind
 	$(GO) run ./main.go
@@ -106,7 +106,6 @@ install: generate $(KUBECTL) $(KUSTOMIZE) ## Install CRDs into a cluster
 uninstall: generate $(KUBECTL) $(KUSTOMIZE) ## Uninstall CRDs from a cluster
 	$(KUSTOMIZE) build config/crd | $(KUBECTL) delete -f -
 
-# todo: wat?
 .PHONY: deploy
 deploy: generate $(KUBECTL) $(KUSTOMIZE) docker-build docker-push ## Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 	$(KUSTOMIZE) build config/default | sed "s_${CONFIG_REGISTRY}_${REGISTRY}/${IMG}_" | $(KUBECTL) apply -f -

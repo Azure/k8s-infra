@@ -25,7 +25,7 @@ const (
 	ReconcileActionWatchDelete     = ReconcileAction("WatchDelete")
 )
 
-// TODO: Naming
+// TODO: Naming?
 type ReconcileMetadata struct {
 	log                       logr.Logger
 	metaObj                   genruntime.MetaObject

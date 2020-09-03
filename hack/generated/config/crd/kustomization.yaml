@@ -2,9 +2,8 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 
-# TODO: We need to generate this?
+# TODO: We need to generate this
 resources:
-# - bases/microsoft.resources.infra.azure.com_resourcegroups.yaml
 - bases/microsoft.batch.infra.azure.com_batchaccounts.yaml
 - bases/microsoft.storage.infra.azure.com_storageaccounts.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
