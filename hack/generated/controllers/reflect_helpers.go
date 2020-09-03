@@ -69,7 +69,6 @@ func NewEmptyArmResourceStatus(metaObject genruntime.MetaObject) (genruntime.Arm
 	armStatus, err := kubeStatus.ConvertToArm("")
 
 	// TODO: Some reflect hackery here to make sure that this is a ptr not a value
-
 	armStatusPtr := NewPtrFromValue(armStatus)
 	castArmStatus, ok := armStatusPtr.(genruntime.ArmResourceStatus)
 	if !ok {
@@ -115,7 +114,7 @@ func SetStatus(metaObj genruntime.MetaObject, status interface{}) error {
 	return nil
 }
 
-// Here be dragons... use carefully as it may not work for everything?
+// NewPtrFromValue creates a new pointer type from a value
 func NewPtrFromValue(value interface{}) interface{} {
 	v := reflect.ValueOf(value)
 
@@ -123,10 +122,12 @@ func NewPtrFromValue(value interface{}) interface{} {
 	ptr := reflect.New(v.Type())
 	ptr.Elem().Set(v)
 
-	// TODO: how to check that this doesn't fail
 	return ptr.Interface()
 }
 
+// TODO: Can we delete this helper later when we have some better code generated functions?
+// ValueOfPtr dereferences a pointer and returns the value the pointer points to.
+// Use this as carefully as you would the * operator
 func ValueOfPtr(ptr interface{}) interface{} {
 	v := reflect.ValueOf(ptr)
 	if v.Kind() != reflect.Ptr {

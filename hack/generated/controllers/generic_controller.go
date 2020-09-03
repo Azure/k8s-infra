@@ -311,10 +311,6 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return result, err
 }
 
-func (gr *GenericReconciler) LogAndEvent() {
-
-}
-
 // TODO: ??
 //func (gr *GenericReconciler) isResourceGroupReady(ctx context.Context, grouped azcorev1.Grouped) (bool, error) {
 //	// has a resource group, so check if the resource group is already provisioned
