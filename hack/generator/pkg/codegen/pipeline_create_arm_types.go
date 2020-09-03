@@ -364,11 +364,9 @@ func addArmConversionInterface(
 			isResource)), nil
 	}
 
-	transformedDef, err := transformTypeDefinition(
+	return transformTypeDefinition(
 		kubeDef,
 		[]conversionHandler{addInterfaceHandler})
-
-	return transformedDef, err
 }
 
 func convertArmPropertyTypeIfNeeded(definitions astmodel.Types, t astmodel.Type) (astmodel.Type, error) {
