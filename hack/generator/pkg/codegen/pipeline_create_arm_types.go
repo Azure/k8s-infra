@@ -199,8 +199,8 @@ func transformTypeDefinition(
 	def astmodel.TypeDefinition,
 	handlers []conversionHandler) (astmodel.TypeDefinition, error) {
 
-	if !astmodel.IsObjectType(def.Type()) {
-		return astmodel.TypeDefinition{}, errors.Errorf("input type %q (%T) did not contain expected type Object", def.Name(), def.Type())
+	if !astmodel.IsObjectDefinition(def) && !astmodel.IsArmDefinition(def) {
+		return astmodel.TypeDefinition{}, errors.Errorf("input type %q (%T) did not contain expected type", def.Name(), def.Type())
 	}
 
 	visitor := astmodel.MakeTypeVisitor()
