@@ -29,9 +29,9 @@
 ## Different kinds of resource relationships in Azure
 #### Related/linked resources 
 Two resources are related to one another ("has-a" relationship), but there is no ownership.
-Example: [VMSS -> Subnet](https://github.com/Azure/k8s-infra/blob/master/apis/microsoft.compute/v1/virtualmachinescaleset_types.go#L169) ([json schema](https://schema.management.azure.com/schemas/2019-07-01/Microsoft.Compute.json)).
+Example: [VMSS → Subnet](https://github.com/Azure/k8s-infra/blob/master/apis/microsoft.compute/v1/virtualmachinescaleset_types.go#L169) ([json schema](https://schema.management.azure.com/schemas/2019-07-01/Microsoft.Compute.json)).
 
-This relationship is stereotypically one-way (a VMSS refers to a Subnet, but a Subnet _does not_ refer to a VMSS).
+This relationship is always one-way (a VMSS refers to a Subnet, but a Subnet _does not_ refer to a VMSS).
 
 #### Owner and dependent
 Two resources have a relationship where one is owned by the other.
@@ -75,7 +75,7 @@ These are just properties (often but not always called `id`) which refer to the 
 ```
 
 #### What does ASO do?
-Similar to how ARM templates behave, ASO uses the decomposition of fully qualified resource id to reference another resource, as seen [here for VMSS -> VNet](https://github.com/Azure/azure-service-operator/blob/92240406aff3863f3a267d8a1dc1e28aa3e841ae/api/v1alpha1/azurevmscaleset_types.go#L25)
+Similar to how ARM templates behave, ASO uses the decomposition of fully qualified resource id to reference another resource, as seen [here for VMSS → VNet](https://github.com/Azure/azure-service-operator/blob/92240406aff3863f3a267d8a1dc1e28aa3e841ae/api/v1alpha1/azurevmscaleset_types.go#L25)
 
 ```go
 type AzureVMScaleSetSpec struct {
@@ -303,36 +303,37 @@ allow references to resources that were created before the customer onboarded to
 
 `ResourceLifeCycle` can be either `Managed` or `Unmanaged`.
 
-`ResourceLifeCycle` is not specified by the customer explicitly in the `Spec`, instead 
+`ResourceLifeCycle` is not specified by the customer explicitly in the `Spec`, instead it is inferred based on how
+the resource was created in Kubernetes. If a resource is created as just a reference (id, name, no spec details) then
+it is `Unmanaged`. If a resource is created with a populated spec, then the resource is `Managed`.
 
-RouteTable + Routes issue (multiple routes of the same name are allowed)
+### RouteTable + Routes issue (multiple routes of the same name are allowed)
 
 Options for this:
-Note that all of these options share this restriction: Each resource must be imported, i.e. to import a VNET you may need to import
+Note that all of these options share this restriction: Each resource must be imported, e.g. to import a VNET you may need to import
 the resource group the VNET is in, and then the VNET (with an `Owner` reference pointing to the imported `ResourceGroup`). 
 
-Option 1: Users must create a _valid_ resource with the same name as the resource they want to track. If this resources spec differs from what is in Azure, an error is logged 
-but we never actually apply any state to Azure (i.e. we don't try to sync to the spec). A tag in the metadata must be added to inform the operator not to sync.
-Note that because of how we managed names in Azure and names in Kubernetes,  
+**Option 1:** Users must create a _valid_ resource with the same name as the resource they want to track. If this resource's spec differs from what is in Azure, an error is logged 
+but we never actually apply any state to Azure (i.e. we don't try to sync to the spec). A tag in the metadata must be added to inform the operator not to sync.   
 
-Advantages
+**Advantages**
 - Swapping from unmanaged to managed is super easy, just remove the tag blocking the reconciliation loop.
 
-Disadvantages
+**Disadvantages**
 - There is possibly a significant amount of extra effort required to re-specify a resource whose shape we really just want to "import" from ARM. Worse for large trees of objects
   or deeply nested objects.
 - If the tag is forgotten (or has a typo) we will try to manage a resource which we shouldn't be managing. This could be _very_ problematic depending on how different
-  the specification is from what's there in Azure.
+  the specification is from what exists in Azure.
 - The existence of a spec may suggest we are actually seeking towards it -- which we are not. ASO does have a similar feature though so maybe not that big of a problem.
 
-Option 2: Users create an entity with just the "identifying fields" set: `Metadata.Name`, `Owner`, and optionally `Spec.AzureName`.
+**Option 2:** Users create an entity with just the "identifying fields" set: `Metadata.Name`, `Owner`, and optionally `Spec.AzureName`.
 When an entity is created like this, the controller knows to treat it specially (optionally may also add a tag automatically?).
 These entities will only be watched by the controller, no mutating update will be sent to ARM.
 
-Advantages
+**Advantages**
 - Relatively easy to import even complex object hierarchies.
 
-Disadvantages
+**Disadvantages**
 - This screws up the "required-ness" of non-identifying fields in a spec. For example: a Virtual Network requires a `Properties VirtualNetworkProperties` field to be set,
   but since we have to allow that field to be `nil` when importing a Virtual Network we can't set the `Properties` field with a required annotation for Kubebuilder.
 
@@ -356,13 +357,13 @@ Option 3: Same as option 2, but use `anyOf` to specify two valid structures:
 
 Note that it has to be `anyOf` because `oneOf` disallows multiple matches, and `owner` + `foo` matches both sets in the example above.
 
-Advantages
+**Advantages**
 - Represents what we want and maintains better automatic validation.
 
-Disadvantages
-- Kubebuilder doesn't generating this, so we would have to come up with another way to do it, or possibly upstream changes to Kubebuilder to support it.
+**Disadvantages**
+- Kubebuilder doesn't support generating this, so we would have to come up with another way to do it, or possibly upstream changes to Kubebuilder to support it.
 
-Option 4: Other ideas...
+**Option 4:** Other ideas...
 Do away with Kubebuilder validation entirely and use our own (including our own validating webhooks).
 Use Kustomize and our own code-generator/parser to generate amendments to Kubebuilder's generated CRDs to get the `anyOf` shape we want above.
 
@@ -532,7 +533,7 @@ If the owner is created, the dependent resource will then be created by the reco
 
 ### What happens when a resource contains a link to another resource which doesn't exist?
 The resource with the link will be stuck in an unprovisioned state with an error stating that the linked resource doesn't exist.
-This behavior is the same as for a dependent resource with a non-existant owner.
+This behavior is the same as for a dependent resource with a non-existent owner.
 
 ### How are the CRD entities going to be rendered as ARM deployments?
 There are a few different ways to perform ARM deployments as [discussed in Dependent Resources](#dependent-resources).
@@ -545,6 +546,7 @@ Yes. If you have a complex hierarchy of resources (where resources have involved
 all of their YAMLs to the operator at the same time it is likely that some requests when sent to ARM will fail because of missing dependencies.
 Those resources that failed to deploy initially will be in an unprovisioned state in Kubernetes, and eventually
 all the resources will be created through multiple iterations of the reconciliation loop. 
+
 
 ### Aren't there going to be races in resource deletion?
 Yes. `Owner` as discussed in this specification is informing Kubernetes _how Azure behaves_. The fact that 
@@ -569,7 +571,7 @@ name of the owner and the name of the resource to build the name specified in th
 include the name of the owner in the `dependsOn` field. 
 
 ### What happens if an owning resource is deleted and immediately recreated?
-Kubernetes garbage collection is based on object `uid`'s. As discussed above we bind to that `uid` on 
+Kubernetes garbage collection is based on object `uid`'s. As discussed above, we bind to that `uid` on 
 dependent resource creation. If a resource is deleted and then recreated Kubernetes will still understand
 that the new resource is fundamentally different than the old resource and garbage collection will happen
 as expected. The result will be that there is a new owning resource but all of its dependent resources were 
