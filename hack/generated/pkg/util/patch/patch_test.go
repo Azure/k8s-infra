@@ -172,10 +172,17 @@ func TestHelperPatch(t *testing.T) {
 
 			h, err := NewHelper(beforeCopy, fakeClient)
 			g.Expect(err).NotTo(HaveOccurred())
-			beforeMeta := beforeCopy.(*storage.StorageAccount)
 
+			// Set the resource version of the "after" target to be whatever
+			// "before" has -- this value is assigned automatically by Kubernetes
+			// and must match for Patch to succeeded. Since our objective here
+			// is to test the PatchHelper, the resource version must match (non-matching
+			// resource versions are trivially "correct" because nothing is
+			// supposed to happen - this is enforced by controller-runtime + Kubernetes so we
+			// don't need to test it)
+			beforeMeta := beforeCopy.(*storage.StorageAccount)
 			afterMeta := tt.after.(*storage.StorageAccount)
-			afterMeta.ResourceVersion = beforeMeta.ResourceVersion // TODO: HACK HACK
+			afterMeta.ResourceVersion = beforeMeta.ResourceVersion
 
 			afterCopy := tt.after.DeepCopyObject()
 
