@@ -579,7 +579,7 @@ deleted (in Azure and in k8s).
 
 ## TODOs
 - How can we allow customers to easily find all dependents for a particular owner (i.e. all subnets of a vnet) using `kubectl`?
-- Cross subscription refs?
+- Cross subscription refs? Note that these are supported by a few Azure resources (VNET for example), but aren't supported in most places.
 
 ## Questions
 These are questions I am posing to the group - I don't expect to have an answer without input from the group.
