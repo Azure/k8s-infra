@@ -45,11 +45,10 @@ func CollectArmSpecAndStatusDefinitions(definitions Types) TypeNameSet {
 		return armName, nil
 	}
 
-	// TODO: We should be using a better way to identify ARM types. I believe
-	// TODO Bevan is working on it.
 	armSpecAndStatus := make(TypeNameSet)
 	for _, def := range definitions {
-		if resourceType, ok := def.Type().(*ResourceType); ok {
+		if IsResourceDefinition(def) && definitions.IsArmDefinition(&def) {
+			resourceType := def.Type().(*ResourceType)
 
 			armSpecName, err := findType(resourceType.spec)
 			if err != nil {
