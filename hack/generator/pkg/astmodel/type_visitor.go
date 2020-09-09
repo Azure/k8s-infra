@@ -7,7 +7,6 @@ package astmodel
 
 import (
 	"fmt"
-
 	"github.com/pkg/errors"
 
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -212,17 +211,21 @@ func IdentityVisitOfResourceType(this *TypeVisitor, it *ResourceType, ctx interf
 }
 
 func IdentityVisitOfArmType(this *TypeVisitor, at *ArmType, ctx interface{}) (Type, error) {
-	newType, err := this.Visit(&at.objectType, ctx)
+	nt, err := this.Visit(&at.objectType, ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to visit ARM underlying type %v", at.objectType)
 	}
 
-	ot, ok := newType.(*ObjectType)
-	if !ok {
-		return nil, errors.Errorf("expected transformation of ARM underlying type %v to return ObjectType, not %v", at.objectType, ot)
-	}
+	switch newType := nt.(type) {
+	case *ObjectType:
+		return MakeArmType(*newType), nil
 
-	return MakeArmType(*ot), nil
+	case *ArmType:
+		return newType, nil
+
+	default:
+		return nil, errors.Errorf("expected transformation of ARM underlying type %v to return ObjectType or ArmType, not %v", at.objectType, nt)
+	}
 }
 
 func IdentityVisitOfOneOfType(this *TypeVisitor, it OneOfType, ctx interface{}) (Type, error) {
@@ -264,7 +267,7 @@ func IdentityVisitOfAllOfType(this *TypeVisitor, it AllOfType, ctx interface{}) 
 }
 
 func IdentityVisitOfStorageType(this *TypeVisitor, st *StorageType, ctx interface{}) (Type, error) {
-	newType, err := this.Visit(&st.objectType, ctx)
+	newType, err := this.Visit(st.objectType, ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to visit storage type %v", st.objectType)
 	}
@@ -274,5 +277,5 @@ func IdentityVisitOfStorageType(this *TypeVisitor, st *StorageType, ctx interfac
 		return nil, errors.Errorf("expected transformation of Storage type %v to return ObjectType, not %v", st.objectType, ot)
 	}
 
-	return MakeStorageType(*ot), nil
+	return MakeStorageType(ot), nil
 }
