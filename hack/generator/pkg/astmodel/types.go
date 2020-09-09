@@ -93,3 +93,55 @@ func (types Types) Copy() Types {
 	result.AddTypes(types)
 	return result
 }
+
+// IsArmType returns true if the passed type is a Arm type or names an Arm type; false otherwise.
+func (types Types) IsArmType(aType Type) bool {
+	switch t := aType.(type) {
+	case *ArmType:
+		return true
+
+	case *ResourceType:
+		return types.IsArmResource(t)
+
+	case TypeName:
+		if def, ok := types[t]; ok {
+			return types.IsArmDefinition(&def)
+		}
+		return false
+
+	default:
+		return false
+	}
+}
+
+// IsArmDefinition returns true if the passed definition is for a Arm type or names an Arm type; false otherwise.
+func (types Types) IsArmDefinition(definition *TypeDefinition) bool {
+	return types.IsArmType(definition.theType)
+}
+
+// IsArmDefinition returns true if the passed resource contains Arm Types or names Arm types; false otherwise.
+func (types Types) IsArmResource(resource *ResourceType) bool {
+	return types.IsArmType(resource.SpecType()) || types.IsArmType(resource.StatusType())
+}
+
+// IsEnumType returns true if the passed type is a Arm type or names an Arm type; false otherwise.
+func (types Types) IsEnumType(aType Type) bool {
+	switch t := aType.(type) {
+	case *EnumType:
+		return true
+
+	case TypeName:
+		if def, ok := types[t]; ok {
+			return types.IsEnumDefinition(&def)
+		}
+		return false
+
+	default:
+		return false
+	}
+}
+
+// IsEnumDefinition returns true if the passed definition is for an Enum type or names an Enum type; false otherwise.
+func (types Types) IsEnumDefinition(definition *TypeDefinition) bool {
+	return types.IsEnumType(definition.Type())
+}
