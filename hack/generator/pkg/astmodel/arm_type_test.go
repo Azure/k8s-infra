@@ -70,7 +70,7 @@ func Test_IsArmDefinition_GivenType_ReturnsExpectedResult(t *testing.T) {
 			t.Parallel()
 			g := NewGomegaWithT(t)
 
-			isArm := IsArmDefinition(c.definition)
+			isArm := IsArmDefinition(&c.definition)
 
 			g.Expect(isArm).To(Equal(c.expected))
 		})
