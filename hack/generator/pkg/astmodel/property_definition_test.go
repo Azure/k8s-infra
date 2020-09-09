@@ -234,7 +234,7 @@ func Test_PropertyDefinitionWithValidation_GivenValidation_AddsToValidation(t *t
 	g := NewGomegaWithT(t)
 
 	v := ValidateRequired()
-	property := NewPropertyDefinition(fieldName, fieldJsonName, fieldType).WithValidation(v)
+	property := NewPropertyDefinition(propertyName, propertyJsonName, propertyType).WithValidation(v)
 
 	g.Expect(property.validations).To(ContainElement(v))
 }
@@ -243,7 +243,7 @@ func Test_PropertyDefinitionWithValidation_GivenValidation_LeavesOriginalUnmodif
 	g := NewGomegaWithT(t)
 
 	v := ValidateRequired()
-	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType)
+	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType)
 	property := original.WithValidation(v)
 
 	g.Expect(property).NotTo(Equal(original))
@@ -257,7 +257,7 @@ func Test_PropertyDefinitionWithoutValidation_ReturnsPropertyWithoutValidation(t
 	g := NewGomegaWithT(t)
 
 	v := ValidateRequired()
-	property := NewPropertyDefinition(fieldName, fieldJsonName, fieldType).
+	property := NewPropertyDefinition(propertyName, propertyJsonName, propertyType).
 		WithValidation(v).
 		WithoutValidation()
 
@@ -268,7 +268,7 @@ func Test_PropertyDefinitionWithoutValidation_LeavesOriginalUnmodified(t *testin
 	g := NewGomegaWithT(t)
 
 	v := ValidateRequired()
-	original := NewPropertyDefinition(fieldName, fieldJsonName, fieldType).WithValidation(v)
+	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType).WithValidation(v)
 	property := original.WithoutValidation()
 
 	g.Expect(property).NotTo(Equal(original))
