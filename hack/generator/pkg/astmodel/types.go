@@ -114,7 +114,7 @@ func (types Types) IsArmType(aType Type) bool {
 	}
 }
 
-// IsArmDefinition returns true if the passed definition is for a Arm type or names an Arm type; false otherwise.
+// IsArmDefinition returns true if the passed definition is for an Arm type or names an Arm type; false otherwise.
 func (types Types) IsArmDefinition(definition *TypeDefinition) bool {
 	return types.IsArmType(definition.theType)
 }

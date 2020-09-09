@@ -28,7 +28,7 @@ func CollectResourceDefinitions(definitions Types) TypeNameSet {
 }
 
 // CollectArmSpecDefinitions returns a TypeNameSet of all of the
-// arm spec definitions passed in.
+// ARM spec definitions passed in.
 func CollectArmSpecAndStatusDefinitions(definitions Types) TypeNameSet {
 	findType := func(t Type) (TypeName, error) {
 		name, ok := t.(TypeName)
@@ -39,7 +39,7 @@ func CollectArmSpecAndStatusDefinitions(definitions Types) TypeNameSet {
 		armName := CreateArmTypeName(name)
 
 		if _, ok = definitions[armName]; !ok {
-			return TypeName{}, errors.Errorf("Couldn't ARM type find %q", armName)
+			return TypeName{}, errors.Errorf("Couldn't find ARM type %q", armName)
 		}
 
 		return armName, nil

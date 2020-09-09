@@ -94,8 +94,7 @@ func (factory *StorageTypeFactory) visitTypeName(_ *astmodel.TypeVisitor, name a
 	actualDefinition, actualDefinitionFound := factory.types[name]
 
 	// Check for property specific handling
-	if vc.property != nil && actualDefinitionFound {
-
+	if visitorContext.property != nil && actualDefinitionFound {
 		if et, ok := actualDefinition.Type().(*astmodel.EnumType); ok {
 			// Property type refers to an enum, so we use the base type instead
 			return et.BaseType(), nil
