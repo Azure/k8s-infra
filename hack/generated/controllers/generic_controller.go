@@ -243,10 +243,10 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// *  ReconcileActionBeginDelete --> Start deleting in Azure and mark state as "Deleting"
 	// *  ReconcileActionWatchDelete --> http HEAD to see if resource still exists in Azure. If so, requeue, else, remove finalizer.
 	case ReconcileActionBeginDelete:
-		eventMsg = fmt.Sprintf("start deleting resource")
+		eventMsg = "start deleting resource"
 		result, err = gr.reconcileDelete(ctx, log, metaObj, gr.startDeleteOfResource)
 	case ReconcileActionWatchDelete:
-		eventMsg = fmt.Sprintf("deleting... checking for updated state")
+		eventMsg = "deleting... checking for updated state"
 		result, err = gr.reconcileDelete(ctx, log, metaObj, gr.updateFromNonTerminalDeleteState)
 	}
 

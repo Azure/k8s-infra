@@ -119,6 +119,9 @@ func GetFullAzureNameAndResourceGroup(r genruntime.MetaObject, gr *GenericReconc
 		}
 
 		rgName, ownerName, err := GetFullAzureNameAndResourceGroup(ownerMeta, gr)
+		if err != nil {
+			return "", "", errors.Wrapf(err, "failed to get full Azure name and resource group for %s", ownerNamespacedName)
+		}
 		combinedAzureName := GetAzureName(r)
 		if ownerName != "" {
 			combinedAzureName = genruntime.CombineArmNames(ownerName, r.AzureName())

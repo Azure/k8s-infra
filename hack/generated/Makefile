@@ -20,6 +20,12 @@ Q = $(if $(filter 1,$V),,@)
 .PHONY: all
 all: generate header-check fmt build test
 
+# There is a ci specific target because we want the CI pass to fail if
+# the code has not been go fmt-ed, whereas locally we want "make all"
+# to just format the code for you
+.PHONY: ci
+ci: generate build test-cover
+
 .PHONY: lint
 lint: $(GOLANGCI_LINT) ; $(info $(M) running golangci configured linters…) ## Lint codebase
 	$(Q) $(GOLANGCI_LINT) run -v
@@ -39,6 +45,13 @@ tidy: ; $(info $(M) running tidy…) @ ## Run tidy
 .PHONY: test
 test: ; $(info $(M) running go test…)
 	$(Q) $(GO) test $(GO_DIRS_TO_TEST) -tags=noexit
+
+.PHONY: test-cover
+test-cover: $(GCOV2LCOV) ; $(info $(M) running go test…)
+	# NOTE: if you update the 'test-cover' target, also update ./github/workflows/test.yml
+	#       for the Windows part of the "test-generator" job.
+	$(Q) $(GO) test -tags=noexit -race -covermode atomic -coverprofile=cover.out -coverpkg=./... $(GO_DIRS_TO_TEST)
+	$(Q) $(GCOV2LCOV) -infile cover.out -outfile coverage.lcov
 
 .PHONY: generate
 generate: $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code
@@ -60,7 +73,7 @@ generate: $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code
 	$(Q) $(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./apis/..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: build
-build:
+build: tidy lint ; $(info $(M) building ./bin/$(APP))
 	$(Q) $(GO) build -o ./bin/$(APP)
 
 ## --------------------------------------

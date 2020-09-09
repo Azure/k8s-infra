@@ -24,7 +24,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-
 // TODO: This class is use-once, which seems wrong to me?
 // Helper is a utility for ensuring the proper Patching of resources
 // and their status

@@ -67,6 +67,9 @@ func NewEmptyArmResourceStatus(metaObject genruntime.MetaObject) (genruntime.Arm
 	// TODO: Do we actually want to return a ptr here, not a value?
 	// No need to actually pass name here (we're going to populate this entity from ARM anyway)
 	armStatus, err := kubeStatus.ConvertToArm("")
+	if err != nil {
+		return nil, err
+	}
 
 	// TODO: Some reflect hackery here to make sure that this is a ptr not a value
 	armStatusPtr := NewPtrFromValue(armStatus)
