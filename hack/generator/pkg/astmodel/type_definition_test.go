@@ -6,6 +6,7 @@
 package astmodel
 
 import (
+	"errors"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -130,6 +131,86 @@ func TestApplyObjectTransformation_GivenNonObjectAndTransformation_ReturnsError(
 	transformed, err := original.ApplyObjectTransformation(func(objectType *ObjectType) (Type, error) {
 		return objectType.WithProperty(property), nil
 	})
+
+	g.Expect(transformed).To(BeNil())
+	g.Expect(err).NotTo(BeNil())
+}
+
+/*
+ * ApplyObjectTransformations() tests
+ */
+
+var (
+	fullNameProperty = NewStringPropertyDefinition("FullName")
+	knownAsProperty  = NewStringPropertyDefinition("KnownAs")
+
+	injectFullName = func(objectType *ObjectType) (*ObjectType, error) {
+		return objectType.WithProperty(fullNameProperty), nil
+	}
+
+	injectKnownAs = func(objectType *ObjectType) (*ObjectType, error) {
+		return objectType.WithProperty(knownAsProperty), nil
+	}
+
+	failingTransform = func(objectType *ObjectType) (*ObjectType, error) {
+		return nil, errors.New("bang")
+	}
+)
+
+func TestApplyObjectTransformations_GivenObjectAndTransformations_AppliesTransformations(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ref := MakeTypeName(MakeLocalPackageReference("group", "2020-01-01"), "name")
+	original := MakeTypeDefinition(ref, NewObjectType())
+
+	transformed, err := original.ApplyObjectTransformations(injectFullName, injectKnownAs)
+
+	g.Expect(err).To(BeNil())
+
+	ot, ok := transformed.Type().(*ObjectType)
+	g.Expect(ok).To(BeTrue())
+	g.Expect(ot).NotTo(BeNil())
+
+	fn, ok := ot.Property("FullName")
+	g.Expect(ok).To(BeTrue())
+	g.Expect(fn).NotTo(BeNil())
+
+	ka, ok := ot.Property("KnownAs")
+	g.Expect(ok).To(BeTrue())
+	g.Expect(ka).NotTo(BeNil())
+}
+
+func TestApplyObjectTransformations_GivenObjectAndFirstTransformationReturningError_ReturnsErrorWithoutCallingSecondTransformation(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ref := MakeTypeName(MakeLocalPackageReference("group", "2020-01-01"), "name")
+	original := MakeTypeDefinition(ref, NewObjectType())
+
+	transformed, err := original.ApplyObjectTransformations(failingTransform, injectKnownAs)
+
+	g.Expect(transformed).To(BeNil())
+	g.Expect(err).NotTo(BeNil())
+}
+
+func TestApplyObjectTransformations_GivenObjectAndSecondTransformationReturningError_ReturnsErrorFromSecondTransformation(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ref := MakeTypeName(MakeLocalPackageReference("group", "2020-01-01"), "name")
+	original := MakeTypeDefinition(ref, NewObjectType())
+
+	transformed, err := original.ApplyObjectTransformations(injectFullName, failingTransform)
+
+	g.Expect(transformed).To(BeNil())
+	g.Expect(err).NotTo(BeNil())
+}
+
+func TestApplyObjectTransformations_GivenNonObjectAndTransformations_ReturnsError(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ref := MakeTypeName(MakeLocalPackageReference("group", "2020-01-01"), "name")
+	original := MakeTypeDefinition(ref, StringType)
+
+	transformed, err := original.ApplyObjectTransformations(injectFullName, injectKnownAs)
 
 	g.Expect(transformed).To(BeNil())
 	g.Expect(err).NotTo(BeNil())

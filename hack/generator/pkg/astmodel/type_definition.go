@@ -129,3 +129,39 @@ func (def TypeDefinition) ApplyObjectTransformation(transform func(*ObjectType) 
 	result := def.WithType(newType)
 	return &result, nil
 }
+
+// ApplyObjectTransformations applies multiple transformations to the ObjectType contained by this
+// definition, returning a new definition.
+// If the definition does not contain an object, an error will be returned
+// The transformations are constrained to return ObjectType results to allow them to be chained together.
+func (def TypeDefinition) ApplyObjectTransformations(transforms ...func(*ObjectType) (*ObjectType, error)) (*TypeDefinition, error) {
+	// We use a TypeVisitor to allow automatic handling of wrapper types (such as ArmType and StorageType)
+	visited := false
+	visitor := MakeTypeVisitor()
+	visitor.VisitObjectType = func(_ *TypeVisitor, ot *ObjectType, _ interface{}) (Type, error) {
+		result := ot
+		for _, transform := range transforms {
+			rt, err := transform(result)
+			if err != nil {
+				return nil, err
+			}
+
+			result = rt
+		}
+
+		visited = true
+		return result, nil
+	}
+
+	newType, err := visitor.Visit(def.theType, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "transformation of %v failed", def.name)
+	}
+
+	if !visited {
+		return nil, errors.Errorf("transformation was not applied to %v (expected object type, found %v)", def.name, def.theType)
+	}
+
+	result := def.WithType(newType)
+	return &result, nil
+}
