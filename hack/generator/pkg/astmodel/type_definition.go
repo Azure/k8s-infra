@@ -100,3 +100,32 @@ func (def TypeDefinition) RequiredPackageReferences() []PackageReference {
 func FileNameHint(name TypeName) string {
 	return transformToSnakeCase(name.name)
 }
+
+// ApplyObjectTransformation applies a specific transformation to the ObjectType contained by this
+// definition, returning a new definition
+// If the definition does not contain an object, an error will be returned
+func (def TypeDefinition) ApplyObjectTransformation(transform func(*ObjectType) (Type, error)) (*TypeDefinition, error) {
+	// We use a TypeVisitor to allow automatic handling of wrapper types (such as ArmType and StorageType)
+	visited := false
+	visitor := MakeTypeVisitor()
+	visitor.VisitObjectType = func(_ *TypeVisitor, ot *ObjectType, _ interface{}) (Type, error) {
+		rt, err := transform(ot)
+		if err != nil {
+			return nil, err
+		}
+		visited = true
+		return rt, nil
+	}
+
+	newType, err := visitor.Visit(def.theType, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "transformation of %v failed", def.name)
+	}
+
+	if !visited {
+		return nil, errors.Errorf("transformation was not applied to %v (expected object type, found %v)", def.name, def.theType)
+	}
+
+	result := def.WithType(newType)
+	return &result, nil
+}

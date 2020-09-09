@@ -78,3 +78,59 @@ func createStringProperty(name string, description string) *PropertyDefinition {
 func createIntProperty(name string, description string) *PropertyDefinition {
 	return NewPropertyDefinition(PropertyName(name), name, IntType).WithDescription(description)
 }
+
+/*
+ * ApplyObjectTransformation() tests
+ */
+
+func TestApplyObjectTransformation_GivenObjectAndTransformation_AppliesTransformation(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ref := MakeTypeName(MakeLocalPackageReference("group", "2020-01-01"), "name")
+	original := MakeTypeDefinition(ref, NewObjectType())
+	property := NewStringPropertyDefinition("FullName")
+
+	transformed, err := original.ApplyObjectTransformation(func(objectType *ObjectType) (Type, error) {
+		return objectType.WithProperty(property), nil
+	})
+
+	g.Expect(err).To(BeNil())
+
+	ot, ok := transformed.Type().(*ObjectType)
+	g.Expect(ok).To(BeTrue())
+	g.Expect(ot).NotTo(BeNil())
+
+	prop, ok := ot.Property("FullName")
+	g.Expect(ok).To(BeTrue())
+	g.Expect(prop).NotTo(BeNil())
+
+}
+
+func TestApplyObjectTransformation_GivenObjectAndTransformationReturningError_ReturnsError(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ref := MakeTypeName(MakeLocalPackageReference("group", "2020-01-01"), "name")
+	original := MakeTypeDefinition(ref, NewObjectType())
+
+	transformed, err := original.ApplyObjectTransformation(func(objectType *ObjectType) (Type, error) {
+		return nil, errors.New("failed")
+	})
+
+	g.Expect(transformed).To(BeNil())
+	g.Expect(err).NotTo(BeNil())
+}
+
+func TestApplyObjectTransformation_GivenNonObjectAndTransformation_ReturnsError(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ref := MakeTypeName(MakeLocalPackageReference("group", "2020-01-01"), "name")
+	original := MakeTypeDefinition(ref, StringType)
+	property := NewStringPropertyDefinition("FullName")
+
+	transformed, err := original.ApplyObjectTransformation(func(objectType *ObjectType) (Type, error) {
+		return objectType.WithProperty(property), nil
+	})
+
+	g.Expect(transformed).To(BeNil())
+	g.Expect(err).NotTo(BeNil())
+}
