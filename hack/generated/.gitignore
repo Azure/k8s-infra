@@ -2,3 +2,4 @@ apis/
 _apis/
 config/crd/bases/
 config/webhook
+controllers/controller_resources_gen.go
