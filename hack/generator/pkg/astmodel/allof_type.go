@@ -86,10 +86,14 @@ func (allOf AllOfType) References() TypeNameSet {
 	return result
 }
 
+// AsType always panics; AllOf cannot be represented by the Go AST and must be
+// lowered to an object type
 func (allOf AllOfType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr {
 	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
 }
 
+// AsDeclarations always panics; AllOf cannot be represented by the Go AST and must be
+// lowered to an object type
 func (allOf AllOfType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
 	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
 }
