@@ -160,17 +160,17 @@ func (objectType *ObjectType) Equals(t Type) bool {
 		return true
 	}
 
-	st, ok := t.(*ObjectType)
+	other, ok := t.(*ObjectType)
 	if !ok {
 		return false
 	}
 
-	if len(objectType.properties) != len(st.properties) {
+	if len(objectType.properties) != len(other.properties) {
 		// Different number of properties, not equal
 		return false
 	}
 
-	for n, f := range st.properties {
+	for n, f := range other.properties {
 		ourProperty, ok := objectType.properties[n]
 		if !ok {
 			// Didn't find the property, not equal
@@ -183,12 +183,12 @@ func (objectType *ObjectType) Equals(t Type) bool {
 		}
 	}
 
-	if len(objectType.functions) != len(st.functions) {
+	if len(objectType.functions) != len(other.functions) {
 		// Different number of functions, not equal
 		return false
 	}
 
-	for functionName, function := range st.functions {
+	for functionName, function := range other.functions {
 		ourFunction, ok := objectType.functions[functionName]
 		if !ok {
 			// Didn't find the func, not equal
@@ -201,7 +201,7 @@ func (objectType *ObjectType) Equals(t Type) bool {
 		}
 	}
 
-	return objectType.InterfaceImplementer.Equals(st.InterfaceImplementer)
+	return objectType.InterfaceImplementer.Equals(other.InterfaceImplementer)
 }
 
 // WithProperty creates a new ObjectType with another property attached to it
