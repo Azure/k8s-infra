@@ -98,7 +98,7 @@ func (allOf AllOfType) AsDeclarations(codeGenerationContext *CodeGenerationConte
 	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
 }
 
-// RequiredImports returns the union of the required imports of all the oneOf types
+// RequiredImports returns the union of the required imports of all the AllOf types
 func (allOf AllOfType) RequiredImports() []PackageReference {
 	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
 }
