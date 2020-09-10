@@ -78,6 +78,13 @@ type FuncDetails struct {
 //	}
 func DefineFunc(funcDetails FuncDetails) *ast.FuncDecl {
 
+	// Safety check that we are making something valid
+	if (funcDetails.ReceiverIdent == nil) != (funcDetails.ReceiverType == nil) {
+		panic(fmt.Sprintf("ReceiverIdent and ReceiverType must both be specified, or omitted. ReceiverIdent: %q, ReceiverType: %q",
+			funcDetails.ReceiverIdent,
+			funcDetails.ReceiverType))
+	}
+
 	var comment []*ast.Comment
 	if funcDetails.Comment != "" {
 		comment = []*ast.Comment{
@@ -87,8 +94,9 @@ func DefineFunc(funcDetails FuncDetails) *ast.FuncDecl {
 		}
 	}
 
-	return &ast.FuncDecl{
-		Recv: &ast.FieldList{
+	var recv *ast.FieldList
+	if funcDetails.ReceiverIdent != nil {
+		recv = &ast.FieldList{
 			List: []*ast.Field{
 				{
 					Names: []*ast.Ident{
@@ -97,7 +105,11 @@ func DefineFunc(funcDetails FuncDetails) *ast.FuncDecl {
 					Type: funcDetails.ReceiverType,
 				},
 			},
-		},
+		}
+	}
+
+	return &ast.FuncDecl{
+		Recv: recv,
 		Name: funcDetails.Name,
 		Doc: &ast.CommentGroup{
 			List: comment,
