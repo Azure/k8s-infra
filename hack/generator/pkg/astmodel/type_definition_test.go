@@ -6,7 +6,7 @@
 package astmodel
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"testing"
 
 	. "github.com/onsi/gomega"

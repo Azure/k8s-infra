@@ -6,6 +6,7 @@
 package astmodel
 
 import (
+	"github.com/pkg/errors"
 	"go/ast"
 	"go/token"
 )
