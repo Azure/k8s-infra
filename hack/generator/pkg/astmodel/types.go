@@ -94,6 +94,24 @@ func (types Types) Copy() Types {
 	return result
 }
 
+// AsResourceType returns the underlying resource type if the definition contains one or names one
+func (types Types) AsResourceType(aType Type) (*ResourceType, bool) {
+	switch t := aType.(type) {
+
+	case *ResourceType:
+		return t, true
+
+	case TypeName:
+		if def, ok := types[t]; ok {
+			return types.AsResourceType(def.theType)
+		}
+		return nil, false
+
+	default:
+		return nil, false
+	}
+}
+
 // IsArmType returns true if the passed type is a Arm type or names an Arm type; false otherwise.
 func (types Types) IsArmType(aType Type) bool {
 	switch t := aType.(type) {
