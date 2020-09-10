@@ -47,8 +47,13 @@ func CollectArmSpecAndStatusDefinitions(definitions Types) TypeNameSet {
 
 	armSpecAndStatus := make(TypeNameSet)
 	for _, def := range definitions {
-		if IsResourceDefinition(def) && definitions.IsArmDefinition(&def) {
-			resourceType := def.Type().(*ResourceType)
+
+		if IsStoragePackageReference(def.Name().PackageReference) {
+			// There are no ARM types in our storage packages
+			continue
+		}
+
+		if resourceType, ok := definitions.AsResourceType(def.Type()); ok {
 
 			armSpecName, err := findType(resourceType.spec)
 			if err != nil {
