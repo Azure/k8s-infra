@@ -71,7 +71,7 @@ func MakeAllOfType(types []Type) Type {
 
 var _ Type = AllOfType{}
 
-// Types returns what types the OneOf can be
+// Types returns what types the AllOf can be
 func (allOf AllOfType) Types() []Type {
 	return allOf.types
 }
