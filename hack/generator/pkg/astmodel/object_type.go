@@ -280,3 +280,14 @@ func (objectType *ObjectType) copy() *ObjectType {
 func (objectType *ObjectType) String() string {
 	return "(object)"
 }
+
+// IsObjectType returns true if the passed type is an object type OR if it is a wrapper type containing an object type
+func IsObjectType(t Type) bool {
+	_, ok := t.(*ObjectType)
+	return ok
+}
+
+// IsObjectDefinition returns true if the passed definition is for a Arm type; false otherwise.
+func IsObjectDefinition(definition TypeDefinition) bool {
+	return IsObjectType(definition.theType)
+}

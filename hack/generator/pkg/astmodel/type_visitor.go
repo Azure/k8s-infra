@@ -26,6 +26,7 @@ type TypeVisitor struct {
 	VisitOptionalType func(this *TypeVisitor, it *OptionalType, ctx interface{}) (Type, error)
 	VisitEnumType     func(this *TypeVisitor, it *EnumType, ctx interface{}) (Type, error)
 	VisitResourceType func(this *TypeVisitor, it *ResourceType, ctx interface{}) (Type, error)
+	VisitArmType      func(this *TypeVisitor, it *ArmType, ctx interface{}) (Type, error)
 }
 
 // Visit invokes the appropriate VisitX on TypeVisitor
@@ -55,6 +56,8 @@ func (tv *TypeVisitor) Visit(t Type, ctx interface{}) (Type, error) {
 		return tv.VisitEnumType(tv, it, ctx)
 	case *ResourceType:
 		return tv.VisitResourceType(tv, it, ctx)
+	case *ArmType:
+		return tv.VisitArmType(tv, it, ctx)
 	}
 
 	panic(fmt.Sprintf("unhandled type: (%T) %v", t, t))
@@ -78,8 +81,7 @@ func (tv *TypeVisitor) VisitDefinition(td TypeDefinition, ctx interface{}) (*Typ
 		return nil, errors.Wrapf(err, "visit of type of %q failed", td.Name())
 	}
 
-	def := MakeTypeDefinition(name, visitedType)
-	def = def.WithDescription(td.Description())
+	def := MakeTypeDefinition(name, visitedType).WithDescription(td.description)
 	return &def, nil
 }
 
@@ -91,103 +93,138 @@ func MakeTypeVisitor() TypeVisitor {
 	// recursive invocations of Visit to avoid having to rebuild the tree if the
 	// leaf nodes do not actually change.
 	return TypeVisitor{
-		VisitTypeName: func(_ *TypeVisitor, it TypeName, _ interface{}) (Type, error) {
-			return it, nil
-		},
-		VisitArrayType: func(this *TypeVisitor, it *ArrayType, ctx interface{}) (Type, error) {
-			newElement, err := this.Visit(it.element, ctx)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to visit type of array")
-			}
-
-			return NewArrayType(newElement), nil
-		},
-		VisitPrimitive: func(_ *TypeVisitor, it *PrimitiveType, _ interface{}) (Type, error) {
-			return it, nil
-		},
-		VisitObjectType: func(this *TypeVisitor, it *ObjectType, ctx interface{}) (Type, error) {
-			// just map the property types
-			var errs []error
-			var newProps []*PropertyDefinition
-			for _, prop := range it.properties {
-				p, err := this.Visit(prop.propertyType, ctx)
-				if err != nil {
-					errs = append(errs, err)
-				} else {
-					newProps = append(newProps, prop.WithType(p))
-				}
-			}
-
-			if len(errs) > 0 {
-				return nil, kerrors.NewAggregate(errs)
-			}
-
-			return it.WithProperties(newProps...), nil
-		},
-		VisitOneOfType: func(this *TypeVisitor, it OneOfType, ctx interface{}) (Type, error) {
-			var newTypes []Type
-			for _, oneOf := range it.Types() {
-				newType, err := this.Visit(oneOf, ctx)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to visit oneOf")
-				}
-
-				newTypes = append(newTypes, newType)
-			}
-
-			return MakeOneOfType(newTypes), nil
-		},
-		VisitAllOfType: func(this *TypeVisitor, it AllOfType, ctx interface{}) (Type, error) {
-			var newTypes []Type
-			for _, allOf := range it.Types() {
-				newType, err := this.Visit(allOf, ctx)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to visit allOf")
-				}
-
-				newTypes = append(newTypes, newType)
-			}
-
-			return MakeAllOfType(newTypes), nil
-		},
-		VisitMapType: func(this *TypeVisitor, it *MapType, ctx interface{}) (Type, error) {
-			visitedKey, err := this.Visit(it.key, ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to visit map key type %v", it.key)
-			}
-
-			visitedValue, err := this.Visit(it.value, ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to visit map value type %v", it.value)
-			}
-
-			return NewMapType(visitedKey, visitedValue), nil
-		},
-		VisitEnumType: func(_ *TypeVisitor, it *EnumType, _ interface{}) (Type, error) {
-			// if we visit the enum base type then we will also have to do something
-			// about the values. so by default don't do anything with the enum base
-			return it, nil
-		},
-		VisitOptionalType: func(this *TypeVisitor, it *OptionalType, ctx interface{}) (Type, error) {
-			visitedElement, err := this.Visit(it.element, ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to visit optional element type %v", it.element)
-			}
-
-			return NewOptionalType(visitedElement), nil
-		},
-		VisitResourceType: func(this *TypeVisitor, it *ResourceType, ctx interface{}) (Type, error) {
-			visitedSpec, err := this.Visit(it.spec, ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to visit resource spec type %v", it.spec)
-			}
-
-			visitedStatus, err := this.Visit(it.status, ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to visit resource status type %v", it.status)
-			}
-
-			return NewResourceType(visitedSpec, visitedStatus).WithOwner(it.Owner()), nil
-		},
+		VisitTypeName:     identityVisitOfTypeName,
+		VisitArrayType:    identityVisitOfArrayType,
+		VisitPrimitive:    identityVisitOfPrimitiveType,
+		VisitObjectType:   identityVisitOfObjectType,
+		VisitMapType:      identityVisitOfMapType,
+		VisitEnumType:     identityVisitOfEnumType,
+		VisitOptionalType: identityVisitOfOptionalType,
+		VisitResourceType: identityVisitOfResourceType,
+		VisitArmType:      identityVisitOfArmType,
+		VisitOneOfType:    identityVisitOneOfType,
+		VisitAllOfType:    identityVisitAllOfType,
 	}
+}
+
+func identityVisitOfTypeName(_ *TypeVisitor, it TypeName, _ interface{}) (Type, error) {
+	return it, nil
+}
+
+func identityVisitOfArrayType(this *TypeVisitor, it *ArrayType, ctx interface{}) (Type, error) {
+	newElement, err := this.Visit(it.element, ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to visit type of array")
+	}
+
+	return NewArrayType(newElement), nil
+}
+
+func identityVisitOfPrimitiveType(_ *TypeVisitor, it *PrimitiveType, _ interface{}) (Type, error) {
+	return it, nil
+}
+
+func identityVisitOfObjectType(this *TypeVisitor, it *ObjectType, ctx interface{}) (Type, error) {
+	// just map the property types
+	var errs []error
+	var newProps []*PropertyDefinition
+	for _, prop := range it.properties {
+		p, err := this.Visit(prop.propertyType, ctx)
+		if err != nil {
+			errs = append(errs, err)
+		} else {
+			newProps = append(newProps, prop.WithType(p))
+		}
+	}
+
+	if len(errs) > 0 {
+		return nil, kerrors.NewAggregate(errs)
+	}
+
+	return it.WithProperties(newProps...), nil
+}
+
+func identityVisitOfMapType(this *TypeVisitor, it *MapType, ctx interface{}) (Type, error) {
+	visitedKey, err := this.Visit(it.key, ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to visit map key type %v", it.key)
+	}
+
+	visitedValue, err := this.Visit(it.value, ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to visit map value type %v", it.value)
+	}
+
+	return NewMapType(visitedKey, visitedValue), nil
+}
+
+func identityVisitOfEnumType(_ *TypeVisitor, it *EnumType, _ interface{}) (Type, error) {
+	// if we visit the enum base type then we will also have to do something
+	// about the values. so by default don't do anything with the enum base
+	return it, nil
+}
+
+func identityVisitOfOptionalType(this *TypeVisitor, it *OptionalType, ctx interface{}) (Type, error) {
+	visitedElement, err := this.Visit(it.element, ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to visit optional element type %v", it.element)
+	}
+
+	return NewOptionalType(visitedElement), nil
+}
+
+func identityVisitOfResourceType(this *TypeVisitor, it *ResourceType, ctx interface{}) (Type, error) {
+	visitedSpec, err := this.Visit(it.spec, ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to visit resource spec type %v", it.spec)
+	}
+
+	visitedStatus, err := this.Visit(it.status, ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to visit resource status type %v", it.status)
+	}
+
+	return NewResourceType(visitedSpec, visitedStatus).WithOwner(it.Owner()), nil
+}
+
+func identityVisitOfArmType(this *TypeVisitor, at *ArmType, ctx interface{}) (Type, error) {
+	newType, err := this.Visit(&at.objectType, ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to visit ARM underlying type %v", at.objectType)
+	}
+
+	ot, ok := newType.(*ObjectType)
+	if !ok {
+		return nil, errors.Errorf("expected transformation of ARM underlying type %v to return ObjectType, not %v", at.objectType, ot)
+	}
+
+	return MakeArmType(*ot), nil
+}
+
+func identityVisitOneOfType(this *TypeVisitor, it OneOfType, ctx interface{}) (Type, error) {
+	var newTypes []Type
+	for _, oneOf := range it.Types() {
+		newType, err := this.Visit(oneOf, ctx)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to visit oneOf")
+		}
+
+		newTypes = append(newTypes, newType)
+	}
+
+	return MakeOneOfType(newTypes), nil
+}
+
+func identityVisitAllOfType(this *TypeVisitor, it AllOfType, ctx interface{}) (Type, error) {
+	var newTypes []Type
+	for _, allOf := range it.Types() {
+		newType, err := this.Visit(allOf, ctx)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to visit allOf")
+		}
+
+		newTypes = append(newTypes, newType)
+	}
+
+	return MakeAllOfType(newTypes), nil
 }
