@@ -41,10 +41,8 @@ func TestHelperUnstructuredPatch(t *testing.T) {
 	fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme)
 	g.Expect(fakeClient.Create(ctx, obj)).To(Succeed())
 
-	h, err := NewHelper(obj, fakeClient)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	g.Expect(h.Patch(ctx, obj)).To(Succeed())
+	h := NewHelper(fakeClient)
+	g.Expect(h.Patch(ctx, obj, obj)).To(Succeed())
 
 	// Make sure that the status has been preserved.
 	succeeded, err := IsSucceeded(obj)
@@ -170,8 +168,7 @@ func TestHelperPatch(t *testing.T) {
 			beforeCopy := tt.before.DeepCopyObject()
 			g.Expect(fakeClient.Create(ctx, beforeCopy)).To(Succeed())
 
-			h, err := NewHelper(beforeCopy, fakeClient)
-			g.Expect(err).NotTo(HaveOccurred())
+			h := NewHelper(fakeClient)
 
 			// Set the resource version of the "after" target to be whatever
 			// "before" has -- this value is assigned automatically by Kubernetes
@@ -186,7 +183,7 @@ func TestHelperPatch(t *testing.T) {
 
 			afterCopy := tt.after.DeepCopyObject()
 
-			err = h.Patch(ctx, afterCopy)
+			err := h.Patch(ctx, beforeCopy, afterCopy)
 			if tt.wantErr {
 				g.Expect(err).To(HaveOccurred())
 			} else {

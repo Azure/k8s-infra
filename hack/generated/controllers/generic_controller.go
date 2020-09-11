@@ -10,9 +10,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/util/patch"
+	"github.com/Azure/k8s-infra/hack/generated/pkg/util/armresourceresolver"
+	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"strconv"
 	"time"
 
@@ -24,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -50,14 +49,14 @@ const (
 
 // GenericReconciler reconciles resources
 type GenericReconciler struct {
-	Client     client.Client
-	Log        logr.Logger
-	ARMClient  armclient.Applier
-	Scheme     *runtime.Scheme
-	Recorder   record.EventRecorder
-	Name       string
-	GVK        schema.GroupVersionKind
-	Controller controller.Controller
+	Log              logr.Logger
+	ARMClient        armclient.Applier
+	KubeClient       *kubeclient.Client
+	ResourceResolver *armresourceresolver.Resolver
+	Recorder         record.EventRecorder
+	Name             string
+	GVK              schema.GroupVersionKind
+	Controller       controller.Controller
 }
 
 func RegisterAll(mgr ctrl.Manager, applier armclient.Applier, objs []runtime.Object, log logr.Logger, options controller.Options) []error {
@@ -114,14 +113,16 @@ func register(mgr ctrl.Manager, applier armclient.Applier, obj runtime.Object, l
 	//	return fmt.Errorf("unable to setup field indexer for status.id of %v with: %w", gvk, err)
 	//}
 
+	kubeClient := kubeclient.NewClient(mgr.GetClient(), mgr.GetScheme())
+
 	reconciler := &GenericReconciler{
-		Client:    mgr.GetClient(),
-		ARMClient: applier,
-		Scheme:    mgr.GetScheme(),
-		Name:      t.Name(),
-		Log:       log.WithName(controllerName),
-		Recorder:  mgr.GetEventRecorderFor(controllerName),
-		GVK:       gvk,
+		ARMClient:        applier,
+		KubeClient:       kubeClient,
+		ResourceResolver: armresourceresolver.NewResolver(kubeClient),
+		Name:             t.Name(),
+		Log:              log.WithName(controllerName),
+		Recorder:         mgr.GetEventRecorderFor(controllerName),
+		GVK:              gvk,
 	}
 
 	ctrlBuilder := ctrl.NewControllerManagedBy(mgr).
@@ -165,31 +166,12 @@ func register(mgr ctrl.Manager, applier armclient.Applier, obj runtime.Object, l
 		Complete()
 }
 
-func (gr *GenericReconciler) GetObject(namespacedName types.NamespacedName, gvk schema.GroupVersionKind) (runtime.Object, error) {
-	ctx := context.Background()
-
-	obj, err := gr.Scheme.New(gvk)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to create object from gvk %+v with", gr.GVK)
-	}
-
-	if err := gr.Client.Get(ctx, namespacedName, obj); err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil, nil
-		}
-
-		return nil, err
-	}
-
-	return obj, nil
-}
-
 // Reconcile will take state in K8s and apply it to Azure
 func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := gr.Log.WithValues("name", req.Name, "namespace", req.Namespace)
 
-	obj, err := gr.GetObject(req.NamespacedName, gr.GVK)
+	obj, err := gr.KubeClient.GetObject(ctx, req.NamespacedName, gr.GVK)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -348,7 +330,7 @@ func (gr *GenericReconciler) reconcileDelete(
 
 	log.Info("reconcile delete start")
 
-	_, armResourceSpec, err := ResourceSpecToArmResourceSpec(gr, metaObj)
+	_, armResourceSpec, err := ResourceSpecToArmResourceSpec(ctx, gr, metaObj)
 	if err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "couldn't convert to armResourceSpec")
 	}
@@ -366,7 +348,7 @@ func (gr *GenericReconciler) startDeleteOfResource(
 	resource genruntime.ArmResource,
 	metaObj genruntime.MetaObject) (ctrl.Result, error) {
 
-	if err := patcher(ctx, gr.Client, metaObj, func(ctx context.Context, mutMetaObject genruntime.MetaObject) error {
+	if err := gr.KubeClient.PatchHelper(ctx, metaObj, func(ctx context.Context, mutMetaObject genruntime.MetaObject) error {
 		if resource.GetId() != "" {
 			emptyStatus, err := NewEmptyArmResourceStatus(metaObj)
 			if err != nil {
@@ -420,7 +402,7 @@ func (gr *GenericReconciler) updateFromNonTerminalDeleteState(
 		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
-	err = patcher(ctx, gr.Client, metaObj, func(ctx context.Context, mutMetaObject genruntime.MetaObject) error {
+	err = gr.KubeClient.PatchHelper(ctx, metaObj, func(ctx context.Context, mutMetaObject genruntime.MetaObject) error {
 		controllerutil.RemoveFinalizer(mutMetaObject, GenericControllerFinalizer)
 		return nil
 	})
@@ -433,7 +415,7 @@ func (gr *GenericReconciler) updateFromNonTerminalDeleteState(
 }
 
 func (gr *GenericReconciler) getStatus(ctx context.Context, id string, data *ReconcileMetadata) (genruntime.ArmTransformer, error) {
-	_, typedArmSpec, err := ResourceSpecToArmResourceSpec(gr, data.metaObj)
+	_, typedArmSpec, err := ResourceSpecToArmResourceSpec(ctx, gr, data.metaObj)
 	if err != nil {
 		return nil, err
 	}
@@ -491,9 +473,9 @@ func (gr *GenericReconciler) updateMetaObject(
 		return errors.Wrap(err, "failed to compute resource spec hash")
 	}
 
-	annotations := map[string]string {
+	annotations := map[string]string{
 		ResourceSigAnnotationKey: sig,
-		DeploymentIdAnnotation: deployment.Id,
+		DeploymentIdAnnotation:   deployment.Id,
 		DeploymentNameAnnotation: deployment.Name,
 		// TODO: Do we want to just use Azure's annotations here? I bet we don't? We probably want to map
 		// TODO: them onto something more robust? For now just use Azure's though.
@@ -523,12 +505,12 @@ func (gr *GenericReconciler) updateMetaObject(
 }
 
 func (gr *GenericReconciler) createDeployment(ctx context.Context, data *ReconcileMetadata) (ctrl.Result, error) {
-	deployment, err := gr.resourceSpecToDeployment(data)
+	deployment, err := gr.resourceSpecToDeployment(ctx, data)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := patcher(ctx, gr.Client, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
+	if err := gr.KubeClient.PatchHelper(ctx, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
 		deployment, err = gr.ARMClient.CreateDeployment(ctx, deployment)
 		if err != nil {
 			return err
@@ -562,12 +544,12 @@ func (gr *GenericReconciler) createDeployment(ctx context.Context, data *Reconci
 
 // TODO: There's a bit too much duplicated code between this and create deployment -- should be a good way to combine them?
 func (gr *GenericReconciler) watchDeployment(ctx context.Context, data *ReconcileMetadata) (ctrl.Result, error) {
-	deployment, err := gr.resourceSpecToDeployment(data)
+	deployment, err := gr.resourceSpecToDeployment(ctx, data)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := patcher(ctx, gr.Client, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
+	if err := gr.KubeClient.PatchHelper(ctx, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
 		deployment, err = gr.ARMClient.GetDeployment(ctx, deployment.Id)
 		if err != nil {
 			return errors.Wrapf(err, "failed getting deployment %q from ARM", deployment.Id)
@@ -621,8 +603,8 @@ func (gr *GenericReconciler) watchDeployment(ctx context.Context, data *Reconcil
 	return result, err
 }
 
-func (gr *GenericReconciler) resourceSpecToDeployment(data *ReconcileMetadata) (*armclient.Deployment, error) {
-	resourceGroupName, typedArmSpec, err := ResourceSpecToArmResourceSpec(gr, data.metaObj)
+func (gr *GenericReconciler) resourceSpecToDeployment(ctx context.Context, data *ReconcileMetadata) (*armclient.Deployment, error) {
+	resourceGroupName, typedArmSpec, err := ResourceSpecToArmResourceSpec(ctx, gr, data.metaObj)
 	if err != nil {
 		return nil, err
 	}
@@ -723,25 +705,4 @@ func addAnnotations(metaObj genruntime.MetaObject, newAnnotations map[string]str
 	}
 
 	metaObj.SetAnnotations(annotations)
-}
-
-func patcher(ctx context.Context, c client.Client, metaObj genruntime.MetaObject, mutator func(context.Context, genruntime.MetaObject) error) error {
-	patchHelper, err := patch.NewHelper(metaObj, c)
-	if err != nil {
-		return err
-	}
-
-	if err := mutator(ctx, metaObj); err != nil {
-		return err
-	}
-
-	if err := patchHelper.Patch(ctx, metaObj); err != nil {
-		return errors.Wrap(err, "patchHelper patch failed")
-	}
-
-	// fill resourcer with patched updates since patch will copy resourcer
-	return c.Get(ctx, client.ObjectKey{
-		Namespace: metaObj.GetNamespace(),
-		Name:      metaObj.GetName(),
-	}, metaObj)
 }

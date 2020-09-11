@@ -6,6 +6,7 @@ Licensed under the MIT license.
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 	"github.com/pkg/errors"
@@ -14,7 +15,7 @@ import (
 
 // ResourceSpecToArmResourceSpec converts a genruntime.MetaObject (a Kubernetes representation of a resource) into
 // a genruntime.ArmResourceSpec - a specification which can be submitted to Azure for deployment
-func ResourceSpecToArmResourceSpec(gr *GenericReconciler, metaObject genruntime.MetaObject) (string, genruntime.ArmResourceSpec, error) {
+func ResourceSpecToArmResourceSpec(ctx context.Context, gr *GenericReconciler, metaObject genruntime.MetaObject) (string, genruntime.ArmResourceSpec, error) {
 
 	metaObjReflector := reflect.Indirect(reflect.ValueOf(metaObject))
 	if !metaObjReflector.IsValid() {
@@ -38,7 +39,7 @@ func ResourceSpecToArmResourceSpec(gr *GenericReconciler, metaObject genruntime.
 		return "", nil, errors.Errorf("spec was of type %T which doesn't implement genruntime.ArmTransformer", spec)
 	}
 
-	resourceGroupName, azureName, err := GetFullAzureNameAndResourceGroup(metaObject, gr)
+	resourceGroupName, azureName, err := gr.ResourceResolver.GetFullAzureNameAndResourceGroup(ctx, metaObject)
 	if err != nil {
 		return "", nil, err
 	}
