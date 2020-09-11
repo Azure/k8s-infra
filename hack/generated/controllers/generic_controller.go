@@ -48,7 +48,7 @@ const (
 	GenericControllerFinalizer = "generated.infra.azure.com/finalizer"
 )
 
-// GenericReconciler reconciles STUFF
+// GenericReconciler reconciles resources
 type GenericReconciler struct {
 	Client     client.Client
 	Log        logr.Logger
@@ -84,7 +84,7 @@ func RegisterAll(mgr ctrl.Manager, applier armclient.Applier, objs []runtime.Obj
 func register(mgr ctrl.Manager, applier armclient.Applier, obj runtime.Object, log logr.Logger, options controller.Options) error {
 	v, err := conversion.EnforcePtr(obj)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "obj was expected to be ptr but was not")
 	}
 
 	t := v.Type()
@@ -93,7 +93,7 @@ func register(mgr ctrl.Manager, applier armclient.Applier, obj runtime.Object, l
 	// Use the provided GVK to construct a new runtime object of the desired concrete type.
 	gvk, err := apiutil.GVKForObject(obj, mgr.GetScheme())
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "couldn't create GVK for obj %T", obj)
 	}
 	log.V(4).Info("Registering", "GVK", gvk)
 
@@ -155,7 +155,7 @@ func register(mgr ctrl.Manager, applier armclient.Applier, obj runtime.Object, l
 
 	c, err := ctrlBuilder.Build(reconciler)
 	if err != nil {
-		return fmt.Errorf("unable to build controllers / reconciler with: %w", err)
+		return errors.Wrap(err, "unable to build controllers / reconciler")
 	}
 
 	reconciler.Controller = c
@@ -199,13 +199,11 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
-	// ToUnstructured and get spec? or else interface that returns spec as interface{}
-
 	// The Go type for the Kubernetes object must understand how to
 	// convert itself to/from the corresponding Azure types.
 	metaObj, ok := obj.(genruntime.MetaObject)
 	if !ok {
-		return ctrl.Result{}, fmt.Errorf("object is not a genruntime.MetaObject: %+v - type: %T", obj, obj)
+		return ctrl.Result{}, errors.Errorf("object is not a genruntime.MetaObject: %+v - type: %T", obj, obj)
 	}
 
 	reconcileData := NewReconcileMetadata(metaObj, log)
@@ -448,7 +446,7 @@ func (gr *GenericReconciler) getStatus(ctx context.Context, id string, data *Rec
 
 	// Get the resource
 	err = gr.ARMClient.GetResource(ctx, id, typedArmSpec.GetApiVersion(), armStatus)
-	if data.log.V(0).Enabled() { // TODO: CHange this level
+	if data.log.V(0).Enabled() { // TODO: Change this level
 		statusBytes, err := json.Marshal(armStatus)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to serialize ARM status to JSON for debugging")
@@ -493,21 +491,19 @@ func (gr *GenericReconciler) updateMetaObject(
 		return errors.Wrap(err, "failed to compute resource spec hash")
 	}
 
-	annotations := make(map[string]string)
-	annotations[ResourceSigAnnotationKey] = sig
-	annotations[DeploymentIdAnnotation] = deployment.Id
-	annotations[DeploymentNameAnnotation] = deployment.Name
-
-	// TODO: Do we want to just use Azure's annotations here? I bet we don't? We probably want to map
-	// TODO: them onto something more robust? For now just use Azure's though.
-	annotations[ResourceStateAnnotation] = string(deployment.Properties.ProvisioningState)
+	annotations := map[string]string {
+		ResourceSigAnnotationKey: sig,
+		DeploymentIdAnnotation: deployment.Id,
+		DeploymentNameAnnotation: deployment.Name,
+		// TODO: Do we want to just use Azure's annotations here? I bet we don't? We probably want to map
+		// TODO: them onto something more robust? For now just use Azure's though.
+		ResourceStateAnnotation: string(deployment.Properties.ProvisioningState),
+	}
 
 	if deployment.IsTerminalProvisioningState() {
 		if deployment.Properties.ProvisioningState == armclient.FailedProvisioningState {
 			annotations[ResourceErrorAnnotation] = deployment.Properties.Error.String()
-		} else if len(deployment.Properties.OutputResources) == 0 {
-			return errors.Errorf("Template deployment didn't have any output resources")
-		} else {
+		} else if len(deployment.Properties.OutputResources) > 0 {
 			resourceId := deployment.Properties.OutputResources[0].ID
 			annotations[ResourceIdAnnotation] = resourceId
 
@@ -517,6 +513,8 @@ func (gr *GenericReconciler) updateMetaObject(
 					return err
 				}
 			}
+		} else {
+			return errors.Errorf("template deployment didn't have any output resources")
 		}
 	}
 
