@@ -11,8 +11,6 @@ import (
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/pkg/errors"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/klog/v2"
-	"strings"
 )
 
 // createStorageTypes returns a pipeline stage that creates dedicated storage types for each resource and nested object.
@@ -38,11 +36,6 @@ func createStorageTypes() PipelineStage {
 				if types.IsEnumDefinition(&d) {
 					// Skip Enum definitions as we use the base type for storage
 					continue
-				}
-
-				// HACK - to allow breakpoints
-				if strings.HasSuffix(d.Name().Name(), "Arm") {
-					klog.Warning(d.Name().Name())
 				}
 
 				def, err := visitor.VisitDefinition(d, vc)
@@ -158,10 +151,10 @@ func (factory *StorageTypeFactory) makeStorageProperty(prop *astmodel.PropertyDe
 
 // mapTypeName maps an existing type name into the right package for the matching storage type
 // Returns the original instance for any type that does not need to be mapped to storage
-func (factory *StorageTypeFactory) mapTypeName(name astmodel.TypeName) (astmodel.Type, error) {
+func (factory *StorageTypeFactory) mapTypeName(name astmodel.TypeName) (*astmodel.TypeName, error) {
 	if !name.PackageReference.IsLocalPackage() {
 		// Don't need to map non-local packages
-		return name, nil
+		return &name, nil
 	}
 
 	storagePackage, err := astmodel.CreateStoragePackageReference(name.PackageReference)
@@ -170,7 +163,7 @@ func (factory *StorageTypeFactory) mapTypeName(name astmodel.TypeName) (astmodel
 	}
 
 	newName := astmodel.MakeTypeName(storagePackage, name.Name())
-	return newName, nil
+	return &newName, nil
 }
 
 func (factory *StorageTypeFactory) visitArmType(
@@ -181,10 +174,6 @@ func (factory *StorageTypeFactory) visitArmType(
 	// We don't want to do anything with ARM types
 	return it, nil
 }
-
-//func (factory *StorageTypeFactory) visitResourceType(tv *astmodel.TypeVisitor, it *astmodel.ResourceType, ctx interface{}) (astmodel.Type, error) {
-//
-//}
 
 func descriptionForStorageVariant(definition astmodel.TypeDefinition) []string {
 	_, pkg, err := definition.Name().PackageReference.GroupAndPackage()
