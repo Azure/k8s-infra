@@ -16,7 +16,6 @@ const (
 	testGroup      = "demo"
 	testVersion    = "v20200801"
 	testObjectName = "anObject"
-	testEnumName   = "anEnum"
 )
 
 /*
@@ -45,25 +44,6 @@ func TestMapTypeName_GivenObjectReference_ReturnsNameInStoragePackage(t *testing
 	g.Expect(pkg).To(Equal("v20200801s"))
 }
 
-func TestMapTypeName_GivenEnumReference_ReturnsOriginalName(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	enumName := createNameForTest(testEnumName)
-	enumDefinition := createEnumDefinitionForTest(enumName)
-	types := createTypesForTest(enumDefinition)
-	factory := StorageTypeFactory{
-		types: types,
-	}
-
-	storageName, err := factory.mapTypeName(enumName)
-	g.Expect(err).To(BeNil())
-
-	grp, pkg, _ := storageName.PackageReference.GroupAndPackage()
-	g.Expect(storageName.Name()).To(Equal(testEnumName))
-	g.Expect(grp).To(Equal(testGroup))
-	g.Expect(pkg).To(Equal(testVersion))
-}
-
 /*
  * Support methods
  */
@@ -86,14 +66,4 @@ func createObjectDefinitionForTest(objectName astmodel.TypeName) astmodel.TypeDe
 	objectType := astmodel.NewObjectType().WithProperties(idProperty)
 	objectDefinition := astmodel.MakeTypeDefinition(objectName, objectType)
 	return objectDefinition
-}
-
-func createEnumDefinitionForTest(enumName astmodel.TypeName, options ...string) astmodel.TypeDefinition {
-	var opts []astmodel.EnumValue
-	for _, o := range options {
-		opts = append(opts, astmodel.EnumValue{Identifier: o, Value: o})
-	}
-	enumType := astmodel.NewEnumType(astmodel.StringType, opts)
-	enumDefinition := astmodel.MakeTypeDefinition(enumName, enumType)
-	return enumDefinition
 }
