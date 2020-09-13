@@ -35,8 +35,8 @@ func applyKubernetesResourceInterface(idFactory astmodel.IdentifierFactory) Pipe
 					}
 
 					specObj, err := astmodel.TypeAsObjectType(spec.Type())
-					if !ok {
-						return nil, errors.Errorf("resource spec %q did not contain an object", specName)
+					if err != nil {
+						return nil, errors.Wrapf(err, "resource spec %q did not contain an object", specName)
 					}
 
 					iface, err := astmodel.NewKubernetesResourceInterfaceImpl(idFactory, specObj)

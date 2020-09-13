@@ -200,8 +200,6 @@ func removeValidations(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
 	return t, nil
 }
 
-type conversionHandler = func(t *astmodel.ObjectType) (*astmodel.ObjectType, error)
-
 func getResourceSpecDefinition(
 	definitions astmodel.Types,
 	resourceType *astmodel.ResourceType) (astmodel.TypeDefinition, error) {
@@ -350,7 +348,7 @@ func addArmConversionInterface(
 	if err != nil {
 		emptyDef := astmodel.TypeDefinition{}
 		return emptyDef,
-			errors.Errorf("Failed to add ARM conversion interface to Kubenetes object definition", armDef.Name())
+			errors.Errorf("Failed to add ARM conversion interface to Kubenetes object definition %v", armDef.Name())
 	}
 
 	return *result, nil

@@ -27,6 +27,7 @@ func createStorageTypes() PipelineStage {
 			vc := makeStorageTypesVisitorContext()
 			var errs []error
 			for _, d := range types {
+				d := d
 
 				if types.IsArmDefinition(&d) {
 					// Skip ARM definitions, we don't need to create storage variants of those
