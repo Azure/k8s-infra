@@ -75,7 +75,11 @@ func (tv *TypeVisitor) VisitDefinition(td TypeDefinition, ctx interface{}) (*Typ
 
 	name, ok := visitedName.(TypeName)
 	if !ok {
-		return nil, errors.Errorf("expected visit of %q to return TypeName, not %T", td.Name(), visitedName)
+		if t, ok := visitedName.(*TypeName); ok {
+			name = *t
+		} else {
+			return nil, errors.Errorf("expected visit of %q to return TypeName, not %T", td.Name(), visitedName)
+		}
 	}
 
 	visitedType, err := tv.Visit(td.Type(), ctx)
