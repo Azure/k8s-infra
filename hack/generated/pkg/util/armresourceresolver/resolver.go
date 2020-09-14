@@ -80,7 +80,7 @@ func (r *Resolver) GetFullAzureNameAndResourceGroup(ctx context.Context, obj gen
 		}
 		combinedAzureName := getAzureName(obj)
 		if ownerName != "" {
-			combinedAzureName = genruntime.CombineArmNames(ownerName, obj.AzureName())
+			combinedAzureName = genruntime.CombineArmNames(ownerName, combinedAzureName)
 		}
 		return rgName, combinedAzureName, nil
 	}
