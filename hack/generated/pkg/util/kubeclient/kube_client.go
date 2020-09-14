@@ -18,9 +18,8 @@ import (
 )
 
 type Client struct {
-	Client      client.Client
-	Scheme      *runtime.Scheme
-	patchHelper *patch.Helper
+	Client client.Client
+	Scheme *runtime.Scheme
 }
 
 func NewClient(
@@ -28,9 +27,8 @@ func NewClient(
 	scheme *runtime.Scheme) *Client {
 
 	return &Client{
-		Client:      client,
-		Scheme:      scheme,
-		patchHelper: patch.NewHelper(client),
+		Client: client,
+		Scheme: scheme,
 	}
 }
 
@@ -57,17 +55,20 @@ func (k *Client) PatchHelper(
 	obj genruntime.MetaObject,
 	mutator func(context.Context, genruntime.MetaObject) error) error {
 
-	before := obj.DeepCopyObject()
+	patcher, err := patch.NewHelper(obj, k.Client)
+	if err != nil {
+		return err
+	}
 
 	if err := mutator(ctx, obj); err != nil {
 		return err
 	}
 
-	if err := k.patchHelper.Patch(ctx, before, obj); err != nil {
+	if err := patcher.Patch(ctx, obj); err != nil {
 		return errors.Wrap(err, "patchHelper patch failed")
 	}
 
-	// fill resourcer with patched updates since patch will copy resourcer
+	// fill resource with patched updates
 	return k.Client.Get(ctx, client.ObjectKey{
 		Namespace: obj.GetNamespace(),
 		Name:      obj.GetName(),

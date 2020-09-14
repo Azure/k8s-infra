@@ -1,4 +1,3 @@
-// TODO: Can we change this?
 /*
 Copyright 2017 The Kubernetes Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,120 +11,163 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// This package is taken from https://github.com/kubernetes-sigs/cluster-api/tree/master/util/patch with slight modifications
+// to suit our use-case
+// TODO: Ensure we add attribution in License file once we have one
+
 package patch
 
 import (
 	"context"
-	"reflect"
-
+	"encoding/json"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// TODO: This class is use-once, which seems wrong to me?
-// Helper is a utility for ensuring the proper Patching of resources
-// and their status
+// Helper is a utility for ensuring the proper patching of objects.
 type Helper struct {
-	client client.Client
+	client       client.Client
+	beforeObject runtime.Object
+	before       *unstructured.Unstructured
+	after        *unstructured.Unstructured
+	changes      map[string]bool
 }
 
 // NewHelper returns an initialized Helper
-func NewHelper(c client.Client) *Helper {
+func NewHelper(obj runtime.Object, crClient client.Client) (*Helper, error) {
+	// Return early if the object is nil.
+	// If you're wondering why we need reflection to do this check, see https://golang.org/doc/faq#nil_error.
+	if obj == nil || (reflect.ValueOf(obj).IsValid() && reflect.ValueOf(obj).IsNil()) {
+		return nil, errors.Errorf("expected non-nil object")
+	}
+
+	// Convert the object to unstructured to compare against our before copy.
+	unstructuredObj, err := toUnstructured(obj)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Helper{
-		client: c,
-	}
+		client:       crClient,
+		before:       unstructuredObj,
+		beforeObject: obj.DeepCopyObject(),
+	}, nil
 }
 
-// Patch will attempt to patch the given resource and its status
-func (h *Helper) Patch(ctx context.Context, before runtime.Object, after runtime.Object) error {
-	err := validateResource(before)
-	if err != nil {
-		return err
+// Patch will attempt to patch the given object, including its status.
+func (h *Helper) Patch(ctx context.Context, obj runtime.Object) error {
+	if obj == nil {
+		return errors.Errorf("expected non-nil object")
 	}
-	err = validateResource(after)
+
+	// Convert the object to unstructured to compare against our before copy.
+	var err error
+	h.after, err = toUnstructured(obj)
 	if err != nil {
 		return err
 	}
 
-	resourcePatch := client.MergeFrom(before.DeepCopyObject())
-	statusPatch := client.MergeFrom(before.DeepCopyObject())
-
-	// Convert the resource to unstructured to compare against our before copy.
-	beforeUnstructured, err := resourceToUnstructured(before)
-	if err != nil {
-		return err
-	}
-	afterUnstructured, err := resourceToUnstructured(after)
+	// Calculate and store the top-level field changes (e.g. "metadata", "spec", "status") we have before/after.
+	h.changes, err = h.calculateChanges(obj)
 	if err != nil {
 		return err
 	}
 
-	beforeStatus, beforeHasStatus, err := extractStatus(beforeUnstructured)
+	// Issue patches and return errors in an aggregate.
+	return kerrors.NewAggregate([]error{
+		h.patch(ctx, obj),
+		h.patchStatus(ctx, obj),
+	})
+}
+
+// patch issues a patch for metadata and spec.
+func (h *Helper) patch(ctx context.Context, obj runtime.Object) error {
+	if !h.shouldPatch("metadata") && !h.shouldPatch("spec") {
+		return nil
+	}
+	beforeObject, afterObject, err := h.calculatePatch(obj, specPatch)
 	if err != nil {
 		return err
 	}
-	afterStatus, afterHasStatus, err := extractStatus(afterUnstructured)
+	return h.client.Patch(ctx, afterObject, client.MergeFrom(beforeObject))
+}
+
+// patchStatus issues a patch if the status has changed.
+func (h *Helper) patchStatus(ctx context.Context, obj runtime.Object) error {
+	if !h.shouldPatch("status") {
+		return nil
+	}
+	beforeObject, afterObject, err := h.calculatePatch(obj, statusPatch)
 	if err != nil {
 		return err
 	}
+	return h.client.Status().Patch(ctx, afterObject, client.MergeFrom(beforeObject))
+}
 
-	var errs []error
+// calculatePatch returns the before/after objects to be given in a controller-runtime patch, scoped down to the absolute necessary.
+func (h *Helper) calculatePatch(afterObj runtime.Object, focus patchType) (runtime.Object, runtime.Object, error) {
+	// Make a copy of the unstructured objects first.
+	before := h.before.DeepCopy()
+	after := h.after.DeepCopy()
 
-	if !reflect.DeepEqual(beforeUnstructured, afterUnstructured) {
-		// only issue a Patch if the before and after resources (minus status) differ
-		if err := h.client.Patch(ctx, after.DeepCopyObject(), resourcePatch); err != nil {
-			errs = append(errs, err)
+	// Let's loop on the copies of our before/after and remove all the keys we don't need.
+	for _, v := range []*unstructured.Unstructured{before, after} {
+		// Ranges over the keys of the unstructured object, think of this as the very top level of an object
+		// when submitting a yaml to kubectl or a client.
+		//
+		// These would be keys like `apiVersion`, `kind`, `metadata`, `spec`, `status`, etc.
+		for key := range v.Object {
+			// If the current key isn't something we absolutetly need (see the map for reference),
+			// and it's not our current focus, then we should remove it.
+			if key != focus.Key() && !preserveUnstructuredKeys[key] {
+				unstructured.RemoveNestedField(v.Object, key)
+				continue
+			}
 		}
 	}
 
-	if (beforeHasStatus || afterHasStatus) && !reflect.DeepEqual(beforeStatus, afterStatus) {
-		// only issue a Status Patch if the resource has a status and the beforeStatus
-		// and afterStatus copies differ
-		if err := h.client.Status().Patch(ctx, after.DeepCopyObject(), statusPatch); err != nil {
-			errs = append(errs, err)
-		}
+	// We've now applied all modifications to local unstructured objects,
+	// make copies of the original objects and convert them back.
+	beforeObj := h.beforeObject.DeepCopyObject()
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(before.Object, beforeObj); err != nil {
+		return nil, nil, err
+	}
+	afterObj = afterObj.DeepCopyObject()
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(after.Object, afterObj); err != nil {
+		return nil, nil, err
 	}
 
-	return kerrors.NewAggregate(errs)
+	return beforeObj, afterObj, nil
 }
 
-func validateResource(r runtime.Object) error {
-	if r == nil {
-		return errors.Errorf("expected non-nil resource")
-	}
-
-	return nil
+func (h *Helper) shouldPatch(in string) bool {
+	return h.changes[in]
 }
 
-func resourceToUnstructured(r runtime.Object) (map[string]interface{}, error) {
-	// If the object is already unstructured, we need to perform a deepcopy first
-	// because the `DefaultUnstructuredConverter.ToUnstructured` function returns
-	// the underlying unstructured object map without making a copy.
-	if _, ok := r.(runtime.Unstructured); ok {
-		r = r.DeepCopyObject()
-	}
-
-	// Convert the resource to unstructured for easier comparison later.
-	return runtime.DefaultUnstructuredConverter.ToUnstructured(r)
-}
-
-// Note that this call modifies u by removing status!
-func extractStatus(u map[string]interface{}) (interface{}, bool, error) {
-	hasStatus := false
-	// attempt to extract the status from the resource for easier comparison later
-	status, ok, err := unstructured.NestedFieldCopy(u, "status")
+// calculate changes tries to build a patch from the before/after objects we have
+// and store in a map which top-level fields (e.g. `metadata`, `spec`, `status`, etc.) have changed.
+func (h *Helper) calculateChanges(after runtime.Object) (map[string]bool, error) {
+	// Calculate patch data.
+	patch := client.MergeFrom(h.beforeObject)
+	diff, err := patch.Data(after)
 	if err != nil {
-		return nil, false, err
-	}
-	if ok {
-		hasStatus = true
-		// if the resource contains a status remove it from our unstructured copy
-		// to avoid unnecessary patching later
-		unstructured.RemoveNestedField(u, "status")
+		return nil, errors.Wrapf(err, "failed to calculate patch data")
 	}
 
-	return status, hasStatus, nil
+	// Unmarshal patch data into a local map.
+	patchDiff := map[string]interface{}{}
+	if err := json.Unmarshal(diff, &patchDiff); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal patch data into a map")
+	}
+
+	// Return the map.
+	res := make(map[string]bool, len(patchDiff))
+	for key := range patchDiff {
+		res[key] = true
+	}
+	return res, nil
 }
