@@ -13,7 +13,6 @@ import (
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/armresourceresolver"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
 	"github.com/pkg/errors"
-	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -33,17 +32,6 @@ import (
 
 const (
 	// ResourceSigAnnotationKey is an annotation key which holds the value of the hash of the spec
-	ResourceSigAnnotationKey = "resource-sig.infra.azure.com"
-
-	// TODO: Delete these later in favor of something in status?
-	DeploymentIdAnnotation   = "deployment-id.infra.azure.com"
-	DeploymentNameAnnotation = "deployment-name.infra.azure.com"
-	ResourceStateAnnotation  = "resource-state.infra.azure.com"
-	ResourceIdAnnotation     = "resource-id.infra.azure.com"
-	ResourceErrorAnnotation  = "resource-error.infra.azure.com"
-	// PreserveDeploymentAnnotation is the key which tells the applier to keep or delete the deployment
-	PreserveDeploymentAnnotation = "x-preserve-deployment"
-
 	GenericControllerFinalizer = "generated.infra.azure.com/finalizer"
 )
 
@@ -176,20 +164,17 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	case ReconcileActionBeginDeployment:
 		result, err = gr.createDeployment(ctx, reconcileData)
 		// TODO: Hmm this doesn't get the ID?
-		eventMsg = fmt.Sprintf("Starting new deployment to Azure with ID: %q", getDeploymentId(metaObj))
+		eventMsg = fmt.Sprintf(
+			"Starting new deployment to Azure with ID: %q",
+			genruntime.GetDeploymentIdOrDefault(reconcileData.metaObj))
 	case ReconcileActionWatchDeployment:
 		result, err = gr.watchDeployment(ctx, reconcileData)
 
-		currentState := getResourceProvisioningState(metaObj)
-		// TODO: Is there a better way to do this?
-		var currentStateStr = "<nil>"
-		if currentState != nil {
-			currentStateStr = string(*currentState)
-		}
+		currentState := genruntime.GetResourceProvisioningStateOrDefault(metaObj)
 		eventMsg = fmt.Sprintf(
 			"Ongoing deployment with ID %q in state: %q",
-			getDeploymentId(metaObj),
-			currentStateStr)
+			genruntime.GetDeploymentIdOrDefault(metaObj),
+			currentState)
 	// For delete, there are 2 possible state transitions.
 	// *  ReconcileActionBeginDelete --> Start deleting in Azure and mark state as "Deleting"
 	// *  ReconcileActionWatchDelete --> http HEAD to see if resource still exists in Azure. If so, requeue, else, remove finalizer.
@@ -208,6 +193,7 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	if err != nil {
 		log.Error(err, "Error during reconcile", "action", action)
+		gr.Recorder.Event(metaObj, v1.EventTypeWarning, "ReconcileActionError", err.Error())
 		return result, err
 	}
 
@@ -227,7 +213,7 @@ func (gr *GenericReconciler) reconcileDelete(
 		return ctrl.Result{}, errors.Wrapf(err, "couldn't convert to armResourceSpec")
 	}
 	// TODO: Not setting status here
-	resource := genruntime.NewArmResource(armResourceSpec, nil, getResourceId(metaObj))
+	resource := genruntime.NewArmResource(armResourceSpec, nil, genruntime.GetResourceId(metaObj))
 
 	return f(ctx, log, resource, metaObj)
 }
@@ -240,7 +226,7 @@ func (gr *GenericReconciler) startDeleteOfResource(
 	resource genruntime.ArmResource,
 	metaObj genruntime.MetaObject) (ctrl.Result, error) {
 
-	if err := gr.KubeClient.PatchHelper(ctx, metaObj, func(ctx context.Context, mutMetaObject genruntime.MetaObject) error {
+	err := gr.KubeClient.PatchHelper(ctx, metaObj, func(ctx context.Context, mutMetaObject genruntime.MetaObject) error {
 		if resource.GetId() != "" {
 			emptyStatus, err := NewEmptyArmResourceStatus(metaObj)
 			if err != nil {
@@ -252,9 +238,7 @@ func (gr *GenericReconciler) startDeleteOfResource(
 				return errors.Wrapf(err, "failed trying to delete resource %s", resource.Spec().GetType())
 			}
 
-			annotations := make(map[string]string)
-			annotations[ResourceStateAnnotation] = string(armclient.DeletingProvisioningState)
-			addAnnotations(metaObj, annotations)
+			genruntime.SetResourceState(metaObj, string(armclient.DeletingProvisioningState))
 		} else {
 			controllerutil.RemoveFinalizer(mutMetaObject, GenericControllerFinalizer)
 		}
@@ -265,7 +249,9 @@ func (gr *GenericReconciler) startDeleteOfResource(
 		//}
 
 		return nil
-	}); err != nil && !apierrors.IsNotFound(err) {
+	})
+
+	if err != nil && !apierrors.IsNotFound(err) {
 		return ctrl.Result{}, errors.Wrap(err, "failed to patch after starting delete")
 	}
 
@@ -360,26 +346,24 @@ func (gr *GenericReconciler) updateMetaObject(
 
 	controllerutil.AddFinalizer(metaObj, GenericControllerFinalizer)
 
-	sig, err := SpecSignature(metaObj)
+	sig, err := genruntime.SpecSignature(metaObj)
 	if err != nil {
 		return errors.Wrap(err, "failed to compute resource spec hash")
 	}
 
-	annotations := map[string]string{
-		ResourceSigAnnotationKey: sig,
-		DeploymentIdAnnotation:   deployment.Id,
-		DeploymentNameAnnotation: deployment.Name,
-		// TODO: Do we want to just use Azure's annotations here? I bet we don't? We probably want to map
-		// TODO: them onto something more robust? For now just use Azure's though.
-		ResourceStateAnnotation: string(deployment.Properties.ProvisioningState),
-	}
+	genruntime.SetDeploymentId(metaObj, deployment.Id)
+	genruntime.SetDeploymentName(metaObj, deployment.Name)
+	// TODO: Do we want to just use Azure's annotations here? I bet we don't? We probably want to map
+	// TODO: them onto something more robust? For now just use Azure's though.
+	genruntime.SetResourceState(metaObj, string(deployment.Properties.ProvisioningState))
+	genruntime.SetResourceSignature(metaObj, sig)
 
 	if deployment.IsTerminalProvisioningState() {
 		if deployment.Properties.ProvisioningState == armclient.FailedProvisioningState {
-			annotations[ResourceErrorAnnotation] = deployment.Properties.Error.String()
+			genruntime.SetResourceError(metaObj, deployment.Properties.Error.String())
 		} else if len(deployment.Properties.OutputResources) > 0 {
 			resourceId := deployment.Properties.OutputResources[0].ID
-			annotations[ResourceIdAnnotation] = resourceId
+			genruntime.SetResourceId(metaObj, resourceId)
 
 			if status != nil {
 				err = SetStatus(metaObj, status)
@@ -392,7 +376,6 @@ func (gr *GenericReconciler) updateMetaObject(
 		}
 	}
 
-	addAnnotations(metaObj, annotations)
 	return nil
 }
 
@@ -402,7 +385,7 @@ func (gr *GenericReconciler) createDeployment(ctx context.Context, data *Reconci
 		return ctrl.Result{}, err
 	}
 
-	if err := gr.KubeClient.PatchHelper(ctx, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
+	err = gr.KubeClient.PatchHelper(ctx, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
 		deployment, err = gr.ARMClient.CreateDeployment(ctx, deployment)
 		if err != nil {
 			return err
@@ -414,7 +397,9 @@ func (gr *GenericReconciler) createDeployment(ctx context.Context, data *Reconci
 		}
 
 		return nil
-	}); err != nil {
+	})
+
+	if err != nil {
 		// This is a superfluous error as per https://github.com/kubernetes-sigs/controller-runtime/issues/377
 		// The correct handling is just to ignore it and we will get an event shortly with the updated version to patch
 		if apierrors.IsNotFound(err) {
@@ -441,7 +426,7 @@ func (gr *GenericReconciler) watchDeployment(ctx context.Context, data *Reconcil
 		return ctrl.Result{}, err
 	}
 
-	if err := gr.KubeClient.PatchHelper(ctx, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
+	err = gr.KubeClient.PatchHelper(ctx, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
 		deployment, err = gr.ARMClient.GetDeployment(ctx, deployment.Id)
 		if err != nil {
 			return errors.Wrapf(err, "failed getting deployment %q from ARM", deployment.Id)
@@ -460,7 +445,7 @@ func (gr *GenericReconciler) watchDeployment(ctx context.Context, data *Reconcil
 			}
 		}
 
-		if deployment.IsTerminalProvisioningState() && !getShouldPreserveDeployment(data.metaObj) {
+		if deployment.IsTerminalProvisioningState() && !genruntime.GetShouldPreserveDeployment(data.metaObj) {
 			err := gr.ARMClient.DeleteDeployment(ctx, deployment.Id)
 			if err != nil {
 				return errors.Wrapf(err, "failed to delete deployment %q", deployment.Id)
@@ -475,7 +460,9 @@ func (gr *GenericReconciler) watchDeployment(ctx context.Context, data *Reconcil
 		}
 
 		return nil
-	}); err != nil {
+	})
+
+	if err != nil {
 		// This is a superfluous error as per https://github.com/kubernetes-sigs/controller-runtime/issues/377
 		// The correct handling is just to ignore it and we will get an event shortly with the updated version to patch
 		if apierrors.IsNotFound(err) {
@@ -502,8 +489,8 @@ func (gr *GenericReconciler) resourceSpecToDeployment(ctx context.Context, data 
 	}
 
 	// TODO: get other deployment details from status and avoid creating a new deployment
-	deploymentId, deploymentIdOk := data.metaObj.GetAnnotations()[DeploymentIdAnnotation]
-	deploymentName, deploymentNameOk := data.metaObj.GetAnnotations()[DeploymentNameAnnotation]
+	deploymentId, deploymentIdOk := genruntime.GetDeploymentId(data.metaObj)
+	deploymentName, deploymentNameOk := genruntime.GetDeploymentName(data.metaObj)
 	if deploymentIdOk != deploymentNameOk {
 		return nil, errors.Errorf(
 			"deploymentIdOk: %t, deploymentNameOk: %t expected to match, but didn't",
@@ -523,78 +510,4 @@ func (gr *GenericReconciler) resourceSpecToDeployment(ctx context.Context, data 
 		deployment = gr.ARMClient.NewDeployment(resourceGroupName, deploymentName, typedArmSpec)
 	}
 	return deployment, nil
-}
-
-func hasResourceHashAnnotationChanged(metaObj genruntime.MetaObject) (bool, error) {
-	oldSig, exists := metaObj.GetAnnotations()[ResourceSigAnnotationKey]
-	if !exists {
-		// signature does not exist, so yes, it has changed
-		return true, nil
-	}
-
-	newSig, err := SpecSignature(metaObj)
-	if err != nil {
-		return false, err
-	}
-	// check if the last signature matches the new signature
-	return oldSig != newSig, nil
-}
-
-func getResourceProvisioningState(metaObj genruntime.MetaObject) *armclient.ProvisioningState {
-	state, ok := metaObj.GetAnnotations()[ResourceStateAnnotation]
-	if !ok {
-		return nil
-	}
-
-	result := armclient.ProvisioningState(state)
-	return &result
-}
-
-func getDeploymentId(metaObj genruntime.MetaObject) string {
-	id, ok := metaObj.GetAnnotations()[DeploymentIdAnnotation]
-	if !ok {
-		return ""
-	}
-
-	return id
-}
-
-func getShouldPreserveDeployment(metaObj genruntime.MetaObject) bool {
-	preserveDeploymentString, ok := metaObj.GetAnnotations()[PreserveDeploymentAnnotation]
-	if !ok {
-		return false
-	}
-
-	preserveDeployment, err := strconv.ParseBool(preserveDeploymentString)
-	// Anything other than an error is assumed to be false...
-	// TODO: Would we rather have any usage of this key imply true (regardless of value?)
-	if err != nil {
-		// TODO: Log here
-		return false
-	}
-
-	return preserveDeployment
-}
-
-// TODO: Remove this when we have status
-func getResourceId(metaObj genruntime.MetaObject) string {
-	id, ok := metaObj.GetAnnotations()[ResourceIdAnnotation]
-	if !ok {
-		return ""
-	}
-
-	return id
-}
-
-func addAnnotations(metaObj genruntime.MetaObject, newAnnotations map[string]string) {
-	annotations := metaObj.GetAnnotations()
-	if annotations == nil {
-		annotations = map[string]string{}
-	}
-
-	for k, v := range newAnnotations {
-		annotations[k] = v
-	}
-
-	metaObj.SetAnnotations(annotations)
 }

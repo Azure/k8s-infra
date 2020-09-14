@@ -39,12 +39,20 @@ func NewReconcileMetadata(metaObj genruntime.MetaObject, log logr.Logger) *Recon
 	// TODO: stuff we don't need... but for now not bothering as I am not sure if there is a
 	// TODO: clean generic way to do that in go and also don't know perf impact of doing it all up
 	// TODO: front like we are now
+
+	var provisioningState *armclient.ProvisioningState
+	stateStr := genruntime.GetResourceProvisioningStateOrDefault(metaObj)
+	if stateStr != "" {
+		s := armclient.ProvisioningState(stateStr)
+		provisioningState = &s
+	}
+
 	return &ReconcileMetadata{
 		metaObj:                   metaObj,
 		log:                       log,
-		resourceProvisioningState: getResourceProvisioningState(metaObj),
-		preserveDeployment:        getShouldPreserveDeployment(metaObj),
-		deploymentId:              getDeploymentId(metaObj),
+		resourceProvisioningState: provisioningState,
+		preserveDeployment:        genruntime.GetShouldPreserveDeployment(metaObj),
+		deploymentId:              genruntime.GetDeploymentIdOrDefault(metaObj),
 	}
 }
 
@@ -59,7 +67,7 @@ func (r *ReconcileMetadata) DetermineReconcileAction() (ReconcileAction, error) 
 		}
 		return ReconcileActionBeginDelete, nil
 	} else {
-		hasChanged, err := hasResourceHashAnnotationChanged(r.metaObj)
+		hasChanged, err := genruntime.HasResourceSpecHashChanged(r.metaObj)
 		if err != nil {
 			return ReconcileActionNoAction, errors.Wrap(err, "failed comparing resource hash")
 		}
