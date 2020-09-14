@@ -72,14 +72,6 @@ func RegisterAll(mgr ctrl.Manager, applier armclient.Applier, objs []runtime.Obj
 	return errs
 }
 
-// TODO: is this comment still correct...?
-// register takes a manager and a struct describing how to instantiate
-// controllers for various types using a generic reconciler function. Only one
-// type (using For) may be directly watched by each controller, but zero, one or
-// many Owned types are acceptable. This setup allows reconcileFn to have access
-// to the concrete type defined as part of a closure, while allowing for
-// independent controllers per GVK (== better parallelism, vs 1 controllers
-// managing many, many List/Watches)
 func register(mgr ctrl.Manager, applier armclient.Applier, obj runtime.Object, log logr.Logger, options controller.Options) error {
 	v, err := conversion.EnforcePtr(obj)
 	if err != nil {
@@ -129,31 +121,6 @@ func register(mgr ctrl.Manager, applier armclient.Applier, obj runtime.Object, l
 		For(obj).
 		WithOptions(options)
 
-	// TODO: I think we need to do the below, but skipping it for now...
-	//if metaObj, ok := obj.(azcorev1.MetaObject); ok {
-	//	trls, err := xform.GetTypeReferenceData(metaObj)
-	//	if err != nil {
-	//		return fmt.Errorf("unable get type reference data for obj %v with: %w", metaObj, err)
-	//	}
-	//
-	//	for _, trl := range trls {
-	//		if trl.IsOwned {
-	//			gvk := schema.GroupVersionKind{
-	//				Group:   trl.Group,
-	//				Version: "v1",
-	//				Kind:    trl.Kind,
-	//			}
-	//			ownedObj, err := mgr.GetScheme().New(gvk)
-	//			if err != nil {
-	//				return fmt.Errorf("unable to create GVK %v with: %w", gvk, err)
-	//			}
-	//
-	//			reconciler.Owns = append(reconciler.Owns, ownedObj)
-	//			ctrlBuilder.Owns(ownedObj)
-	//		}
-	//	}
-	//}
-
 	c, err := ctrlBuilder.Build(reconciler)
 	if err != nil {
 		return errors.Wrap(err, "unable to build controllers / reconciler")
@@ -198,6 +165,10 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	var result ctrl.Result
 	var eventMsg string
 
+	// TODO: Remaining work:
+	// TODO:   1. Check that the resource owner is ready (see xform AreOwnersReady)
+	// TODO:   2. Apply Kubernetes resource ownership (see xform ApplyOwnership).
+
 	// TODO: Action could be a function here if we wanted?
 	switch action {
 	case ReconcileActionNoAction:
@@ -240,87 +211,8 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return result, err
 	}
 
-	//if grouped, ok := obj.(azcorev1.Grouped); ok {
-	//	ready, err := gr.isResourceGroupReady(ctx, grouped)
-	//	if err != nil {
-	//		log.Error(err, "failed checking if resource group was ready")
-	//		gr.Recorder.Event(metaObj, v1.EventTypeWarning, "GroupReadyError", fmt.Sprintf("isResourceGroupReady failed with: %s", err))
-	//		return ctrl.Result{}, err
-	//	}
-	//
-	//	if !ready {
-	//		requeueTime := 30 * time.Second
-	//		msg := fmt.Sprintf("resource group %q is not ready or not created yet; will try again in about %s", grouped.GetResourceGroupObjectRef().Name, requeueTime)
-	//		gr.Recorder.Event(metaObj, v1.EventTypeNormal, "ResourceGroupNotReady", msg)
-	//		return ctrl.Result{
-	//			RequeueAfter: requeueTime,
-	//		}, nil
-	//	}
-	//}
-
-	// TODO: Check if status of owners is good
-
-	//ownersReady, err := gr.Converter.AreOwnersReady(ctx, metaObj)
-	//if err != nil {
-	//	log.Error(err, "failed checking owner references are ready")
-	//	gr.Recorder.Event(metaObj, v1.EventTypeWarning, "OwnerReferenceCheckError", err.Error())
-	//	return ctrl.Result{}, err
-	//}
-	//
-	//if !ownersReady {
-	//	gr.Recorder.Event(metaObj, v1.EventTypeNormal, "OwnerReferencesNotReady", "owner reference are not ready; retrying in 30s")
-	//	return ctrl.Result{
-	//		RequeueAfter: 30 * time.Second,
-	//	}, nil
-	//}
-
-	// TODO: ApplyDeployment ownership
-	//allApplied, err := gr.Converter.ApplyOwnership(ctx, metaObj)
-	//if err != nil {
-	//	log.Error(err, "failed applying ownership to owned references")
-	//	gr.Recorder.Event(metaObj, v1.EventTypeWarning, "OwnerReferencesFailedApply", "owner reference are not ready; retrying in 30s")
-	//	return ctrl.Result{}, fmt.Errorf("failed applying ownership to owned references with: %w", err)
-	//}
-	//
-	//if !allApplied {
-	//	log.Info("not all owned objects were applied; will requeue for 30 seconds")
-	//	result.RequeueAfter = 30 * time.Second
-	//}
-
-	// log.Info("reconcile complete")
 	return result, err
 }
-
-// TODO: ??
-//func (gr *GenericReconciler) isResourceGroupReady(ctx context.Context, grouped azcorev1.Grouped) (bool, error) {
-//	// has a resource group, so check if the resource group is already provisioned
-//	groupRef := grouped.GetResourceGroupObjectRef()
-//	if groupRef == nil {
-//		return false, fmt.Errorf("grouped resources must have a resource group")
-//	}
-//
-//	key := client.ObjectKey{
-//		Name:      groupRef.Name,
-//		Namespace: groupRef.Namespace,
-//	}
-//
-//	// get the storage version of the resource group regardless of the referenced version
-//	var rg microsoftresourcesv1.ResourceGroup
-//	if err := gr.Client.Get(ctx, key, &rg); err != nil {
-//		if apierrors.IsNotFound(err) {
-//			// not able to find the resource, but that's ok. It might not exist yet
-//			return false, nil
-//		}
-//		return false, fmt.Errorf("error GETing rg resource with: %w", err)
-//	}
-//
-//	status, err := statusutil.GetProvisioningState(&rg)
-//	if err != nil {
-//		return false, fmt.Errorf("unable to get provisioning state for resource group with: %w", err)
-//	}
-//
-//	return zips.ProvisioningState(status) == zips.SucceededProvisioningState, nil
-//}
 
 func (gr *GenericReconciler) reconcileDelete(
 	ctx context.Context,
