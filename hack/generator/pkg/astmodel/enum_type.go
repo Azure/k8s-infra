@@ -81,9 +81,7 @@ func (enum *EnumType) createBaseDeclaration(
 	addWrappedComments(&declaration.Doc.List, description, 120)
 
 	validationComment := GenerateKubebuilderComment(enum.CreateValidation())
-	declaration.Doc.List = append(
-		declaration.Doc.List,
-		&ast.Comment{Text: "\n" + validationComment})
+	addComment(&declaration.Doc.List, validationComment)
 
 	return declaration
 }
