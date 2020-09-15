@@ -44,6 +44,7 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 				}
 
 				// we might end up with something that requires re-visiting
+				// e.g. AllOf can turn into a OneOf that we then need to visit
 				return this.Visit(object, ctx)
 			}
 
@@ -193,7 +194,6 @@ func (s synthesizer) convertToOneOfProperty(propIndex int, from astmodel.Type) (
 	default:
 		return nil, errors.Errorf("unexpected oneOf member, type: %T", from)
 	}
-
 }
 
 func (s synthesizer) intersectTypes(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
