@@ -7,6 +7,7 @@ package patch
 
 import (
 	"context"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -14,7 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -38,7 +38,9 @@ func TestHelperUnstructuredPatch(t *testing.T) {
 			},
 		},
 	}
-	fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme)
+
+	s := runtime.NewScheme()
+	fakeClient := fake.NewFakeClientWithScheme(s)
 	g.Expect(fakeClient.Create(ctx, obj)).To(Succeed())
 
 	h, err := NewHelper(obj, fakeClient)
@@ -53,6 +55,32 @@ func TestHelperUnstructuredPatch(t *testing.T) {
 	// Make sure that the object has been patched properly.
 	afterObj := obj.DeepCopy()
 	g.Expect(fakeClient.Get(ctx, client.ObjectKey{Namespace: "default", Name: "test-foo"}, afterObj)).To(Succeed())
+}
+
+func TestPatchNotFound(t *testing.T) {
+	g := NewWithT(t)
+	ctx := context.TODO()
+
+	s := runtime.NewScheme()
+	fakeClient := fake.NewFakeClientWithScheme(s)
+	g.Expect(storage.AddToScheme(s)).To(Succeed())
+
+	obj := &storage.StorageAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-group",
+			Namespace: "test-namespace",
+		},
+	}
+
+	h, err := NewHelper(obj, fakeClient)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	// Make a modification so that there is something to patch
+	obj.Spec.AzureName = "test"
+
+	err = h.Patch(ctx, obj)
+	g.Expect(err).To(HaveOccurred())
+	g.Expect(apierrors.IsNotFound(err)).To(BeTrue())
 }
 
 func TestHelperPatch(t *testing.T) {
@@ -161,10 +189,11 @@ func TestHelperPatch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			g := NewWithT(t)
 
-			g.Expect(storage.AddToScheme(scheme.Scheme)).To(Succeed())
-
 			ctx := context.Background()
-			fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme)
+
+			s := runtime.NewScheme()
+			g.Expect(storage.AddToScheme(s)).To(Succeed())
+			fakeClient := fake.NewFakeClientWithScheme(s)
 
 			beforeCopy := tt.before.DeepCopyObject()
 			g.Expect(fakeClient.Create(ctx, beforeCopy)).To(Succeed())
