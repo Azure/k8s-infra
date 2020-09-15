@@ -23,7 +23,6 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -77,11 +76,15 @@ func (h *Helper) Patch(ctx context.Context, obj runtime.Object) error {
 		return err
 	}
 
-	// Issue patches and return errors in an aggregate.
-	return kerrors.NewAggregate([]error{
-		h.patch(ctx, obj),
-		h.patchStatus(ctx, obj),
-	})
+	if err := h.patch(ctx, obj); err != nil {
+		return err
+	}
+
+	if err := h.patchStatus(ctx, obj); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // patch issues a patch for metadata and spec.

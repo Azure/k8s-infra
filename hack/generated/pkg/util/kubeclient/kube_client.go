@@ -65,7 +65,8 @@ func (k *Client) PatchHelper(
 	}
 
 	if err := patcher.Patch(ctx, obj); err != nil {
-		return errors.Wrap(err, "patchHelper patch failed")
+		// Don't wrap this error so that we can easily use apierrors to classify it elsewhere
+		return err
 	}
 
 	// fill resource with patched updates

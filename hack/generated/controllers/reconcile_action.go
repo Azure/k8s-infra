@@ -67,11 +67,18 @@ func (r *ReconcileMetadata) DetermineReconcileAction() (ReconcileAction, error) 
 		}
 		return ReconcileActionBeginDelete, nil
 	} else {
+		// TODO: is this check actually required?
+		//hasStatus, err := HasStatus(r.metaObj)
+		//if err != nil {
+		//	return ReconcileActionNoAction, errors.Wrap(err, "failed checking if resource has status")
+		//}
+
 		hasChanged, err := genruntime.HasResourceSpecHashChanged(r.metaObj)
 		if err != nil {
 			return ReconcileActionNoAction, errors.Wrap(err, "failed comparing resource hash")
 		}
 
+		//if !hasChanged && r.IsTerminalProvisioningState() && hasStatus {
 		if !hasChanged && r.IsTerminalProvisioningState() {
 			// TODO: Do we want to log here?
 			msg := fmt.Sprintf("resource spec has not changed and resource is in terminal state: %q", *r.resourceProvisioningState)

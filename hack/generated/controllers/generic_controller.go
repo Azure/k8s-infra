@@ -13,11 +13,11 @@ import (
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/armresourceresolver"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
 	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"time"
 
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -135,6 +135,12 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		// This means that the resource doesn't exist
 		return ctrl.Result{}, nil
 	}
+
+	// Always operate on a copy rather than the object from the client, as per
+	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/controllers.md, which says:
+	// Never mutate original objects! Caches are shared across controllers, this means that if you mutate your "copy"
+	// (actually a reference or shallow copy) of an object, you'll mess up other controllers (not just your own).
+	obj = obj.DeepCopyObject()
 
 	// The Go type for the Kubernetes object must understand how to
 	// convert itself to/from the corresponding Azure types.
@@ -357,7 +363,6 @@ func (gr *GenericReconciler) updateMetaObject(
 	// TODO: them onto something more robust? For now just use Azure's though.
 	genruntime.SetResourceState(metaObj, string(deployment.Properties.ProvisioningState))
 	genruntime.SetResourceSignature(metaObj, sig)
-
 	if deployment.IsTerminalProvisioningState() {
 		if deployment.Properties.ProvisioningState == armclient.FailedProvisioningState {
 			genruntime.SetResourceError(metaObj, deployment.Properties.Error.String())
@@ -426,13 +431,14 @@ func (gr *GenericReconciler) watchDeployment(ctx context.Context, data *Reconcil
 		return ctrl.Result{}, err
 	}
 
+	var status genruntime.ArmTransformer
 	err = gr.KubeClient.PatchHelper(ctx, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
+
 		deployment, err = gr.ARMClient.GetDeployment(ctx, deployment.Id)
 		if err != nil {
 			return errors.Wrapf(err, "failed getting deployment %q from ARM", deployment.Id)
 		}
 
-		var status genruntime.ArmTransformer
 		if deployment.Properties != nil && deployment.Properties.ProvisioningState == armclient.SucceededProvisioningState {
 			// TODO: There's some overlap here with what updateMetaObject does
 			if len(deployment.Properties.OutputResources) == 0 {
@@ -443,15 +449,6 @@ func (gr *GenericReconciler) watchDeployment(ctx context.Context, data *Reconcil
 			if err != nil {
 				return errors.Wrap(err, "Failed getting status from ARM")
 			}
-		}
-
-		if deployment.IsTerminalProvisioningState() && !genruntime.GetShouldPreserveDeployment(data.metaObj) {
-			err := gr.ARMClient.DeleteDeployment(ctx, deployment.Id)
-			if err != nil {
-				return errors.Wrapf(err, "failed to delete deployment %q", deployment.Id)
-			}
-			deployment.Id = ""
-			deployment.Name = ""
 		}
 
 		err = gr.updateMetaObject(data.metaObj, deployment, status)
@@ -465,11 +462,40 @@ func (gr *GenericReconciler) watchDeployment(ctx context.Context, data *Reconcil
 	if err != nil {
 		// This is a superfluous error as per https://github.com/kubernetes-sigs/controller-runtime/issues/377
 		// The correct handling is just to ignore it and we will get an event shortly with the updated version to patch
-		if apierrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) { // TODO: ??
 			return ctrl.Result{}, nil
 		}
 
 		return ctrl.Result{}, errors.Wrap(err, "failed to patch")
+	}
+
+	// TODO: Does this need to be its own stage?
+	if deployment.IsTerminalProvisioningState() && !genruntime.GetShouldPreserveDeployment(data.metaObj) {
+		err = gr.KubeClient.PatchHelper(ctx, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
+			err := gr.ARMClient.DeleteDeployment(ctx, deployment.Id)
+			if err != nil {
+				return errors.Wrapf(err, "failed to delete deployment %q", deployment.Id)
+			}
+			deployment.Id = ""
+			deployment.Name = ""
+
+			err = gr.updateMetaObject(data.metaObj, deployment, status)
+			if err != nil {
+				return errors.Wrap(err, "failed updating metaObj")
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			// This is a superfluous error as per https://github.com/kubernetes-sigs/controller-runtime/issues/377
+			// The correct handling is just to ignore it and we will get an event shortly with the updated version to patch
+			//if apierrors.IsNotFound(err) { // TODO: ??
+			//	return ctrl.Result{}, nil
+			//}
+
+			return ctrl.Result{}, errors.Wrap(err, "failed to patch")
+		}
 	}
 
 	result := ctrl.Result{}
