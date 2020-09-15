@@ -156,7 +156,12 @@ func addAnnotation(metaObj MetaObject, k string, v string) {
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
-	annotations[k] = v
+	// I think this is the behavior we want...
+	if v == "" {
+		delete(annotations, k)
+	} else {
+		annotations[k] = v
+	}
 	metaObj.SetAnnotations(annotations)
 }
 

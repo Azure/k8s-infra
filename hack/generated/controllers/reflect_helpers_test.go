@@ -53,7 +53,6 @@ func Test_EmptyArmResourceStatus(t *testing.T) {
 	g.Expect(status).To(BeAssignableToTypeOf(&batch.BatchAccount_StatusArm{}))
 }
 
-
 func Test_HasStatus(t *testing.T) {
 	g := NewGomegaWithT(t)
 
