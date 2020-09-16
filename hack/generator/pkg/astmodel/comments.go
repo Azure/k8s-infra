@@ -26,19 +26,7 @@ func addWrappedComments(commentList *[]*ast.Comment, comments []string, width in
 
 func addWrappedComment(commentList *[]*ast.Comment, comment string, width int) {
 	for _, c := range formatComment(comment, width) {
-		line := strings.TrimSpace(c)
-
-		if !strings.HasPrefix(line, "//") {
-			line = "//" + line
-		}
-
-		if *commentList == nil {
-			line = "\n" + line
-		}
-
-		*commentList = append(*commentList, &ast.Comment{
-			Text: line,
-		})
+		addComment(commentList, c)
 	}
 }
 
