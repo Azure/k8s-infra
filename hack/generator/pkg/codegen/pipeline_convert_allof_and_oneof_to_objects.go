@@ -122,7 +122,7 @@ func (s synthesizer) oneOfObject(oneOf astmodel.OneOfType) (astmodel.Type, error
 	// OpenAPI does, see https://github.com/Azure/k8s-infra/issues/71
 	var properties []*astmodel.PropertyDefinition
 
-	propertyDescription := "mutually exclusive with all other properties"
+	propertyDescription := "Mutually exclusive with all other properties"
 	err := oneOf.Types().ForEachError(func(t astmodel.Type, i int) error {
 		prop, err := s.convertToOneOfProperty(i, t)
 		if err != nil {
