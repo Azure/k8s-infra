@@ -217,7 +217,7 @@ func identityVisitOneOfType(this *TypeVisitor, it OneOfType, ctx interface{}) (T
 		return nil, err
 	}
 
-	return MakeOneOfType(newTypes), nil
+	return MakeOneOfType(newTypes...), nil
 }
 
 func identityVisitAllOfType(this *TypeVisitor, it AllOfType, ctx interface{}) (Type, error) {
@@ -236,5 +236,5 @@ func identityVisitAllOfType(this *TypeVisitor, it AllOfType, ctx interface{}) (T
 		return nil, err
 	}
 
-	return MakeAllOfType(newTypes), nil
+	return MakeAllOfType(newTypes...), nil
 }

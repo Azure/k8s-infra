@@ -23,7 +23,7 @@ type OneOfType struct {
 
 // MakeOneOfType is a smart constructor for a  OneOfType,
 // maintaining the invariants
-func MakeOneOfType(types []Type) Type {
+func MakeOneOfType(types ...Type) Type {
 	uniqueTypes := MakeTypeSet()
 	for _, t := range types {
 		if oneOf, ok := t.(OneOfType); ok {

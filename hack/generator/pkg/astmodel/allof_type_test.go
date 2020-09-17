@@ -15,7 +15,7 @@ func TestAllOfOneTypeReturnsThatType(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	oneType := StringType
-	result := MakeAllOfType([]Type{oneType})
+	result := MakeAllOfType(oneType)
 
 	g.Expect(result).To(BeIdenticalTo(oneType))
 }
@@ -24,7 +24,7 @@ func TestAllOfIdenticalTypesReturnsThatType(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	oneType := StringType
-	result := MakeAllOfType([]Type{oneType, oneType})
+	result := MakeAllOfType(oneType, oneType)
 
 	g.Expect(result).To(BeIdenticalTo(oneType))
 }
@@ -32,9 +32,9 @@ func TestAllOfIdenticalTypesReturnsThatType(t *testing.T) {
 func TestAllOfFlattensNestedAllOfs(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	result := MakeAllOfType([]Type{BoolType, MakeAllOfType([]Type{StringType, IntType})})
+	result := MakeAllOfType(BoolType, MakeAllOfType(StringType, IntType))
 
-	expected := MakeAllOfType([]Type{BoolType, StringType, IntType})
+	expected := MakeAllOfType(BoolType, StringType, IntType)
 
 	g.Expect(result).To(Equal(expected))
 }
@@ -42,13 +42,13 @@ func TestAllOfFlattensNestedAllOfs(t *testing.T) {
 func TestAllOfOneOfBecomesOneOfAllOf(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	oneOf := MakeOneOfType([]Type{StringType, FloatType})
-	result := MakeAllOfType([]Type{BoolType, IntType, oneOf})
+	oneOf := MakeOneOfType(StringType, FloatType)
+	result := MakeAllOfType(BoolType, IntType, oneOf)
 
-	expected := MakeOneOfType([]Type{
-		MakeAllOfType([]Type{BoolType, IntType, StringType}),
-		MakeAllOfType([]Type{BoolType, IntType, FloatType}),
-	})
+	expected := MakeOneOfType(
+		MakeAllOfType(BoolType, IntType, StringType),
+		MakeAllOfType(BoolType, IntType, FloatType),
+	)
 
 	g.Expect(result).To(Equal(expected))
 }
@@ -56,8 +56,8 @@ func TestAllOfOneOfBecomesOneOfAllOf(t *testing.T) {
 func TestAllOfEqualityDoesNotCareAboutOrder(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	x := MakeAllOfType([]Type{StringType, BoolType})
-	y := MakeAllOfType([]Type{BoolType, StringType})
+	x := MakeAllOfType(StringType, BoolType)
+	y := MakeAllOfType(BoolType, StringType)
 
 	g.Expect(x.Equals(y)).To(BeTrue())
 	g.Expect(y.Equals(x)).To(BeTrue())
@@ -66,8 +66,8 @@ func TestAllOfEqualityDoesNotCareAboutOrder(t *testing.T) {
 func TestAllOfMustHaveAllTypesToBeEqual(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	x := MakeAllOfType([]Type{StringType, BoolType, FloatType})
-	y := MakeAllOfType([]Type{BoolType, StringType})
+	x := MakeAllOfType(StringType, BoolType, FloatType)
+	y := MakeAllOfType(BoolType, StringType)
 
 	g.Expect(x.Equals(y)).To(BeFalse())
 	g.Expect(y.Equals(x)).To(BeFalse())
@@ -76,8 +76,8 @@ func TestAllOfMustHaveAllTypesToBeEqual(t *testing.T) {
 func TestAllOfsWithDifferentTypesAreNotEqual(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	x := MakeAllOfType([]Type{StringType, FloatType})
-	y := MakeAllOfType([]Type{BoolType, StringType})
+	x := MakeAllOfType(StringType, FloatType)
+	y := MakeAllOfType(BoolType, StringType)
 
 	g.Expect(x.Equals(y)).To(BeFalse())
 	g.Expect(y.Equals(x)).To(BeFalse())

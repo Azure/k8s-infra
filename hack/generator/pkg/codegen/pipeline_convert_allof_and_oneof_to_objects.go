@@ -509,7 +509,7 @@ func (s synthesizer) handleOneOf(left astmodel.Type, right astmodel.Type) (astmo
 		return nil, err
 	}
 
-	return astmodel.MakeOneOfType(newTypes), nil
+	return astmodel.MakeOneOfType(newTypes...), nil
 }
 
 func (s synthesizer) handleTypeName(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {

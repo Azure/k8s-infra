@@ -196,7 +196,7 @@ func (scanner *SchemaScanner) GenerateDefinitionsFromDeploymentTemplate(ctx cont
 
 		// now we will remove the existing resource definition and replace it with a new one that includes the base type
 		// first, reconstruct the allof with an anonymous type instead of the typename
-		specType := astmodel.MakeAllOfType([]astmodel.Type{objectBase, resourceType.SpecType()})
+		specType := astmodel.MakeAllOfType(objectBase, resourceType.SpecType())
 		// now replace it
 		scanner.removeTypeDefinition(resourceRef)
 		scanner.addTypeDefinition(resourceDef.WithType(astmodel.NewAzureResourceType(specType, nil, resourceDef.Name())))
@@ -603,7 +603,7 @@ func allOfHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (a
 		types = append(types, objectType)
 	}
 
-	return astmodel.MakeAllOfType(types), nil
+	return astmodel.MakeAllOfType(types...), nil
 }
 
 func oneOfHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (astmodel.Type, error) {
@@ -628,7 +628,7 @@ func generateOneOfUnionType(ctx context.Context, subschemas []Schema, scanner *S
 		}
 	}
 
-	return astmodel.MakeOneOfType(types), nil
+	return astmodel.MakeOneOfType(types...), nil
 }
 
 func anyOfHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (astmodel.Type, error) {

@@ -15,7 +15,7 @@ func TestOneOfOneTypeReturnsThatType(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	oneType := StringType
-	result := MakeOneOfType([]Type{oneType})
+	result := MakeOneOfType(oneType)
 
 	g.Expect(result).To(BeIdenticalTo(oneType))
 }
@@ -24,7 +24,7 @@ func TestOneOfIdenticalTypesReturnsThatType(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	oneType := StringType
-	result := MakeOneOfType([]Type{oneType, oneType})
+	result := MakeOneOfType(oneType, oneType)
 
 	g.Expect(result).To(BeIdenticalTo(oneType))
 }
@@ -32,9 +32,9 @@ func TestOneOfIdenticalTypesReturnsThatType(t *testing.T) {
 func TestOneOfFlattensNestedOneOfs(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	result := MakeOneOfType([]Type{BoolType, MakeOneOfType([]Type{StringType, IntType})})
+	result := MakeOneOfType(BoolType, MakeOneOfType(StringType, IntType))
 
-	expected := MakeOneOfType([]Type{BoolType, StringType, IntType})
+	expected := MakeOneOfType(BoolType, StringType, IntType)
 
 	g.Expect(result).To(Equal(expected))
 }
@@ -42,8 +42,8 @@ func TestOneOfFlattensNestedOneOfs(t *testing.T) {
 func TestOneOfEqualityDoesNotCareAboutOrder(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	x := MakeOneOfType([]Type{StringType, BoolType})
-	y := MakeOneOfType([]Type{BoolType, StringType})
+	x := MakeOneOfType(StringType, BoolType)
+	y := MakeOneOfType(BoolType, StringType)
 
 	g.Expect(x.Equals(y)).To(BeTrue())
 	g.Expect(y.Equals(x)).To(BeTrue())
@@ -52,8 +52,8 @@ func TestOneOfEqualityDoesNotCareAboutOrder(t *testing.T) {
 func TestOneOfMustHaveAllTypesToBeEqual(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	x := MakeOneOfType([]Type{StringType, BoolType, FloatType})
-	y := MakeOneOfType([]Type{BoolType, StringType})
+	x := MakeOneOfType(StringType, BoolType, FloatType)
+	y := MakeOneOfType(BoolType, StringType)
 
 	g.Expect(x.Equals(y)).To(BeFalse())
 	g.Expect(y.Equals(x)).To(BeFalse())
@@ -62,8 +62,8 @@ func TestOneOfMustHaveAllTypesToBeEqual(t *testing.T) {
 func TestOneOfsWithDifferentTypesAreNotEqual(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	x := MakeOneOfType([]Type{StringType, FloatType})
-	y := MakeOneOfType([]Type{BoolType, StringType})
+	x := MakeOneOfType(StringType, FloatType)
+	y := MakeOneOfType(BoolType, StringType)
 
 	g.Expect(x.Equals(y)).To(BeFalse())
 	g.Expect(y.Equals(x)).To(BeFalse())
