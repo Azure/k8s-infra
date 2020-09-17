@@ -203,13 +203,18 @@ func identityVisitOfArmType(this *TypeVisitor, at *ArmType, ctx interface{}) (Ty
 
 func identityVisitOneOfType(this *TypeVisitor, it OneOfType, ctx interface{}) (Type, error) {
 	var newTypes []Type
-	for _, oneOf := range it.Types() {
+	err := it.Types().ForEachError(func(oneOf Type, _ int) error {
 		newType, err := this.Visit(oneOf, ctx)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to visit oneOf")
+			return errors.Wrapf(err, "failed to visit oneOf")
 		}
 
 		newTypes = append(newTypes, newType)
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	return MakeOneOfType(newTypes), nil
@@ -217,13 +222,18 @@ func identityVisitOneOfType(this *TypeVisitor, it OneOfType, ctx interface{}) (T
 
 func identityVisitAllOfType(this *TypeVisitor, it AllOfType, ctx interface{}) (Type, error) {
 	var newTypes []Type
-	for _, allOf := range it.Types() {
+	err := it.Types().ForEachError(func(allOf Type, _ int) error {
 		newType, err := this.Visit(allOf, ctx)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to visit allOf")
+			return errors.Wrapf(err, "failed to visit allOf")
 		}
 
 		newTypes = append(newTypes, newType)
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	return MakeAllOfType(newTypes), nil

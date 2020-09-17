@@ -15,40 +15,45 @@ import (
 // of all the given types
 type AllOfType struct {
 	// invariants:
-	// - all types are unique
+	// - all types are unique (enforced by TypeSet)
 	// - length > 1
 	// - no nested AllOfs (aside from indirectly via TypeName)
-	types []Type
+	types TypeSet
 }
 
 // MakeAllOfType is a smart constructor for AllOfType,
 // maintaining the invariants
 func MakeAllOfType(types []Type) Type {
-	var uniqueTypes []Type
+	uniqueTypes := MakeTypeSet()
 	for _, t := range types {
 		if allOf, ok := t.(AllOfType); ok {
-			for _, tInner := range allOf.types {
-				uniqueTypes = appendIfUniqueType(uniqueTypes, tInner)
-			}
+			allOf.types.ForEach(func(t Type, _ int) {
+				uniqueTypes.Add(t)
+			})
 		} else {
-			uniqueTypes = appendIfUniqueType(uniqueTypes, t)
+			uniqueTypes.Add(t)
 		}
 	}
 
-	if len(uniqueTypes) == 1 {
-		return uniqueTypes[0]
+	if uniqueTypes.Len() == 1 {
+		var result Type
+		uniqueTypes.ForEach(func(t Type, _ int) {
+			result = t
+		})
+
+		return result
 	}
 
 	// see if there are any OneOfs inside
 	var oneOfs []OneOfType
 	var notOneOfs []Type
-	for _, t := range uniqueTypes {
+	uniqueTypes.ForEach(func(t Type, _ int) {
 		if oneOf, ok := t.(OneOfType); ok {
 			oneOfs = append(oneOfs, oneOf)
 		} else {
 			notOneOfs = append(notOneOfs, t)
 		}
-	}
+	})
 
 	if len(oneOfs) == 1 {
 		// we want to push AllOf down so that:
@@ -58,9 +63,9 @@ func MakeAllOfType(types []Type) Type {
 		// the latter is much easier to deal with
 
 		var ts []Type
-		for _, t := range oneOfs[0].types {
+		oneOfs[0].types.ForEach(func(t Type, _ int) {
 			ts = append(ts, MakeAllOfType(append(notOneOfs, t)))
-		}
+		})
 
 		return MakeOneOfType(ts)
 	}
@@ -71,17 +76,18 @@ func MakeAllOfType(types []Type) Type {
 
 var _ Type = AllOfType{}
 
-// Types returns what types the AllOf can be
-func (allOf AllOfType) Types() []Type {
+// Types returns what types the AllOf can be.
+// Exposed as ReadonlyTypeSet so caller can't break invariants.
+func (allOf AllOfType) Types() ReadonlyTypeSet {
 	return allOf.types
 }
 
 // References returns any type referenced by the AllOf types
 func (allOf AllOfType) References() TypeNameSet {
 	var result TypeNameSet
-	for _, t := range allOf.types {
+	allOf.types.ForEach(func(t Type, _ int) {
 		result = SetUnion(result, t.References())
-	}
+	})
 
 	return result
 }
@@ -106,41 +112,20 @@ func (allOf AllOfType) RequiredImports() []PackageReference {
 // Equals returns true if the other Type is a AllOf that contains
 // the same set of types
 func (allOf AllOfType) Equals(t Type) bool {
-
 	other, ok := t.(AllOfType)
 	if !ok {
 		return false
 	}
 
-	if len(allOf.types) != len(other.types) {
-		return false
-	}
-
-	// compare regardless of ordering
-	for _, t := range allOf.types {
-		found := false
-		for _, tOther := range other.types {
-			if t.Equals(tOther) {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			return false
-		}
-	}
-
-	return true
+	return allOf.types.Equals(other.types)
 }
 
 // String implements fmt.Stringer
 func (allOf AllOfType) String() string {
-
 	var subStrings []string
-	for _, t := range allOf.Types() {
+	allOf.types.ForEach(func(t Type, _ int) {
 		subStrings = append(subStrings, t.String())
-	}
+	})
 
 	return fmt.Sprintf("(allOf: %s)", strings.Join(subStrings, ", "))
 }

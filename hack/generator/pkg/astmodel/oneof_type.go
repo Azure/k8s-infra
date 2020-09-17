@@ -15,28 +15,33 @@ import (
 // one of a number of selected types
 type OneOfType struct {
 	// invariants:
-	// - all types are unique
+	// - all types are unique (enforced by TypeSet)
 	// - length > 1
 	// - no nested OneOfs (aside from indirectly via TypeName)
-	types []Type
+	types TypeSet
 }
 
 // MakeOneOfType is a smart constructor for a  OneOfType,
 // maintaining the invariants
 func MakeOneOfType(types []Type) Type {
-	var uniqueTypes []Type
+	uniqueTypes := MakeTypeSet()
 	for _, t := range types {
 		if oneOf, ok := t.(OneOfType); ok {
-			for _, tInner := range oneOf.types {
-				uniqueTypes = appendIfUniqueType(uniqueTypes, tInner)
-			}
+			oneOf.types.ForEach(func(t Type, _ int) {
+				uniqueTypes.Add(t)
+			})
 		} else {
-			uniqueTypes = appendIfUniqueType(uniqueTypes, t)
+			uniqueTypes.Add(t)
 		}
 	}
 
-	if len(uniqueTypes) == 1 {
-		return uniqueTypes[0]
+	if uniqueTypes.Len() == 1 {
+		var result Type
+		uniqueTypes.ForEach(func(t Type, _ int) {
+			result = t
+		})
+
+		return result
 	}
 
 	return OneOfType{uniqueTypes}
@@ -44,17 +49,19 @@ func MakeOneOfType(types []Type) Type {
 
 var _ Type = OneOfType{}
 
-// Types returns what types the OneOf can be
-func (oneOf OneOfType) Types() []Type {
+// Types returns what types the OneOf can be.
+// Exposed as ReadonlyTypeSet so caller can't break invariants.
+func (oneOf OneOfType) Types() ReadonlyTypeSet {
 	return oneOf.types
 }
 
 // References returns any type referenced by the OneOf types
 func (oneOf OneOfType) References() TypeNameSet {
 	var result TypeNameSet
-	for _, t := range oneOf.types {
+
+	oneOf.types.ForEach(func(t Type, _ int) {
 		result = SetUnion(result, t.References())
-	}
+	})
 
 	return result
 }
@@ -79,41 +86,20 @@ func (oneOf OneOfType) RequiredImports() []PackageReference {
 // Equals returns true if the other Type is a OneOfType that contains
 // the same set of types
 func (oneOf OneOfType) Equals(t Type) bool {
-
 	other, ok := t.(OneOfType)
 	if !ok {
 		return false
 	}
 
-	if len(oneOf.types) != len(other.types) {
-		return false
-	}
-
-	// compare regardless of ordering
-	for _, t := range oneOf.types {
-		found := false
-		for _, tOther := range other.types {
-			if t.Equals(tOther) {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			return false
-		}
-	}
-
-	return true
+	return oneOf.types.Equals(other.types)
 }
 
 // String implements fmt.Stringer
 func (oneOf OneOfType) String() string {
-
 	var subStrings []string
-	for _, t := range oneOf.Types() {
+	oneOf.types.ForEach(func(t Type, _ int) {
 		subStrings = append(subStrings, t.String())
-	}
+	})
 
 	return fmt.Sprintf("(oneOf: %s)", strings.Join(subStrings, ", "))
 }

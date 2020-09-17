@@ -123,16 +123,21 @@ func (s synthesizer) oneOfObject(oneOf astmodel.OneOfType) (astmodel.Type, error
 	var properties []*astmodel.PropertyDefinition
 
 	propertyDescription := "mutually exclusive with all other properties"
-	for i, t := range oneOf.Types() {
+	err := oneOf.Types().ForEachError(func(t astmodel.Type, i int) error {
 		prop, err := s.convertToOneOfProperty(i, t)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		prop = prop.MakeOptional()
 		prop = prop.WithDescription(propertyDescription)
 
 		properties = append(properties, prop)
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	objectType := astmodel.NewObjectType().WithProperties(properties...)
@@ -475,21 +480,33 @@ func (s synthesizer) handleOneOf(left astmodel.Type, right astmodel.Type) (astmo
 	}
 
 	// if there is an equal case, use that:
-	for _, lType := range leftOneOf.Types() {
-		if lType.Equals(right) {
-			return lType, nil
+	{
+		var result astmodel.Type
+		leftOneOf.Types().ForEach(func(lType astmodel.Type, _ int) {
+			if lType.Equals(right) {
+				result = lType
+			}
+		})
+
+		if result != nil {
+			return result, nil
 		}
 	}
 
 	// otherwise intersect with each type:
 	var newTypes []astmodel.Type
-	for _, lType := range leftOneOf.Types() {
+	err := leftOneOf.Types().ForEachError(func(lType astmodel.Type, _ int) error {
 		newType, err := s.intersectTypes(lType, right)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		newTypes = append(newTypes, newType)
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	return astmodel.MakeOneOfType(newTypes), nil
@@ -564,12 +581,14 @@ func (synthesizer) handleMapObject(left astmodel.Type, right astmodel.Type) (ast
 func (s synthesizer) allOfObject(allOf astmodel.AllOfType) (astmodel.Type, error) {
 
 	var intersection astmodel.Type = astmodel.AnyType
-	for _, t := range allOf.Types() {
+	err := allOf.Types().ForEachError(func(t astmodel.Type, _ int) error {
 		var err error
 		intersection, err = s.intersectTypes(intersection, t)
-		if err != nil {
-			return nil, err
-		}
+		return err
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	return intersection, nil

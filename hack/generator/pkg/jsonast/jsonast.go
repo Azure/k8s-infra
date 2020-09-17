@@ -159,16 +159,16 @@ func (scanner *SchemaScanner) GenerateDefinitionsFromDeploymentTemplate(ctx cont
 		return nil, errors.Errorf("expected 'resources' property to be an array containing oneOf")
 	}
 
-	for _, oneType := range resourcesOneOf.Types() {
+	err = resourcesOneOf.Types().ForEachError(func(oneType astmodel.Type, _ int) error {
 		allOf, ok := oneType.(astmodel.AllOfType)
 		if !ok {
-			return nil, errors.Errorf("unexpected resource shape: not an allOf")
+			return errors.Errorf("unexpected resource shape: not an allOf")
 		}
 
 		var resourceRef astmodel.TypeName
 		var objectBase astmodel.TypeName
 		found := 0
-		for _, t := range allOf.Types() {
+		allOf.Types().ForEach(func(t astmodel.Type, _ int) {
 			if typeName, ok := t.(astmodel.TypeName); ok {
 				if !strings.Contains(strings.ToLower(typeName.Name()), "resourcebase") {
 					resourceRef = typeName
@@ -177,28 +177,34 @@ func (scanner *SchemaScanner) GenerateDefinitionsFromDeploymentTemplate(ctx cont
 				}
 				found++
 			}
-		}
+		})
 
 		if found != 2 {
-			return nil, errors.Errorf("unexpected resource shape: expected a ref to base and ref to object")
+			return errors.Errorf("unexpected resource shape: expected a ref to base and ref to object")
 		}
 
 		resourceDef, ok := scanner.findTypeDefinition(resourceRef)
 		if !ok {
-			return nil, errors.Errorf("unable to resolve resource definition for %v", resourceRef)
+			return errors.Errorf("unable to resolve resource definition for %v", resourceRef)
 		}
 
-		if resourceType, ok := resourceDef.Type().(*astmodel.ResourceType); !ok {
+		resourceType, ok := resourceDef.Type().(*astmodel.ResourceType)
+		if !ok {
 			// safety check
-			return nil, errors.Errorf("resource reference %v in deployment template did not resolve to resource type", resourceRef)
-		} else {
-			// now we will remove the existing resource definition and replace it with a new one that includes the base type
-			// first, reconstruct the allof with an anonymous type instead of the typename
-			specType := astmodel.MakeAllOfType([]astmodel.Type{objectBase, resourceType.SpecType()})
-			// now replace it
-			scanner.removeTypeDefinition(resourceRef)
-			scanner.addTypeDefinition(resourceDef.WithType(astmodel.NewAzureResourceType(specType, nil, resourceDef.Name())))
+			return errors.Errorf("resource reference %v in deployment template did not resolve to resource type", resourceRef)
 		}
+
+		// now we will remove the existing resource definition and replace it with a new one that includes the base type
+		// first, reconstruct the allof with an anonymous type instead of the typename
+		specType := astmodel.MakeAllOfType([]astmodel.Type{objectBase, resourceType.SpecType()})
+		// now replace it
+		scanner.removeTypeDefinition(resourceRef)
+		scanner.addTypeDefinition(resourceDef.WithType(astmodel.NewAzureResourceType(specType, nil, resourceDef.Name())))
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	return scanner.Definitions(), nil

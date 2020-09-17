@@ -27,13 +27,13 @@ type ResourceType struct {
 
 // NewResourceType defines a new resource type
 func NewResourceType(specType Type, statusType Type) *ResourceType {
-	return &ResourceType{
-		spec:                 specType,
-		status:               statusType,
+	result := &ResourceType{
 		isStorageVersion:     false,
 		owner:                nil,
 		InterfaceImplementer: MakeInterfaceImplementer(),
 	}
+
+	return result.WithSpec(specType).WithStatus(statusType)
 }
 
 func IsResourceType(t Type) bool {
@@ -140,6 +140,13 @@ func (definition *ResourceType) StatusType() Type {
 
 // WithSpec returns a new resource that has the specified spec type
 func (definition *ResourceType) WithSpec(specType Type) *ResourceType {
+
+	if specResource, ok := specType.(*ResourceType); ok {
+		// type is a resource, take its SpecType instead
+		// so we don't nest resources
+		return definition.WithSpec(specResource.SpecType())
+	}
+
 	result := *definition
 	result.spec = specType
 	return &result
@@ -147,6 +154,13 @@ func (definition *ResourceType) WithSpec(specType Type) *ResourceType {
 
 // WithStatus returns a new resource that has the specified status type
 func (definition *ResourceType) WithStatus(statusType Type) *ResourceType {
+
+	if specResource, ok := statusType.(*ResourceType); ok {
+		// type is a resource, take its StatusType instead
+		// so we don't nest resources
+		return definition.WithStatus(specResource.StatusType())
+	}
+
 	result := *definition
 	result.status = statusType
 	return &result
