@@ -46,17 +46,6 @@ func TypeEquals(left, right Type) bool {
 	return left.Equals(right)
 }
 
-// a helper to maintain the uniqueness of types in a slice
-func appendIfUniqueType(slice []Type, item Type) []Type {
-	for _, r := range slice {
-		if r.Equals(item) {
-			return slice
-		}
-	}
-
-	return append(slice, item)
-}
-
 // TypeAsObjectType extracts the underlying object type (if any)
 func TypeAsObjectType(t Type) (*ObjectType, error) {
 	rt, err := cachedAsObjectTypeVisitor.Visit(t, nil)
