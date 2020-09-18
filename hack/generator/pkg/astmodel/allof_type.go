@@ -23,7 +23,8 @@ type AllOfType struct {
 }
 
 // MakeAllOfType is a smart constructor for AllOfType,
-// maintaining the invariants
+// maintaining the invariants. If only one unique type
+// is passed, then the result will be that type, not an AllOf.
 func MakeAllOfType(types ...Type) Type {
 	uniqueTypes := MakeTypeSet()
 	for _, t := range types {

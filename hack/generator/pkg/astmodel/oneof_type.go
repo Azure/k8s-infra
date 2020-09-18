@@ -23,7 +23,8 @@ type OneOfType struct {
 }
 
 // MakeOneOfType is a smart constructor for a  OneOfType,
-// maintaining the invariants
+// maintaining the invariants. If only one unique type
+// is passed, the result will be that type, not a OneOf.
 func MakeOneOfType(types ...Type) Type {
 	uniqueTypes := MakeTypeSet()
 	for _, t := range types {
