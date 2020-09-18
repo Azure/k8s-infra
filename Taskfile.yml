@@ -21,7 +21,7 @@ tasks:
     desc: Perform all fast local pre-commit tasks.
     cmds: 
     - task: generator:quick-checks
-    - task: controller:generate-crds # required here to prevent it running twice in controller:quick-checks, remove once go-task dedupes dependencies
+    - task: controller:generate-kustomize # required here to prevent it running twice in controller:quick-checks, remove once go-task dedupes dependencies
     - task: controller:quick-checks
     - task: crossplane:generate-crds
     - task: crossplane:quick-checks
@@ -221,6 +221,17 @@ tasks:
     - cd _apis && controller-gen {{.CRD_OPTIONS}} rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=../config/crd/bases output:webhook:artifacts:config=../config/webhook
     vars:
       CRD_OPTIONS: "crd:crdVersions=v1,allowDangerousTypes=true"
+
+  controller:generate-kustomize:
+    desc: Run {{.GENERATOR_APP}} to generate the Kustomize file for registering CRDs.
+    deps: [generator:build, controller:generate-crds]
+    sources:
+      - "{{.GENERATOR_ROOT}}bin/{{.GENERATOR_APP}}"
+      - "{{.CONTROLLER_ROOT}}config/crd/bases/**/*.yaml"
+    generates:
+      - "{{.CONTROLLER_ROOT}}config/crd/kustomization.yaml"
+    cmds:
+      - "{{.GENERATOR_ROOT}}bin/{{.GENERATOR_APP}} gen-kustomize {{.CONTROLLER_ROOT}}config/crd"
 
   ############### Crossplane targets ###############
   crossplane:quick-checks:
