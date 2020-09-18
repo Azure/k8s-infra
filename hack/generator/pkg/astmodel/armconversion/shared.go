@@ -37,8 +37,7 @@ func (builder conversionBuilder) propertyConversionHandler(
 		}
 	}
 
-	return nil // TODO!!!
-	//panic(fmt.Sprintf("No property found for %s", toProp.PropertyName()))
+	panic(fmt.Sprintf("No property found for %s", toProp.PropertyName()))
 }
 
 type propertyConversionHandler = func(toProp *astmodel.PropertyDefinition, fromType *astmodel.ObjectType) []ast.Stmt
