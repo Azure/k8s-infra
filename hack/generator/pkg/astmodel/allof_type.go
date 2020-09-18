@@ -8,6 +8,7 @@ package astmodel
 import (
 	"fmt"
 	"go/ast"
+	"sort"
 	"strings"
 )
 
@@ -125,6 +126,10 @@ func (allOf AllOfType) String() string {
 	var subStrings []string
 	allOf.types.ForEach(func(t Type, _ int) {
 		subStrings = append(subStrings, t.String())
+	})
+
+	sort.Slice(subStrings, func(i, j int) bool {
+		return subStrings[i] < subStrings[j]
 	})
 
 	return fmt.Sprintf("(allOf: %s)", strings.Join(subStrings, ", "))
