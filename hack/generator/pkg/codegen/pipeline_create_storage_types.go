@@ -130,7 +130,7 @@ func (factory *StorageTypeFactory) visitObjectType(
 	}
 
 	ot := astmodel.NewObjectType().WithProperties(properties...)
-	return astmodel.MakeStorageType(ot), nil
+	return astmodel.NewStorageType(ot), nil
 }
 
 func (factory *StorageTypeFactory) makeStorageProperty(prop *astmodel.PropertyDefinition, propertyType astmodel.Type) *astmodel.PropertyDefinition {

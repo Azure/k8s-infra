@@ -53,7 +53,7 @@ func CollectArmSpecAndStatusDefinitions(definitions Types) TypeNameSet {
 			continue
 		}
 
-		if resourceType, ok := definitions.AsResourceType(def.Type()); ok {
+		if resourceType, ok := definitions.ResolveResourceType(def.Type()); ok {
 
 			armSpecName, err := findType(resourceType.spec)
 			if err != nil {

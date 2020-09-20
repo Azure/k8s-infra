@@ -23,8 +23,8 @@ func (st *StorageType) String() string {
 // StorageType is a Type
 var _ Type = &StorageType{}
 
-// MakeStorageType wraps an object type to indicate it's a dedicated storage version
-func MakeStorageType(objectType *ObjectType) *StorageType {
+// NewStorageType wraps an object type to indicate it's a dedicated storage version
+func NewStorageType(objectType *ObjectType) *StorageType {
 	return &StorageType{
 		objectType: objectType,
 	}
@@ -63,8 +63,8 @@ func (st *StorageType) AsDeclarations(codeGenerationContext *CodeGenerationConte
 
 // Equals decides if the types are the same
 func (st *StorageType) Equals(t Type) bool {
-	if ost, ok := t.(*StorageType); ok {
-		return TypeEquals(st.objectType, ost)
+	if other, ok := t.(*StorageType); ok {
+		return TypeEquals(&st.objectType, other)
 	}
 
 	return false

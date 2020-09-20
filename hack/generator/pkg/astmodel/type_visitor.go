@@ -281,5 +281,5 @@ func IdentityVisitOfStorageType(this *TypeVisitor, st *StorageType, ctx interfac
 		return nil, errors.Errorf("expected transformation of Storage type %v to return ObjectType, not %v", st.objectType, ot)
 	}
 
-	return MakeStorageType(ot), nil
+	return NewStorageType(ot), nil
 }

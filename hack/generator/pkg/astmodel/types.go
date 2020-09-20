@@ -94,8 +94,8 @@ func (types Types) Copy() Types {
 	return result
 }
 
-// AsResourceType returns the underlying resource type if the definition contains one or names one
-func (types Types) AsResourceType(aType Type) (*ResourceType, bool) {
+// ResolveResourceType returns the underlying resource type if the definition contains one or names one
+func (types Types) ResolveResourceType(aType Type) (*ResourceType, bool) {
 	switch t := aType.(type) {
 
 	case *ResourceType:
@@ -103,7 +103,7 @@ func (types Types) AsResourceType(aType Type) (*ResourceType, bool) {
 
 	case TypeName:
 		if def, ok := types[t]; ok {
-			return types.AsResourceType(def.theType)
+			return types.ResolveResourceType(def.theType)
 		}
 		return nil, false
 
