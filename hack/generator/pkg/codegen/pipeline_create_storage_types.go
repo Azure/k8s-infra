@@ -34,7 +34,7 @@ func createStorageTypes() PipelineStage {
 					continue
 				}
 
-				if types.IsEnumDefinition(&d) {
+				if _, ok := types.ResolveEnumDefinition(&d); ok {
 					// Skip Enum definitions as we use the base type for storage
 					continue
 				}
