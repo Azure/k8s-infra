@@ -13,7 +13,7 @@ import (
 
 // StorageType wraps an existing type to indicate that it is a storage focussed variation
 type StorageType struct {
-	objectType *ObjectType
+	objectType ObjectType
 }
 
 func (st *StorageType) String() string {
@@ -24,7 +24,7 @@ func (st *StorageType) String() string {
 var _ Type = &StorageType{}
 
 // NewStorageType wraps an object type to indicate it's a dedicated storage version
-func NewStorageType(objectType *ObjectType) *StorageType {
+func NewStorageType(objectType ObjectType) *StorageType {
 	return &StorageType{
 		objectType: objectType,
 	}
