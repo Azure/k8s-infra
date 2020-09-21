@@ -71,7 +71,6 @@ func makeStorageTypesVisitor(types astmodel.Types) astmodel.TypeVisitor {
 	result.VisitTypeName = factory.visitTypeName
 	result.VisitObjectType = factory.visitObjectType
 	result.VisitArmType = factory.visitArmType
-	//result.VisitResourceType = factory.visitResourceType
 
 	return result
 }
