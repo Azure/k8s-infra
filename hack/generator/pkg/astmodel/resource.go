@@ -280,20 +280,18 @@ func (definition *ResourceType) AsDeclarations(codeGenerationContext *CodeGenera
 		},
 	}
 
-	comments :=
-		[]*ast.Comment{
-			{
-				Text: "// +kubebuilder:object:root=true\n",
-			},
-		}
+	var comments []*ast.Comment
 
-	if definition.isStorageVersion {
-		comments = append(comments, &ast.Comment{
-			Text: "// +kubebuilder:storageversion\n",
-		})
+	addComment(&comments, "// +kubebuilder:object:root=true")
+	if definition.status != nil {
+		addComment(&comments, "// +kubebuilder:subresource:status")
 	}
 
-	addDocComments(&comments, description, 200)
+	if definition.isStorageVersion {
+		addComment(&comments, "// +kubebuilder:storageversion")
+	}
+
+	addWrappedComments(&comments, description, 200)
 
 	var declarations []ast.Decl
 	resourceDeclaration := &ast.GenDecl{
@@ -355,7 +353,7 @@ func (definition *ResourceType) resourceListTypeDecls(
 			},
 		}
 
-	addDocComments(&comments, description, 200)
+	addWrappedComments(&comments, description, 200)
 
 	return []ast.Decl{
 		&ast.GenDecl{
