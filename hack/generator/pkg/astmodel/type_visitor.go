@@ -271,15 +271,19 @@ func IdentityVisitOfAllOfType(this *TypeVisitor, it AllOfType, ctx interface{}) 
 }
 
 func IdentityVisitOfStorageType(this *TypeVisitor, st *StorageType, ctx interface{}) (Type, error) {
-	newType, err := this.Visit(&st.objectType, ctx)
+	nt, err := this.Visit(&st.objectType, ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to visit storage type %v", st.objectType)
 	}
 
-	ot, ok := newType.(*ObjectType)
-	if !ok {
-		return nil, errors.Errorf("expected transformation of Storage type %v to return ObjectType, not %v", st.objectType, ot)
-	}
+	switch newType := nt.(type) {
+	case *ObjectType:
+		return NewStorageType(*newType), nil
 
-	return NewStorageType(*ot), nil
+	case *StorageType:
+		return newType, nil
+
+	default:
+		return nil, errors.Errorf("expected transformation of Storage type %v to return ObjectType, not %v", st.objectType, newType)
+	}
 }
