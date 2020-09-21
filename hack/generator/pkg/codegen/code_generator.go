@@ -99,7 +99,7 @@ func (generator *CodeGenerator) Generate(ctx context.Context) error {
 	defs := make(astmodel.Types)
 	for i, stage := range generator.pipeline {
 		klog.V(0).Infof("Pipeline stage %d/%d: %s", i+1, len(generator.pipeline), stage.description)
-		// Defensive copy so that we can compare types in vs out
+		// Defensive copy (in case the pipeline modifies its inputs) so that we can compare types in vs out
 		defsOut, err := stage.Action(ctx, defs.Copy())
 		if err != nil {
 			return errors.Wrapf(err, "Failed during pipeline stage %d/%d: %s", i+1, len(generator.pipeline), stage.description)
