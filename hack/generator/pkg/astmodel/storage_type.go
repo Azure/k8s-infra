@@ -8,7 +8,6 @@ package astmodel
 import (
 	"fmt"
 	"go/ast"
-	"strings"
 )
 
 // StorageType wraps an existing type to indicate that it is a storage focussed variation
@@ -68,24 +67,4 @@ func (st *StorageType) Equals(t Type) bool {
 	}
 
 	return false
-}
-
-// CreateStoragePackageReference creates a reference for a storage package, given the original package reference
-func CreateStoragePackageReference(ref PackageReference) (PackageReference, error) {
-	group, pkg, err := ref.GroupAndPackage()
-	if err != nil {
-		return PackageReference{}, err
-	}
-
-	return MakeLocalPackageReference(group, pkg+"s"), nil
-}
-
-// IsStoragePackageReference returns true if the reference is to a package containing storage types
-func IsStoragePackageReference(ref PackageReference) bool {
-	_, pkg, err := ref.GroupAndPackage()
-	if err != nil {
-		return false
-	}
-
-	return strings.HasSuffix(pkg, "s")
 }

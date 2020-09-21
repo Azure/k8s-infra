@@ -45,8 +45,8 @@ func createStorageTypes() PipelineStage {
 					continue
 				}
 
-				finalDefn := def.WithDescription(descriptionForStorageVariant(d))
-				storageTypes[finalDefn.Name()] = finalDefn
+				finalDef := def.WithDescription(descriptionForStorageVariant(d))
+				storageTypes[finalDef.Name()] = finalDef
 			}
 
 			if len(errs) > 0 {
@@ -151,17 +151,14 @@ func (factory *StorageTypeFactory) makeStorageProperty(
 
 // mapTypeName maps an existing type name into the right package for the matching storage type
 // Returns the original instance for any type that does not need to be mapped to storage
-func (factory *StorageTypeFactory) mapTypeName(name astmodel.TypeName) (astmodel.TypeName, error) {
-	if !name.PackageReference.IsLocalPackage() {
+func (factory *StorageTypeFactory) mapTypeNameIntoStoragePackage(name astmodel.TypeName) (astmodel.TypeName, error) {
+	localRef, ok := name.PackageReference.AsLocalPackage()
+	if !ok {
 		// Don't need to map non-local packages
 		return name, nil
 	}
 
-	storagePackage, err := astmodel.CreateStoragePackageReference(name.PackageReference)
-	if err != nil {
-		return astmodel.TypeName{}, err
-	}
-
+	storagePackage := astmodel.MakeStoragePackageReference(localRef)
 	newName := astmodel.MakeTypeName(storagePackage, name.Name())
 	return newName, nil
 }
@@ -175,10 +172,7 @@ func (factory *StorageTypeFactory) visitArmType(
 }
 
 func descriptionForStorageVariant(definition astmodel.TypeDefinition) []string {
-	_, pkg, err := definition.Name().PackageReference.GroupAndPackage()
-	if err != nil {
-		panic(err)
-	}
+	pkg := definition.Name().PackageReference.PackageName()
 
 	result := []string{
 		fmt.Sprintf("Storage version of %v.%v", pkg, definition.Name().Name()),
