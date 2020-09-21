@@ -105,8 +105,7 @@ func (factory *StorageTypeFactory) visitTypeName(_ *astmodel.TypeVisitor, name a
 func (factory *StorageTypeFactory) visitObjectType(
 	visitor *astmodel.TypeVisitor,
 	object *astmodel.ObjectType,
-	ctx interface{},
-) (astmodel.Type, error) {
+	ctx interface{}) (astmodel.Type, error) {
 	vc := ctx.(StorageTypesVisitorContext)
 	oc := vc.forObject(object)
 
@@ -131,7 +130,9 @@ func (factory *StorageTypeFactory) visitObjectType(
 	return astmodel.NewStorageType(*ot), nil
 }
 
-func (factory *StorageTypeFactory) makeStorageProperty(prop *astmodel.PropertyDefinition, propertyType astmodel.Type) *astmodel.PropertyDefinition {
+func (factory *StorageTypeFactory) makeStorageProperty(
+	prop *astmodel.PropertyDefinition,
+	propertyType astmodel.Type) *astmodel.PropertyDefinition {
 	p := prop.WithType(propertyType).
 		MakeOptional().
 		WithoutValidation().
@@ -168,8 +169,7 @@ func (factory *StorageTypeFactory) mapTypeName(name astmodel.TypeName) (*astmode
 func (factory *StorageTypeFactory) visitArmType(
 	_ *astmodel.TypeVisitor,
 	it *astmodel.ArmType,
-	_ interface{},
-) (astmodel.Type, error) {
+	_ interface{}) (astmodel.Type, error) {
 	// We don't want to do anything with ARM types
 	return it, nil
 }
