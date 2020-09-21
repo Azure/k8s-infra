@@ -63,14 +63,3 @@ func (at *ArmType) String() string {
 func (at *ArmType) ObjectType() ObjectType {
 	return at.objectType
 }
-
-// IsArmType returns true if the passed type is a Arm type; false otherwise.
-func IsArmType(t Type) bool {
-	_, ok := t.(*ArmType)
-	return ok
-}
-
-// IsArmDefinition returns true if the passed definition is for a Arm type; false otherwise.
-func IsArmDefinition(definition *TypeDefinition) bool {
-	return IsArmType(definition.theType)
-}
