@@ -47,7 +47,6 @@ func createStorageTypes() PipelineStage {
 
 				finalDefn := def.WithDescription(descriptionForStorageVariant(d))
 				storageTypes[finalDefn.Name()] = finalDefn
-
 			}
 
 			if len(errs) > 0 {
