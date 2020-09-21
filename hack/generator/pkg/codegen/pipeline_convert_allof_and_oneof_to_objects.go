@@ -48,10 +48,9 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 				return this.Visit(object, ctx)
 			}
 
-			originalVisitOneOf := visitor.VisitOneOfType
 			visitor.VisitOneOfType = func(this *astmodel.TypeVisitor, it astmodel.OneOfType, ctx interface{}) (astmodel.Type, error) {
 				// process children first so that allOfs are resolved
-				result, err := originalVisitOneOf(this, it, ctx)
+				result, err := astmodel.IdentityVisitOfOneOfType(this, it, ctx)
 				if err != nil {
 					return nil, err
 				}
