@@ -151,19 +151,19 @@ func (factory *StorageTypeFactory) makeStorageProperty(
 
 // mapTypeName maps an existing type name into the right package for the matching storage type
 // Returns the original instance for any type that does not need to be mapped to storage
-func (factory *StorageTypeFactory) mapTypeName(name astmodel.TypeName) (*astmodel.TypeName, error) {
+func (factory *StorageTypeFactory) mapTypeName(name astmodel.TypeName) (astmodel.TypeName, error) {
 	if !name.PackageReference.IsLocalPackage() {
 		// Don't need to map non-local packages
-		return &name, nil
+		return name, nil
 	}
 
 	storagePackage, err := astmodel.CreateStoragePackageReference(name.PackageReference)
 	if err != nil {
-		return nil, err
+		return astmodel.TypeName{}, err
 	}
 
 	newName := astmodel.MakeTypeName(storagePackage, name.Name())
-	return &newName, nil
+	return newName, nil
 }
 
 func (factory *StorageTypeFactory) visitArmType(
