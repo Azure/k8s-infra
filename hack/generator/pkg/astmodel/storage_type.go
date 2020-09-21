@@ -74,7 +74,7 @@ func (st *StorageType) Equals(t Type) bool {
 func CreateStoragePackageReference(ref PackageReference) (PackageReference, error) {
 	group, pkg, err := ref.GroupAndPackage()
 	if err != nil {
-		panic(err)
+		return PackageReference{}, err
 	}
 
 	return MakeLocalPackageReference(group, pkg+"s"), nil
