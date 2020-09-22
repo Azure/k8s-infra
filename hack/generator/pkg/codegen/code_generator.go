@@ -89,7 +89,6 @@ func corePipelineStages(idFactory astmodel.IdentifierFactory, configuration *con
 		// Safety checks at the end:
 		ensureDefinitionsDoNotUseAnyTypes(),
 		checkForMissingStatusInformation(),
-		simplifyDefinitions(),
 	}
 }
 
