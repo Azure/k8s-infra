@@ -39,15 +39,19 @@ func (k *Client) GetObject(ctx context.Context, namespacedName types.NamespacedN
 	}
 
 	if err := k.Client.Get(ctx, namespacedName, obj); err != nil {
-		// TODO: Would we rather the caller do this?
-		if apierrors.IsNotFound(err) {
-			return nil, nil
-		}
-
 		return nil, err
 	}
 
 	return obj, nil
+}
+
+func (k *Client) GetObjectOrDefault(ctx context.Context, namespacedName types.NamespacedName, gvk schema.GroupVersionKind) (runtime.Object, error) {
+	result, err := k.GetObject(ctx, namespacedName, gvk)
+	if apierrors.IsNotFound(err) {
+		return nil, nil
+	}
+
+	return result, err
 }
 
 func (k *Client) PatchHelper(

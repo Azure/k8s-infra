@@ -121,7 +121,7 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := gr.Log.WithValues("name", req.Name, "namespace", req.Namespace)
 
-	obj, err := gr.KubeClient.GetObject(ctx, req.NamespacedName, gr.GVK)
+	obj, err := gr.KubeClient.GetObjectOrDefault(ctx, req.NamespacedName, gr.GVK)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
