@@ -19,10 +19,10 @@ const (
 )
 
 /*
- * mapTypeName() tests
+ * mapTypeNameIntoStoragePackage() tests
  */
 
-func TestMapTypeName_GivenObjectReference_ReturnsNameInStoragePackage(t *testing.T) {
+func TestMapTypeNameIntoStoragePackage_GivenObjectReference_ReturnsNameInStoragePackage(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	objectName := createNameForTest(testObjectName)
@@ -32,7 +32,7 @@ func TestMapTypeName_GivenObjectReference_ReturnsNameInStoragePackage(t *testing
 		types: types,
 	}
 
-	storageName, err := factory.mapTypeName(objectName)
+	storageName, err := factory.mapTypeNameIntoStoragePackage(objectName)
 	g.Expect(err).To(BeNil())
 
 	grp, err := storageName.PackageReference.Group()

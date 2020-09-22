@@ -94,7 +94,7 @@ func (factory *StorageTypeFactory) visitTypeName(_ *astmodel.TypeVisitor, name a
 	}
 
 	// Map the type name into our storage namespace
-	visitedName, err := factory.mapTypeName(name)
+	visitedName, err := factory.mapTypeNameIntoStoragePackage(name)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to map name into storage namespace")
 	}
@@ -149,7 +149,7 @@ func (factory *StorageTypeFactory) makeStorageProperty(
 	return p
 }
 
-// mapTypeName maps an existing type name into the right package for the matching storage type
+// mapTypeNameIntoStoragePackage maps an existing type name into the right package for the matching storage type
 // Returns the original instance for any type that does not need to be mapped to storage
 func (factory *StorageTypeFactory) mapTypeNameIntoStoragePackage(name astmodel.TypeName) (astmodel.TypeName, error) {
 	localRef, ok := name.PackageReference.AsLocalPackage()
