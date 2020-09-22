@@ -16,7 +16,7 @@ import (
 func simplifyDefinitions() PipelineStage {
 	return MakePipelineStage(
 		"simplifyDefinitions",
-		"Simplify definitions",
+		"Flatten definitions by removing wrapper types",
 		func(ctx context.Context, defs astmodel.Types) (astmodel.Types, error) {
 			visitor := createSimplifyingVisitor()
 			var errs []error
@@ -26,9 +26,9 @@ func simplifyDefinitions() PipelineStage {
 				if err != nil {
 					errs = append(errs, err)
 				} else {
-					result[d.Name()] = *d
+					result.Add(*d)
 					if !def.Type().Equals(d.Type()) {
-						klog.V(3).Infof("Simplified %v", def.Name())
+						klog.V(3).Infof("Simplified %v from %v to %v", def.Name(), def.Type(), d.Type())
 					}
 				}
 			}
@@ -44,9 +44,15 @@ func simplifyDefinitions() PipelineStage {
 func createSimplifyingVisitor() astmodel.TypeVisitor {
 	result := astmodel.MakeTypeVisitor()
 
+	// Unwrap ArmTypes, promoting the object within
 	result.VisitArmType = func(tv *astmodel.TypeVisitor, at *astmodel.ArmType, ctx interface{}) (astmodel.Type, error) {
 		ot := at.ObjectType()
 		return tv.Visit(&ot, ctx)
+	}
+
+	// Don't need to waste type iterating within complex objects
+	result.VisitObjectType = func(_ *astmodel.TypeVisitor, ot *astmodel.ObjectType, _ interface{}) (astmodel.Type, error) {
+		return ot, nil
 	}
 
 	return result
