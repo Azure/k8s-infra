@@ -79,7 +79,7 @@ func Test_GetFullAzureNameAndResourceGroup_ChildResource(t *testing.T) {
 			},
 		},
 	}
-	err := resolver.Client.Client.Create(ctx, a)
+	err := resolver.client.Client.Create(ctx, a)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	b := &batch.BatchAccountsPool{

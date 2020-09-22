@@ -16,12 +16,12 @@ import (
 )
 
 type Resolver struct {
-	Client *kubeclient.Client
+	client *kubeclient.Client
 }
 
 func NewResolver(client *kubeclient.Client) *Resolver {
 	return &Resolver{
-		Client: client,
+		client: client,
 	}
 }
 
@@ -38,7 +38,7 @@ func (r *Resolver) GetFullAzureNameAndResourceGroup(ctx context.Context, obj gen
 	if owner != nil {
 		var ownerGvk schema.GroupVersionKind
 		found := false
-		for gvk := range r.Client.Scheme.AllKnownTypes() {
+		for gvk := range r.client.Scheme.AllKnownTypes() {
 			if gvk.Group == owner.Group && gvk.Kind == owner.Kind {
 				if !found {
 					ownerGvk = gvk
@@ -64,7 +64,7 @@ func (r *Resolver) GetFullAzureNameAndResourceGroup(ctx context.Context, obj gen
 			Name:      owner.Name,
 		}
 
-		ownerObj, err := r.Client.GetObject(ctx, ownerNamespacedName, ownerGvk)
+		ownerObj, err := r.client.GetObject(ctx, ownerNamespacedName, ownerGvk)
 		if err != nil {
 			return "", "", errors.Wrapf(err, "couldn't find owner %s of %s", owner.Name, obj.GetName())
 		}
