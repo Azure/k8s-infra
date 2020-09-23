@@ -12,7 +12,11 @@ limitations under the License.
 */
 
 // This package is taken from https://github.com/kubernetes-sigs/cluster-api/tree/master/util/patch with slight modifications
-// to suit our use-case
+// Those modifications are:
+//  - Removing stuff associated with conditions, which we're not currently using
+//  - Making patch of status and spec happen sequentially and return error if one fails as opposed to returning an aggregate
+//    error of both. This just makes it a bit easier to determine why there was a failure as you can use the standard
+//    apierrors methods.
 // TODO: Ensure we add attribution in License file once we have one
 
 package patch

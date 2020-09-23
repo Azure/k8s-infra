@@ -12,6 +12,7 @@ import (
 	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/armresourceresolver"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
+	"github.com/Azure/k8s-infra/hack/generated/pkg/util/patch"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
@@ -164,30 +165,31 @@ func (gr *GenericReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 func (gr *GenericReconciler) DetermineReconcileAction(data *ReconcileMetadata) (ReconcileAction, ReconcileActionFunc, error) {
+	state := data.GetResourceProvisioningState()
 
 	if !data.metaObj.GetDeletionTimestamp().IsZero() {
-		if data.resourceProvisioningState != nil && *data.resourceProvisioningState == armclient.DeletingProvisioningState {
+		if state == armclient.DeletingProvisioningState {
 			return ReconcileActionWatchDelete, gr.MonitorDelete, nil
 		}
 		return ReconcileActionBeginDelete, gr.StartDeleteOfResource, nil
 	}
 
-	hasChanged, err := genruntime.HasResourceSpecHashChanged(data.metaObj)
+	hasChanged, err := data.HasResourceSpecHashChanged()
 	if err != nil {
 		return ReconcileActionNoAction, NoAction, errors.Wrap(err, "comparing resource hash")
 	}
 
 	if !hasChanged && data.IsTerminalProvisioningState() {
-		msg := fmt.Sprintf("resource spec has not changed and resource is in terminal state: %q", *data.resourceProvisioningState)
+		msg := fmt.Sprintf("resource spec has not changed and resource is in terminal state: %q", state)
 		data.log.V(1).Info(msg)
 		return ReconcileActionNoAction, NoAction, nil
 	}
 
-	if data.resourceProvisioningState != nil && *data.resourceProvisioningState == armclient.DeletingProvisioningState {
+	if state == armclient.DeletingProvisioningState {
 		return ReconcileActionNoAction, NoAction, errors.Errorf("resource is currently deleting; it can not be applied")
 	}
 
-	if data.deploymentId != "" {
+	if data.GetDeploymentIdOrDefault() != "" {
 		// There is an ongoing deployment we need to monitor
 		return ReconcileActionWatchDeployment, gr.MonitorDeployment, nil
 	}
@@ -219,9 +221,9 @@ func (gr *GenericReconciler) StartDeleteOfResource(
 		return ctrl.Result{}, errors.Wrapf(err, "converting %q to armResourceSpec", data.metaObj.GetName())
 	}
 
-	err = gr.KubeClient.PatchHelper(ctx, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
+	err = gr.Patch(ctx, data, func(ctx context.Context, mutData *ReconcileMetadata) error {
 		if resource.GetId() != "" {
-			emptyStatus, err := NewEmptyArmResourceStatus(data.metaObj)
+			emptyStatus, err := NewEmptyArmResourceStatus(mutData.metaObj)
 			if err != nil {
 				return errors.Wrapf(err, "creating empty status for %q", resource.GetId())
 			}
@@ -230,10 +232,9 @@ func (gr *GenericReconciler) StartDeleteOfResource(
 			if err != nil {
 				return errors.Wrapf(err, "deleting resource %q", resource.Spec().GetType())
 			}
-
-			genruntime.SetResourceState(data.metaObj, string(armclient.DeletingProvisioningState))
+			data.SetResourceProvisioningState(armclient.DeletingProvisioningState)
 		} else {
-			controllerutil.RemoveFinalizer(mutObj, GenericControllerFinalizer)
+			controllerutil.RemoveFinalizer(mutData.metaObj, GenericControllerFinalizer)
 		}
 
 		return nil
@@ -277,8 +278,8 @@ func (gr *GenericReconciler) MonitorDelete(
 		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
-	err = gr.KubeClient.PatchHelper(ctx, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
-		controllerutil.RemoveFinalizer(mutObj, GenericControllerFinalizer)
+	err = gr.Patch(ctx, data, func(ctx context.Context, mutData *ReconcileMetadata) error {
+		controllerutil.RemoveFinalizer(mutData.metaObj, GenericControllerFinalizer)
 		return nil
 	})
 
@@ -296,13 +297,13 @@ func (gr *GenericReconciler) CreateDeployment(ctx context.Context, action Reconc
 	data.log.Info("Starting new deployment to Azure", "action", string(action), "id", deployment.Id)
 	gr.Recorder.Event(data.metaObj, v1.EventTypeNormal, string(action), fmt.Sprintf("Starting new deployment to Azure with ID %q", deployment.Id))
 
-	err = gr.KubeClient.PatchHelper(ctx, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
+	err = gr.Patch(ctx, data, func(ctx context.Context, mutData *ReconcileMetadata) error {
 		deployment, err = gr.ARMClient.CreateDeployment(ctx, deployment)
 		if err != nil {
 			return err
 		}
 
-		err = updateMetaObject(mutObj, deployment, nil) // Status is always nil here
+		err = mutData.Update(deployment, nil) // Status is always nil here
 		if err != nil {
 			return err
 		}
@@ -334,7 +335,7 @@ func (gr *GenericReconciler) MonitorDeployment(ctx context.Context, action Recon
 	}
 
 	var status genruntime.ArmTransformer
-	err = gr.KubeClient.PatchHelper(ctx, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
+	err = gr.Patch(ctx, data, func(ctx context.Context, mutData *ReconcileMetadata) error {
 
 		deployment, err = gr.ARMClient.GetDeployment(ctx, deployment.Id)
 		if err != nil {
@@ -342,7 +343,7 @@ func (gr *GenericReconciler) MonitorDeployment(ctx context.Context, action Recon
 		}
 
 		if deployment.Properties != nil && deployment.Properties.ProvisioningState == armclient.SucceededProvisioningState {
-			// TODO: There's some overlap here with what updateMetaObject does
+			// TODO: There's some overlap here with what Update does
 			if len(deployment.Properties.OutputResources) == 0 {
 				return errors.Errorf("template deployment didn't have any output resources")
 			}
@@ -353,7 +354,7 @@ func (gr *GenericReconciler) MonitorDeployment(ctx context.Context, action Recon
 			}
 		}
 
-		err = updateMetaObject(mutObj, deployment, status)
+		err = mutData.Update(deployment, status)
 		if err != nil {
 			return errors.Wrap(err, "updating metaObj")
 		}
@@ -368,16 +369,16 @@ func (gr *GenericReconciler) MonitorDeployment(ctx context.Context, action Recon
 	}
 
 	// TODO: Could somehow have a method that grouped both of these calls
-	currentState := genruntime.GetResourceProvisioningStateOrDefault(data.metaObj)
+	currentState := data.GetResourceProvisioningState()
 	data.log.Info("Monitoring deployment", "action", string(action), "id", deployment.Id, "state", currentState)
 	gr.Recorder.Event(data.metaObj, v1.EventTypeNormal, string(action), fmt.Sprintf("Monitoring Azure deployment ID=%q, state=%q", deployment.Id, currentState))
 
 	// We do two patches here because if we remove the deployment before we've actually confirmed we persisted
 	// the resource ID, then we will be unable to get the resource ID the next time around. Only once we have
 	// persisted the resource ID can we safely delete the deployment
-	if deployment.IsTerminalProvisioningState() && !genruntime.GetShouldPreserveDeployment(data.metaObj) {
+	if deployment.IsTerminalProvisioningState() && !data.GetShouldPreserveDeployment() {
 		data.log.Info("Deleting deployment", "ID", deployment.Id)
-		err = gr.KubeClient.PatchHelper(ctx, data.metaObj, func(ctx context.Context, mutObj genruntime.MetaObject) error {
+		err = gr.Patch(ctx, data, func(ctx context.Context, mutData *ReconcileMetadata) error {
 			err := gr.ARMClient.DeleteDeployment(ctx, deployment.Id)
 			if err != nil {
 				return errors.Wrapf(err, "deleting deployment %q", deployment.Id)
@@ -385,7 +386,7 @@ func (gr *GenericReconciler) MonitorDeployment(ctx context.Context, action Recon
 			deployment.Id = ""
 			deployment.Name = ""
 
-			err = updateMetaObject(mutObj, deployment, status)
+			err = mutData.Update(deployment, status)
 			if err != nil {
 				return errors.Wrap(err, "updating metaObj")
 			}
@@ -420,7 +421,7 @@ func (gr *GenericReconciler) constructArmResource(ctx context.Context, data *Rec
 		return nil, errors.Wrapf(err, "converting to armResourceSpec")
 	}
 	// TODO: Not setting status here
-	resource := genruntime.NewArmResource(armResourceSpec, nil, genruntime.GetResourceId(data.metaObj))
+	resource := genruntime.NewArmResource(armResourceSpec, nil, data.GetResourceIdOrDefault())
 
 	return resource, nil
 }
@@ -479,8 +480,8 @@ func (gr *GenericReconciler) resourceSpecToDeployment(ctx context.Context, data 
 	}
 
 	// TODO: get other deployment details from status and avoid creating a new deployment
-	deploymentId, deploymentIdOk := genruntime.GetDeploymentId(data.metaObj)
-	deploymentName, deploymentNameOk := genruntime.GetDeploymentName(data.metaObj)
+	deploymentId, deploymentIdOk := data.GetDeploymentId()
+	deploymentName, deploymentNameOk := data.GetDeploymentName()
 	if deploymentIdOk != deploymentNameOk {
 		return nil, errors.Errorf(
 			"deploymentIdOk: %t, deploymentNameOk: %t expected to match, but didn't",
@@ -500,4 +501,31 @@ func (gr *GenericReconciler) resourceSpecToDeployment(ctx context.Context, data 
 		deployment = gr.ARMClient.NewDeployment(resourceGroupName, deploymentName, typedArmSpec)
 	}
 	return deployment, nil
+}
+
+func (gr *GenericReconciler) Patch(
+	ctx context.Context,
+	data *ReconcileMetadata,
+	mutator func(context.Context, *ReconcileMetadata) error) error {
+
+	// TODO: it's sorta awkward we have to reach into KubeClient to get its client here
+	patcher, err := patch.NewHelper(data.metaObj, gr.KubeClient.Client)
+	if err != nil {
+		return err
+	}
+
+	if err := mutator(ctx, data); err != nil {
+		return err
+	}
+
+	if err := patcher.Patch(ctx, data.metaObj); err != nil {
+		// Don't wrap this error so that we can easily use apierrors to classify it elsewhere
+		return err
+	}
+
+	// fill resource with patched updates
+	return gr.KubeClient.Client.Get(ctx, client.ObjectKey{
+		Namespace: data.metaObj.GetNamespace(),
+		Name:      data.metaObj.GetName(),
+	}, data.metaObj)
 }

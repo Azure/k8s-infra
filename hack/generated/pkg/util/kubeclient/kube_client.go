@@ -7,8 +7,6 @@ package kubeclient
 
 import (
 	"context"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/util/patch"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -52,30 +50,4 @@ func (k *Client) GetObjectOrDefault(ctx context.Context, namespacedName types.Na
 	}
 
 	return result, err
-}
-
-func (k *Client) PatchHelper(
-	ctx context.Context,
-	obj genruntime.MetaObject,
-	mutator func(context.Context, genruntime.MetaObject) error) error {
-
-	patcher, err := patch.NewHelper(obj, k.Client)
-	if err != nil {
-		return err
-	}
-
-	if err := mutator(ctx, obj); err != nil {
-		return err
-	}
-
-	if err := patcher.Patch(ctx, obj); err != nil {
-		// Don't wrap this error so that we can easily use apierrors to classify it elsewhere
-		return err
-	}
-
-	// fill resource with patched updates
-	return k.Client.Get(ctx, client.ObjectKey{
-		Namespace: obj.GetNamespace(),
-		Name:      obj.GetName(),
-	}, obj)
 }
