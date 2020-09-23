@@ -35,7 +35,6 @@ func ResourceSpecToArmResourceSpec(
 	specFieldPtr := reflect.New(specField.Type())
 	specFieldPtr.Elem().Set(specField)
 
-	// TODO: how to check that this doesn't fail
 	spec := specFieldPtr.Interface()
 
 	armTransformer, ok := spec.(genruntime.ArmTransformer)
@@ -43,7 +42,7 @@ func ResourceSpecToArmResourceSpec(
 		return "", nil, errors.Errorf("spec was of type %T which doesn't implement genruntime.ArmTransformer", spec)
 	}
 
-	resourceGroupName, azureName, err := resolver.GetFullAzureNameAndResourceGroup(ctx, metaObject)
+	resourceGroupName, azureName, err := resolver.GetResourceGroupAndFullAzureName(ctx, metaObject)
 	if err != nil {
 		return "", nil, err
 	}

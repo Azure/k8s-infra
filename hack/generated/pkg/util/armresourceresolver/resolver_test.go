@@ -49,7 +49,7 @@ func Test_GetFullAzureNameAndResourceGroup_TopLevelResource(t *testing.T) {
 		},
 	}
 
-	rg, fullName, err := resolver.GetFullAzureNameAndResourceGroup(ctx, a)
+	rg, fullName, err := resolver.GetResourceGroupAndFullAzureName(ctx, a)
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Expect(rg).To(Equal(resourceGroupName))
 	g.Expect(fullName).To(Equal(name))
@@ -93,7 +93,7 @@ func Test_GetFullAzureNameAndResourceGroup_ChildResource(t *testing.T) {
 		},
 	}
 
-	rg, fullName, err := resolver.GetFullAzureNameAndResourceGroup(ctx, b)
+	rg, fullName, err := resolver.GetResourceGroupAndFullAzureName(ctx, b)
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Expect(rg).To(Equal(resourceGroupName))
 	g.Expect(fullName).To(Equal(fmt.Sprintf("%s/%s", parentName, childName)))

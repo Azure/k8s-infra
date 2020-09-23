@@ -23,10 +23,6 @@ type ReconcileMetadata struct {
 }
 
 func NewReconcileMetadata(metaObj genruntime.MetaObject, log logr.Logger) *ReconcileMetadata {
-	// TODO: We could do some sort of lazy-load thing here so that we don't have to preload
-	// TODO: stuff we don't need... but for now not bothering as I am not sure if there is a
-	// TODO: clean generic way to do that in go and also don't know perf impact of doing it all up
-	// TODO: front like we are now
 
 	var provisioningState *armclient.ProvisioningState
 	stateStr := genruntime.GetResourceProvisioningStateOrDefault(metaObj)

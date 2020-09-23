@@ -8,11 +8,13 @@ package armresourceresolver
 import (
 	"context"
 	"fmt"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
+
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
+	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
 )
 
 type Resolver struct {
@@ -25,10 +27,10 @@ func NewResolver(client *kubeclient.Client) *Resolver {
 	}
 }
 
-// GetFullAzureNameAndResourceGroup gets the full name for use in creating a resource. This name includes
+// GetResourceGroupAndFullAzureName gets the full name for use in creating a resource. This name includes
 // the full "path" to the resource being deployed. For example, a Virtual Network Subnet's name might be:
 // "myvnet/mysubnet"
-func (r *Resolver) GetFullAzureNameAndResourceGroup(ctx context.Context, obj genruntime.MetaObject) (string, string, error) {
+func (r *Resolver) GetResourceGroupAndFullAzureName(ctx context.Context, obj genruntime.MetaObject) (string, string, error) {
 	owner := obj.Owner()
 
 	if obj.GetObjectKind().GroupVersionKind().Kind == "ResourceGroup" {
@@ -38,6 +40,7 @@ func (r *Resolver) GetFullAzureNameAndResourceGroup(ctx context.Context, obj gen
 	if owner != nil {
 		var ownerGvk schema.GroupVersionKind
 		found := false
+		// TODO: We need to find the specific storage version GVK...
 		for gvk := range r.client.Scheme.AllKnownTypes() {
 			if gvk.Group == owner.Group && gvk.Kind == owner.Kind {
 				if !found {
@@ -74,7 +77,7 @@ func (r *Resolver) GetFullAzureNameAndResourceGroup(ctx context.Context, obj gen
 			return "", "", errors.Errorf("owner %s (%s) was not of type genruntime.MetaObject", ownerNamespacedName, ownerGvk)
 		}
 
-		rgName, ownerName, err := r.GetFullAzureNameAndResourceGroup(ctx, ownerMeta)
+		rgName, ownerName, err := r.GetResourceGroupAndFullAzureName(ctx, ownerMeta)
 		if err != nil {
 			return "", "", errors.Wrapf(err, "failed to get full Azure name and resource group for %s", ownerNamespacedName)
 		}

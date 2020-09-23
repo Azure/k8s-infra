@@ -79,9 +79,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TODO: Does this actually do something?
-	// +kubebuilder:scaffold:builder
-
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")

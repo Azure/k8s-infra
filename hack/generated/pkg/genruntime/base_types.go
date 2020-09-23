@@ -9,11 +9,12 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"strconv"
+
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"strconv"
 )
 
 const (
@@ -63,11 +64,7 @@ func GetDeploymentId(metaObj MetaObject) (string, bool) {
 }
 
 func GetDeploymentIdOrDefault(metaObj MetaObject) string {
-	id, ok := GetDeploymentId(metaObj)
-	if !ok {
-		return ""
-	}
-
+	id, _ := GetDeploymentId(metaObj)
 	return id
 }
 
@@ -205,6 +202,9 @@ type ArmResourceSpec interface {
 
 // ArmResourceStatus is an ARM resource status
 type ArmResourceStatus interface {
+	// TODO: Unsure what the actual content of this interface needs to be.
+	// TODO: We need to define it and generate the code for it
+
 	// GetId() string
 }
 
@@ -212,7 +212,7 @@ type ArmResource interface {
 	Spec() ArmResourceSpec
 	Status() ArmResourceStatus
 
-	GetId() string // TODO: ?
+	GetId() string // TODO: Should this be on Status instead?
 }
 
 func NewArmResource(spec ArmResourceSpec, status ArmResourceStatus, id string) ArmResource {

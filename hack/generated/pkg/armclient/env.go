@@ -9,13 +9,11 @@ import (
 	"os"
 )
 
-type (
-	Enver interface {
-		GetEnv(key string) string
-	}
+type Enver interface {
+	GetEnv(key string) string
+}
 
-	stdEnv struct{}
-)
+type stdEnv struct{}
 
 // GetEnv will return os.GetEnv for a given key
 func (*stdEnv) GetEnv(key string) string {

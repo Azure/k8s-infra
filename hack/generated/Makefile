@@ -105,7 +105,7 @@ kind-create:
 .PHONY: run
 run: export ENVIRONMENT = development
 run: kind-create install ## Run a development cluster using kind
-	$(GO) run ./main.go
+	$(GO) run ./main.go -v 4
 
 ## --------------------------------------
 ## Deploy
