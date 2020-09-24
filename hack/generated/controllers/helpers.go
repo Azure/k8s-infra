@@ -7,8 +7,9 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // CreateDeploymentName generates a unique deployment name

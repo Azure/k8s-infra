@@ -8,10 +8,12 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
+
+	"github.com/pkg/errors"
+
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/armresourceresolver"
-	"github.com/pkg/errors"
-	"reflect"
 )
 
 // ResourceSpecToArmResourceSpec converts a genruntime.MetaObject (a Kubernetes representation of a resource) into

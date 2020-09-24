@@ -9,14 +9,16 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
+	"strconv"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"strconv"
+
+	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
+	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 )
 
 const (

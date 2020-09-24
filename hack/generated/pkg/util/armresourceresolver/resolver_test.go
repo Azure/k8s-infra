@@ -8,13 +8,15 @@ package armresourceresolver
 import (
 	"context"
 	"fmt"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
+	"testing"
+
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
+
+	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
+	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
 
 	batch "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.batch/v20170901"
 	storage "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.storage/v20190401"
@@ -30,7 +32,6 @@ func Test_GetFullAzureNameAndResourceGroup_TopLevelResource(t *testing.T) {
 	ctx := context.TODO()
 
 	s := runtime.NewScheme()
-	// Add storage to scheme
 	_ = storage.AddToScheme(s)
 
 	resolver := NewTestResolver(s)
@@ -60,7 +61,6 @@ func Test_GetFullAzureNameAndResourceGroup_ChildResource(t *testing.T) {
 	ctx := context.TODO()
 
 	s := runtime.NewScheme()
-	// Add storage to scheme
 	_ = batch.AddToScheme(s)
 
 	resolver := NewTestResolver(s)

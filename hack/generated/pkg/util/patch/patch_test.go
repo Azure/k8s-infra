@@ -7,8 +7,9 @@ package patch
 
 import (
 	"context"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"testing"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
