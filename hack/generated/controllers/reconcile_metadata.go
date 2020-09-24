@@ -206,7 +206,7 @@ func (r *ReconcileMetadata) Update(
 				}
 			}
 		} else {
-			return errors.Errorf("template deployment didn't have any output resources")
+			return errors.New("template deployment didn't have any output resources")
 		}
 	}
 

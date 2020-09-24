@@ -9,26 +9,26 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/util/armresourceresolver"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/util/patch"
-	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
+	"github.com/Azure/k8s-infra/hack/generated/pkg/util/armresourceresolver"
+	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
+	"github.com/Azure/k8s-infra/hack/generated/pkg/util/patch"
 )
 
 const (
@@ -51,11 +51,11 @@ type GenericReconciler struct {
 type ReconcileAction string
 
 const (
-	ReconcileActionNoAction        = ReconcileAction("NoAction")
-	ReconcileActionBeginDeployment = ReconcileAction("BeginDeployment")
-	ReconcileActionWatchDeployment = ReconcileAction("MonitorDeployment")
-	ReconcileActionBeginDelete     = ReconcileAction("BeginDelete")
-	ReconcileActionWatchDelete     = ReconcileAction("MonitorDelete")
+	ReconcileActionNoAction          = ReconcileAction("NoAction")
+	ReconcileActionBeginDeployment   = ReconcileAction("BeginDeployment")
+	ReconcileActionMonitorDeployment = ReconcileAction("MonitorDeployment")
+	ReconcileActionBeginDelete       = ReconcileAction("BeginDelete")
+	ReconcileActionMonitorDelete     = ReconcileAction("MonitorDelete")
 )
 
 type ReconcileActionFunc = func(ctx context.Context, action ReconcileAction, data *ReconcileMetadata) (ctrl.Result, error)
@@ -169,7 +169,7 @@ func (gr *GenericReconciler) DetermineReconcileAction(data *ReconcileMetadata) (
 
 	if !data.metaObj.GetDeletionTimestamp().IsZero() {
 		if state == armclient.DeletingProvisioningState {
-			return ReconcileActionWatchDelete, gr.MonitorDelete, nil
+			return ReconcileActionMonitorDelete, gr.MonitorDelete, nil
 		}
 		return ReconcileActionBeginDelete, gr.StartDeleteOfResource, nil
 	}
@@ -191,7 +191,7 @@ func (gr *GenericReconciler) DetermineReconcileAction(data *ReconcileMetadata) (
 
 	if data.GetDeploymentIdOrDefault() != "" {
 		// There is an ongoing deployment we need to monitor
-		return ReconcileActionWatchDeployment, gr.MonitorDeployment, nil
+		return ReconcileActionMonitorDeployment, gr.MonitorDeployment, nil
 	}
 
 	return ReconcileActionBeginDeployment, gr.CreateDeployment, nil
@@ -258,7 +258,7 @@ func (gr *GenericReconciler) MonitorDelete(
 	action ReconcileAction,
 	data *ReconcileMetadata) (ctrl.Result, error) {
 
-	msg := "Continue monitoring ongoing delete"
+	msg := "Continue monitoring deletion"
 	data.log.Info(msg)
 	gr.Recorder.Event(data.metaObj, v1.EventTypeNormal, string(action), msg)
 
@@ -420,7 +420,7 @@ func (gr *GenericReconciler) constructArmResource(ctx context.Context, data *Rec
 	if err != nil {
 		return nil, errors.Wrapf(err, "converting to armResourceSpec")
 	}
-	// TODO: Not setting status here
+	// TODO: Do we need to set status here - right now it's nil
 	resource := genruntime.NewArmResource(armResourceSpec, nil, data.GetResourceIdOrDefault())
 
 	return resource, nil

@@ -25,7 +25,8 @@ type (
 		GetDeployment(ctx context.Context, deploymentId string) (*Deployment, error)
 		NewDeployment(resourceGroup string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment
 
-		// TODO: Are we ok with the signature where the "result" is really a ptr to the last parameter?
+		// TODO: These functions take an empty status and fill it out with the response from Azure (rather than as
+		// TODO: the return type. I don't love that pattern but don't have a better one either.
 		BeginDeleteResource(ctx context.Context, id string, apiVersion string, status genruntime.ArmResourceStatus) error
 		GetResource(ctx context.Context, id string, apiVersion string, status genruntime.ArmResourceStatus) error
 		HeadResource(ctx context.Context, id string, apiVersion string) (bool, error)
@@ -191,9 +192,8 @@ func (atc *AzureTemplateClient) GetDeployment(ctx context.Context, deploymentId 
 }
 
 func (atc *AzureTemplateClient) NewDeployment(resourceGroup string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment {
-	//if res.ResourceGroup() == "" {
-	//	return NewSubscriptionDeployment(atc.SubscriptionID, res.Location, name, res)
-	//}
+	// TODO: Need to handle case where we are deploying a resourceGroup and thus we need to do a NewSubscriptionDeployment
+	// TODO: rather than a NewResourceGroupDeployment
 
 	resourceName := resourceSpec.GetName()
 	names := strings.Split(resourceName, "/")
@@ -253,37 +253,6 @@ func (atc *AzureTemplateClient) HeadResource(ctx context.Context, id string, api
 		return true, nil
 	}
 }
-
-//func fillResource(de *Deployment, res *Resource) error {
-//	res.DeploymentID = de.ID
-//	if de.Properties != nil {
-//		res.ProvisioningState = de.Properties.ProvisioningState
-//	}
-//
-//	if de.Properties != nil && de.Properties.Outputs != nil {
-//		var templateOutputs map[string]TemplateOutput
-//		if err := json.Unmarshal(de.Properties.Outputs, &templateOutputs); err != nil {
-//			return err
-//		}
-//
-//		templateOutput, ok := templateOutputs["resource"]
-//		if !ok {
-//			return errors.New("could not find the resource output in the outputs map")
-//		}
-//
-//		tOutValue := templateOutput.Value
-//		res.SubscriptionID = tOutValue.SubscriptionID
-//		res.Properties = tOutValue.Properties
-//
-//		if de.Properties.OutputResources != nil && len(de.Properties.OutputResources) == 1 && de.Properties.OutputResources[0].ID != "" {
-//			// seems like this returns a more accurate ID than the resource ID function
-//			res.ID = de.Properties.OutputResources[0].ID
-//		} else {
-//			res.ID = tOutValue.ID
-//		}
-//	}
-//	return nil
-//}
 
 // GetSettingsFromEnvironment returns the available authentication settings from the environment.
 func GetSettingsFromEnvironment(env Enver) (auth.EnvironmentSettings, error) {

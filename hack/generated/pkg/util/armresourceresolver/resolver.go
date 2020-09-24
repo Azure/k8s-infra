@@ -63,13 +63,16 @@ func (r *Resolver) GetResourceGroupAndFullAzureName(ctx context.Context, obj gen
 		}
 	}
 
-	// TODO: We could do this on launch probably since we can check based on the AllKnownTypes() collection
+	// TODO: We should do this on process launch probably since we can check based on the AllKnownTypes() collection
 	if !found {
 		return "", "", errors.Errorf("couldn't find registered scheme for owner %+v", owner)
 	}
 
+	// Kubernetes doesn't support cross-namespace ownership, and all Azure resources are
+	// namespaced, so it should be safe to assume that the owner is in the same namespace as
+	// obj. See https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/
 	ownerNamespacedName := types.NamespacedName{
-		Namespace: obj.GetNamespace(), // TODO: Assumption that resource ownership is not cross namespace
+		Namespace: obj.GetNamespace(),
 		Name:      owner.Name,
 	}
 
