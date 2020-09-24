@@ -8,6 +8,7 @@ package astmodel
 const (
 	genRuntimePathPrefix  = "github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 	GenRuntimePackageName = "genruntime"
+	GroupSuffix           = ".infra.azure.com"
 )
 
 var MetaV1PackageReference = MakeLibraryPackageReference("k8s.io/apimachinery/pkg/apis/meta/v1")
