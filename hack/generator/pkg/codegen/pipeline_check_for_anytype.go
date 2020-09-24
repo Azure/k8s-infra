@@ -24,17 +24,17 @@ import (
 // to have AnyTypes but turn out not to, ensuring that we clean up our configuration
 // as the schemas are fixed and our handling improves.
 func filterOutDefinitionsUsingAnyType(packages []string) PipelineStage {
-	return checkForAnyTypeCore("Filter out rogue definitions using AnyTypes", packages)
+	return checkForAnyType("Filter out rogue definitions using AnyTypes", packages)
 }
 
 // ensureDefinitionsDoNotUseAnyTypes returns a stage that will check for any
 // definitions containing AnyTypes. The stage will return errors for each type
 // found that uses an AnyType.
 func ensureDefinitionsDoNotUseAnyTypes() PipelineStage {
-	return checkForAnyTypeCore("Catch rogue definitions using AnyTypes", []string{})
+	return checkForAnyType("Catch rogue definitions using AnyTypes", []string{})
 }
 
-func checkForAnyTypeCore(description string, packages []string) PipelineStage {
+func checkForAnyType(description string, packages []string) PipelineStage {
 	expectedPackages := make(map[string]struct{}, len(packages))
 	for _, p := range packages {
 		expectedPackages[p] = struct{}{}
