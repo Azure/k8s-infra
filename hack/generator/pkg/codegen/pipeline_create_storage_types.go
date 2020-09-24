@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
-	"github.com/pkg/errors"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
@@ -94,11 +93,13 @@ func (factory *StorageTypeFactory) visitTypeName(_ *astmodel.TypeVisitor, name a
 	}
 
 	// Map the type name into our storage namespace
-	visitedName, err := factory.mapTypeNameIntoStoragePackage(name)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to map name into storage namespace")
+	localRef, ok := name.PackageReference.AsLocalPackage()
+	if !ok {
+		return name, nil
 	}
 
+	storageRef := astmodel.MakeStoragePackageReference(localRef)
+	visitedName := astmodel.MakeTypeName(storageRef, name.Name())
 	return visitedName, nil
 }
 
@@ -138,29 +139,7 @@ func (factory *StorageTypeFactory) makeStorageProperty(
 		WithoutValidation().
 		WithDescription("")
 
-	// If the property is *string we can simplify it to string
-	// This makes other generated code simpler
-	if ot, ok := p.PropertyType().(*astmodel.OptionalType); ok {
-		if ot.Element().Equals(astmodel.StringType) {
-			p = p.WithType(astmodel.StringType)
-		}
-	}
-
 	return p
-}
-
-// mapTypeNameIntoStoragePackage maps an existing type name into the right package for the matching storage type
-// Returns the original instance for any type that does not need to be mapped to storage
-func (factory *StorageTypeFactory) mapTypeNameIntoStoragePackage(name astmodel.TypeName) (astmodel.TypeName, error) {
-	localRef, ok := name.PackageReference.AsLocalPackage()
-	if !ok {
-		// Don't need to map non-local packages
-		return name, nil
-	}
-
-	storagePackage := astmodel.MakeStoragePackageReference(localRef)
-	newName := astmodel.MakeTypeName(storagePackage, name.Name())
-	return newName, nil
 }
 
 func (factory *StorageTypeFactory) visitArmType(

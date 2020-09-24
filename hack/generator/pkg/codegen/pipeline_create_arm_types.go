@@ -212,7 +212,7 @@ func getResourceSpecDefinition(
 
 	resourceSpecDef, ok := definitions[specName]
 	if !ok {
-		return astmodel.TypeDefinition{}, errors.Errorf("couldn't find spec")
+		return astmodel.TypeDefinition{}, errors.Errorf("couldn't find spec %v", specName)
 	}
 
 	// preserve outer spec name
