@@ -47,13 +47,11 @@ func TestExternalPackageReferences_ReturnExpectedProperties(t *testing.T) {
 			g := NewGomegaWithT(t)
 
 			ref := MakeExternalPackageReference(c.path)
-			_, err := ref.Group()
 			_, ok := ref.AsLocalPackage()
 
 			g.Expect(ok).To(BeFalse())
 			g.Expect(ref.PackagePath()).To(Equal(c.path))
 			g.Expect(ref.String()).To(Equal(c.path))
-			g.Expect(err).NotTo(BeNil())
 		})
 	}
 }
