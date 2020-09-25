@@ -87,7 +87,7 @@ func TestLocalPackageReferences_Equals_GivesExpectedResults(t *testing.T) {
 	batchRef := MakeLocalPackageReference("microsoft.batch", "v20200901")
 	olderRef := MakeLocalPackageReference("microsoft.batch", "v20150101")
 	networkingRef := MakeLocalPackageReference("microsoft.networking", "v20200901")
-	fmtRef := MakeLibraryPackageReference("fmt")
+	fmtRef := MakeExternalPackageReference("fmt")
 
 	cases := []struct {
 		name     string

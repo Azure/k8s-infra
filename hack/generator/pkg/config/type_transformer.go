@@ -58,7 +58,7 @@ func produceTargetType(target TransformTarget, descriptor string) (astmodel.Type
 	if target.Name != "" {
 		if target.LibraryPath != "" {
 			return astmodel.MakeTypeName(
-				astmodel.MakeLibraryPackageReference(target.LibraryPath),
+				astmodel.MakeExternalPackageReference(target.LibraryPath),
 				target.Name), nil
 		}
 

@@ -11,7 +11,7 @@ const (
 	GroupSuffix           = ".infra.azure.com"
 )
 
-var MetaV1PackageReference = MakeLibraryPackageReference("k8s.io/apimachinery/pkg/apis/meta/v1")
+var MetaV1PackageReference = MakeExternalPackageReference("k8s.io/apimachinery/pkg/apis/meta/v1")
 
 type PackageReference interface {
 	// IsLocalPackage returns a valud indicating whether this is a local package
@@ -30,5 +30,5 @@ type PackageReference interface {
 
 // MakeGenRuntimePackageReference creates a new package reference for the genruntime package
 func MakeGenRuntimePackageReference() PackageReference {
-	return MakeLibraryPackageReference(genRuntimePathPrefix)
+	return MakeExternalPackageReference(genRuntimePathPrefix)
 }

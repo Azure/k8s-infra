@@ -11,43 +11,43 @@ import (
 	"strings"
 )
 
-// LibraryPackageReference indicates a library package that needs to be imported
-type LibraryPackageReference struct {
+// ExternalPackageReference indicates a library package that needs to be imported
+type ExternalPackageReference struct {
 	packagePath string
 }
 
-var _ PackageReference = LibraryPackageReference{}
-var _ fmt.Stringer = LibraryPackageReference{}
+var _ PackageReference = ExternalPackageReference{}
+var _ fmt.Stringer = ExternalPackageReference{}
 
-// MakeLibraryPackageReference creates a new package reference from a path
-func MakeLibraryPackageReference(packagePath string) LibraryPackageReference {
-	return LibraryPackageReference{packagePath: packagePath}
+// MakeExternalPackageReference creates a new package reference from a path
+func MakeExternalPackageReference(packagePath string) ExternalPackageReference {
+	return ExternalPackageReference{packagePath: packagePath}
 }
 
 // IsLocalPackage returns false to indicate that library packages are not local
-func (pr LibraryPackageReference) IsLocalPackage() bool {
+func (pr ExternalPackageReference) IsLocalPackage() bool {
 	return false
 }
 
 // Group returns an error because it's invalid for library packages
-func (pr LibraryPackageReference) Group() (string, error) {
+func (pr ExternalPackageReference) Group() (string, error) {
 	return "", errors.New("Cannot return Group() for a library package")
 }
 
 // Package returns the package name of this reference
-func (pr LibraryPackageReference) Package() string {
+func (pr ExternalPackageReference) Package() string {
 	l := strings.Split(pr.packagePath, "/")
 	return l[len(l)-1]
 }
 
 // PackagePath returns the fully qualified package path
-func (pr LibraryPackageReference) PackagePath() string {
+func (pr ExternalPackageReference) PackagePath() string {
 	return pr.packagePath
 }
 
 // Equals returns true if the passed package reference references the same package, false otherwise
-func (pr LibraryPackageReference) Equals(ref PackageReference) bool {
-	if other, ok := ref.(LibraryPackageReference); ok {
+func (pr ExternalPackageReference) Equals(ref PackageReference) bool {
+	if other, ok := ref.(ExternalPackageReference); ok {
 		return pr.packagePath == other.packagePath
 	}
 
@@ -55,6 +55,6 @@ func (pr LibraryPackageReference) Equals(ref PackageReference) bool {
 }
 
 // String returns the string representation of the package reference
-func (pr LibraryPackageReference) String() string {
+func (pr ExternalPackageReference) String() string {
 	return pr.packagePath
 }
