@@ -437,7 +437,7 @@ func createOwnerProperty(idFactory astmodel.IdentifierFactory, ownerTypeName *as
 		prop = prop.WithTag("group", group).WithTag("kind", ownerTypeName.Name())
 		prop = prop.WithValidation(astmodel.ValidateRequired()) // Owner is already required
 	} else {
-		panic("owners from external packages not currently supported")
+		return nil, errors.New("owners from external packages not currently supported")
 	}
 
 	return prop, nil
