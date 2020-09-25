@@ -48,9 +48,9 @@ func TestExternalPackageReferences_ReturnExpectedProperties(t *testing.T) {
 
 			ref := MakeExternalPackageReference(c.path)
 			_, err := ref.Group()
+			_, ok := ref.AsLocalPackage()
 
-			g.Expect(ref.IsLocalPackage()).To(BeFalse())
-			g.Expect(ref.Package()).To(Equal(c.packageName))
+			g.Expect(ok).To(BeFalse())
 			g.Expect(ref.PackagePath()).To(Equal(c.path))
 			g.Expect(ref.String()).To(Equal(c.path))
 			g.Expect(err).NotTo(BeNil())

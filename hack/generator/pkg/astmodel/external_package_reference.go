@@ -6,7 +6,6 @@
 package astmodel
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -25,17 +24,12 @@ func MakeExternalPackageReference(packagePath string) ExternalPackageReference {
 }
 
 // IsLocalPackage returns false to indicate that library packages are not local
-func (pr ExternalPackageReference) IsLocalPackage() bool {
-	return false
-}
-
-// Group returns an error because it's invalid for library packages
-func (pr ExternalPackageReference) Group() (string, error) {
-	return "", errors.New("Cannot return Group() for a library package")
+func (pr ExternalPackageReference) AsLocalPackage() (LocalPackageReference, bool) {
+	return LocalPackageReference{}, false
 }
 
 // Package returns the package name of this reference
-func (pr ExternalPackageReference) Package() string {
+func (pr ExternalPackageReference) PackageName() string {
 	l := strings.Split(pr.packagePath, "/")
 	return l[len(l)-1]
 }
