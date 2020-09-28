@@ -15,6 +15,11 @@ import (
 	"k8s.io/klog/v2"
 )
 
+// This is needed when we are processing a Resource that happens to be nested inside
+// other types and we are going to extract the type of the Resource to merge it
+// with other types (e.g. when processing oneOf/allOf). In these cases we need to
+// know if we are in a spec or status context so we can pick out the correct "side"
+// of the resource.
 type resourceFieldSelector string
 
 var (
