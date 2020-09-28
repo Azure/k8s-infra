@@ -446,13 +446,13 @@ func createOwnerProperty(idFactory astmodel.IdentifierFactory, ownerTypeName *as
 		idFactory.CreateIdentifier(astmodel.OwnerProperty, astmodel.NotExported),
 		knownResourceReferenceType)
 
-	group, _, err := ownerTypeName.PackageReference.GroupAndPackage()
-	if err != nil {
-		return nil, err
+	if localRef, ok := ownerTypeName.PackageReference.AsLocalPackage(); ok {
+		group := localRef.Group() + astmodel.GroupSuffix
+		prop = prop.WithTag("group", group).WithTag("kind", ownerTypeName.Name())
+		prop = prop.WithValidation(astmodel.ValidateRequired()) // Owner is already required
+	} else {
+		return nil, errors.New("owners from external packages not currently supported")
 	}
-
-	prop = prop.WithTag("group", group).WithTag("kind", ownerTypeName.Name())
-	prop = prop.WithValidation(astmodel.ValidateRequired()) // Owner is already required
 
 	return prop, nil
 }

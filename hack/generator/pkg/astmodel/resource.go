@@ -166,6 +166,13 @@ func (definition *ResourceType) WithStatus(statusType Type) *ResourceType {
 	return &result
 }
 
+// WithSpec returns a new resource that has the specified spec type
+func (definition *ResourceType) WithSpec(specType Type) *ResourceType {
+	result := *definition
+	result.spec = specType
+	return &result
+}
+
 // WithInterface creates a new Resource with a function (method) attached to it
 func (definition *ResourceType) WithInterface(iface *InterfaceImplementation) *ResourceType {
 	// Create a copy of objectType to preserve immutability
@@ -236,7 +243,7 @@ func (definition *ResourceType) RequiredImports() []PackageReference {
 
 	typeImports = append(typeImports, MetaV1PackageReference)
 	typeImports = append(typeImports, MakeGenRuntimePackageReference())
-	typeImports = append(typeImports, MakePackageReference("fmt"))
+	typeImports = append(typeImports, MakeExternalPackageReference("fmt"))
 
 	// Interface imports
 	typeImports = append(typeImports, definition.InterfaceImplementer.RequiredImports()...)
