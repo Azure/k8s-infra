@@ -80,12 +80,12 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 			visitor.VisitResourceType = func(this *astmodel.TypeVisitor, it *astmodel.ResourceType, ctx interface{}) (astmodel.Type, error) {
 				spec, err := this.Visit(it.SpecType(), chooseSpec)
 				if err != nil {
-					return nil, err
+					return nil, errors.Wrapf(err, "unable to visit resource spec type")
 				}
 
 				status, err := this.Visit(it.StatusType(), chooseStatus)
 				if err != nil {
-					return nil, err
+					return nil, errors.Wrapf(err, "unable to visit resource status type")
 				}
 
 				return it.WithSpec(spec).WithStatus(status), nil
