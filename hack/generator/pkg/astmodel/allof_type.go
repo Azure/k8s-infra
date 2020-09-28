@@ -62,7 +62,9 @@ func MakeAllOfType(types ...Type) Type {
 		// 		allOf { x, y, oneOf { a, b } }
 		// becomes
 		//		oneOf { allOf { x, y, a }, allOf { x, y, b } }
-		// the latter is much easier to deal with
+		// the latter is much easier to deal with in code
+		// as we can deal with each case separately instead of mixing
+		// "outer" and "inner" properties
 
 		var ts []Type
 		oneOfs[0].types.ForEach(func(t Type, _ int) {
