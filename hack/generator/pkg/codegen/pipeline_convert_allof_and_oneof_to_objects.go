@@ -207,7 +207,7 @@ func (s synthesizer) intersectTypes(left astmodel.Type, right astmodel.Type) (as
 	for _, handler := range intersectHandlers {
 		result, err := handler(s, left, right)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "error intersecting types")
 		}
 
 		if result != nil {
