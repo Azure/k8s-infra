@@ -19,6 +19,8 @@ type AllOfType struct {
 	// - all types are unique (enforced by TypeSet)
 	// - length > 1
 	// - no nested AllOfs (aside from indirectly via TypeName)
+	// - we also transform an allOf with a single oneOf inside
+	//   to a oneOf with allOfs inside (see below)
 	types TypeSet
 }
 
