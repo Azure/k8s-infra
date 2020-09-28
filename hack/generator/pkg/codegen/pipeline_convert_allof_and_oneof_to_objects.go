@@ -15,11 +15,11 @@ import (
 	"k8s.io/klog/v2"
 )
 
-type specOrStatus string
+type resourceFieldSelector string
 
 var (
-	chooseSpec   specOrStatus = "Spec"
-	chooseStatus specOrStatus = "Status"
+	chooseSpec   resourceFieldSelector = "Spec"
+	chooseStatus resourceFieldSelector = "Status"
 )
 
 // convertAllOfAndOneOfToObjects reduces the AllOfType and OneOfType to ObjectType
@@ -33,7 +33,7 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 			// the context here is whether we are selecting spec or status fields
 			visitor.VisitAllOfType = func(this *astmodel.TypeVisitor, it astmodel.AllOfType, ctx interface{}) (astmodel.Type, error) {
 				synth := synthesizer{
-					specOrStatus: ctx.(specOrStatus),
+					specOrStatus: ctx.(resourceFieldSelector),
 					defs:         defs,
 					idFactory:    idFactory,
 				}
@@ -57,7 +57,7 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 
 				if resultOneOf, ok := result.(astmodel.OneOfType); ok {
 					synth := synthesizer{
-						specOrStatus: ctx.(specOrStatus),
+						specOrStatus: ctx.(resourceFieldSelector),
 						defs:         defs,
 						idFactory:    idFactory,
 					}
@@ -110,7 +110,7 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 }
 
 type synthesizer struct {
-	specOrStatus specOrStatus
+	specOrStatus resourceFieldSelector
 	idFactory    astmodel.IdentifierFactory
 	defs         astmodel.Types
 }
