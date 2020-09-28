@@ -67,12 +67,10 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 						idFactory:    idFactory,
 					}
 
-					object, err := synth.oneOfObject(resultOneOf)
+					result, err = synth.oneOfObject(resultOneOf)
 					if err != nil {
-						return nil, err
+						return nil, errors.Wrapf(err, "unable to synthesize oneOf")
 					}
-
-					result = object
 				}
 
 				// we might end up with something that requires re-visiting
