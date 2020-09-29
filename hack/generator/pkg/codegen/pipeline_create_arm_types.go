@@ -158,13 +158,7 @@ func iterDefs(
 				return nil, err
 			}
 
-			if existingNewDef, ok := newDefs[newDef.Name()]; ok {
-				if !existingNewDef.Type().Equals(newDef.Type()) {
-					return nil, errors.Errorf("mismatch in generated ARM type %v (existing: %v, new: %v)", newDef.Name(), existingNewDef.Type(), newDef.Type())
-				}
-			} else {
-				newDefs.Add(newDef)
-			}
+			newDefs.Add(newDef)
 
 			actionedDefs[specTypeName] = struct{}{}
 		}
