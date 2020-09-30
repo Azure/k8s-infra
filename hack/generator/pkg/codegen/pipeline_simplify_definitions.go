@@ -51,6 +51,7 @@ func createSimplifyingVisitor() astmodel.TypeVisitor {
 		return tv.Visit(&ot, ctx)
 	}
 
+	// Don't need to waste time iterating within complex objects
 	result.VisitObjectType = func(_ *astmodel.TypeVisitor, ot *astmodel.ObjectType, _ interface{}) (astmodel.Type, error) {
 		return ot, nil
 	}
