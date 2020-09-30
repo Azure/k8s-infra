@@ -71,12 +71,25 @@ func makeStorageTypesVisitor(types astmodel.Types) astmodel.TypeVisitor {
 	result.VisitObjectType = factory.visitObjectType
 	result.VisitArmType = factory.visitArmType
 
+	factory.visitor = result
+	factory.propertyConversions = []propertyConversion{
+		factory.kubernetesResourceStoragePropertyConversion,
+		factory.defaultStoragePropertyConversion,
+	}
+
 	return result
 }
 
 type StorageTypeFactory struct {
-	types astmodel.Types
+	types               astmodel.Types
+	propertyConversions []propertyConversion
+	visitor             astmodel.TypeVisitor
 }
+
+// A property conversion accepts a property definition and optionally applies a conversion to make
+// the property suitable for use on a storage type. Conversions return nil if they decline to
+// convert, deferring the conversion to another.
+type propertyConversion = func(property *astmodel.PropertyDefinition, cxt StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error)
 
 func (factory *StorageTypeFactory) visitTypeName(_ *astmodel.TypeVisitor, name astmodel.TypeName, ctx interface{}) (astmodel.Type, error) {
 	vc := ctx.(StorageTypesVisitorContext)
@@ -104,7 +117,7 @@ func (factory *StorageTypeFactory) visitTypeName(_ *astmodel.TypeVisitor, name a
 }
 
 func (factory *StorageTypeFactory) visitObjectType(
-	visitor *astmodel.TypeVisitor,
+	_ *astmodel.TypeVisitor,
 	object *astmodel.ObjectType,
 	ctx interface{}) (astmodel.Type, error) {
 	vc := ctx.(StorageTypesVisitorContext)
@@ -113,11 +126,10 @@ func (factory *StorageTypeFactory) visitObjectType(
 	var errs []error
 	properties := object.Properties()
 	for i, prop := range properties {
-		propertyType, err := visitor.Visit(prop.PropertyType(), oc.forProperty(prop))
+		p, err := factory.makeStorageProperty(prop, oc)
 		if err != nil {
 			errs = append(errs, err)
 		} else {
-			p := factory.makeStorageProperty(prop, propertyType)
 			properties[i] = p
 		}
 	}
@@ -131,15 +143,54 @@ func (factory *StorageTypeFactory) visitObjectType(
 	return astmodel.NewStorageType(*ot), nil
 }
 
+// makeStorageProperty applies a conversion to make a variant of the property for use when
+// serializing to storage
 func (factory *StorageTypeFactory) makeStorageProperty(
 	prop *astmodel.PropertyDefinition,
-	propertyType astmodel.Type) *astmodel.PropertyDefinition {
+	pc StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error) {
+	for _, conv := range factory.propertyConversions {
+		p, err := conv(prop, pc.forProperty(prop))
+		if err != nil {
+			// Something went wrong, return the error
+			return nil, err
+		}
+		if p != nil {
+			// We have the conversion we need, return it promptly
+			return p, nil
+		}
+	}
+
+	return nil, fmt.Errorf("failed to find a conversion for property %v", prop.PropertyName())
+}
+
+// Preserve properties required by the KubernetesResource interface unchanged as they're always required
+func (factory *StorageTypeFactory) kubernetesResourceStoragePropertyConversion(
+	prop *astmodel.PropertyDefinition,
+	_ StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error) {
+	if prop.HasName(astmodel.AzureNameProperty) ||
+		prop.HasName(astmodel.OwnerProperty) {
+		// Keep these unchanged
+		return prop, nil
+	}
+
+	// No opinion, defer to another conversion
+	return nil, nil
+}
+
+func (factory *StorageTypeFactory) defaultStoragePropertyConversion(
+	prop *astmodel.PropertyDefinition,
+	ctx StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error) {
+	propertyType, err := factory.visitor.Visit(prop.PropertyType(), ctx.forProperty(prop))
+	if err != nil {
+		return nil, err
+	}
+
 	p := prop.WithType(propertyType).
 		MakeOptional().
 		WithoutValidation().
 		WithDescription("")
 
-	return p
+	return p, nil
 }
 
 func (factory *StorageTypeFactory) visitArmType(
