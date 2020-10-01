@@ -240,10 +240,10 @@ func (objectType *ObjectType) WithoutProperty(name PropertyName) *ObjectType {
 }
 
 // WithFunction creates a new ObjectType with a function (method) attached to it
-func (objectType *ObjectType) WithFunction(name string, function Function) *ObjectType {
+func (objectType *ObjectType) WithFunction(function Function) *ObjectType {
 	// Create a copy of objectType to preserve immutability
 	result := objectType.copy()
-	result.functions[name] = function
+	result.functions[function.Name()] = function
 
 	return result
 }
