@@ -58,6 +58,7 @@ func NewKubernetesResourceInterfaceImpl(
 // objectFunction is a simple helper that implements the Function interface. It is intended for use for functions
 // that only need information about the object they are operating on
 type objectFunction struct {
+	name      string
 	o         *ObjectType
 	idFactory IdentifierFactory
 
@@ -65,6 +66,11 @@ type objectFunction struct {
 }
 
 var _ Function = &objectFunction{}
+
+// Name returns the unique name of this function
+func (k *objectFunction) Name() string {
+	return k.name
+}
 
 func (k *objectFunction) RequiredImports() []PackageReference {
 	// We only require GenRuntime
@@ -77,8 +83,8 @@ func (k *objectFunction) References() TypeNameSet {
 	return k.o.References()
 }
 
-func (k *objectFunction) AsFunc(codeGenerationContext *CodeGenerationContext, receiver TypeName, methodName string) *ast.FuncDecl {
-	return k.asFunc(k, codeGenerationContext, receiver, methodName)
+func (k *objectFunction) AsFunc(codeGenerationContext *CodeGenerationContext, receiver TypeName) *ast.FuncDecl {
+	return k.asFunc(k, codeGenerationContext, receiver, k.name)
 }
 
 func (k *objectFunction) Equals(f Function) bool {
