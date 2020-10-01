@@ -56,8 +56,19 @@ func (objectType *ObjectType) AsDeclarations(codeGenerationContext *CodeGenerati
 
 func (objectType *ObjectType) generateMethodDecls(codeGenerationContext *CodeGenerationContext, typeName TypeName) []ast.Decl {
 	var result []ast.Decl
-	for methodName, function := range objectType.functions {
-		funcDef := function.AsFunc(codeGenerationContext, typeName, methodName)
+
+	// Functions must be ordered by name for deterministic output
+	var functions []Function
+	for _, f := range objectType.functions {
+		functions = append(functions, f)
+	}
+
+	sort.Slice(functions, func(i int, j int) bool {
+		return functions[i].Name() < functions[j].Name()
+	})
+
+	for _, f := range objectType.functions {
+		funcDef := f.AsFunc(codeGenerationContext, typeName)
 		result = append(result, funcDef)
 	}
 
