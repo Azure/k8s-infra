@@ -36,22 +36,25 @@ func NewKubernetesResourceInterfaceImpl(
 		return nil, errors.Errorf("Resource spec doesn't have %q property", azureNameProperty)
 	}
 
-	funcs := map[string]Function{
-		OwnerProperty: &objectFunction{
-			o:         spec,
-			idFactory: idFactory,
-			asFunc:    ownerFunction,
-		},
-		AzureNameProperty: &objectFunction{
-			o:         spec,
-			idFactory: idFactory,
-			asFunc:    azureNameFunction,
-		},
+	ownerFunc := &objectFunction{
+		name:      OwnerProperty,
+		o:         spec,
+		idFactory: idFactory,
+		asFunc:    ownerFunction,
+	}
+
+	azureNameFunc := &objectFunction{
+		name:      AzureNameProperty,
+		o:         spec,
+		idFactory: idFactory,
+		asFunc:    azureNameFunction,
 	}
 
 	result := NewInterfaceImplementation(
 		MakeTypeName(MakeGenRuntimePackageReference(), "KubernetesResource"),
-		funcs)
+		ownerFunc,
+		azureNameFunc)
+
 	return result, nil
 }
 
