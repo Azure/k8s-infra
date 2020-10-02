@@ -411,3 +411,7 @@ func (resource *ResourceType) copy() *ResourceType {
 
 	return result
 }
+
+func (resource *ResourceType) HasTestCases() bool {
+	return len(resource.testcases) > 0
+}
