@@ -49,19 +49,19 @@ func (i InterfaceImplementer) AsDeclarations(
 	// interfaces must be ordered by name for deterministic output
 	// (We sort them directly to skip future lookups)
 	var interfaces []*InterfaceImplementation
-	for _, intf := range i.interfaces {
-		interfaces = append(interfaces, intf)
+	for _, iface := range i.interfaces {
+		interfaces = append(interfaces, iface)
 	}
 
 	sort.Slice(interfaces, func(i int, j int) bool {
-		return interfaces[i].Name().name < interfaces[j].Name().Name()
+		return interfaces[i].Name().name < interfaces[j].Name().name
 	})
 
-	for _, intf := range interfaces {
-		result = append(result, i.generateInterfaceImplAssertion(codeGenerationContext, intf, typeName))
+	for _, iface := range interfaces {
+		result = append(result, i.generateInterfaceImplAssertion(codeGenerationContext, iface, typeName))
 
 		var functions []Function
-		for _, f := range intf.functions {
+		for _, f := range iface.functions {
 			functions = append(functions, f)
 		}
 

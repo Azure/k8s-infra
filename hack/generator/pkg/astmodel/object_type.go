@@ -67,7 +67,7 @@ func (objectType *ObjectType) generateMethodDecls(codeGenerationContext *CodeGen
 		return functions[i].Name() < functions[j].Name()
 	})
 
-	for _, f := range objectType.functions {
+	for _, f := range functions {
 		funcDef := f.AsFunc(codeGenerationContext, typeName)
 		result = append(result, funcDef)
 	}

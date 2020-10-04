@@ -71,6 +71,7 @@ type objectFunction struct {
 var _ Function = &objectFunction{}
 
 // Name returns the unique name of this function
+// (You can't have two functions with the same name on the same object or resource)
 func (k *objectFunction) Name() string {
 	return k.name
 }

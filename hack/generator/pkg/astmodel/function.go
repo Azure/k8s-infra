@@ -11,7 +11,8 @@ import (
 
 // Function represents something that is an (unnamed) Go function
 type Function interface {
-	// The unique name of this interface
+	// The unique name of this function
+	// (You can't have two functions with the same name on the same object or resource)
 	Name() string
 
 	RequiredImports() []PackageReference
