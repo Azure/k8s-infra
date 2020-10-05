@@ -8,6 +8,7 @@ package astmodel
 import (
 	"go/token"
 	"io"
+	"k8s.io/klog/v2"
 	"os"
 	"sort"
 
