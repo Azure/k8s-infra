@@ -40,7 +40,7 @@ func (array *ArrayType) AsType(codeGenerationContext *CodeGenerationContext) ast
 }
 
 // RequiredImports returns a list of packages required by this
-func (array *ArrayType) RequiredImports() []PackageReference {
+func (array *ArrayType) RequiredImports() *PackageImportSet {
 	return array.element.RequiredImports()
 }
 

@@ -227,19 +227,19 @@ func (definition *ResourceType) WithOwner(owner *TypeName) *ResourceType {
 }
 
 // RequiredImports returns a list of packages required by this
-func (definition *ResourceType) RequiredImports() []PackageReference {
+func (definition *ResourceType) RequiredImports() *PackageImportSet {
 	typeImports := definition.spec.RequiredImports()
 
 	if definition.status != nil {
-		typeImports = append(typeImports, definition.status.RequiredImports()...)
+		typeImports.Merge(definition.status.RequiredImports())
 	}
 
-	typeImports = append(typeImports, MetaV1PackageReference)
-	typeImports = append(typeImports, MakeGenRuntimePackageReference())
-	typeImports = append(typeImports, MakeExternalPackageReference("fmt"))
+	typeImports.AddImport(NewPackageImport(MetaV1PackageReference).WithName("metav1"))
+	typeImports.AddReference(MakeGenRuntimePackageReference())
+	typeImports.AddReference(MakeExternalPackageReference("fmt"))
 
 	// Interface imports
-	typeImports = append(typeImports, definition.InterfaceImplementer.RequiredImports()...)
+	typeImports.Merge(definition.InterfaceImplementer.RequiredImports())
 
 	return typeImports
 }

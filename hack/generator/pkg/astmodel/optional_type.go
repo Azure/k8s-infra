@@ -64,7 +64,7 @@ func (optional *OptionalType) AsType(codeGenerationContext *CodeGenerationContex
 }
 
 // RequiredImports returns the imports required by the 'element' type
-func (optional *OptionalType) RequiredImports() []PackageReference {
+func (optional *OptionalType) RequiredImports() *PackageImportSet {
 	return optional.element.RequiredImports()
 }
 

@@ -26,7 +26,7 @@ func MakeArmType(object ObjectType) ArmType {
 }
 
 // RequiredImports returns a list of packages required by this type
-func (at ArmType) RequiredImports() []PackageReference {
+func (at ArmType) RequiredImports() *PackageImportSet {
 	return at.objectType.RequiredImports()
 }
 

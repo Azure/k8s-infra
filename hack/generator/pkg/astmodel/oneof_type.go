@@ -81,7 +81,7 @@ func (oneOf OneOfType) AsDeclarations(codeGenerationContext *CodeGenerationConte
 }
 
 // RequiredImports returns the union of the required imports of all the oneOf types
-func (oneOf OneOfType) RequiredImports() []PackageReference {
+func (oneOf OneOfType) RequiredImports() *PackageImportSet {
 	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
 }
 

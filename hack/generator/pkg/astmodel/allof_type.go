@@ -117,7 +117,7 @@ func (allOf AllOfType) AsDeclarations(codeGenerationContext *CodeGenerationConte
 }
 
 // RequiredImports returns the union of the required imports of all the AllOf types
-func (allOf AllOfType) RequiredImports() []PackageReference {
+func (allOf AllOfType) RequiredImports() *PackageImportSet {
 	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
 }
 

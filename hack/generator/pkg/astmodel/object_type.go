@@ -133,17 +133,17 @@ func (objectType *ObjectType) AsType(codeGenerationContext *CodeGenerationContex
 }
 
 // RequiredImports returns a list of packages required by this
-func (objectType *ObjectType) RequiredImports() []PackageReference {
-	var result []PackageReference
+func (objectType *ObjectType) RequiredImports() *PackageImportSet {
+	result := EmptyPackageImportSet()
 	for _, property := range objectType.properties {
-		result = append(result, property.PropertyType().RequiredImports()...)
+		result.Merge(property.PropertyType().RequiredImports())
 	}
 
 	for _, function := range objectType.functions {
-		result = append(result, function.RequiredImports()...)
+		result.Merge(function.RequiredImports())
 	}
 
-	result = append(result, objectType.InterfaceImplementer.RequiredImports()...)
+	result.Merge(objectType.InterfaceImplementer.RequiredImports())
 
 	return result
 }

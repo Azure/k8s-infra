@@ -122,8 +122,8 @@ func (f *OneOfJSONMarshalFunction) AsFunc(
 }
 
 // RequiredImports returns a list of packages required by this
-func (f *OneOfJSONMarshalFunction) RequiredImports() []PackageReference {
-	return []PackageReference{
-		MakeExternalPackageReference("encoding/json"),
-	}
+func (f *OneOfJSONMarshalFunction) RequiredImports() *PackageImportSet {
+	result := EmptyPackageImportSet()
+	result.AddReference(MakeExternalPackageReference("encoding/json"))
+	return result
 }

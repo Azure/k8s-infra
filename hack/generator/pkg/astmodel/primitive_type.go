@@ -42,8 +42,8 @@ func (prim *PrimitiveType) AsDeclarations(genContext *CodeGenerationContext, nam
 }
 
 // RequiredImports returns a list of package required by this
-func (prim *PrimitiveType) RequiredImports() []PackageReference {
-	return nil
+func (prim *PrimitiveType) RequiredImports() *PackageImportSet {
+	return EmptyPackageImportSet()
 }
 
 // References always returns nil because primitive types don't refer to

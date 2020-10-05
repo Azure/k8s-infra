@@ -97,11 +97,10 @@ func (i InterfaceImplementer) Equals(other InterfaceImplementer) bool {
 	return true
 }
 
-func (i InterfaceImplementer) RequiredImports() []PackageReference {
-	var result []PackageReference
-
+func (i InterfaceImplementer) RequiredImports() *PackageImportSet {
+	result := EmptyPackageImportSet()
 	for _, i := range i.interfaces {
-		result = append(result, i.RequiredImports()...)
+		result.Merge(i.RequiredImports())
 	}
 
 	return result
