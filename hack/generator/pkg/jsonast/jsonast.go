@@ -628,6 +628,8 @@ func generateOneOfUnionType(ctx context.Context, schema Schema, subschemas []Sch
 		}
 	}
 
+	result := astmodel.MakeOneOfType(types...)
+
 	// if the node that contains the oneOf(/anyOf) defines other properties, create an object type with them inside to merge
 	if len(schema.properties()) > 0 {
 		objectType, err := scanner.RunHandler(ctx, Object, schema)
@@ -635,10 +637,10 @@ func generateOneOfUnionType(ctx context.Context, schema Schema, subschemas []Sch
 			return nil, err
 		}
 
-		types = append(types, objectType)
+		result = astmodel.MakeAllOfType(objectType, result)
 	}
 
-	return astmodel.MakeOneOfType(types...), nil
+	return result, nil
 }
 
 func anyOfHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (astmodel.Type, error) {
