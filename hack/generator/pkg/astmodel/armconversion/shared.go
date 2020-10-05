@@ -68,15 +68,13 @@ func getReceiverObjectType(codeGenerationContext *astmodel.CodeGenerationContext
 		panic(err)
 	}
 
-	switch receiverType := rt.Type().(type) {
-	case *astmodel.ObjectType:
-		return receiverType
-	case *astmodel.ArmType:
-		kubeType := receiverType.ObjectType()
-		return &kubeType
-	default:
+	receiverType, ok := rt.Type().(*astmodel.ObjectType)
+	if !ok {
+		// Don't expect to have any wrapper types left at this point
 		panic(fmt.Sprintf("receiver for ArmConversionFunction is not of expected type. TypeName: %v, Type %T", receiver, rt.Type()))
 	}
+
+	return receiverType
 }
 
 func generateTypeConversionAssignments(
