@@ -9,21 +9,23 @@ import "go/ast"
 
 type FakeFunction struct {
 	name       string
-	Imported   map[PackageReference]struct{}
+	Imported   *PackageImportSet
 	Referenced TypeNameSet
+}
+
+func NewFakeFunction(name string) *FakeFunction {
+	return &FakeFunction{
+		name:     name,
+		Imported: EmptyPackageImportSet(),
+	}
 }
 
 func (fake *FakeFunction) Name() string {
 	return fake.name
 }
 
-func (fake *FakeFunction) RequiredImports() []PackageReference {
-	var result []PackageReference
-	for k := range fake.Imported {
-		result = append(result, k)
-	}
-
-	return result
+func (fake *FakeFunction) RequiredImports() *PackageImportSet {
+	return fake.Imported
 }
 
 func (fake *FakeFunction) References() TypeNameSet {
@@ -54,13 +56,12 @@ func (fake *FakeFunction) Equals(f Function) bool {
 	}
 
 	// Check to see if they have the same imports
-	if len(fake.Imported) != len(fn.Imported) {
+	if fake.Imported.Length() != fn.Imported.Length() {
 		return false
 	}
 
-	for k := range fake.Imported {
-		if _, ok := fn.Imported[k]; !ok {
-			// Missing key, not equal
+	for _, imp := range fake.Imported.AsSlice() {
+		if !fn.Imported.ContainsImport(imp) {
 			return false
 		}
 	}
