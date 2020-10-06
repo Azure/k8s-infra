@@ -22,3 +22,7 @@ type TestCase interface {
 	// Equals determines if this TestCase is equal to another one
 	Equals(f TestCase) bool
 }
+
+type TestCaseDefiner interface {
+	TestCases() []TestCase
+}
