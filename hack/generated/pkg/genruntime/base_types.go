@@ -89,24 +89,52 @@ func (resource *armResourceImpl) GetId() string {
 	return resource.Id
 }
 
-// DeployableResource represents a resource which can be deployed to Azure. In addition
-// to specification information, this includes the target resource group of the resource
-type DeployableResource struct {
-	resourceGroup string
-	spec          ArmResourceSpec
+type DeployableResource interface {
+	Spec() ArmResourceSpec
 }
 
-func NewDeployableResource(resourceGroup string, spec ArmResourceSpec) *DeployableResource {
-	return &DeployableResource{
+func NewDeployableResourceGroupResource(resourceGroup string, spec ArmResourceSpec) *ResourceGroupResource {
+	return &ResourceGroupResource{
 		resourceGroup: resourceGroup,
 		spec:          spec,
 	}
 }
 
-func (r *DeployableResource) ResourceGroup() string {
+func NewDeployableSubscriptionResource(location string, spec ArmResourceSpec) *SubscriptionResource {
+	return &SubscriptionResource{
+		location: location,
+		spec:     spec,
+	}
+}
+
+// DeployableResource represents a resource which can be deployed to Azure. In addition
+// to specification information, this includes the target resource group of the resource.
+type ResourceGroupResource struct {
+	resourceGroup string
+	spec          ArmResourceSpec
+}
+
+var _ DeployableResource = &ResourceGroupResource{}
+
+func (r *ResourceGroupResource) ResourceGroup() string {
 	return r.resourceGroup
 }
 
-func (r *DeployableResource) Spec() ArmResourceSpec {
+func (r *ResourceGroupResource) Spec() ArmResourceSpec {
+	return r.spec
+}
+
+type SubscriptionResource struct {
+	location string
+	spec     ArmResourceSpec
+}
+
+var _ DeployableResource = &SubscriptionResource{}
+
+func (r *SubscriptionResource) Location() string {
+	return r.location
+}
+
+func (r *SubscriptionResource) Spec() ArmResourceSpec {
 	return r.spec
 }
