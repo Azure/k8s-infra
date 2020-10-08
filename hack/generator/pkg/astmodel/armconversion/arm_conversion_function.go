@@ -36,8 +36,8 @@ func (c *ArmConversionFunction) Name() string {
 }
 
 // RequiredImports returns the imports required for this conversion function
-func (c *ArmConversionFunction) RequiredImports() *astmodel.PackageImportSet {
-	result := astmodel.EmptyPackageImportSet()
+func (c *ArmConversionFunction) RequiredPackageReferences() []astmodel.PackageReference {
+	var result []astmodel.PackageReference
 
 	// Because this interface is attached to an object, by definition that object will specify
 	// its own required imports. We don't want to call the objects required imports here
@@ -45,10 +45,9 @@ func (c *ArmConversionFunction) RequiredImports() *astmodel.PackageImportSet {
 
 	// We need these because we're going to be constructing/casting to the types
 	// of the properties in the ARM object, so we need to import those.
-	result.Merge(c.armType.RequiredImports())
-	result.AddReference(astmodel.MakeGenRuntimePackageReference())
-	result.AddReference(astmodel.MakeExternalPackageReference("fmt"))
-
+	result = append(result, c.armType.RequiredPackageReferences()...)
+	result = append(result, astmodel.MakeGenRuntimePackageReference())
+	result = append(result, astmodel.MakeExternalPackageReference("fmt"))
 	return result
 }
 

@@ -9,14 +9,14 @@ import "go/ast"
 
 type FakeFunction struct {
 	name       string
-	Imported   *PackageImportSet
+	Imported   []PackageReference
 	Referenced TypeNameSet
 }
 
 func NewFakeFunction(name string) *FakeFunction {
 	return &FakeFunction{
 		name:     name,
-		Imported: EmptyPackageImportSet(),
+		Imported: nil,
 	}
 }
 
@@ -24,7 +24,7 @@ func (fake *FakeFunction) Name() string {
 	return fake.name
 }
 
-func (fake *FakeFunction) RequiredImports() *PackageImportSet {
+func (fake *FakeFunction) RequiredPackageReferences() []PackageReference {
 	return fake.Imported
 }
 
@@ -32,7 +32,7 @@ func (fake *FakeFunction) References() TypeNameSet {
 	return fake.Referenced
 }
 
-func (fake *FakeFunction) AsFunc(codeGenerationContext *CodeGenerationContext, receiver TypeName) *ast.FuncDecl {
+func (fake *FakeFunction) AsFunc(_ *CodeGenerationContext, _ TypeName) *ast.FuncDecl {
 	panic("implement me")
 }
 
@@ -56,12 +56,20 @@ func (fake *FakeFunction) Equals(f Function) bool {
 	}
 
 	// Check to see if they have the same imports
-	if fake.Imported.Length() != fn.Imported.Length() {
+	if len(fake.Imported) != len(fn.Imported) {
 		return false
 	}
 
-	for _, imp := range fake.Imported.AsSlice() {
-		if !fn.Imported.ContainsImport(imp) {
+	for _, imp := range fake.Imported {
+		found := false
+		for _, i := range fn.Imported {
+			if i.Equals(imp) {
+				found = true
+				break
+			}
+		}
+
+		if !found {
 			return false
 		}
 	}
