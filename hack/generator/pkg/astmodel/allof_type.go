@@ -116,8 +116,9 @@ func (allOf AllOfType) AsDeclarations(codeGenerationContext *CodeGenerationConte
 	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
 }
 
-// RequiredImports returns the union of the required imports of all the AllOf types
-func (allOf AllOfType) RequiredImports() *PackageImportSet {
+// RequiredPackageReferences always panics; AllOf cannot be represented by the Go AST and must be
+// lowered to an object type
+func (allOf AllOfType) RequiredPackageReferences() []PackageReference {
 	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
 }
 

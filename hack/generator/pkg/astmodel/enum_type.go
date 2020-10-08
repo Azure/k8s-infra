@@ -148,9 +148,9 @@ func (enum *EnumType) Equals(t Type) bool {
 	return false
 }
 
-// RequiredImports indicates that Enums never need additional imports
-func (enum *EnumType) RequiredImports() *PackageImportSet {
-	return EmptyPackageImportSet()
+// RequiredPackageReferences indicates that Enums never need additional imports
+func (enum *EnumType) RequiredPackageReferences() []PackageReference {
+	return nil
 }
 
 // Options returns all the enum options

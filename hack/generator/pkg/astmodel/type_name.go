@@ -70,11 +70,9 @@ func (typeName TypeName) References() TypeNameSet {
 	return NewTypeNameSet(typeName)
 }
 
-// RequiredImports returns all the imports required for this definition
-func (typeName TypeName) RequiredImports() *PackageImportSet {
-	result := EmptyPackageImportSet()
-	result.AddReference(typeName.PackageReference)
-	return result
+// RequiredPackageReferences returns all the imports required for this definition
+func (typeName TypeName) RequiredPackageReferences() []PackageReference {
+	return []PackageReference{typeName.PackageReference}
 }
 
 // Equals returns true if the passed type is the same TypeName, false otherwise

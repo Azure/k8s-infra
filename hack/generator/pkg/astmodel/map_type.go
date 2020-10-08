@@ -51,11 +51,10 @@ func (m *MapType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr 
 	}
 }
 
-// RequiredImports returns a list of packages required by this
-func (m *MapType) RequiredImports() *PackageImportSet {
-	result := EmptyPackageImportSet()
-	result.Merge(m.key.RequiredImports())
-	result.Merge(m.value.RequiredImports())
+// RequiredPackageReferences returns a list of packages required by this
+func (m *MapType) RequiredPackageReferences() []PackageReference {
+	result := m.key.RequiredPackageReferences()
+	result = append(result, m.value.RequiredPackageReferences()...)
 	return result
 }
 
