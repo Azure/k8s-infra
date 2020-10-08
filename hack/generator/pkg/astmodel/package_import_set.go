@@ -9,20 +9,20 @@ import "sort"
 
 // PackageImportSet represents a set of distinct PackageImport references
 type PackageImportSet struct {
-	imports map[PackageImport]bool
+	imports map[PackageImport]struct{}
 }
 
 // EmptyPackageImportSet creates a new empty set of PackageImport references
 func EmptyPackageImportSet() *PackageImportSet {
 	return &PackageImportSet{
-		imports: make(map[PackageImport]bool),
+		imports: make(map[PackageImport]struct{}),
 	}
 }
 
 // AddImport ensures the set includes the specified import
 // Adding an import already present in the set is fine.
 func (set *PackageImportSet) AddImport(packageImport PackageImport) {
-	set.imports[packageImport] = true
+	set.imports[packageImport] = struct{}{}
 }
 
 // AddReference ensures this set includes an import of the specified reference
