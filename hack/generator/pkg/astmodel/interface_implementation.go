@@ -26,11 +26,11 @@ func (iface *InterfaceImplementation) Name() TypeName {
 	return iface.name
 }
 
-// RequiredImports returns a list of packages required by this
-func (iface *InterfaceImplementation) RequiredImports() *PackageImportSet {
-	result := EmptyPackageImportSet()
+// RequiredPackageReferences returns a list of packages required by this
+func (iface *InterfaceImplementation) RequiredPackageReferences() []PackageReference {
+	var result []PackageReference
 	for _, f := range iface.functions {
-		result.Merge(f.RequiredImports())
+		result = append(result, f.RequiredPackageReferences()...)
 	}
 
 	return result
