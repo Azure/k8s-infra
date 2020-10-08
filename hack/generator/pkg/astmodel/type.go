@@ -55,7 +55,7 @@ func TypeAsObjectType(t Type) (*ObjectType, error) {
 
 	ot, ok := rt.(*ObjectType)
 	if !ok {
-		return nil, fmt.Errorf("Type %v is not an object", rt)
+		return nil, fmt.Errorf("type %v is not an object", rt)
 	}
 
 	return ot, nil
