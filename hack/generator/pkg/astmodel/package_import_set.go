@@ -61,7 +61,7 @@ func (set *PackageImportSet) ImportFor(ref PackageReference) (PackageImport, boo
 	return PackageImport{}, false
 }
 
-// AsSlice() returns a sorted slice containing all the imports
+// AsSlice() returns a slice containing all the imports
 func (set *PackageImportSet) AsSlice() []PackageImport {
 	var result []PackageImport
 	for i := range set.imports {
@@ -70,6 +70,18 @@ func (set *PackageImportSet) AsSlice() []PackageImport {
 
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].String() < result[j].String()
+	})
+
+	return result
+}
+
+// AsSortedSlice() return a sorted slice containing all the imports
+// less specifies how to order the imports
+func (set *PackageImportSet) AsSortedSlice(less func(i PackageImport, j PackageImport) bool) []PackageImport {
+	result := set.AsSlice()
+
+	sort.Slice(result, func(i int, j int) bool {
+		return less(result[i], result[j])
 	})
 
 	return result
@@ -95,4 +107,32 @@ func (set *PackageImportSet) ApplyName(ref PackageReference, name string) {
 	if found {
 		set.AddImport(NewPackageImport(ref).WithName(name))
 	}
+}
+
+// ByPackageImportName() orders PackageImport instances by name,
+// We order explicitly named packages before implicitly named ones
+func ByNameInGroups(left PackageImport, right PackageImport) bool {
+	if left.name != right.name {
+		// Explicit names are different
+		if left.name == "" {
+			// left has no explicit name, right does, right goes first
+			return false
+		}
+
+		if right.name == "" {
+			// left has explicit name, right does not, left goes first
+			return true
+		}
+
+		return left.name < right.name
+	}
+
+	// Explicit names are the same
+	if IsLocalPackageReference(left.PackageReference) != IsLocalPackageReference(right.PackageReference) {
+		// if left is local, right is not, left goes first, and vice versa
+		return IsLocalPackageReference(left.PackageReference)
+	}
+
+	// Explicit names are the same, both local or both external
+	return left.PackageReference.String() < right.PackageReference.String()
 }

@@ -139,3 +139,58 @@ func TestRemove_WhenItemNotInSet_LeavesSetWithoutIt(t *testing.T) {
 	set.Remove(pathTestImport)
 	g.Expect(set.ContainsImport(pathTestImport)).To(BeFalse())
 }
+
+/*
+ * ByNameInGroups() tests
+ */
+
+func TestByNameInGroups_AppliesExpectedOrdering(t *testing.T) {
+
+	fmtRef := MakeExternalPackageReference("fmt")
+	testingRef := MakeExternalPackageReference("testing")
+	gomegaRef := MakeExternalPackageReference("github.com/onsi/gomega")
+
+	bareFmtImport := NewPackageImport(fmtRef)
+	namedFmtImport := bareFmtImport.WithName("f")
+
+	bareTestingImport := NewPackageImport(testingRef)
+	namedTestingImport := bareTestingImport.WithName("tst")
+
+	gomegaImport := NewPackageImport(gomegaRef)
+	implicitGomegaImport := gomegaImport.WithName(".")
+
+	localRef := MakeLocalPackageReference("this", "v1")
+	localImport := NewPackageImport(localRef)
+
+	cases := []struct {
+		name  string
+		left  PackageImport
+		right PackageImport
+		less  bool
+	}{
+		// Comparison with self
+		{"fmt not less than self", bareFmtImport, bareFmtImport, false},
+		{"testing not less than self", bareTestingImport, bareTestingImport, false},
+		{"named fmt not less than self", namedTestingImport, namedTestingImport, false},
+		{"implicit gomega not less than self", implicitGomegaImport, implicitGomegaImport, false},
+		// named imports before others
+		{"named testing before bare testing", namedTestingImport, bareTestingImport, true},
+		{"bare testing after named testing", bareTestingImport, namedTestingImport, false},
+		// named imports are ordered by name
+		{"named fmt before named testing", namedFmtImport, namedTestingImport, true},
+		{"named testing after named fmt", namedTestingImport, namedFmtImport, false},
+		// local imports before external ones
+		{"external gomega after local import", gomegaImport, localImport, false},
+		{"local import before external gomega", localImport, gomegaImport, true},
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			g := NewGomegaWithT(t)
+			less := ByNameInGroups(c.left, c.right)
+			g.Expect(less).To(Equal(c.less))
+		})
+	}
+}

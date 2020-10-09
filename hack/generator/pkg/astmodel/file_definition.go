@@ -151,7 +151,7 @@ func (file *FileDefinition) generateImports() *PackageImportSet {
 
 	// Determine if there are any conflicting imports -- these are imports with the same "name"
 	// but a different package path
-	imports := requiredImports.AsSlice()
+	imports := requiredImports.AsSortedSlice(ByNameInGroups)
 	for _, imp := range imports {
 		for _, otherImp := range imports {
 			if !imp.Equals(otherImp) && imp.PackageName() == otherImp.PackageName() {
