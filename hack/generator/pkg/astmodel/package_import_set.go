@@ -79,3 +79,20 @@ func (set *PackageImportSet) AsSlice() []PackageImport {
 func (set *PackageImportSet) Length() int {
 	return len(set.imports)
 }
+
+// ApplyName replaces any existing PackageImport for the specified reference with one using the
+// specified name
+func (set *PackageImportSet) ApplyName(ref PackageReference, name string) {
+	found := false
+	// Iterate over a slice as that freezes the list
+	for _, imp := range set.AsSlice() {
+		if imp.PackageReference.Equals(ref) {
+			set.Remove(imp)
+			found = true
+		}
+	}
+
+	if found {
+		set.AddImport(NewPackageImport(ref).WithName(name))
+	}
+}

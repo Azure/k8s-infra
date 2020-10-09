@@ -144,6 +144,9 @@ func (file *FileDefinition) generateImports() *PackageImportSet {
 	selfImport := NewPackageImport(file.packageReference)
 	requiredImports.Remove(selfImport)
 
+	// TODO: Make this configurable
+	requiredImports.ApplyName(MetaV1PackageReference, "metav1")
+
 	// TODO: Do something about conflicting imports
 
 	// Determine if there are any conflicting imports -- these are imports with the same "name"
