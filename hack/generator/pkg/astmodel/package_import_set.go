@@ -104,7 +104,7 @@ func (set *PackageImportSet) ApplyName(ref PackageReference, name string) {
 	}
 }
 
-// ByPackageImportName() orders PackageImport instances by name,
+// ByNameInGroups() orders PackageImport instances by name,
 // We order explicitly named packages before implicitly named ones
 func ByNameInGroups(left PackageImport, right PackageImport) bool {
 	if left.name != right.name {
