@@ -14,8 +14,9 @@ var (
 	simpleTestRef PackageReference = MakeExternalPackageReference("simple")
 	pathTestRef   PackageReference = MakeExternalPackageReference("package/path")
 
-	simpleTestImport = NewPackageImport(simpleTestRef)
-	pathTestImport   = NewPackageImport(pathTestRef)
+	simpleTestImport         = NewPackageImport(simpleTestRef)
+	pathTestImport           = NewPackageImport(pathTestRef)
+	simpleTestImportWithName = simpleTestImport.WithName("simple")
 )
 
 /*
@@ -45,6 +46,26 @@ func TestAddImport_WhenImportPresent_LeavesSetSameSize(t *testing.T) {
 	set.AddImport(simpleTestImport)
 	set.AddImport(simpleTestImport)
 	g.Expect(set.imports).To(HaveLen(1))
+}
+
+func TestAddImport_WhenAddingNamedImportAndUnnamedExists_PrefersNamedImport(t *testing.T) {
+	g := NewGomegaWithT(t)
+	set := NewPackageImportSet()
+	set.AddImport(simpleTestImport)
+	set.AddImport(simpleTestImportWithName)
+	imp, ok := set.ImportFor(simpleTestRef)
+	g.Expect(ok).To(BeTrue())
+	g.Expect(imp).To(Equal(simpleTestImportWithName))
+}
+
+func TestAddImport_WhenAddingUnnamedImportAndNamedExists_PrefersNamedImport(t *testing.T) {
+	g := NewGomegaWithT(t)
+	set := NewPackageImportSet()
+	set.AddImport(simpleTestImportWithName)
+	set.AddImport(simpleTestImport)
+	imp, ok := set.ImportFor(simpleTestRef)
+	g.Expect(ok).To(BeTrue())
+	g.Expect(imp).To(Equal(simpleTestImportWithName))
 }
 
 /*

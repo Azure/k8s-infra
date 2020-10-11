@@ -9,20 +9,25 @@ import "sort"
 
 // PackageImportSet represents a set of distinct PackageImport references
 type PackageImportSet struct {
-	imports map[PackageImport]struct{}
+	imports map[PackageReference]PackageImport
 }
 
 // NewPackageImportSet creates a new empty set of PackageImport references
 func NewPackageImportSet() *PackageImportSet {
 	return &PackageImportSet{
-		imports: make(map[PackageImport]struct{}),
+		imports: make(map[PackageReference]PackageImport),
 	}
 }
 
-// AddImport ensures the set includes the specified import
-// Adding an import already present in the set is fine.
+// AddImport ensures the set includes an specified import
+// If the set already contains an UNNAMED import for the same reference, it's overwritten, as we
+// prefer named imports
 func (set *PackageImportSet) AddImport(packageImport PackageImport) {
-	set.imports[packageImport] = struct{}{}
+	imp, ok := set.imports[packageImport.PackageReference]
+	if !ok || imp.name == "" {
+		// Don't have this import already, or the one we have has no name
+		set.imports[packageImport.PackageReference] = packageImport
+	}
 }
 
 // AddImportOfReference ensures this set includes an import of the specified reference
@@ -33,29 +38,30 @@ func (set *PackageImportSet) AddImportOfReference(ref PackageReference) {
 
 // Merge ensures that all imports specified in other are included
 func (set *PackageImportSet) Merge(other *PackageImportSet) {
-	for i := range other.imports {
-		set.AddImport(i)
+	for _, imp := range other.imports {
+		set.AddImport(imp)
 	}
 }
 
 // Remove ensures the specified item is not present
 // Removing an item not in the set is not an error.
 func (set *PackageImportSet) Remove(packageImport PackageImport) {
-	delete(set.imports, packageImport)
+	delete(set.imports, packageImport.PackageReference)
 }
 
 // Contains allows checking to see if an import is included
 func (set *PackageImportSet) ContainsImport(packageImport PackageImport) bool {
-	_, found := set.imports[packageImport]
-	return found
+	if imp, ok := set.imports[packageImport.PackageReference]; ok {
+		return imp.Equals(packageImport)
+	}
+
+	return false
 }
 
 // ImportFor looks up a package reference and returns its import, if any
 func (set *PackageImportSet) ImportFor(ref PackageReference) (PackageImport, bool) {
-	for imp := range set.imports {
-		if imp.PackageReference.Equals(ref) {
-			return imp, true
-		}
+	if imp, ok := set.imports[ref]; ok {
+		return imp, true
 	}
 
 	return PackageImport{}, false
@@ -64,8 +70,8 @@ func (set *PackageImportSet) ImportFor(ref PackageReference) (PackageImport, boo
 // AsSlice() returns a slice containing all the imports
 func (set *PackageImportSet) AsSlice() []PackageImport {
 	var result []PackageImport
-	for i := range set.imports {
-		result = append(result, i)
+	for _, imp := range set.imports {
+		result = append(result, imp)
 	}
 
 	sort.Slice(result, func(i, j int) bool {
@@ -95,17 +101,10 @@ func (set *PackageImportSet) Length() int {
 // ApplyName replaces any existing PackageImport for the specified reference with one using the
 // specified name
 func (set *PackageImportSet) ApplyName(ref PackageReference, name string) {
-	found := false
-	// Iterate over a slice as that freezes the list
-	for _, imp := range set.AsSlice() {
-		if imp.PackageReference.Equals(ref) {
-			set.Remove(imp)
-			found = true
-		}
-	}
-
-	if found {
-		set.AddImport(NewPackageImport(ref).WithName(name))
+	if _, ok := set.imports[ref]; ok {
+		// We're importing that reference, apply the forced name
+		// Modifying the map directly to bypass any rules enforced by AddImport()
+		set.imports[ref] = NewPackageImport(ref).WithName(name)
 	}
 }
 
