@@ -48,21 +48,21 @@ func TestAddImport_WhenImportPresent_LeavesSetSameSize(t *testing.T) {
 }
 
 /*
- * AddReference() tests
+ * AddImportOfReference() tests
  */
 
 func TestAddReference_WhenReferenceMissing_IncreasesSizeOfSet(t *testing.T) {
 	g := NewGomegaWithT(t)
 	set := NewPackageImportSet()
-	set.AddReference(simpleTestRef)
+	set.AddImportOfReference(simpleTestRef)
 	g.Expect(set.imports).To(HaveLen(1))
 }
 
 func TestAddImport_WhenReferencePresent_LeavesSetSameSize(t *testing.T) {
 	g := NewGomegaWithT(t)
 	set := NewPackageImportSet()
-	set.AddReference(simpleTestRef)
-	set.AddReference(simpleTestRef)
+	set.AddImportOfReference(simpleTestRef)
+	set.AddImportOfReference(simpleTestRef)
 	g.Expect(set.imports).To(HaveLen(1))
 }
 
@@ -73,8 +73,8 @@ func TestAddImport_WhenReferencePresent_LeavesSetSameSize(t *testing.T) {
 func TestMerge_GivenEmptySet_LeavesSetUnchanged(t *testing.T) {
 	g := NewGomegaWithT(t)
 	setA := NewPackageImportSet()
-	setA.AddReference(simpleTestRef)
-	setA.AddReference(pathTestRef)
+	setA.AddImportOfReference(simpleTestRef)
+	setA.AddImportOfReference(pathTestRef)
 	setB := NewPackageImportSet()
 	setA.Merge(setB)
 	g.Expect(setA.imports).To(HaveLen(2))
@@ -83,11 +83,11 @@ func TestMerge_GivenEmptySet_LeavesSetUnchanged(t *testing.T) {
 func TestMerge_GivenIdenticalSet_LeavesSetUnchanged(t *testing.T) {
 	g := NewGomegaWithT(t)
 	setA := NewPackageImportSet()
-	setA.AddReference(simpleTestRef)
-	setA.AddReference(pathTestRef)
+	setA.AddImportOfReference(simpleTestRef)
+	setA.AddImportOfReference(pathTestRef)
 	setB := NewPackageImportSet()
-	setB.AddReference(simpleTestRef)
-	setB.AddReference(pathTestRef)
+	setB.AddImportOfReference(simpleTestRef)
+	setB.AddImportOfReference(pathTestRef)
 	setA.Merge(setB)
 	g.Expect(setA.imports).To(HaveLen(2))
 }
@@ -95,9 +95,9 @@ func TestMerge_GivenIdenticalSet_LeavesSetUnchanged(t *testing.T) {
 func TestMerge_GivenDisjointSets_MergesSets(t *testing.T) {
 	g := NewGomegaWithT(t)
 	setA := NewPackageImportSet()
-	setA.AddReference(simpleTestRef)
+	setA.AddImportOfReference(simpleTestRef)
 	setB := NewPackageImportSet()
-	setB.AddReference(pathTestRef)
+	setB.AddImportOfReference(pathTestRef)
 	setA.Merge(setB)
 	g.Expect(setA.imports).To(HaveLen(2))
 }

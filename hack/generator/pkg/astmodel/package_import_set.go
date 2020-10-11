@@ -25,9 +25,9 @@ func (set *PackageImportSet) AddImport(packageImport PackageImport) {
 	set.imports[packageImport] = struct{}{}
 }
 
-// AddReference ensures this set includes an import of the specified reference
+// AddImportOfReference ensures this set includes an import of the specified reference
 // Adding a reference already in the set is fine.
-func (set *PackageImportSet) AddReference(ref PackageReference) {
+func (set *PackageImportSet) AddImportOfReference(ref PackageReference) {
 	set.AddImport(NewPackageImport(ref))
 }
 

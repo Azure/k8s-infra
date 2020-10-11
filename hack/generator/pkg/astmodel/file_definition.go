@@ -136,7 +136,7 @@ func (file *FileDefinition) generateImports() *PackageImportSet {
 
 	for _, s := range file.definitions {
 		for _, r := range s.RequiredPackageReferences() {
-			requiredImports.AddReference(r)
+			requiredImports.AddImportOfReference(r)
 		}
 	}
 
