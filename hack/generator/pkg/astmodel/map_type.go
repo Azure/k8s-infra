@@ -53,7 +53,8 @@ func (m *MapType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr 
 
 // RequiredPackageReferences returns a list of packages required by this
 func (m *MapType) RequiredPackageReferences() []PackageReference {
-	result := m.key.RequiredPackageReferences()
+	var result []PackageReference
+	result = append(result, m.key.RequiredPackageReferences()...)
 	result = append(result, m.value.RequiredPackageReferences()...)
 	return result
 }

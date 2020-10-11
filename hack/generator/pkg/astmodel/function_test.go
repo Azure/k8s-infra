@@ -9,7 +9,7 @@ import "go/ast"
 
 type FakeFunction struct {
 	name       string
-	Imported   []PackageReference
+	Imported   map[PackageReference]struct{}
 	Referenced TypeNameSet
 }
 
@@ -25,7 +25,12 @@ func (fake *FakeFunction) Name() string {
 }
 
 func (fake *FakeFunction) RequiredPackageReferences() []PackageReference {
-	return fake.Imported
+	var result []PackageReference
+	for k := range fake.Imported {
+		result = append(result, k)
+	}
+
+	return result
 }
 
 func (fake *FakeFunction) References() TypeNameSet {
@@ -60,16 +65,9 @@ func (fake *FakeFunction) Equals(f Function) bool {
 		return false
 	}
 
-	for _, imp := range fake.Imported {
-		found := false
-		for _, i := range fn.Imported {
-			if i.Equals(imp) {
-				found = true
-				break
-			}
-		}
-
-		if !found {
+	for imp := range fake.Imported {
+		if _, ok := fn.Imported[imp]; !ok {
+			// Missing key, not equal
 			return false
 		}
 	}
