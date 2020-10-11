@@ -132,7 +132,7 @@ func assignRanks(definers []TypeDefinition, ranks map[TypeName]int) []TypeDefini
 // generateImports products the definitive set of imports for use in this file and
 // disambiguates any conflicts
 func (file *FileDefinition) generateImports() *PackageImportSet {
-	var requiredImports = EmptyPackageImportSet()
+	var requiredImports = NewPackageImportSet()
 
 	for _, s := range file.definitions {
 		for _, r := range s.RequiredPackageReferences() {

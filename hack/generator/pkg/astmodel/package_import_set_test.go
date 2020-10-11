@@ -19,12 +19,12 @@ var (
 )
 
 /*
- * EmptyPackageImportSet() tests
+ * NewPackageImportSet() tests
  */
 
 func TestEmptyPackageImportSet_ReturnsEmptySet(t *testing.T) {
 	g := NewGomegaWithT(t)
-	set := EmptyPackageImportSet()
+	set := NewPackageImportSet()
 	g.Expect(set.imports).To(HaveLen(0))
 }
 
@@ -34,14 +34,14 @@ func TestEmptyPackageImportSet_ReturnsEmptySet(t *testing.T) {
 
 func TestAddImport_WhenImportMissing_IncreasesSizeOfSet(t *testing.T) {
 	g := NewGomegaWithT(t)
-	set := EmptyPackageImportSet()
+	set := NewPackageImportSet()
 	set.AddImport(simpleTestImport)
 	g.Expect(set.imports).To(HaveLen(1))
 }
 
 func TestAddImport_WhenImportPresent_LeavesSetSameSize(t *testing.T) {
 	g := NewGomegaWithT(t)
-	set := EmptyPackageImportSet()
+	set := NewPackageImportSet()
 	set.AddImport(simpleTestImport)
 	set.AddImport(simpleTestImport)
 	g.Expect(set.imports).To(HaveLen(1))
@@ -53,14 +53,14 @@ func TestAddImport_WhenImportPresent_LeavesSetSameSize(t *testing.T) {
 
 func TestAddReference_WhenReferenceMissing_IncreasesSizeOfSet(t *testing.T) {
 	g := NewGomegaWithT(t)
-	set := EmptyPackageImportSet()
+	set := NewPackageImportSet()
 	set.AddReference(simpleTestRef)
 	g.Expect(set.imports).To(HaveLen(1))
 }
 
 func TestAddImport_WhenReferencePresent_LeavesSetSameSize(t *testing.T) {
 	g := NewGomegaWithT(t)
-	set := EmptyPackageImportSet()
+	set := NewPackageImportSet()
 	set.AddReference(simpleTestRef)
 	set.AddReference(simpleTestRef)
 	g.Expect(set.imports).To(HaveLen(1))
@@ -72,20 +72,20 @@ func TestAddImport_WhenReferencePresent_LeavesSetSameSize(t *testing.T) {
 
 func TestMerge_GivenEmptySet_LeavesSetUnchanged(t *testing.T) {
 	g := NewGomegaWithT(t)
-	setA := EmptyPackageImportSet()
+	setA := NewPackageImportSet()
 	setA.AddReference(simpleTestRef)
 	setA.AddReference(pathTestRef)
-	setB := EmptyPackageImportSet()
+	setB := NewPackageImportSet()
 	setA.Merge(setB)
 	g.Expect(setA.imports).To(HaveLen(2))
 }
 
 func TestMerge_GivenIdenticalSet_LeavesSetUnchanged(t *testing.T) {
 	g := NewGomegaWithT(t)
-	setA := EmptyPackageImportSet()
+	setA := NewPackageImportSet()
 	setA.AddReference(simpleTestRef)
 	setA.AddReference(pathTestRef)
-	setB := EmptyPackageImportSet()
+	setB := NewPackageImportSet()
 	setB.AddReference(simpleTestRef)
 	setB.AddReference(pathTestRef)
 	setA.Merge(setB)
@@ -94,9 +94,9 @@ func TestMerge_GivenIdenticalSet_LeavesSetUnchanged(t *testing.T) {
 
 func TestMerge_GivenDisjointSets_MergesSets(t *testing.T) {
 	g := NewGomegaWithT(t)
-	setA := EmptyPackageImportSet()
+	setA := NewPackageImportSet()
 	setA.AddReference(simpleTestRef)
-	setB := EmptyPackageImportSet()
+	setB := NewPackageImportSet()
 	setB.AddReference(pathTestRef)
 	setA.Merge(setB)
 	g.Expect(setA.imports).To(HaveLen(2))
@@ -108,14 +108,14 @@ func TestMerge_GivenDisjointSets_MergesSets(t *testing.T) {
 
 func TestContains_GivenMemberOfSet_ReturnsTrue(t *testing.T) {
 	g := NewGomegaWithT(t)
-	set := EmptyPackageImportSet()
+	set := NewPackageImportSet()
 	set.AddImport(simpleTestImport)
 	g.Expect(set.ContainsImport(simpleTestImport)).To(BeTrue())
 }
 
 func TestContains_GivenNonMemberOfSet_ReturnsFalse(t *testing.T) {
 	g := NewGomegaWithT(t)
-	set := EmptyPackageImportSet()
+	set := NewPackageImportSet()
 	set.AddImport(simpleTestImport)
 	g.Expect(set.ContainsImport(pathTestImport)).To(BeFalse())
 }
@@ -126,7 +126,7 @@ func TestContains_GivenNonMemberOfSet_ReturnsFalse(t *testing.T) {
 
 func TestRemove_WhenItemInSet_RemovesIt(t *testing.T) {
 	g := NewGomegaWithT(t)
-	set := EmptyPackageImportSet()
+	set := NewPackageImportSet()
 	set.AddImport(simpleTestImport)
 	set.Remove(simpleTestImport)
 	g.Expect(set.ContainsImport(simpleTestImport)).To(BeFalse())
@@ -134,7 +134,7 @@ func TestRemove_WhenItemInSet_RemovesIt(t *testing.T) {
 
 func TestRemove_WhenItemNotInSet_LeavesSetWithoutIt(t *testing.T) {
 	g := NewGomegaWithT(t)
-	set := EmptyPackageImportSet()
+	set := NewPackageImportSet()
 	set.AddImport(simpleTestImport)
 	set.Remove(pathTestImport)
 	g.Expect(set.ContainsImport(pathTestImport)).To(BeFalse())

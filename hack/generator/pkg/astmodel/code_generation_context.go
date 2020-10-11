@@ -26,7 +26,7 @@ func NewCodeGenerationContext(
 	packageImports *PackageImportSet,
 	generatedPackages map[PackageReference]*PackageDefinition) *CodeGenerationContext {
 
-	imports := EmptyPackageImportSet()
+	imports := NewPackageImportSet()
 	imports.Merge(packageImports)
 
 	return &CodeGenerationContext{
@@ -43,7 +43,7 @@ func (codeGenContext *CodeGenerationContext) CurrentPackage() PackageReference {
 // PackageImports returns the set of package references in the current context
 func (codeGenContext *CodeGenerationContext) PackageImports() *PackageImportSet {
 	// return a copy of the map to ensure immutability
-	result := EmptyPackageImportSet()
+	result := NewPackageImportSet()
 	result.Merge(codeGenContext.packageImports)
 	return result
 }

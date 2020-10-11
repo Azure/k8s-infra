@@ -12,8 +12,8 @@ type PackageImportSet struct {
 	imports map[PackageImport]struct{}
 }
 
-// EmptyPackageImportSet creates a new empty set of PackageImport references
-func EmptyPackageImportSet() *PackageImportSet {
+// NewPackageImportSet creates a new empty set of PackageImport references
+func NewPackageImportSet() *PackageImportSet {
 	return &PackageImportSet{
 		imports: make(map[PackageImport]struct{}),
 	}
