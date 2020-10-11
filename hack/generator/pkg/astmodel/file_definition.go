@@ -147,8 +147,6 @@ func (file *FileDefinition) generateImports() *PackageImportSet {
 	// TODO: Make this configurable
 	requiredImports.ApplyName(MetaV1PackageReference, "metav1")
 
-	// TODO: Do something about conflicting imports
-
 	// Determine if there are any conflicting imports -- these are imports with the same "name"
 	// but a different package path
 	imports := requiredImports.AsSortedSlice(ByNameInGroups)

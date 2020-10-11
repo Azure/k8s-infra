@@ -74,10 +74,6 @@ func (set *PackageImportSet) AsSlice() []PackageImport {
 		result = append(result, imp)
 	}
 
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].String() < result[j].String()
-	})
-
 	return result
 }
 
