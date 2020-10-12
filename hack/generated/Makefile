@@ -18,13 +18,13 @@ V = 0
 Q = $(if $(filter 1,$V),,@)
 
 .PHONY: all
-all: generate header-check fmt build test
+all: generate header-check fmt build test test-int
 
 # There is a ci specific target because we want the CI pass to fail if
 # the code has not been go fmt-ed, whereas locally we want "make all"
 # to just format the code for you
 .PHONY: ci
-ci: generate build test-cover
+ci: generate build test-cover test-int
 
 .PHONY: lint
 lint: $(GOLANGCI_LINT) ; $(info $(M) running golangci configured linters…) ## Lint codebase
@@ -45,6 +45,13 @@ tidy: ; $(info $(M) running tidy…) @ ## Run tidy
 .PHONY: test
 test: ; $(info $(M) running go test…)
 	$(Q) $(GO) test $(GO_DIRS_TO_TEST) -tags=noexit
+
+# Initially this target uses kind as there is no need to end to end test on Azure.
+# Eventually when we start supporting features like MSI that only work in Azure,
+# it's likely we'll need to make the integration tests (or at least some of them)
+# run in an AKS cluster.
+.PHONY: test-int
+test-int: kind-create install kind-delete ; $(info $(M) running controller integration test…)
 
 .PHONY: test-cover
 test-cover: $(GCOV2LCOV) ; $(info $(M) running go test…)
