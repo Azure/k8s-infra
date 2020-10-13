@@ -170,12 +170,12 @@ func IdentityVisitOfObjectType(this *TypeVisitor, it *ObjectType, ctx interface{
 func IdentityVisitOfMapType(this *TypeVisitor, it *MapType, ctx interface{}) (Type, error) {
 	visitedKey, err := this.Visit(it.key, ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to visit map key type %v", it.key)
+		return nil, errors.Wrapf(err, "failed to visit map key type %T", it.key)
 	}
 
 	visitedValue, err := this.Visit(it.value, ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to visit map value type %v", it.value)
+		return nil, errors.Wrapf(err, "failed to visit map value type %T", it.value)
 	}
 
 	return NewMapType(visitedKey, visitedValue), nil
@@ -190,7 +190,7 @@ func IdentityVisitOfEnumType(_ *TypeVisitor, it *EnumType, _ interface{}) (Type,
 func IdentityVisitOfOptionalType(this *TypeVisitor, it *OptionalType, ctx interface{}) (Type, error) {
 	visitedElement, err := this.Visit(it.element, ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to visit optional element type %v", it.element)
+		return nil, errors.Wrapf(err, "failed to visit optional element type %T", it.element)
 	}
 
 	return NewOptionalType(visitedElement), nil
@@ -199,12 +199,12 @@ func IdentityVisitOfOptionalType(this *TypeVisitor, it *OptionalType, ctx interf
 func IdentityVisitOfResourceType(this *TypeVisitor, it *ResourceType, ctx interface{}) (Type, error) {
 	visitedSpec, err := this.Visit(it.spec, ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to visit resource spec type %v", it.spec)
+		return nil, errors.Wrapf(err, "failed to visit resource spec type %T", it.spec)
 	}
 
 	visitedStatus, err := this.Visit(it.status, ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to visit resource status type %v", it.status)
+		return nil, errors.Wrapf(err, "failed to visit resource status type %T", it.status)
 	}
 
 	return it.WithSpec(visitedSpec).WithStatus(visitedStatus), nil
@@ -213,7 +213,7 @@ func IdentityVisitOfResourceType(this *TypeVisitor, it *ResourceType, ctx interf
 func IdentityVisitOfArmType(this *TypeVisitor, at *ArmType, ctx interface{}) (Type, error) {
 	nt, err := this.Visit(&at.objectType, ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to visit ARM underlying type %v", at.objectType)
+		return nil, errors.Wrapf(err, "failed to visit ARM underlying type %T", at.objectType)
 	}
 
 	switch newType := nt.(type) {
@@ -224,7 +224,7 @@ func IdentityVisitOfArmType(this *TypeVisitor, at *ArmType, ctx interface{}) (Ty
 		return newType, nil
 
 	default:
-		return nil, errors.Errorf("expected transformation of ARM underlying type %v to return ObjectType or ArmType, not %v", at.objectType, nt)
+		return nil, errors.Errorf("expected transformation of ARM underlying type %T to return ObjectType or ArmType, not %T", at.objectType, nt)
 	}
 }
 
@@ -269,7 +269,7 @@ func IdentityVisitOfAllOfType(this *TypeVisitor, it AllOfType, ctx interface{}) 
 func IdentityVisitOfStorageType(this *TypeVisitor, st *StorageType, ctx interface{}) (Type, error) {
 	nt, err := this.Visit(&st.objectType, ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to visit storage type %v", st.objectType)
+		return nil, errors.Wrapf(err, "failed to visit storage type %T", st.objectType)
 	}
 
 	switch newType := nt.(type) {
@@ -280,6 +280,6 @@ func IdentityVisitOfStorageType(this *TypeVisitor, st *StorageType, ctx interfac
 		return newType, nil
 
 	default:
-		return nil, errors.Errorf("expected transformation of Storage type %v to return ObjectType, not %v", st.objectType, newType)
+		return nil, errors.Errorf("expected transformation of Storage type %T to return ObjectType, not %T", st.objectType, newType)
 	}
 }
