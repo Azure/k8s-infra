@@ -73,8 +73,8 @@ func makeStorageTypesVisitor(types astmodel.Types) astmodel.TypeVisitor {
 
 	factory.visitor = result
 	factory.propertyConversions = []propertyConversion{
-		factory.kubernetesResourceStoragePropertyConversion,
-		factory.defaultStoragePropertyConversion,
+		factory.preserveKubernetesResourceStorageProperties,
+		factory.convertPropertiesForStorage,
 	}
 
 	return result
@@ -164,7 +164,7 @@ func (factory *StorageTypeFactory) makeStorageProperty(
 }
 
 // Preserve properties required by the KubernetesResource interface unchanged as they're always required
-func (factory *StorageTypeFactory) kubernetesResourceStoragePropertyConversion(
+func (factory *StorageTypeFactory) preserveKubernetesResourceStorageProperties(
 	prop *astmodel.PropertyDefinition,
 	_ StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error) {
 	if prop.HasName(astmodel.AzureNameProperty) ||
@@ -177,7 +177,7 @@ func (factory *StorageTypeFactory) kubernetesResourceStoragePropertyConversion(
 	return nil, nil
 }
 
-func (factory *StorageTypeFactory) defaultStoragePropertyConversion(
+func (factory *StorageTypeFactory) convertPropertiesForStorage(
 	prop *astmodel.PropertyDefinition,
 	ctx StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error) {
 	propertyType, err := factory.visitor.Visit(prop.PropertyType(), ctx.forProperty(prop))
