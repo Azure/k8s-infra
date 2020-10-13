@@ -54,6 +54,19 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 			}
 
 			visitor.VisitOneOfType = func(this *astmodel.TypeVisitor, it astmodel.OneOfType, ctx interface{}) (astmodel.Type, error) {
+				synth := synthesizer{
+					specOrStatus: ctx.(resourceFieldSelector),
+					defs:         defs,
+					idFactory:    idFactory,
+				}
+
+				// we want to preserve names of the inner types
+				// even if they are converted to other (unnamed types)
+				propNames, err := synth.getOneOfPropNames(it)
+				if err != nil {
+					return nil, err
+				}
+
 				// process children first so that allOfs are resolved
 				result, err := astmodel.IdentityVisitOfOneOfType(this, it, ctx)
 				if err != nil {
@@ -61,13 +74,7 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 				}
 
 				if resultOneOf, ok := result.(astmodel.OneOfType); ok {
-					synth := synthesizer{
-						specOrStatus: ctx.(resourceFieldSelector),
-						defs:         defs,
-						idFactory:    idFactory,
-					}
-
-					result, err = synth.oneOfObject(resultOneOf)
+					result, err = synth.oneOfObject(resultOneOf, propNames)
 					if err != nil {
 						return nil, errors.Wrapf(err, "unable to synthesize oneOf")
 					}
@@ -118,63 +125,70 @@ type synthesizer struct {
 	defs         astmodel.Types
 }
 
-func (s synthesizer) oneOfObject(oneOf astmodel.OneOfType) (astmodel.Type, error) {
-	// If there's more than one option, synthesize a type.
-	// Note that this is required because Kubernetes CRDs do not support OneOf the same way
-	// OpenAPI does, see https://github.com/Azure/k8s-infra/issues/71
-	var properties []*astmodel.PropertyDefinition
+type names struct {
+	golang astmodel.PropertyName
+	json   string
 
-	propertyDescription := "Mutually exclusive with all other properties"
-	err := oneOf.Types().ForEachError(func(t astmodel.Type, i int) error {
-		prop, err := s.convertToOneOfProperty(i, t)
-		if err != nil {
-			return err
-		}
-
-		prop = prop.MakeOptional()
-		prop = prop.WithDescription(propertyDescription)
-
-		properties = append(properties, prop)
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	objectType := astmodel.NewObjectType().WithProperties(properties...)
-	objectType = objectType.WithFunction(astmodel.NewOneOfJSONMarshalFunction(objectType, s.idFactory))
-
-	return objectType, nil
+	// used to resolve conflicts:
+	goodName bool
+	depth    int
 }
 
-func (s synthesizer) convertToOneOfProperty(propIndex int, from astmodel.Type) (*astmodel.PropertyDefinition, error) {
-	switch concreteType := from.(type) {
+func (ns names) betterThan(other names) bool {
+	if ns.goodName && !other.goodName {
+		return true
+	}
+
+	if other.goodName && !ns.goodName {
+		return false
+	}
+
+	// both are good or bad
+	return ns.depth <= other.depth
+}
+
+func (s synthesizer) getOneOfPropNames(oneOf astmodel.OneOfType) ([]names, error) {
+
+	var result []names
+
+	err := oneOf.Types().ForEachError(func(t astmodel.Type, ix int) error {
+		name, err := s.getOneOfName(t, ix)
+		if err == nil {
+			result = append(result, name)
+		}
+
+		return err
+	})
+
+	return result, err
+}
+
+func (s synthesizer) getOneOfName(t astmodel.Type, propIndex int) (names, error) {
+	switch concreteType := t.(type) {
 	case astmodel.TypeName:
-		propertyName := s.idFactory.CreatePropertyName(concreteType.Name(), astmodel.Exported)
-
 		// JSON name is unimportant here because we will implement the JSON marshaller anyway,
 		// but we still need it for controller-gen
-		jsonName := s.idFactory.CreateIdentifier(concreteType.Name(), astmodel.NotExported)
-		return astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType), nil
+		return names{
+			golang:   s.idFactory.CreatePropertyName(concreteType.Name(), astmodel.Exported),
+			json:     s.idFactory.CreateIdentifier(concreteType.Name(), astmodel.NotExported),
+			goodName: true, // a typename name is good (everything else is not)
+		}, nil
 	case *astmodel.EnumType:
-		// TODO: This name sucks but what alternative do we have?
+		// JSON name is unimportant here because we will implement the JSON marshaller anyway,
+		// but we still need it for controller-gen
 		name := fmt.Sprintf("enum%v", propIndex)
-		propertyName := s.idFactory.CreatePropertyName(name, astmodel.Exported)
-
-		// JSON name is unimportant here because we will implement the JSON marshaller anyway,
-		// but we still need it for controller-gen
-		jsonName := s.idFactory.CreateIdentifier(name, astmodel.NotExported)
-		return astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType), nil
+		return names{
+			golang:   s.idFactory.CreatePropertyName(name, astmodel.Exported),
+			json:     s.idFactory.CreateIdentifier(name, astmodel.NotExported),
+			goodName: false, // TODO: This name sucks but what alternative do we have?
+		}, nil
 	case *astmodel.ObjectType:
-		// TODO: This name sucks but what alternative do we have?
 		name := fmt.Sprintf("object%v", propIndex)
-		propertyName := s.idFactory.CreatePropertyName(name, astmodel.Exported)
-
-		// JSON name is unimportant here because we will implement the JSON marshaller anyway,
-		// but we still need it for controller-gen
-		jsonName := s.idFactory.CreateIdentifier(name, astmodel.NotExported)
-		return astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType), nil
+		return names{
+			golang:   s.idFactory.CreatePropertyName(name, astmodel.Exported),
+			json:     s.idFactory.CreateIdentifier(name, astmodel.NotExported),
+			goodName: false, // TODO: This name sucks but what alternative do we have?
+		}, nil
 	case *astmodel.PrimitiveType:
 		var primitiveTypeName string
 		if concreteType == astmodel.AnyType {
@@ -185,22 +199,69 @@ func (s synthesizer) convertToOneOfProperty(propIndex int, from astmodel.Type) (
 
 		// TODO: This name sucks but what alternative do we have?
 		name := fmt.Sprintf("%v%v", primitiveTypeName, propIndex)
-		propertyName := s.idFactory.CreatePropertyName(name, astmodel.Exported)
-
-		// JSON name is unimportant here because we will implement the JSON marshaller anyway,
-		// but we still need it for controller-gen
-		jsonName := s.idFactory.CreateIdentifier(name, astmodel.NotExported)
-		return astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType).MakeOptional(), nil
-
+		return names{
+			golang:   s.idFactory.CreatePropertyName(name, astmodel.Exported),
+			json:     s.idFactory.CreateIdentifier(name, astmodel.NotExported),
+			goodName: false, // TODO: This name sucks but what alternative do we have?
+		}, nil
 	case *astmodel.ResourceType:
 		name := fmt.Sprintf("resource%v", propIndex)
-		propertyName := s.idFactory.CreatePropertyName(name, astmodel.Exported)
-		jsonName := s.idFactory.CreateIdentifier(name, astmodel.NotExported)
-		return astmodel.NewPropertyDefinition(propertyName, jsonName, concreteType).MakeOptional(), nil
+		return names{
+			golang:   s.idFactory.CreatePropertyName(name, astmodel.Exported),
+			json:     s.idFactory.CreateIdentifier(name, astmodel.NotExported),
+			goodName: false, // TODO: This name sucks but what alternative do we have?
+		}, nil
+
+	case astmodel.AllOfType:
+		var result *names
+		err := concreteType.Types().ForEachError(func(t astmodel.Type, ix int) error {
+			inner, err := s.getOneOfName(t, ix)
+			if err != nil {
+				return err
+			}
+
+			if result == nil || inner.betterThan(*result) {
+				result = &inner
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			return names{}, err
+		}
+
+		if result != nil {
+			result.depth += 1
+			return *result, nil
+		}
+
+		return names{}, errors.New("unable to produce name for AllOf")
 
 	default:
-		return nil, errors.Errorf("unexpected oneOf member, type: %T", from)
+		return names{}, errors.Errorf("unexpected oneOf member, type: %T", t)
 	}
+}
+
+func (s synthesizer) oneOfObject(oneOf astmodel.OneOfType, propNames []names) (astmodel.Type, error) {
+	// If there's more than one option, synthesize a type.
+	// Note that this is required because Kubernetes CRDs do not support OneOf the same way
+	// OpenAPI does, see https://github.com/Azure/k8s-infra/issues/71
+	var properties []*astmodel.PropertyDefinition
+
+	propertyDescription := "Mutually exclusive with all other properties"
+	oneOf.Types().ForEach(func(t astmodel.Type, ix int) {
+		names := propNames[ix]
+		prop := astmodel.NewPropertyDefinition(names.golang, names.json, t)
+		prop = prop.MakeOptional()
+		prop = prop.WithDescription(propertyDescription)
+		properties = append(properties, prop)
+	})
+
+	objectType := astmodel.NewObjectType().WithProperties(properties...)
+	objectType = objectType.WithFunction(astmodel.NewOneOfJSONMarshalFunction(objectType, s.idFactory))
+
+	return objectType, nil
 }
 
 func (s synthesizer) intersectTypes(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
