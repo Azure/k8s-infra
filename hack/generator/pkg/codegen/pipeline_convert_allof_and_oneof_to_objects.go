@@ -74,10 +74,7 @@ func convertAllOfAndOneOfToObjects(idFactory astmodel.IdentifierFactory) Pipelin
 				}
 
 				if resultOneOf, ok := result.(astmodel.OneOfType); ok {
-					result, err = synth.oneOfObject(resultOneOf, propNames)
-					if err != nil {
-						return nil, errors.Wrapf(err, "unable to synthesize oneOf")
-					}
+					result = synth.oneOfObject(resultOneOf, propNames)
 				}
 
 				// we might end up with something that requires re-visiting
@@ -243,7 +240,7 @@ func (s synthesizer) getOneOfName(t astmodel.Type, propIndex int) (names, error)
 	}
 }
 
-func (s synthesizer) oneOfObject(oneOf astmodel.OneOfType, propNames []names) (astmodel.Type, error) {
+func (s synthesizer) oneOfObject(oneOf astmodel.OneOfType, propNames []names) astmodel.Type {
 	// If there's more than one option, synthesize a type.
 	// Note that this is required because Kubernetes CRDs do not support OneOf the same way
 	// OpenAPI does, see https://github.com/Azure/k8s-infra/issues/71
@@ -261,7 +258,7 @@ func (s synthesizer) oneOfObject(oneOf astmodel.OneOfType, propNames []names) (a
 	objectType := astmodel.NewObjectType().WithProperties(properties...)
 	objectType = objectType.WithFunction(astmodel.NewOneOfJSONMarshalFunction(objectType, s.idFactory))
 
-	return objectType, nil
+	return objectType
 }
 
 func (s synthesizer) intersectTypes(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
