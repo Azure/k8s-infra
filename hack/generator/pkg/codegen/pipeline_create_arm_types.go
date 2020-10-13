@@ -265,7 +265,7 @@ func createArmTypeDefinition(definitions astmodel.Types, def astmodel.TypeDefini
 		ApplyObjectTransformations(removeValidations, convertPropertiesToArmTypesWrapper)
 	if err != nil {
 		return astmodel.TypeDefinition{},
-			errors.Wrapf(err, "Failed to create ARM prototype %v from Kubernetes definition %v", armName, def.Name())
+			errors.Wrapf(err, "creating ARM prototype %v from Kubernetes definition %v", armName, def.Name())
 	}
 
 	result, err := armDef.ApplyObjectTransformation(func(objectType *astmodel.ObjectType) (astmodel.Type, error) {
@@ -273,7 +273,7 @@ func createArmTypeDefinition(definitions astmodel.Types, def astmodel.TypeDefini
 	})
 	if err != nil {
 		return astmodel.TypeDefinition{},
-			errors.Wrapf(err, "Failed to create ARM definition %v from Kubernetes definition %v", armName, def.Name())
+			errors.Wrapf(err, "creating ARM definition %v from Kubernetes definition %v", armName, def.Name())
 	}
 
 	return *result, nil
@@ -317,7 +317,7 @@ func modifyKubeResourceSpecDefinition(
 
 	kubernetesDef, err := resourceSpecDef.ApplyObjectTransformations(remapProperties, injectOwnerProperty)
 	if err != nil {
-		return astmodel.TypeDefinition{}, errors.Wrapf(err, "failed to remap properties of Kubernetes definition")
+		return astmodel.TypeDefinition{}, errors.Wrapf(err, "remapping properties of Kubernetes definition")
 	}
 
 	return *kubernetesDef, nil

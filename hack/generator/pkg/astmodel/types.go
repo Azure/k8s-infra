@@ -112,7 +112,7 @@ func (types Types) ResolveResourceType(aType Type) (*ResourceType, bool) {
 	}
 }
 
-// IsArmType returns true if the passed type is a Arm type or names an Arm type; false otherwise.
+// IsArmType returns true if the passed type is an Arm type or names an Arm type; false otherwise.
 func (types Types) IsArmType(aType Type) bool {
 	switch t := aType.(type) {
 	case *ArmType:
@@ -142,7 +142,7 @@ func (types Types) IsArmResource(resource *ResourceType) bool {
 	return types.IsArmType(resource.SpecType()) || types.IsArmType(resource.StatusType())
 }
 
-// ResolveEnumType returns true if the passed type is a Arm type or names an Arm type; false otherwise.
+// ResolveEnumType returns true if the passed type is an enum type or names an enum type; false otherwise.
 func (types Types) ResolveEnumType(aType Type) (EnumType, bool) {
 	switch t := aType.(type) {
 	case *EnumType:

@@ -89,7 +89,7 @@ type StorageTypeFactory struct {
 // A property conversion accepts a property definition and optionally applies a conversion to make
 // the property suitable for use on a storage type. Conversions return nil if they decline to
 // convert, deferring the conversion to another.
-type propertyConversion = func(property *astmodel.PropertyDefinition, cxt StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error)
+type propertyConversion = func(property *astmodel.PropertyDefinition, ctx StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error)
 
 func (factory *StorageTypeFactory) visitTypeName(_ *astmodel.TypeVisitor, name astmodel.TypeName, ctx interface{}) (astmodel.Type, error) {
 	vc := ctx.(StorageTypesVisitorContext)
