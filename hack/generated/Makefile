@@ -2,9 +2,10 @@ SHELL             = /bin/bash
 PACKAGE           = github.com/Azure/k8s-infra/hack/generated
 APP               = k8sinfra-controller
 
-timestamp         := $(shell /bin/date "+%Y%m%d-%H%M%S")
-# CONFIG_REGISTRY = kind-registry:5000/fake/k8s-infra-controller:latest
-IMG               ?= k8s-infra-generated-contoller:$(timestamp)
+# timestamp         := $(shell /bin/date "+%Y%m%d-%H%M%S")
+CONFIG_REGISTRY = kind-registry:5000/fake/k8s-infra-controller:latest
+# IMG               ?= k8s-infra-generated-contoller:$(timestamp)
+IMG               ?= k8s-infra-generated-contoller:latest
 KIND_CLUSTER_NAME = k8sinfra-generated
 
 include ../../tools.mk
@@ -13,6 +14,7 @@ CRD_OPTIONS     ?= "crd:crdVersions=v1,allowDangerousTypes=true"
 GO_DIRS         := $(shell $(GO) list -f '{{.Dir}}' ./...)
 # We exclude the apis folder because it's really large and test discovery takes a good amount of time (>10s)
 GO_DIRS_TO_TEST := $(shell $(GO) list -f '{{.Dir}}' ./... | grep -v /apis/)
+CONTROLLER_DEBUG_LOGLEVEL := 4
 
 V = 0
 Q = $(if $(filter 1,$V),,@)
@@ -50,8 +52,13 @@ test: ; $(info $(M) running go test…)
 # Eventually when we start supporting features like MSI that only work in Azure,
 # it's likely we'll need to make the integration tests (or at least some of them)
 # run in an AKS cluster.
+.PHONY: test-int-no-cleanup
+test-int-no-cleanup: $(ROOT_DIR)/.env kind-create deploy ; $(info $(M) running controller integration test…)
+	# MUST be executed as single command, or env vars will not propagate to test execution
+	$(Q) . $(ROOT_DIR)/.env && $(GO) test $(GO_DIRS_TO_TEST) -tags integration # TODO: better way to just run integration tests?
+
 .PHONY: test-int
-test-int: kind-create install kind-delete ; $(info $(M) running controller integration test…)
+test-int: test-int-no-cleanup kind-delete
 
 .PHONY: test-cover
 test-cover: $(GCOV2LCOV) ; $(info $(M) running go test…)
@@ -63,10 +70,10 @@ test-cover: $(GCOV2LCOV) ; $(info $(M) running go test…)
 .PHONY: generate
 generate: $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code
 	# Force regeneration of all of the conversions
-	@echo "Deleting old controller gen files"
+	@echo "Deleting old deepcopy files"
 	$(Q) find "./apis" -type f -name "zz_generated.*" -delete
 
-	@echo "Executing controller-gen"
+	@echo "Executing controller-gen to generate deepcopy functions"
 	$(Q) $(CONTROLLER_GEN) object:headerFile=../boilerplate.go.txt paths="./..."
 
 #	@echo "Executing conversion-gen"
@@ -77,11 +84,11 @@ generate: $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code
 #		--go-header-file=../boilerplate.go.txt
 
 	# Force regeneration of all of the CRDs
-	@echo "Deleting old CRDs"
+	@echo "Deleting old CRD YAMLs"
 	$(Q) if [ -d "./config/crd/bases" ]; then find "./config/crd/bases" -type f -name "*" -delete; fi
 
-	@echo "Executing controller-gen to generate CRDs"
-	$(Q) $(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./apis/..." output:crd:artifacts:config=config/crd/bases
+	@echo "Executing controller-gen to generate CRD and RBAC YAMLs"
+	$(Q) $(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: build
 build: tidy lint ; $(info $(M) building ./bin/$(APP))
@@ -97,16 +104,7 @@ kind-delete: $(KIND) ## Destroys the "k8sinfra" kind cluster.
 
 .PHONY: kind-create
 kind-create:
-	$(Q) $(KIND) get clusters | grep -E $(KIND_CLUSTER_NAME) > /dev/null;\
-	EXISTS=$$?;\
-	if [ $$EXISTS -eq 0 ]; then \
-		echo "$(KIND_CLUSTER_NAME) already exists"; \
-	else \
-		$(KIND) create cluster --name=$(KIND_CLUSTER_NAME); \
-	fi; \
-
-	# TODO: Need to use this script when we actually start installing stuff from a registry
-	# $(SCRIPTS_DIR)/kind-with-registry.sh
+	export KIND_CLUSTER_NAME=$(KIND_CLUSTER_NAME) && $(SCRIPTS_DIR)/kind-with-registry.sh
 
 # TODO: We may want this later
 #.PHONY: apply-certs-and-secrets
@@ -116,7 +114,7 @@ kind-create:
 .PHONY: run
 run: export ENVIRONMENT = development
 run: kind-create install ## Run a development cluster using kind
-	$(GO) run ./main.go -v 4
+	$(Q) $(GO) run ./main.go -v $(CONTROLLER_DEBUG_LOGLEVEL)
 
 ## --------------------------------------
 ## Deploy
@@ -132,7 +130,10 @@ uninstall: generate $(KUBECTL) $(KUSTOMIZE) ## Uninstall CRDs from a cluster
 
 .PHONY: deploy
 deploy: generate $(KUBECTL) $(KUSTOMIZE) docker-build docker-push ## Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+	# TODO: Consider patching in CONTROLLER_DEBUG_LOGLEVEL?
 	$(KUSTOMIZE) build config/default | sed "s_${CONFIG_REGISTRY}_${REGISTRY}/${IMG}_" | $(KUBECTL) apply -f -
+	# TODO: Is there a better way to do the below?
+	$(SCRIPTS_DIR)/deploy_testing_secret.sh
 
 .PHONY: docker-build
 docker-build: ## Build the docker image
