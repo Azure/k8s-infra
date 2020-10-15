@@ -3,6 +3,7 @@ package astbuilder
 import (
 	"fmt"
 	"go/ast"
+	"strings"
 )
 
 type FuncDetails struct {
