@@ -127,7 +127,7 @@ func crossplaneCorePipelineStages(idFactory astmodel.IdentifierFactory, configur
 		applyExportFilters(configuration),
 		stripUnreferencedTypeDefinitions(),
 
-		// filterOutDefinitionsUsingAnyType(configuration.AnyTypePackages),
+		filterOutDefinitionsUsingAnyType(configuration.AnyTypePackages),
 
 		// createArmTypesAndCleanKubernetesTypes(idFactory),
 
@@ -138,7 +138,7 @@ func crossplaneCorePipelineStages(idFactory astmodel.IdentifierFactory, configur
 		simplifyDefinitions(),
 
 		// Safety checks at the end:
-		// ensureDefinitionsDoNotUseAnyTypes(),
+		ensureDefinitionsDoNotUseAnyTypes(),
 		checkForMissingStatusInformation(),
 	}
 }

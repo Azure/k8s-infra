@@ -4,9 +4,7 @@
 package v20171001
 
 import (
-	"fmt"
-	"github.com/Azure/k8s-infra/hack/generated/apis/deploymenttemplate/v20150101"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
+	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

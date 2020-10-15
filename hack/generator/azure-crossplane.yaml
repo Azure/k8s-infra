@@ -41,6 +41,39 @@ exportFilters:
     group: deploymenttemplate
     name: '*ResourceBase*'
     because: Not actually a resource, used for inheritance only.
+
+  # AnyType excludes
+#  - action: exclude
+#    version: v20200501
+#    group: microsoft.network
+#    name: 'ApplicationSecurityGroup*'
+#    because: Has AnyType
+#  - action: exclude
+#    version: v20200501
+#    group: microsoft.network
+#    name: 'ApplicationGateway*'
+#    because: Has AnyType
+#  - action: exclude
+#    version: v20200501
+#    group: microsoft.network
+#    name: 'NetworkWatcher*'
+#    because: Has AnyType
+#  - action: exclude
+#    version: v20200501
+#    group: microsoft.network
+#    name: 'DdosProtection*'
+#    because: Has AnyType
+#  - action: exclude
+#    version: v20200501
+#    group: microsoft.network
+#    name: 'ExpressRoute*'
+#    because: Has AnyType
+#  - action: exclude
+#    version: v20200501
+#    group: microsoft.network
+#    name: 'ManagedServiceIdentity*'
+#    because: Has AnyType
+
   - action: include
     version: v20200501
     group: microsoft.network
@@ -68,7 +101,7 @@ exportFilters:
 # TODO: get rid of these, either by chasing the teams generating
 # weird json or by handling them differently in the generator.
 anyTypePackages:
-  # - microsoft.network/v20200501
+  - microsoft.network/v20200501
 
 typeTransformers:
   - group: definitions

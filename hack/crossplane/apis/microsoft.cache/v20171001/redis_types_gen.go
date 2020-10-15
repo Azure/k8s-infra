@@ -4,9 +4,8 @@
 package v20171001
 
 import (
+	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/Azure/k8s-infra/hack/generated/apis/deploymenttemplate/v20150101"
 )
 
 // +kubebuilder:object:root=true
