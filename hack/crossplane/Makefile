@@ -18,7 +18,7 @@ V = 0
 Q = $(if $(filter 1,$V),,@)
 
 .PHONY: all
-all: generate header-check fmt build test
+all: generate header-check fmt build
 
 # There is a ci specific target because we want the CI pass to fail if
 # the code has not been go fmt-ed, whereas locally we want "make all"
@@ -78,5 +78,5 @@ generate: $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code
 
 .PHONY: build
 build: tidy lint ; $(info $(M) building ./bin/$(APP))
-	$(Q) $(GO) build "./apis/..." -o ./bin/$(APP)
+	$(Q) $(GO) build "./apis/..."
 
