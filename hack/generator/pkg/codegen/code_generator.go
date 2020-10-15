@@ -34,7 +34,7 @@ func NewCodeGeneratorFromConfigFile(configurationFile string) (*CodeGenerator, e
 func NewCodeGeneratorFromConfig(configuration *config.Configuration, idFactory astmodel.IdentifierFactory) (*CodeGenerator, error) {
 	var pipeline []PipelineStage
 	pipeline = append(pipeline, loadSchemaIntoTypes(idFactory, configuration, defaultSchemaLoader))
-	pipeline = append(pipeline, corePipelineStages(idFactory, configuration)...)
+	pipeline = append(pipeline, crossplaneCorePipelineStages(idFactory, configuration)...)
 	pipeline = append(pipeline, deleteGeneratedCode(configuration.OutputPath), exportPackages(configuration.OutputPath))
 
 	result := &CodeGenerator{
@@ -87,6 +87,53 @@ func corePipelineStages(idFactory astmodel.IdentifierFactory, configuration *con
 
 		// Safety checks at the end:
 		ensureDefinitionsDoNotUseAnyTypes(),
+		checkForMissingStatusInformation(),
+	}
+}
+
+func crossplaneCorePipelineStages(idFactory astmodel.IdentifierFactory, configuration *config.Configuration) []PipelineStage {
+	return []PipelineStage{
+		// Import status info from Swagger:
+		augmentResourcesWithStatus(idFactory, configuration),
+
+		// Reduces oneOf/allOf types from schemas to object types:
+		convertAllOfAndOneOfToObjects(idFactory),
+
+		// Flatten out any nested resources created by allOf, etc. we want to do this before naming types or things
+		// get named with names like Resource_Spec_Spec_Spec:
+		flattenResources(), stripUnreferencedTypeDefinitions(),
+
+		// Name all anonymous object and enum types (required by controller-gen):
+		nameTypesForCRD(idFactory),
+
+		// Apply property type rewrites from the config file
+		// must come after nameTypesForCRD and convertAllOfAndOneOf so that objects are all expanded
+		applyPropertyRewrites(configuration),
+
+		// Figure out ARM resource owners:
+		determineResourceOwnership(),
+
+		// Strip out redundant type aliases:
+		removeTypeAliases(),
+
+		// De-pluralize resource types:
+		// improveResourcePluralization(),
+
+		stripUnreferencedTypeDefinitions(),
+
+		// Apply export filters before generating
+		// ARM types for resources etc:
+		applyExportFilters(configuration),
+		stripUnreferencedTypeDefinitions(),
+
+		// filterOutDefinitionsUsingAnyType(configuration.AnyTypePackages),
+
+		createArmTypesAndCleanKubernetesTypes(idFactory),
+		applyKubernetesResourceInterface(idFactory),
+		simplifyDefinitions(),
+
+		// Safety checks at the end:
+		// ensureDefinitionsDoNotUseAnyTypes(),
 		checkForMissingStatusInformation(),
 	}
 }
