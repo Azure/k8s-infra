@@ -122,31 +122,33 @@ type synthesizer struct {
 	defs         astmodel.Types
 }
 
-type names struct {
+type propertyNames struct {
 	golang astmodel.PropertyName
 	json   string
 
 	// used to resolve conflicts:
-	goodName bool
-	depth    int
+	isGoodName bool
+	depth      int
 }
 
-func (ns names) betterThan(other names) bool {
-	if ns.goodName && !other.goodName {
+func (ns propertyNames) betterThan(other propertyNames) bool {
+	if ns.isGoodName && !other.isGoodName {
 		return true
 	}
 
-	if other.goodName && !ns.goodName {
+	if !ns.isGoodName && other.isGoodName {
 		return false
 	}
 
-	// both are good or bad
+	// both are good or !good
+	// return the name closer to the top
+	// (i.e. “lower” in inheritance hierarchy)
 	return ns.depth <= other.depth
 }
 
-func (s synthesizer) getOneOfPropNames(oneOf astmodel.OneOfType) ([]names, error) {
+func (s synthesizer) getOneOfPropNames(oneOf astmodel.OneOfType) ([]propertyNames, error) {
 
-	var result []names
+	var result []propertyNames
 
 	err := oneOf.Types().ForEachError(func(t astmodel.Type, ix int) error {
 		name, err := s.getOneOfName(t, ix)
@@ -160,31 +162,31 @@ func (s synthesizer) getOneOfPropNames(oneOf astmodel.OneOfType) ([]names, error
 	return result, err
 }
 
-func (s synthesizer) getOneOfName(t astmodel.Type, propIndex int) (names, error) {
+func (s synthesizer) getOneOfName(t astmodel.Type, propIndex int) (propertyNames, error) {
 	switch concreteType := t.(type) {
 	case astmodel.TypeName:
 		// JSON name is unimportant here because we will implement the JSON marshaller anyway,
 		// but we still need it for controller-gen
-		return names{
-			golang:   s.idFactory.CreatePropertyName(concreteType.Name(), astmodel.Exported),
-			json:     s.idFactory.CreateIdentifier(concreteType.Name(), astmodel.NotExported),
-			goodName: true, // a typename name is good (everything else is not)
+		return propertyNames{
+			golang:     s.idFactory.CreatePropertyName(concreteType.Name(), astmodel.Exported),
+			json:       s.idFactory.CreateIdentifier(concreteType.Name(), astmodel.NotExported),
+			isGoodName: true, // a typename name is good (everything else is not)
 		}, nil
 	case *astmodel.EnumType:
 		// JSON name is unimportant here because we will implement the JSON marshaller anyway,
 		// but we still need it for controller-gen
 		name := fmt.Sprintf("enum%v", propIndex)
-		return names{
-			golang:   s.idFactory.CreatePropertyName(name, astmodel.Exported),
-			json:     s.idFactory.CreateIdentifier(name, astmodel.NotExported),
-			goodName: false, // TODO: This name sucks but what alternative do we have?
+		return propertyNames{
+			golang:     s.idFactory.CreatePropertyName(name, astmodel.Exported),
+			json:       s.idFactory.CreateIdentifier(name, astmodel.NotExported),
+			isGoodName: false, // TODO: This name sucks but what alternative do we have?
 		}, nil
 	case *astmodel.ObjectType:
 		name := fmt.Sprintf("object%v", propIndex)
-		return names{
-			golang:   s.idFactory.CreatePropertyName(name, astmodel.Exported),
-			json:     s.idFactory.CreateIdentifier(name, astmodel.NotExported),
-			goodName: false, // TODO: This name sucks but what alternative do we have?
+		return propertyNames{
+			golang:     s.idFactory.CreatePropertyName(name, astmodel.Exported),
+			json:       s.idFactory.CreateIdentifier(name, astmodel.NotExported),
+			isGoodName: false, // TODO: This name sucks but what alternative do we have?
 		}, nil
 	case *astmodel.PrimitiveType:
 		var primitiveTypeName string
@@ -196,21 +198,21 @@ func (s synthesizer) getOneOfName(t astmodel.Type, propIndex int) (names, error)
 
 		// TODO: This name sucks but what alternative do we have?
 		name := fmt.Sprintf("%v%v", primitiveTypeName, propIndex)
-		return names{
-			golang:   s.idFactory.CreatePropertyName(name, astmodel.Exported),
-			json:     s.idFactory.CreateIdentifier(name, astmodel.NotExported),
-			goodName: false, // TODO: This name sucks but what alternative do we have?
+		return propertyNames{
+			golang:     s.idFactory.CreatePropertyName(name, astmodel.Exported),
+			json:       s.idFactory.CreateIdentifier(name, astmodel.NotExported),
+			isGoodName: false, // TODO: This name sucks but what alternative do we have?
 		}, nil
 	case *astmodel.ResourceType:
 		name := fmt.Sprintf("resource%v", propIndex)
-		return names{
-			golang:   s.idFactory.CreatePropertyName(name, astmodel.Exported),
-			json:     s.idFactory.CreateIdentifier(name, astmodel.NotExported),
-			goodName: false, // TODO: This name sucks but what alternative do we have?
+		return propertyNames{
+			golang:     s.idFactory.CreatePropertyName(name, astmodel.Exported),
+			json:       s.idFactory.CreateIdentifier(name, astmodel.NotExported),
+			isGoodName: false, // TODO: This name sucks but what alternative do we have?
 		}, nil
 
 	case astmodel.AllOfType:
-		var result *names
+		var result *propertyNames
 		err := concreteType.Types().ForEachError(func(t astmodel.Type, ix int) error {
 			inner, err := s.getOneOfName(t, ix)
 			if err != nil {
@@ -225,7 +227,7 @@ func (s synthesizer) getOneOfName(t astmodel.Type, propIndex int) (names, error)
 		})
 
 		if err != nil {
-			return names{}, err
+			return propertyNames{}, err
 		}
 
 		if result != nil {
@@ -233,14 +235,14 @@ func (s synthesizer) getOneOfName(t astmodel.Type, propIndex int) (names, error)
 			return *result, nil
 		}
 
-		return names{}, errors.New("unable to produce name for AllOf")
+		return propertyNames{}, errors.New("unable to produce name for AllOf")
 
 	default:
-		return names{}, errors.Errorf("unexpected oneOf member, type: %T", t)
+		return propertyNames{}, errors.Errorf("unexpected oneOf member, type: %T", t)
 	}
 }
 
-func (s synthesizer) oneOfObject(oneOf astmodel.OneOfType, propNames []names) astmodel.Type {
+func (s synthesizer) oneOfObject(oneOf astmodel.OneOfType, propNames []propertyNames) astmodel.Type {
 	// If there's more than one option, synthesize a type.
 	// Note that this is required because Kubernetes CRDs do not support OneOf the same way
 	// OpenAPI does, see https://github.com/Azure/k8s-infra/issues/71
