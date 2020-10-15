@@ -27,8 +27,15 @@ type P2svpnGatewaysList struct {
 	Items           []P2svpnGateways `json:"items"`
 }
 
-//Generated from:
 type P2SVpnGateway_Status struct {
+	AtProvider P2svpnGatewaysObservation `json:"atProvider"`
+}
+
+type P2svpnGateways_Spec struct {
+	ForProvider P2svpnGatewaysParameters `json:"forProvider"`
+}
+
+type P2svpnGatewaysObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,37 +57,6 @@ type P2SVpnGateway_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type P2svpnGateways_Spec struct {
-	ForProvider P2svpnGatewaysParameters `json:"forProvider"`
-}
-
-//Generated from:
-type P2SVpnGatewayProperties_Status struct {
-
-	//CustomDnsServers: List of all customer specified DNS servers IP addresses.
-	CustomDnsServers []string `json:"customDnsServers,omitempty"`
-
-	//P2SConnectionConfigurations: List of all p2s connection configurations of the
-	//gateway.
-	P2SConnectionConfigurations []P2SConnectionConfiguration_Status `json:"p2SConnectionConfigurations,omitempty"`
-
-	//ProvisioningState: The provisioning state of the P2S VPN gateway resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//VirtualHub: The VirtualHub to which the gateway belongs.
-	VirtualHub *SubResource_Status `json:"virtualHub,omitempty"`
-
-	//VpnClientConnectionHealth: All P2S VPN clients' connection health status.
-	VpnClientConnectionHealth *VpnClientConnectionHealth_Status `json:"vpnClientConnectionHealth,omitempty"`
-
-	//VpnGatewayScaleUnit: The scale unit for this p2s vpn gateway.
-	VpnGatewayScaleUnit *int `json:"vpnGatewayScaleUnit,omitempty"`
-
-	//VpnServerConfiguration: The VpnServerConfiguration to which the p2sVpnGateway is
-	//attached to.
-	VpnServerConfiguration *SubResource_Status `json:"vpnServerConfiguration,omitempty"`
 }
 
 type P2svpnGatewaysParameters struct {
@@ -122,23 +98,6 @@ type P2svpnGatewaysParameters struct {
 	Type P2svpnGatewaysSpecType `json:"type"`
 }
 
-//Generated from:
-type P2SConnectionConfiguration_Status struct {
-
-	//Etag: A unique read-only string that changes whenever the resource is updated.
-	Etag *string `json:"etag,omitempty"`
-
-	//Id: Resource ID.
-	Id *string `json:"id,omitempty"`
-
-	//Name: The name of the resource that is unique within a resource group. This name
-	//can be used to access the resource.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of the P2S connection configuration.
-	Properties *P2SConnectionConfigurationProperties_Status `json:"properties,omitempty"`
-}
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/P2SVpnGatewayProperties
 type P2SVpnGatewayProperties struct {
 
@@ -160,6 +119,33 @@ type P2SVpnGatewayProperties struct {
 	VpnServerConfiguration *SubResource `json:"vpnServerConfiguration,omitempty"`
 }
 
+//Generated from:
+type P2SVpnGatewayProperties_Status struct {
+
+	//CustomDnsServers: List of all customer specified DNS servers IP addresses.
+	CustomDnsServers []string `json:"customDnsServers,omitempty"`
+
+	//P2SConnectionConfigurations: List of all p2s connection configurations of the
+	//gateway.
+	P2SConnectionConfigurations []P2SConnectionConfiguration_Status `json:"p2SConnectionConfigurations,omitempty"`
+
+	//ProvisioningState: The provisioning state of the P2S VPN gateway resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//VirtualHub: The VirtualHub to which the gateway belongs.
+	VirtualHub *SubResource_Status `json:"virtualHub,omitempty"`
+
+	//VpnClientConnectionHealth: All P2S VPN clients' connection health status.
+	VpnClientConnectionHealth *VpnClientConnectionHealth_Status `json:"vpnClientConnectionHealth,omitempty"`
+
+	//VpnGatewayScaleUnit: The scale unit for this p2s vpn gateway.
+	VpnGatewayScaleUnit *int `json:"vpnGatewayScaleUnit,omitempty"`
+
+	//VpnServerConfiguration: The VpnServerConfiguration to which the p2sVpnGateway is
+	//attached to.
+	VpnServerConfiguration *SubResource_Status `json:"vpnServerConfiguration,omitempty"`
+}
+
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type P2svpnGatewaysSpecApiVersion string
 
@@ -169,6 +155,34 @@ const P2svpnGatewaysSpecApiVersion20200501 = P2svpnGatewaysSpecApiVersion("2020-
 type P2svpnGatewaysSpecType string
 
 const P2svpnGatewaysSpecTypeMicrosoftNetworkP2svpnGateways = P2svpnGatewaysSpecType("Microsoft.Network/p2svpnGateways")
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/P2SConnectionConfiguration
+type P2SConnectionConfiguration struct {
+
+	//Name: The name of the resource that is unique within a resource group. This name
+	//can be used to access the resource.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the P2S connection configuration.
+	Properties *P2SConnectionConfigurationProperties `json:"properties,omitempty"`
+}
+
+//Generated from:
+type P2SConnectionConfiguration_Status struct {
+
+	//Etag: A unique read-only string that changes whenever the resource is updated.
+	Etag *string `json:"etag,omitempty"`
+
+	//Id: Resource ID.
+	Id *string `json:"id,omitempty"`
+
+	//Name: The name of the resource that is unique within a resource group. This name
+	//can be used to access the resource.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the P2S connection configuration.
+	Properties *P2SConnectionConfigurationProperties_Status `json:"properties,omitempty"`
+}
 
 //Generated from:
 type VpnClientConnectionHealth_Status struct {
@@ -190,15 +204,16 @@ type VpnClientConnectionHealth_Status struct {
 	VpnClientConnectionsCount *int `json:"vpnClientConnectionsCount,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/P2SConnectionConfiguration
-type P2SConnectionConfiguration struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/P2SConnectionConfigurationProperties
+type P2SConnectionConfigurationProperties struct {
 
-	//Name: The name of the resource that is unique within a resource group. This name
-	//can be used to access the resource.
-	Name *string `json:"name,omitempty"`
+	//RoutingConfiguration: The Routing Configuration indicating the associated and
+	//propagated route tables on this connection.
+	RoutingConfiguration *RoutingConfiguration `json:"routingConfiguration,omitempty"`
 
-	//Properties: Properties of the P2S connection configuration.
-	Properties *P2SConnectionConfigurationProperties `json:"properties,omitempty"`
+	//VpnClientAddressPool: The reference to the address space resource which
+	//represents Address space for P2S VpnClient.
+	VpnClientAddressPool *AddressSpace `json:"vpnClientAddressPool,omitempty"`
 }
 
 //Generated from:
@@ -215,18 +230,6 @@ type P2SConnectionConfigurationProperties_Status struct {
 	//VpnClientAddressPool: The reference to the address space resource which
 	//represents Address space for P2S VpnClient.
 	VpnClientAddressPool *AddressSpace_Status `json:"vpnClientAddressPool,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/P2SConnectionConfigurationProperties
-type P2SConnectionConfigurationProperties struct {
-
-	//RoutingConfiguration: The Routing Configuration indicating the associated and
-	//propagated route tables on this connection.
-	RoutingConfiguration *RoutingConfiguration `json:"routingConfiguration,omitempty"`
-
-	//VpnClientAddressPool: The reference to the address space resource which
-	//represents Address space for P2S VpnClient.
-	VpnClientAddressPool *AddressSpace `json:"vpnClientAddressPool,omitempty"`
 }
 
 func init() {

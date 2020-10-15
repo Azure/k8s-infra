@@ -27,8 +27,15 @@ type PrivateLinkServicesList struct {
 	Items           []PrivateLinkServices `json:"items"`
 }
 
-//Generated from:
 type PrivateLinkService_Status struct {
+	AtProvider PrivateLinkServicesObservation `json:"atProvider"`
+}
+
+type PrivateLinkServices_Spec struct {
+	ForProvider PrivateLinkServicesParameters `json:"forProvider"`
+}
+
+type PrivateLinkServicesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,48 +57,6 @@ type PrivateLinkService_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type PrivateLinkServices_Spec struct {
-	ForProvider PrivateLinkServicesParameters `json:"forProvider"`
-}
-
-//Generated from:
-type PrivateLinkServiceProperties_Status struct {
-
-	//Alias: The alias of the private link service.
-	Alias *string `json:"alias,omitempty"`
-
-	//AutoApproval: The auto-approval list of the private link service.
-	AutoApproval *ResourceSet_Status `json:"autoApproval,omitempty"`
-
-	//EnableProxyProtocol: Whether the private link service is enabled for proxy
-	//protocol or not.
-	EnableProxyProtocol *bool `json:"enableProxyProtocol,omitempty"`
-
-	//Fqdns: The list of Fqdn.
-	Fqdns []string `json:"fqdns,omitempty"`
-
-	//IpConfigurations: An array of private link service IP configurations.
-	IpConfigurations []PrivateLinkServiceIpConfiguration_Status `json:"ipConfigurations,omitempty"`
-
-	//LoadBalancerFrontendIpConfigurations: An array of references to the load
-	//balancer IP configurations.
-	LoadBalancerFrontendIpConfigurations []FrontendIPConfiguration_Status `json:"loadBalancerFrontendIpConfigurations,omitempty"`
-
-	//NetworkInterfaces: An array of references to the network interfaces created for
-	//this private link service.
-	NetworkInterfaces []NetworkInterface_Status `json:"networkInterfaces,omitempty"`
-
-	//PrivateEndpointConnections: An array of list about connections to the private
-	//endpoint.
-	PrivateEndpointConnections []PrivateEndpointConnection_Status `json:"privateEndpointConnections,omitempty"`
-
-	//ProvisioningState: The provisioning state of the private link service resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//Visibility: The visibility list of the private link service.
-	Visibility *ResourceSet_Status `json:"visibility,omitempty"`
 }
 
 type PrivateLinkServicesParameters struct {
@@ -133,25 +98,6 @@ type PrivateLinkServicesParameters struct {
 	Type PrivateLinkServicesSpecType `json:"type"`
 }
 
-//Generated from:
-type PrivateLinkServiceIpConfiguration_Status struct {
-
-	//Etag: A unique read-only string that changes whenever the resource is updated.
-	Etag *string `json:"etag,omitempty"`
-
-	//Id: Resource ID.
-	Id *string `json:"id,omitempty"`
-
-	//Name: The name of private link service ip configuration.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of the private link service ip configuration.
-	Properties *PrivateLinkServiceIpConfigurationProperties_Status `json:"properties,omitempty"`
-
-	//Type: The resource type.
-	Type *string `json:"type,omitempty"`
-}
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateLinkServiceProperties
 type PrivateLinkServiceProperties struct {
 
@@ -176,6 +122,44 @@ type PrivateLinkServiceProperties struct {
 	Visibility *PrivateLinkServicePropertiesVisibility `json:"visibility,omitempty"`
 }
 
+//Generated from:
+type PrivateLinkServiceProperties_Status struct {
+
+	//Alias: The alias of the private link service.
+	Alias *string `json:"alias,omitempty"`
+
+	//AutoApproval: The auto-approval list of the private link service.
+	AutoApproval *ResourceSet_Status `json:"autoApproval,omitempty"`
+
+	//EnableProxyProtocol: Whether the private link service is enabled for proxy
+	//protocol or not.
+	EnableProxyProtocol *bool `json:"enableProxyProtocol,omitempty"`
+
+	//Fqdns: The list of Fqdn.
+	Fqdns []string `json:"fqdns,omitempty"`
+
+	//IpConfigurations: An array of private link service IP configurations.
+	IpConfigurations []PrivateLinkServiceIpConfiguration_Status `json:"ipConfigurations,omitempty"`
+
+	//LoadBalancerFrontendIpConfigurations: An array of references to the load
+	//balancer IP configurations.
+	LoadBalancerFrontendIpConfigurations []FrontendIPConfiguration_Status `json:"loadBalancerFrontendIpConfigurations,omitempty"`
+
+	//NetworkInterfaces: An array of references to the network interfaces created for
+	//this private link service.
+	NetworkInterfaces []NetworkInterface_Status `json:"networkInterfaces,omitempty"`
+
+	//PrivateEndpointConnections: An array of list about connections to the private
+	//endpoint.
+	PrivateEndpointConnections []PrivateEndpointConnection_Status `json:"privateEndpointConnections,omitempty"`
+
+	//ProvisioningState: The provisioning state of the private link service resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//Visibility: The visibility list of the private link service.
+	Visibility *ResourceSet_Status `json:"visibility,omitempty"`
+}
+
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type PrivateLinkServicesSpecApiVersion string
 
@@ -186,13 +170,6 @@ type PrivateLinkServicesSpecType string
 
 const PrivateLinkServicesSpecTypeMicrosoftNetworkPrivateLinkServices = PrivateLinkServicesSpecType("Microsoft.Network/privateLinkServices")
 
-//Generated from:
-type ResourceSet_Status struct {
-
-	//Subscriptions: The list of subscriptions.
-	Subscriptions []string `json:"subscriptions,omitempty"`
-}
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateLinkServiceIpConfiguration
 type PrivateLinkServiceIpConfiguration struct {
 
@@ -201,6 +178,66 @@ type PrivateLinkServiceIpConfiguration struct {
 
 	//Properties: Properties of the private link service ip configuration.
 	Properties *PrivateLinkServiceIpConfigurationProperties `json:"properties,omitempty"`
+}
+
+//Generated from:
+type PrivateLinkServiceIpConfiguration_Status struct {
+
+	//Etag: A unique read-only string that changes whenever the resource is updated.
+	Etag *string `json:"etag,omitempty"`
+
+	//Id: Resource ID.
+	Id *string `json:"id,omitempty"`
+
+	//Name: The name of private link service ip configuration.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the private link service ip configuration.
+	Properties *PrivateLinkServiceIpConfigurationProperties_Status `json:"properties,omitempty"`
+
+	//Type: The resource type.
+	Type *string `json:"type,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateLinkServicePropertiesAutoApproval
+type PrivateLinkServicePropertiesAutoApproval struct {
+
+	//Subscriptions: The list of subscriptions.
+	Subscriptions []string `json:"subscriptions,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateLinkServicePropertiesVisibility
+type PrivateLinkServicePropertiesVisibility struct {
+
+	//Subscriptions: The list of subscriptions.
+	Subscriptions []string `json:"subscriptions,omitempty"`
+}
+
+//Generated from:
+type ResourceSet_Status struct {
+
+	//Subscriptions: The list of subscriptions.
+	Subscriptions []string `json:"subscriptions,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateLinkServiceIpConfigurationProperties
+type PrivateLinkServiceIpConfigurationProperties struct {
+
+	//Primary: Whether the ip configuration is primary or not.
+	Primary *bool `json:"primary,omitempty"`
+
+	//PrivateIPAddress: The private IP address of the IP configuration.
+	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
+
+	//PrivateIPAddressVersion: Whether the specific IP configuration is IPv4 or IPv6.
+	//Default is IPv4.
+	PrivateIPAddressVersion *PrivateLinkServiceIpConfigurationPropertiesPrivateIPAddressVersion `json:"privateIPAddressVersion,omitempty"`
+
+	//PrivateIPAllocationMethod: The private IP address allocation method.
+	PrivateIPAllocationMethod *PrivateLinkServiceIpConfigurationPropertiesPrivateIPAllocationMethod `json:"privateIPAllocationMethod,omitempty"`
+
+	//Subnet: The reference to the subnet resource.
+	Subnet *SubResource `json:"subnet,omitempty"`
 }
 
 //Generated from:
@@ -225,40 +262,6 @@ type PrivateLinkServiceIpConfigurationProperties_Status struct {
 
 	//Subnet: The reference to the subnet resource.
 	Subnet *Subnet_Status `json:"subnet,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateLinkServicePropertiesAutoApproval
-type PrivateLinkServicePropertiesAutoApproval struct {
-
-	//Subscriptions: The list of subscriptions.
-	Subscriptions []string `json:"subscriptions,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateLinkServicePropertiesVisibility
-type PrivateLinkServicePropertiesVisibility struct {
-
-	//Subscriptions: The list of subscriptions.
-	Subscriptions []string `json:"subscriptions,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateLinkServiceIpConfigurationProperties
-type PrivateLinkServiceIpConfigurationProperties struct {
-
-	//Primary: Whether the ip configuration is primary or not.
-	Primary *bool `json:"primary,omitempty"`
-
-	//PrivateIPAddress: The private IP address of the IP configuration.
-	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
-
-	//PrivateIPAddressVersion: Whether the specific IP configuration is IPv4 or IPv6.
-	//Default is IPv4.
-	PrivateIPAddressVersion *PrivateLinkServiceIpConfigurationPropertiesPrivateIPAddressVersion `json:"privateIPAddressVersion,omitempty"`
-
-	//PrivateIPAllocationMethod: The private IP address allocation method.
-	PrivateIPAllocationMethod *PrivateLinkServiceIpConfigurationPropertiesPrivateIPAllocationMethod `json:"privateIPAllocationMethod,omitempty"`
-
-	//Subnet: The reference to the subnet resource.
-	Subnet *SubResource `json:"subnet,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"IPv4","IPv6"}

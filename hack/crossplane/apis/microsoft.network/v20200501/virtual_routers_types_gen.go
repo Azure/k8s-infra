@@ -27,8 +27,15 @@ type VirtualRoutersList struct {
 	Items           []VirtualRouters `json:"items"`
 }
 
-//Generated from:
 type VirtualRouter_Status struct {
+	AtProvider VirtualRoutersObservation `json:"atProvider"`
+}
+
+type VirtualRouters_Spec struct {
+	ForProvider VirtualRoutersParameters `json:"forProvider"`
+}
+
+type VirtualRoutersObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,32 +57,6 @@ type VirtualRouter_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type VirtualRouters_Spec struct {
-	ForProvider VirtualRoutersParameters `json:"forProvider"`
-}
-
-//Generated from:
-type VirtualRouterPropertiesFormat_Status struct {
-
-	//HostedGateway: The Gateway on which VirtualRouter is hosted.
-	HostedGateway *SubResource_Status `json:"hostedGateway,omitempty"`
-
-	//HostedSubnet: The Subnet on which VirtualRouter is hosted.
-	HostedSubnet *SubResource_Status `json:"hostedSubnet,omitempty"`
-
-	//Peerings: List of references to VirtualRouterPeerings.
-	Peerings []SubResource_Status `json:"peerings,omitempty"`
-
-	//ProvisioningState: The provisioning state of the resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//VirtualRouterAsn: VirtualRouter ASN.
-	VirtualRouterAsn *int `json:"virtualRouterAsn,omitempty"`
-
-	//VirtualRouterIps: VirtualRouter IPs.
-	VirtualRouterIps []string `json:"virtualRouterIps,omitempty"`
 }
 
 type VirtualRoutersParameters struct {
@@ -125,6 +106,28 @@ type VirtualRouterPropertiesFormat struct {
 
 	//HostedSubnet: The Subnet on which VirtualRouter is hosted.
 	HostedSubnet *SubResource `json:"hostedSubnet,omitempty"`
+
+	//VirtualRouterAsn: VirtualRouter ASN.
+	VirtualRouterAsn *int `json:"virtualRouterAsn,omitempty"`
+
+	//VirtualRouterIps: VirtualRouter IPs.
+	VirtualRouterIps []string `json:"virtualRouterIps,omitempty"`
+}
+
+//Generated from:
+type VirtualRouterPropertiesFormat_Status struct {
+
+	//HostedGateway: The Gateway on which VirtualRouter is hosted.
+	HostedGateway *SubResource_Status `json:"hostedGateway,omitempty"`
+
+	//HostedSubnet: The Subnet on which VirtualRouter is hosted.
+	HostedSubnet *SubResource_Status `json:"hostedSubnet,omitempty"`
+
+	//Peerings: List of references to VirtualRouterPeerings.
+	Peerings []SubResource_Status `json:"peerings,omitempty"`
+
+	//ProvisioningState: The provisioning state of the resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 
 	//VirtualRouterAsn: VirtualRouter ASN.
 	VirtualRouterAsn *int `json:"virtualRouterAsn,omitempty"`

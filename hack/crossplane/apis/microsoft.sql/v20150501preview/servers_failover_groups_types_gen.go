@@ -27,8 +27,15 @@ type ServersFailoverGroupsList struct {
 	Items           []ServersFailoverGroups `json:"items"`
 }
 
-//Generated from:
 type FailoverGroup_Status struct {
+	AtProvider ServersFailoverGroupsObservation `json:"atProvider"`
+}
+
+type ServersFailoverGroups_Spec struct {
+	ForProvider ServersFailoverGroupsParameters `json:"forProvider"`
+}
+
+type ServersFailoverGroupsObservation struct {
 
 	//Id: Resource ID.
 	Id *string `json:"id,omitempty"`
@@ -47,34 +54,6 @@ type FailoverGroup_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type ServersFailoverGroups_Spec struct {
-	ForProvider ServersFailoverGroupsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type FailoverGroupProperties_Status struct {
-
-	//Databases: List of databases in the failover group.
-	Databases []string `json:"databases,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//PartnerServers: List of partner server information for the failover group.
-	PartnerServers []PartnerInfo_Status `json:"partnerServers"`
-
-	//ReadOnlyEndpoint: Read-only endpoint of the failover group instance.
-	ReadOnlyEndpoint *FailoverGroupReadOnlyEndpoint_Status `json:"readOnlyEndpoint,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//ReadWriteEndpoint: Read-write endpoint of the failover group instance.
-	ReadWriteEndpoint FailoverGroupReadWriteEndpoint_Status `json:"readWriteEndpoint"`
-
-	//ReplicationRole: Local replication role of the failover group instance.
-	ReplicationRole *FailoverGroupPropertiesStatusReplicationRole `json:"replicationRole,omitempty"`
-
-	//ReplicationState: Replication state of the failover group instance.
-	ReplicationState *string `json:"replicationState,omitempty"`
 }
 
 type ServersFailoverGroupsParameters struct {
@@ -134,6 +113,40 @@ type FailoverGroupProperties struct {
 	ReadWriteEndpoint FailoverGroupReadWriteEndpoint `json:"readWriteEndpoint"`
 }
 
+//Generated from:
+type FailoverGroupProperties_Status struct {
+
+	//Databases: List of databases in the failover group.
+	Databases []string `json:"databases,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//PartnerServers: List of partner server information for the failover group.
+	PartnerServers []PartnerInfo_Status `json:"partnerServers"`
+
+	//ReadOnlyEndpoint: Read-only endpoint of the failover group instance.
+	ReadOnlyEndpoint *FailoverGroupReadOnlyEndpoint_Status `json:"readOnlyEndpoint,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//ReadWriteEndpoint: Read-write endpoint of the failover group instance.
+	ReadWriteEndpoint FailoverGroupReadWriteEndpoint_Status `json:"readWriteEndpoint"`
+
+	//ReplicationRole: Local replication role of the failover group instance.
+	ReplicationRole *FailoverGroupPropertiesStatusReplicationRole `json:"replicationRole,omitempty"`
+
+	//ReplicationState: Replication state of the failover group instance.
+	ReplicationState *string `json:"replicationState,omitempty"`
+}
+
+// +kubebuilder:validation:Enum={"2015-05-01-preview"}
+type ServersFailoverGroupsSpecApiVersion string
+
+const ServersFailoverGroupsSpecApiVersion20150501Preview = ServersFailoverGroupsSpecApiVersion("2015-05-01-preview")
+
+// +kubebuilder:validation:Enum={"Microsoft.Sql/servers/failoverGroups"}
+type ServersFailoverGroupsSpecType string
+
+const ServersFailoverGroupsSpecTypeMicrosoftSqlServersFailoverGroups = ServersFailoverGroupsSpecType("Microsoft.Sql/servers/failoverGroups")
+
 // +kubebuilder:validation:Enum={"Primary","Secondary"}
 type FailoverGroupPropertiesStatusReplicationRole string
 
@@ -142,11 +155,33 @@ const (
 	FailoverGroupPropertiesStatusReplicationRoleSecondary = FailoverGroupPropertiesStatusReplicationRole("Secondary")
 )
 
+//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/FailoverGroupReadOnlyEndpoint
+type FailoverGroupReadOnlyEndpoint struct {
+
+	//FailoverPolicy: Failover policy of the read-only endpoint for the failover group.
+	FailoverPolicy *FailoverGroupReadOnlyEndpointFailoverPolicy `json:"failoverPolicy,omitempty"`
+}
+
 //Generated from:
 type FailoverGroupReadOnlyEndpoint_Status struct {
 
 	//FailoverPolicy: Failover policy of the read-only endpoint for the failover group.
 	FailoverPolicy *FailoverGroupReadOnlyEndpointStatusFailoverPolicy `json:"failoverPolicy,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/FailoverGroupReadWriteEndpoint
+type FailoverGroupReadWriteEndpoint struct {
+
+	// +kubebuilder:validation:Required
+	//FailoverPolicy: Failover policy of the read-write endpoint for the failover
+	//group. If failoverPolicy is Automatic then
+	//failoverWithDataLossGracePeriodMinutes is required.
+	FailoverPolicy FailoverGroupReadWriteEndpointFailoverPolicy `json:"failoverPolicy"`
+
+	//FailoverWithDataLossGracePeriodMinutes: Grace period before failover with data
+	//loss is attempted for the read-write endpoint. If failoverPolicy is Automatic
+	//then failoverWithDataLossGracePeriodMinutes is required.
+	FailoverWithDataLossGracePeriodMinutes *int `json:"failoverWithDataLossGracePeriodMinutes,omitempty"`
 }
 
 //Generated from:
@@ -164,6 +199,14 @@ type FailoverGroupReadWriteEndpoint_Status struct {
 	FailoverWithDataLossGracePeriodMinutes *int `json:"failoverWithDataLossGracePeriodMinutes,omitempty"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/PartnerInfo
+type PartnerInfo struct {
+
+	// +kubebuilder:validation:Required
+	//Id: Resource identifier of the partner server.
+	Id string `json:"id"`
+}
+
 //Generated from:
 type PartnerInfo_Status struct {
 
@@ -178,22 +221,13 @@ type PartnerInfo_Status struct {
 	ReplicationRole *PartnerInfoStatusReplicationRole `json:"replicationRole,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"2015-05-01-preview"}
-type ServersFailoverGroupsSpecApiVersion string
+// +kubebuilder:validation:Enum={"Disabled","Enabled"}
+type FailoverGroupReadOnlyEndpointFailoverPolicy string
 
-const ServersFailoverGroupsSpecApiVersion20150501Preview = ServersFailoverGroupsSpecApiVersion("2015-05-01-preview")
-
-// +kubebuilder:validation:Enum={"Microsoft.Sql/servers/failoverGroups"}
-type ServersFailoverGroupsSpecType string
-
-const ServersFailoverGroupsSpecTypeMicrosoftSqlServersFailoverGroups = ServersFailoverGroupsSpecType("Microsoft.Sql/servers/failoverGroups")
-
-//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/FailoverGroupReadOnlyEndpoint
-type FailoverGroupReadOnlyEndpoint struct {
-
-	//FailoverPolicy: Failover policy of the read-only endpoint for the failover group.
-	FailoverPolicy *FailoverGroupReadOnlyEndpointFailoverPolicy `json:"failoverPolicy,omitempty"`
-}
+const (
+	FailoverGroupReadOnlyEndpointFailoverPolicyDisabled = FailoverGroupReadOnlyEndpointFailoverPolicy("Disabled")
+	FailoverGroupReadOnlyEndpointFailoverPolicyEnabled  = FailoverGroupReadOnlyEndpointFailoverPolicy("Enabled")
+)
 
 // +kubebuilder:validation:Enum={"Disabled","Enabled"}
 type FailoverGroupReadOnlyEndpointStatusFailoverPolicy string
@@ -203,20 +237,13 @@ const (
 	FailoverGroupReadOnlyEndpointStatusFailoverPolicyEnabled  = FailoverGroupReadOnlyEndpointStatusFailoverPolicy("Enabled")
 )
 
-//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/FailoverGroupReadWriteEndpoint
-type FailoverGroupReadWriteEndpoint struct {
+// +kubebuilder:validation:Enum={"Automatic","Manual"}
+type FailoverGroupReadWriteEndpointFailoverPolicy string
 
-	// +kubebuilder:validation:Required
-	//FailoverPolicy: Failover policy of the read-write endpoint for the failover
-	//group. If failoverPolicy is Automatic then
-	//failoverWithDataLossGracePeriodMinutes is required.
-	FailoverPolicy FailoverGroupReadWriteEndpointFailoverPolicy `json:"failoverPolicy"`
-
-	//FailoverWithDataLossGracePeriodMinutes: Grace period before failover with data
-	//loss is attempted for the read-write endpoint. If failoverPolicy is Automatic
-	//then failoverWithDataLossGracePeriodMinutes is required.
-	FailoverWithDataLossGracePeriodMinutes *int `json:"failoverWithDataLossGracePeriodMinutes,omitempty"`
-}
+const (
+	FailoverGroupReadWriteEndpointFailoverPolicyAutomatic = FailoverGroupReadWriteEndpointFailoverPolicy("Automatic")
+	FailoverGroupReadWriteEndpointFailoverPolicyManual    = FailoverGroupReadWriteEndpointFailoverPolicy("Manual")
+)
 
 // +kubebuilder:validation:Enum={"Automatic","Manual"}
 type FailoverGroupReadWriteEndpointStatusFailoverPolicy string
@@ -226,36 +253,12 @@ const (
 	FailoverGroupReadWriteEndpointStatusFailoverPolicyManual    = FailoverGroupReadWriteEndpointStatusFailoverPolicy("Manual")
 )
 
-//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/PartnerInfo
-type PartnerInfo struct {
-
-	// +kubebuilder:validation:Required
-	//Id: Resource identifier of the partner server.
-	Id string `json:"id"`
-}
-
 // +kubebuilder:validation:Enum={"Primary","Secondary"}
 type PartnerInfoStatusReplicationRole string
 
 const (
 	PartnerInfoStatusReplicationRolePrimary   = PartnerInfoStatusReplicationRole("Primary")
 	PartnerInfoStatusReplicationRoleSecondary = PartnerInfoStatusReplicationRole("Secondary")
-)
-
-// +kubebuilder:validation:Enum={"Disabled","Enabled"}
-type FailoverGroupReadOnlyEndpointFailoverPolicy string
-
-const (
-	FailoverGroupReadOnlyEndpointFailoverPolicyDisabled = FailoverGroupReadOnlyEndpointFailoverPolicy("Disabled")
-	FailoverGroupReadOnlyEndpointFailoverPolicyEnabled  = FailoverGroupReadOnlyEndpointFailoverPolicy("Enabled")
-)
-
-// +kubebuilder:validation:Enum={"Automatic","Manual"}
-type FailoverGroupReadWriteEndpointFailoverPolicy string
-
-const (
-	FailoverGroupReadWriteEndpointFailoverPolicyAutomatic = FailoverGroupReadWriteEndpointFailoverPolicy("Automatic")
-	FailoverGroupReadWriteEndpointFailoverPolicyManual    = FailoverGroupReadWriteEndpointFailoverPolicy("Manual")
 )
 
 func init() {

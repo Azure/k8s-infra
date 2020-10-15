@@ -31,8 +31,11 @@ type Connections_Spec struct {
 	ForProvider ConnectionsParameters `json:"forProvider"`
 }
 
-//Generated from:
 type VirtualNetworkGatewayConnection_Status struct {
+	AtProvider ConnectionsObservation `json:"atProvider"`
+}
+
+type ConnectionsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -94,6 +97,71 @@ type ConnectionsParameters struct {
 	// +kubebuilder:validation:Required
 	//Type: Resource type
 	Type ConnectionsSpecType `json:"type"`
+}
+
+// +kubebuilder:validation:Enum={"2020-05-01"}
+type ConnectionsSpecApiVersion string
+
+const ConnectionsSpecApiVersion20200501 = ConnectionsSpecApiVersion("2020-05-01")
+
+// +kubebuilder:validation:Enum={"Microsoft.Network/connections"}
+type ConnectionsSpecType string
+
+const ConnectionsSpecTypeMicrosoftNetworkConnections = ConnectionsSpecType("Microsoft.Network/connections")
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualNetworkGatewayConnectionPropertiesFormat
+type VirtualNetworkGatewayConnectionPropertiesFormat struct {
+
+	//AuthorizationKey: The authorizationKey.
+	AuthorizationKey *string `json:"authorizationKey,omitempty"`
+
+	//ConnectionProtocol: Connection protocol used for this connection.
+	ConnectionProtocol *VirtualNetworkGatewayConnectionPropertiesFormatConnectionProtocol `json:"connectionProtocol,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//ConnectionType: Gateway connection type.
+	ConnectionType VirtualNetworkGatewayConnectionPropertiesFormatConnectionType `json:"connectionType"`
+
+	//DpdTimeoutSeconds: The dead peer detection timeout of this connection in seconds.
+	DpdTimeoutSeconds *int `json:"dpdTimeoutSeconds,omitempty"`
+
+	//EnableBgp: EnableBgp flag.
+	EnableBgp *bool `json:"enableBgp,omitempty"`
+
+	//ExpressRouteGatewayBypass: Bypass ExpressRoute Gateway for data forwarding.
+	ExpressRouteGatewayBypass *bool `json:"expressRouteGatewayBypass,omitempty"`
+
+	//IpsecPolicies: The IPSec Policies to be considered by this connection.
+	IpsecPolicies []IpsecPolicy `json:"ipsecPolicies,omitempty"`
+
+	//LocalNetworkGateway2: The reference to local network gateway resource.
+	LocalNetworkGateway2 *SubResource `json:"localNetworkGateway2,omitempty"`
+
+	//Peer: The reference to peerings resource.
+	Peer *SubResource `json:"peer,omitempty"`
+
+	//RoutingWeight: The routing weight.
+	RoutingWeight *int `json:"routingWeight,omitempty"`
+
+	//SharedKey: The IPSec shared key.
+	SharedKey *string `json:"sharedKey,omitempty"`
+
+	//TrafficSelectorPolicies: The Traffic Selector Policies to be considered by this
+	//connection.
+	TrafficSelectorPolicies []TrafficSelectorPolicy `json:"trafficSelectorPolicies,omitempty"`
+
+	//UseLocalAzureIpAddress: Use private local Azure IP for the connection.
+	UseLocalAzureIpAddress *bool `json:"useLocalAzureIpAddress,omitempty"`
+
+	//UsePolicyBasedTrafficSelectors: Enable policy-based traffic selectors.
+	UsePolicyBasedTrafficSelectors *bool `json:"usePolicyBasedTrafficSelectors,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//VirtualNetworkGateway1: The reference to virtual network gateway resource.
+	VirtualNetworkGateway1 SubResource `json:"virtualNetworkGateway1"`
+
+	//VirtualNetworkGateway2: The reference to virtual network gateway resource.
+	VirtualNetworkGateway2 *SubResource `json:"virtualNetworkGateway2,omitempty"`
 }
 
 //Generated from:
@@ -180,15 +248,43 @@ const (
 	ConnectionProtocol_StatusIKEv2 = ConnectionProtocol_Status("IKEv2")
 )
 
-// +kubebuilder:validation:Enum={"2020-05-01"}
-type ConnectionsSpecApiVersion string
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/IpsecPolicy
+type IpsecPolicy struct {
 
-const ConnectionsSpecApiVersion20200501 = ConnectionsSpecApiVersion("2020-05-01")
+	// +kubebuilder:validation:Required
+	//DhGroup: The DH Group used in IKE Phase 1 for initial SA.
+	DhGroup IpsecPolicyDhGroup `json:"dhGroup"`
 
-// +kubebuilder:validation:Enum={"Microsoft.Network/connections"}
-type ConnectionsSpecType string
+	// +kubebuilder:validation:Required
+	//IkeEncryption: The IKE encryption algorithm (IKE phase 2).
+	IkeEncryption IpsecPolicyIkeEncryption `json:"ikeEncryption"`
 
-const ConnectionsSpecTypeMicrosoftNetworkConnections = ConnectionsSpecType("Microsoft.Network/connections")
+	// +kubebuilder:validation:Required
+	//IkeIntegrity: The IKE integrity algorithm (IKE phase 2).
+	IkeIntegrity IpsecPolicyIkeIntegrity `json:"ikeIntegrity"`
+
+	// +kubebuilder:validation:Required
+	//IpsecEncryption: The IPSec encryption algorithm (IKE phase 1).
+	IpsecEncryption IpsecPolicyIpsecEncryption `json:"ipsecEncryption"`
+
+	// +kubebuilder:validation:Required
+	//IpsecIntegrity: The IPSec integrity algorithm (IKE phase 1).
+	IpsecIntegrity IpsecPolicyIpsecIntegrity `json:"ipsecIntegrity"`
+
+	// +kubebuilder:validation:Required
+	//PfsGroup: The Pfs Group used in IKE Phase 2 for new child SA.
+	PfsGroup IpsecPolicyPfsGroup `json:"pfsGroup"`
+
+	// +kubebuilder:validation:Required
+	//SaDataSizeKilobytes: The IPSec Security Association (also called Quick Mode or
+	//Phase 2 SA) payload size in KB for a site to site VPN tunnel.
+	SaDataSizeKilobytes int `json:"saDataSizeKilobytes"`
+
+	// +kubebuilder:validation:Required
+	//SaLifeTimeSeconds: The IPSec Security Association (also called Quick Mode or
+	//Phase 2 SA) lifetime in seconds for a site to site VPN tunnel.
+	SaLifeTimeSeconds int `json:"saLifeTimeSeconds"`
+}
 
 //Generated from:
 type IpsecPolicy_Status struct {
@@ -228,6 +324,18 @@ type IpsecPolicy_Status struct {
 	SaLifeTimeSeconds int `json:"saLifeTimeSeconds"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/TrafficSelectorPolicy
+type TrafficSelectorPolicy struct {
+
+	// +kubebuilder:validation:Required
+	//LocalAddressRanges: A collection of local address spaces in CIDR format.
+	LocalAddressRanges []string `json:"localAddressRanges"`
+
+	// +kubebuilder:validation:Required
+	//RemoteAddressRanges: A collection of remote address spaces in CIDR format.
+	RemoteAddressRanges []string `json:"remoteAddressRanges"`
+}
+
 //Generated from:
 type TrafficSelectorPolicy_Status struct {
 
@@ -260,60 +368,23 @@ type TunnelConnectionHealth_Status struct {
 	Tunnel *string `json:"tunnel,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualNetworkGatewayConnectionPropertiesFormat
-type VirtualNetworkGatewayConnectionPropertiesFormat struct {
+// +kubebuilder:validation:Enum={"IKEv1","IKEv2"}
+type VirtualNetworkGatewayConnectionPropertiesFormatConnectionProtocol string
 
-	//AuthorizationKey: The authorizationKey.
-	AuthorizationKey *string `json:"authorizationKey,omitempty"`
+const (
+	VirtualNetworkGatewayConnectionPropertiesFormatConnectionProtocolIKEv1 = VirtualNetworkGatewayConnectionPropertiesFormatConnectionProtocol("IKEv1")
+	VirtualNetworkGatewayConnectionPropertiesFormatConnectionProtocolIKEv2 = VirtualNetworkGatewayConnectionPropertiesFormatConnectionProtocol("IKEv2")
+)
 
-	//ConnectionProtocol: Connection protocol used for this connection.
-	ConnectionProtocol *VirtualNetworkGatewayConnectionPropertiesFormatConnectionProtocol `json:"connectionProtocol,omitempty"`
+// +kubebuilder:validation:Enum={"ExpressRoute","IPsec","VPNClient","Vnet2Vnet"}
+type VirtualNetworkGatewayConnectionPropertiesFormatConnectionType string
 
-	// +kubebuilder:validation:Required
-	//ConnectionType: Gateway connection type.
-	ConnectionType VirtualNetworkGatewayConnectionPropertiesFormatConnectionType `json:"connectionType"`
-
-	//DpdTimeoutSeconds: The dead peer detection timeout of this connection in seconds.
-	DpdTimeoutSeconds *int `json:"dpdTimeoutSeconds,omitempty"`
-
-	//EnableBgp: EnableBgp flag.
-	EnableBgp *bool `json:"enableBgp,omitempty"`
-
-	//ExpressRouteGatewayBypass: Bypass ExpressRoute Gateway for data forwarding.
-	ExpressRouteGatewayBypass *bool `json:"expressRouteGatewayBypass,omitempty"`
-
-	//IpsecPolicies: The IPSec Policies to be considered by this connection.
-	IpsecPolicies []IpsecPolicy `json:"ipsecPolicies,omitempty"`
-
-	//LocalNetworkGateway2: The reference to local network gateway resource.
-	LocalNetworkGateway2 *SubResource `json:"localNetworkGateway2,omitempty"`
-
-	//Peer: The reference to peerings resource.
-	Peer *SubResource `json:"peer,omitempty"`
-
-	//RoutingWeight: The routing weight.
-	RoutingWeight *int `json:"routingWeight,omitempty"`
-
-	//SharedKey: The IPSec shared key.
-	SharedKey *string `json:"sharedKey,omitempty"`
-
-	//TrafficSelectorPolicies: The Traffic Selector Policies to be considered by this
-	//connection.
-	TrafficSelectorPolicies []TrafficSelectorPolicy `json:"trafficSelectorPolicies,omitempty"`
-
-	//UseLocalAzureIpAddress: Use private local Azure IP for the connection.
-	UseLocalAzureIpAddress *bool `json:"useLocalAzureIpAddress,omitempty"`
-
-	//UsePolicyBasedTrafficSelectors: Enable policy-based traffic selectors.
-	UsePolicyBasedTrafficSelectors *bool `json:"usePolicyBasedTrafficSelectors,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//VirtualNetworkGateway1: The reference to virtual network gateway resource.
-	VirtualNetworkGateway1 SubResource `json:"virtualNetworkGateway1"`
-
-	//VirtualNetworkGateway2: The reference to virtual network gateway resource.
-	VirtualNetworkGateway2 *SubResource `json:"virtualNetworkGateway2,omitempty"`
-}
+const (
+	VirtualNetworkGatewayConnectionPropertiesFormatConnectionTypeExpressRoute = VirtualNetworkGatewayConnectionPropertiesFormatConnectionType("ExpressRoute")
+	VirtualNetworkGatewayConnectionPropertiesFormatConnectionTypeIPsec        = VirtualNetworkGatewayConnectionPropertiesFormatConnectionType("IPsec")
+	VirtualNetworkGatewayConnectionPropertiesFormatConnectionTypeVPNClient    = VirtualNetworkGatewayConnectionPropertiesFormatConnectionType("VPNClient")
+	VirtualNetworkGatewayConnectionPropertiesFormatConnectionTypeVnet2Vnet    = VirtualNetworkGatewayConnectionPropertiesFormatConnectionType("Vnet2Vnet")
+)
 
 //Generated from:
 // +kubebuilder:validation:Enum={"Connected","Connecting","NotConnected","Unknown"}
@@ -408,90 +479,6 @@ const (
 	IpsecIntegrity_StatusSHA256    = IpsecIntegrity_Status("SHA256")
 )
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/IpsecPolicy
-type IpsecPolicy struct {
-
-	// +kubebuilder:validation:Required
-	//DhGroup: The DH Group used in IKE Phase 1 for initial SA.
-	DhGroup IpsecPolicyDhGroup `json:"dhGroup"`
-
-	// +kubebuilder:validation:Required
-	//IkeEncryption: The IKE encryption algorithm (IKE phase 2).
-	IkeEncryption IpsecPolicyIkeEncryption `json:"ikeEncryption"`
-
-	// +kubebuilder:validation:Required
-	//IkeIntegrity: The IKE integrity algorithm (IKE phase 2).
-	IkeIntegrity IpsecPolicyIkeIntegrity `json:"ikeIntegrity"`
-
-	// +kubebuilder:validation:Required
-	//IpsecEncryption: The IPSec encryption algorithm (IKE phase 1).
-	IpsecEncryption IpsecPolicyIpsecEncryption `json:"ipsecEncryption"`
-
-	// +kubebuilder:validation:Required
-	//IpsecIntegrity: The IPSec integrity algorithm (IKE phase 1).
-	IpsecIntegrity IpsecPolicyIpsecIntegrity `json:"ipsecIntegrity"`
-
-	// +kubebuilder:validation:Required
-	//PfsGroup: The Pfs Group used in IKE Phase 2 for new child SA.
-	PfsGroup IpsecPolicyPfsGroup `json:"pfsGroup"`
-
-	// +kubebuilder:validation:Required
-	//SaDataSizeKilobytes: The IPSec Security Association (also called Quick Mode or
-	//Phase 2 SA) payload size in KB for a site to site VPN tunnel.
-	SaDataSizeKilobytes int `json:"saDataSizeKilobytes"`
-
-	// +kubebuilder:validation:Required
-	//SaLifeTimeSeconds: The IPSec Security Association (also called Quick Mode or
-	//Phase 2 SA) lifetime in seconds for a site to site VPN tunnel.
-	SaLifeTimeSeconds int `json:"saLifeTimeSeconds"`
-}
-
-//Generated from:
-// +kubebuilder:validation:Enum={"ECP256","ECP384","None","PFS1","PFS14","PFS2","PFS2048","PFS24","PFSMM"}
-type PfsGroup_Status string
-
-const (
-	PfsGroup_StatusECP256  = PfsGroup_Status("ECP256")
-	PfsGroup_StatusECP384  = PfsGroup_Status("ECP384")
-	PfsGroup_StatusNone    = PfsGroup_Status("None")
-	PfsGroup_StatusPFS1    = PfsGroup_Status("PFS1")
-	PfsGroup_StatusPFS14   = PfsGroup_Status("PFS14")
-	PfsGroup_StatusPFS2    = PfsGroup_Status("PFS2")
-	PfsGroup_StatusPFS2048 = PfsGroup_Status("PFS2048")
-	PfsGroup_StatusPFS24   = PfsGroup_Status("PFS24")
-	PfsGroup_StatusPFSMM   = PfsGroup_Status("PFSMM")
-)
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/TrafficSelectorPolicy
-type TrafficSelectorPolicy struct {
-
-	// +kubebuilder:validation:Required
-	//LocalAddressRanges: A collection of local address spaces in CIDR format.
-	LocalAddressRanges []string `json:"localAddressRanges"`
-
-	// +kubebuilder:validation:Required
-	//RemoteAddressRanges: A collection of remote address spaces in CIDR format.
-	RemoteAddressRanges []string `json:"remoteAddressRanges"`
-}
-
-// +kubebuilder:validation:Enum={"IKEv1","IKEv2"}
-type VirtualNetworkGatewayConnectionPropertiesFormatConnectionProtocol string
-
-const (
-	VirtualNetworkGatewayConnectionPropertiesFormatConnectionProtocolIKEv1 = VirtualNetworkGatewayConnectionPropertiesFormatConnectionProtocol("IKEv1")
-	VirtualNetworkGatewayConnectionPropertiesFormatConnectionProtocolIKEv2 = VirtualNetworkGatewayConnectionPropertiesFormatConnectionProtocol("IKEv2")
-)
-
-// +kubebuilder:validation:Enum={"ExpressRoute","IPsec","VPNClient","Vnet2Vnet"}
-type VirtualNetworkGatewayConnectionPropertiesFormatConnectionType string
-
-const (
-	VirtualNetworkGatewayConnectionPropertiesFormatConnectionTypeExpressRoute = VirtualNetworkGatewayConnectionPropertiesFormatConnectionType("ExpressRoute")
-	VirtualNetworkGatewayConnectionPropertiesFormatConnectionTypeIPsec        = VirtualNetworkGatewayConnectionPropertiesFormatConnectionType("IPsec")
-	VirtualNetworkGatewayConnectionPropertiesFormatConnectionTypeVPNClient    = VirtualNetworkGatewayConnectionPropertiesFormatConnectionType("VPNClient")
-	VirtualNetworkGatewayConnectionPropertiesFormatConnectionTypeVnet2Vnet    = VirtualNetworkGatewayConnectionPropertiesFormatConnectionType("Vnet2Vnet")
-)
-
 // +kubebuilder:validation:Enum={"DHGroup1","DHGroup14","DHGroup2","DHGroup2048","DHGroup24","ECP256","ECP384","None"}
 type IpsecPolicyDhGroup string
 
@@ -571,6 +558,22 @@ const (
 	IpsecPolicyPfsGroupPFS2048 = IpsecPolicyPfsGroup("PFS2048")
 	IpsecPolicyPfsGroupPFS24   = IpsecPolicyPfsGroup("PFS24")
 	IpsecPolicyPfsGroupPFSMM   = IpsecPolicyPfsGroup("PFSMM")
+)
+
+//Generated from:
+// +kubebuilder:validation:Enum={"ECP256","ECP384","None","PFS1","PFS14","PFS2","PFS2048","PFS24","PFSMM"}
+type PfsGroup_Status string
+
+const (
+	PfsGroup_StatusECP256  = PfsGroup_Status("ECP256")
+	PfsGroup_StatusECP384  = PfsGroup_Status("ECP384")
+	PfsGroup_StatusNone    = PfsGroup_Status("None")
+	PfsGroup_StatusPFS1    = PfsGroup_Status("PFS1")
+	PfsGroup_StatusPFS14   = PfsGroup_Status("PFS14")
+	PfsGroup_StatusPFS2    = PfsGroup_Status("PFS2")
+	PfsGroup_StatusPFS2048 = PfsGroup_Status("PFS2048")
+	PfsGroup_StatusPFS24   = PfsGroup_Status("PFS24")
+	PfsGroup_StatusPFSMM   = PfsGroup_Status("PFSMM")
 )
 
 func init() {

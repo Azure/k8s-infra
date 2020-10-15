@@ -27,8 +27,15 @@ type PublicIPPrefixesList struct {
 	Items           []PublicIPPrefixes `json:"items"`
 }
 
-//Generated from:
 type PublicIPPrefix_Status struct {
+	AtProvider PublicIPPrefixesObservation `json:"atProvider"`
+}
+
+type PublicIPPrefixes_Spec struct {
+	ForProvider PublicIPPrefixesParameters `json:"forProvider"`
+}
+
+type PublicIPPrefixesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -57,46 +64,6 @@ type PublicIPPrefix_Status struct {
 	//Zones: A list of availability zones denoting the IP allocated for the resource
 	//needs to come from.
 	Zones []string `json:"zones,omitempty"`
-}
-
-type PublicIPPrefixes_Spec struct {
-	ForProvider PublicIPPrefixesParameters `json:"forProvider"`
-}
-
-//Generated from:
-type PublicIPPrefixPropertiesFormat_Status struct {
-
-	//IpPrefix: The allocated Prefix.
-	IpPrefix *string `json:"ipPrefix,omitempty"`
-
-	//IpTags: The list of tags associated with the public IP prefix.
-	IpTags []IpTag_Status `json:"ipTags,omitempty"`
-
-	//LoadBalancerFrontendIpConfiguration: The reference to load balancer frontend IP
-	//configuration associated with the public IP prefix.
-	LoadBalancerFrontendIpConfiguration *SubResource_Status `json:"loadBalancerFrontendIpConfiguration,omitempty"`
-
-	//PrefixLength: The Length of the Public IP Prefix.
-	PrefixLength *int `json:"prefixLength,omitempty"`
-
-	//ProvisioningState: The provisioning state of the public IP prefix resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//PublicIPAddressVersion: The public IP address version.
-	PublicIPAddressVersion *IPVersion_Status `json:"publicIPAddressVersion,omitempty"`
-
-	//PublicIPAddresses: The list of all referenced PublicIPAddresses.
-	PublicIPAddresses []ReferencedPublicIpAddress_Status `json:"publicIPAddresses,omitempty"`
-
-	//ResourceGuid: The resource GUID property of the public IP prefix resource.
-	ResourceGuid *string `json:"resourceGuid,omitempty"`
-}
-
-//Generated from:
-type PublicIPPrefixSku_Status struct {
-
-	//Name: Name of a public IP prefix SKU.
-	Name *PublicIPPrefixSkuStatusName `json:"name,omitempty"`
 }
 
 type PublicIPPrefixesParameters struct {
@@ -158,6 +125,35 @@ type PublicIPPrefixPropertiesFormat struct {
 	PublicIPAddressVersion *PublicIPPrefixPropertiesFormatPublicIPAddressVersion `json:"publicIPAddressVersion,omitempty"`
 }
 
+//Generated from:
+type PublicIPPrefixPropertiesFormat_Status struct {
+
+	//IpPrefix: The allocated Prefix.
+	IpPrefix *string `json:"ipPrefix,omitempty"`
+
+	//IpTags: The list of tags associated with the public IP prefix.
+	IpTags []IpTag_Status `json:"ipTags,omitempty"`
+
+	//LoadBalancerFrontendIpConfiguration: The reference to load balancer frontend IP
+	//configuration associated with the public IP prefix.
+	LoadBalancerFrontendIpConfiguration *SubResource_Status `json:"loadBalancerFrontendIpConfiguration,omitempty"`
+
+	//PrefixLength: The Length of the Public IP Prefix.
+	PrefixLength *int `json:"prefixLength,omitempty"`
+
+	//ProvisioningState: The provisioning state of the public IP prefix resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//PublicIPAddressVersion: The public IP address version.
+	PublicIPAddressVersion *IPVersion_Status `json:"publicIPAddressVersion,omitempty"`
+
+	//PublicIPAddresses: The list of all referenced PublicIPAddresses.
+	PublicIPAddresses []ReferencedPublicIpAddress_Status `json:"publicIPAddresses,omitempty"`
+
+	//ResourceGuid: The resource GUID property of the public IP prefix resource.
+	ResourceGuid *string `json:"resourceGuid,omitempty"`
+}
+
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PublicIPPrefixSku
 type PublicIPPrefixSku struct {
 
@@ -165,10 +161,12 @@ type PublicIPPrefixSku struct {
 	Name *PublicIPPrefixSkuName `json:"name,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"Standard"}
-type PublicIPPrefixSkuStatusName string
+//Generated from:
+type PublicIPPrefixSku_Status struct {
 
-const PublicIPPrefixSkuStatusNameStandard = PublicIPPrefixSkuStatusName("Standard")
+	//Name: Name of a public IP prefix SKU.
+	Name *PublicIPPrefixSkuStatusName `json:"name,omitempty"`
+}
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type PublicIPPrefixesSpecApiVersion string
@@ -179,13 +177,6 @@ const PublicIPPrefixesSpecApiVersion20200501 = PublicIPPrefixesSpecApiVersion("2
 type PublicIPPrefixesSpecType string
 
 const PublicIPPrefixesSpecTypeMicrosoftNetworkPublicIPPrefixes = PublicIPPrefixesSpecType("Microsoft.Network/publicIPPrefixes")
-
-//Generated from:
-type ReferencedPublicIpAddress_Status struct {
-
-	//Id: The PublicIPAddress Reference.
-	Id *string `json:"id,omitempty"`
-}
 
 // +kubebuilder:validation:Enum={"IPv4","IPv6"}
 type PublicIPPrefixPropertiesFormatPublicIPAddressVersion string
@@ -199,6 +190,18 @@ const (
 type PublicIPPrefixSkuName string
 
 const PublicIPPrefixSkuNameStandard = PublicIPPrefixSkuName("Standard")
+
+// +kubebuilder:validation:Enum={"Standard"}
+type PublicIPPrefixSkuStatusName string
+
+const PublicIPPrefixSkuStatusNameStandard = PublicIPPrefixSkuStatusName("Standard")
+
+//Generated from:
+type ReferencedPublicIpAddress_Status struct {
+
+	//Id: The PublicIPAddress Reference.
+	Id *string `json:"id,omitempty"`
+}
 
 func init() {
 	SchemeBuilder.Register(&PublicIPPrefixes{}, &PublicIPPrefixesList{})

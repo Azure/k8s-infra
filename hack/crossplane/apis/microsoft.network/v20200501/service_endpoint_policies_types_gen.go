@@ -31,8 +31,11 @@ type ServiceEndpointPolicies_Spec struct {
 	ForProvider ServiceEndpointPoliciesParameters `json:"forProvider"`
 }
 
-//Generated from:
 type ServiceEndpointPolicy_Status struct {
+	AtProvider ServiceEndpointPoliciesObservation `json:"atProvider"`
+}
+
+type ServiceEndpointPoliciesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -95,24 +98,6 @@ type ServiceEndpointPoliciesParameters struct {
 	Type ServiceEndpointPoliciesSpecType `json:"type"`
 }
 
-//Generated from:
-type ServiceEndpointPolicyPropertiesFormat_Status struct {
-
-	//ProvisioningState: The provisioning state of the service endpoint policy
-	//resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//ResourceGuid: The resource GUID property of the service endpoint policy resource.
-	ResourceGuid *string `json:"resourceGuid,omitempty"`
-
-	//ServiceEndpointPolicyDefinitions: A collection of service endpoint policy
-	//definitions of the service endpoint policy.
-	ServiceEndpointPolicyDefinitions []ServiceEndpointPolicyDefinition_Status `json:"serviceEndpointPolicyDefinitions,omitempty"`
-
-	//Subnets: A collection of references to subnets.
-	Subnets []Subnet_Status `json:"subnets,omitempty"`
-}
-
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type ServiceEndpointPoliciesSpecApiVersion string
 
@@ -129,6 +114,24 @@ type ServiceEndpointPolicyPropertiesFormat struct {
 	//ServiceEndpointPolicyDefinitions: A collection of service endpoint policy
 	//definitions of the service endpoint policy.
 	ServiceEndpointPolicyDefinitions []ServiceEndpointPolicyDefinition `json:"serviceEndpointPolicyDefinitions,omitempty"`
+}
+
+//Generated from:
+type ServiceEndpointPolicyPropertiesFormat_Status struct {
+
+	//ProvisioningState: The provisioning state of the service endpoint policy
+	//resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//ResourceGuid: The resource GUID property of the service endpoint policy resource.
+	ResourceGuid *string `json:"resourceGuid,omitempty"`
+
+	//ServiceEndpointPolicyDefinitions: A collection of service endpoint policy
+	//definitions of the service endpoint policy.
+	ServiceEndpointPolicyDefinitions []ServiceEndpointPolicyDefinition_Status `json:"serviceEndpointPolicyDefinitions,omitempty"`
+
+	//Subnets: A collection of references to subnets.
+	Subnets []Subnet_Status `json:"subnets,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ServiceEndpointPolicyDefinition

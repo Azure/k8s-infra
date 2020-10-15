@@ -27,8 +27,15 @@ type VpnSitesList struct {
 	Items           []VpnSites `json:"items"`
 }
 
-//Generated from:
 type VpnSite_Status struct {
+	AtProvider VpnSitesObservation `json:"atProvider"`
+}
+
+type VpnSites_Spec struct {
+	ForProvider VpnSitesParameters `json:"forProvider"`
+}
+
+type VpnSitesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,41 +57,6 @@ type VpnSite_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type VpnSites_Spec struct {
-	ForProvider VpnSitesParameters `json:"forProvider"`
-}
-
-//Generated from:
-type VpnSiteProperties_Status struct {
-
-	//AddressSpace: The AddressSpace that contains an array of IP address ranges.
-	AddressSpace *AddressSpace_Status `json:"addressSpace,omitempty"`
-
-	//BgpProperties: The set of bgp properties.
-	BgpProperties *BgpSettings_Status `json:"bgpProperties,omitempty"`
-
-	//DeviceProperties: The device properties.
-	DeviceProperties *DeviceProperties_Status `json:"deviceProperties,omitempty"`
-
-	//IpAddress: The ip-address for the vpn-site.
-	IpAddress *string `json:"ipAddress,omitempty"`
-
-	//IsSecuritySite: IsSecuritySite flag.
-	IsSecuritySite *bool `json:"isSecuritySite,omitempty"`
-
-	//ProvisioningState: The provisioning state of the VPN site resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//SiteKey: The key for vpn-site that can be used for connections.
-	SiteKey *string `json:"siteKey,omitempty"`
-
-	//VirtualWan: The VirtualWAN to which the vpnSite belongs.
-	VirtualWan *SubResource_Status `json:"virtualWan,omitempty"`
-
-	//VpnSiteLinks: List of all vpn site links.
-	VpnSiteLinks []VpnSiteLink_Status `json:"vpnSiteLinks,omitempty"`
 }
 
 type VpnSitesParameters struct {
@@ -126,39 +98,6 @@ type VpnSitesParameters struct {
 	Type VpnSitesSpecType `json:"type"`
 }
 
-//Generated from:
-type DeviceProperties_Status struct {
-
-	//DeviceModel: Model of the device.
-	DeviceModel *string `json:"deviceModel,omitempty"`
-
-	//DeviceVendor: Name of the device Vendor.
-	DeviceVendor *string `json:"deviceVendor,omitempty"`
-
-	//LinkSpeedInMbps: Link speed.
-	LinkSpeedInMbps *int `json:"linkSpeedInMbps,omitempty"`
-}
-
-//Generated from:
-type VpnSiteLink_Status struct {
-
-	//Etag: A unique read-only string that changes whenever the resource is updated.
-	Etag *string `json:"etag,omitempty"`
-
-	//Id: Resource ID.
-	Id *string `json:"id,omitempty"`
-
-	//Name: The name of the resource that is unique within a resource group. This name
-	//can be used to access the resource.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of the VPN site link.
-	Properties *VpnSiteLinkProperties_Status `json:"properties,omitempty"`
-
-	//Type: Resource type.
-	Type *string `json:"type,omitempty"`
-}
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VpnSiteProperties
 type VpnSiteProperties struct {
 
@@ -187,6 +126,37 @@ type VpnSiteProperties struct {
 	VpnSiteLinks []VpnSiteLink `json:"vpnSiteLinks,omitempty"`
 }
 
+//Generated from:
+type VpnSiteProperties_Status struct {
+
+	//AddressSpace: The AddressSpace that contains an array of IP address ranges.
+	AddressSpace *AddressSpace_Status `json:"addressSpace,omitempty"`
+
+	//BgpProperties: The set of bgp properties.
+	BgpProperties *BgpSettings_Status `json:"bgpProperties,omitempty"`
+
+	//DeviceProperties: The device properties.
+	DeviceProperties *DeviceProperties_Status `json:"deviceProperties,omitempty"`
+
+	//IpAddress: The ip-address for the vpn-site.
+	IpAddress *string `json:"ipAddress,omitempty"`
+
+	//IsSecuritySite: IsSecuritySite flag.
+	IsSecuritySite *bool `json:"isSecuritySite,omitempty"`
+
+	//ProvisioningState: The provisioning state of the VPN site resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//SiteKey: The key for vpn-site that can be used for connections.
+	SiteKey *string `json:"siteKey,omitempty"`
+
+	//VirtualWan: The VirtualWAN to which the vpnSite belongs.
+	VirtualWan *SubResource_Status `json:"virtualWan,omitempty"`
+
+	//VpnSiteLinks: List of all vpn site links.
+	VpnSiteLinks []VpnSiteLink_Status `json:"vpnSiteLinks,omitempty"`
+}
+
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type VpnSitesSpecApiVersion string
 
@@ -210,6 +180,19 @@ type DeviceProperties struct {
 	LinkSpeedInMbps *int `json:"linkSpeedInMbps,omitempty"`
 }
 
+//Generated from:
+type DeviceProperties_Status struct {
+
+	//DeviceModel: Model of the device.
+	DeviceModel *string `json:"deviceModel,omitempty"`
+
+	//DeviceVendor: Name of the device Vendor.
+	DeviceVendor *string `json:"deviceVendor,omitempty"`
+
+	//LinkSpeedInMbps: Link speed.
+	LinkSpeedInMbps *int `json:"linkSpeedInMbps,omitempty"`
+}
+
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VpnSiteLink
 type VpnSiteLink struct {
 
@@ -219,6 +202,42 @@ type VpnSiteLink struct {
 
 	//Properties: Properties of the VPN site link.
 	Properties *VpnSiteLinkProperties `json:"properties,omitempty"`
+}
+
+//Generated from:
+type VpnSiteLink_Status struct {
+
+	//Etag: A unique read-only string that changes whenever the resource is updated.
+	Etag *string `json:"etag,omitempty"`
+
+	//Id: Resource ID.
+	Id *string `json:"id,omitempty"`
+
+	//Name: The name of the resource that is unique within a resource group. This name
+	//can be used to access the resource.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the VPN site link.
+	Properties *VpnSiteLinkProperties_Status `json:"properties,omitempty"`
+
+	//Type: Resource type.
+	Type *string `json:"type,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VpnSiteLinkProperties
+type VpnSiteLinkProperties struct {
+
+	//BgpProperties: The set of bgp properties.
+	BgpProperties *VpnLinkBgpSettings `json:"bgpProperties,omitempty"`
+
+	//Fqdn: FQDN of vpn-site-link.
+	Fqdn *string `json:"fqdn,omitempty"`
+
+	//IpAddress: The ip-address for the vpn-site-link.
+	IpAddress *string `json:"ipAddress,omitempty"`
+
+	//LinkProperties: The link provider properties.
+	LinkProperties *VpnLinkProviderProperties `json:"linkProperties,omitempty"`
 }
 
 //Generated from:
@@ -240,43 +259,6 @@ type VpnSiteLinkProperties_Status struct {
 	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
-//Generated from:
-type VpnLinkBgpSettings_Status struct {
-
-	//Asn: The BGP speaker's ASN.
-	Asn *int `json:"asn,omitempty"`
-
-	//BgpPeeringAddress: The BGP peering address and BGP identifier of this BGP
-	//speaker.
-	BgpPeeringAddress *string `json:"bgpPeeringAddress,omitempty"`
-}
-
-//Generated from:
-type VpnLinkProviderProperties_Status struct {
-
-	//LinkProviderName: Name of the link provider.
-	LinkProviderName *string `json:"linkProviderName,omitempty"`
-
-	//LinkSpeedInMbps: Link speed.
-	LinkSpeedInMbps *int `json:"linkSpeedInMbps,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VpnSiteLinkProperties
-type VpnSiteLinkProperties struct {
-
-	//BgpProperties: The set of bgp properties.
-	BgpProperties *VpnLinkBgpSettings `json:"bgpProperties,omitempty"`
-
-	//Fqdn: FQDN of vpn-site-link.
-	Fqdn *string `json:"fqdn,omitempty"`
-
-	//IpAddress: The ip-address for the vpn-site-link.
-	IpAddress *string `json:"ipAddress,omitempty"`
-
-	//LinkProperties: The link provider properties.
-	LinkProperties *VpnLinkProviderProperties `json:"linkProperties,omitempty"`
-}
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VpnLinkBgpSettings
 type VpnLinkBgpSettings struct {
 
@@ -288,8 +270,29 @@ type VpnLinkBgpSettings struct {
 	BgpPeeringAddress *string `json:"bgpPeeringAddress,omitempty"`
 }
 
+//Generated from:
+type VpnLinkBgpSettings_Status struct {
+
+	//Asn: The BGP speaker's ASN.
+	Asn *int `json:"asn,omitempty"`
+
+	//BgpPeeringAddress: The BGP peering address and BGP identifier of this BGP
+	//speaker.
+	BgpPeeringAddress *string `json:"bgpPeeringAddress,omitempty"`
+}
+
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VpnLinkProviderProperties
 type VpnLinkProviderProperties struct {
+
+	//LinkProviderName: Name of the link provider.
+	LinkProviderName *string `json:"linkProviderName,omitempty"`
+
+	//LinkSpeedInMbps: Link speed.
+	LinkSpeedInMbps *int `json:"linkSpeedInMbps,omitempty"`
+}
+
+//Generated from:
+type VpnLinkProviderProperties_Status struct {
 
 	//LinkProviderName: Name of the link provider.
 	LinkProviderName *string `json:"linkProviderName,omitempty"`

@@ -27,8 +27,15 @@ type ServersList struct {
 	Items           []Servers `json:"items"`
 }
 
-//Generated from:
 type Server_Status struct {
+	AtProvider ServersObservation `json:"atProvider"`
+}
+
+type Servers_Spec struct {
+	ForProvider ServersParameters `json:"forProvider"`
+}
+
+type ServersObservation struct {
 
 	//Id: Resource ID.
 	Id *string `json:"id,omitempty"`
@@ -54,31 +61,6 @@ type Server_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type Servers_Spec struct {
-	ForProvider ServersParameters `json:"forProvider"`
-}
-
-//Generated from:
-type ServerProperties_Status struct {
-
-	//AdministratorLogin: Administrator username for the server. Once created it
-	//cannot be changed.
-	AdministratorLogin *string `json:"administratorLogin,omitempty"`
-
-	//AdministratorLoginPassword: The administrator login password (required for
-	//server creation).
-	AdministratorLoginPassword *string `json:"administratorLoginPassword,omitempty"`
-
-	//FullyQualifiedDomainName: The fully qualified domain name of the server.
-	FullyQualifiedDomainName *string `json:"fullyQualifiedDomainName,omitempty"`
-
-	//State: The state of the server.
-	State *string `json:"state,omitempty"`
-
-	//Version: The version of the server.
-	Version *string `json:"version,omitempty"`
 }
 
 type ServersParameters struct {
@@ -133,6 +115,27 @@ type ServerProperties struct {
 	//AdministratorLoginPassword: The administrator login password (required for
 	//server creation).
 	AdministratorLoginPassword *string `json:"administratorLoginPassword,omitempty"`
+
+	//Version: The version of the server.
+	Version *string `json:"version,omitempty"`
+}
+
+//Generated from:
+type ServerProperties_Status struct {
+
+	//AdministratorLogin: Administrator username for the server. Once created it
+	//cannot be changed.
+	AdministratorLogin *string `json:"administratorLogin,omitempty"`
+
+	//AdministratorLoginPassword: The administrator login password (required for
+	//server creation).
+	AdministratorLoginPassword *string `json:"administratorLoginPassword,omitempty"`
+
+	//FullyQualifiedDomainName: The fully qualified domain name of the server.
+	FullyQualifiedDomainName *string `json:"fullyQualifiedDomainName,omitempty"`
+
+	//State: The state of the server.
+	State *string `json:"state,omitempty"`
 
 	//Version: The version of the server.
 	Version *string `json:"version,omitempty"`

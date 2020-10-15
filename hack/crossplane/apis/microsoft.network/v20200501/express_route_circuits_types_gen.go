@@ -27,8 +27,15 @@ type ExpressRouteCircuitsList struct {
 	Items           []ExpressRouteCircuits `json:"items"`
 }
 
-//Generated from:
 type ExpressRouteCircuit_Status struct {
+	AtProvider ExpressRouteCircuitsObservation `json:"atProvider"`
+}
+
+type ExpressRouteCircuits_Spec struct {
+	ForProvider ExpressRouteCircuitsParameters `json:"forProvider"`
+}
+
+type ExpressRouteCircuitsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -53,72 +60,6 @@ type ExpressRouteCircuit_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type ExpressRouteCircuits_Spec struct {
-	ForProvider ExpressRouteCircuitsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type ExpressRouteCircuitPropertiesFormat_Status struct {
-
-	//AllowClassicOperations: Allow classic operations.
-	AllowClassicOperations *bool `json:"allowClassicOperations,omitempty"`
-
-	//Authorizations: The list of authorizations.
-	Authorizations []ExpressRouteCircuitAuthorization_Status `json:"authorizations,omitempty"`
-
-	//BandwidthInGbps: The bandwidth of the circuit when the circuit is provisioned on
-	//an ExpressRoutePort resource.
-	BandwidthInGbps *float64 `json:"bandwidthInGbps,omitempty"`
-
-	//CircuitProvisioningState: The CircuitProvisioningState state of the resource.
-	CircuitProvisioningState *string `json:"circuitProvisioningState,omitempty"`
-
-	//ExpressRoutePort: The reference to the ExpressRoutePort resource when the
-	//circuit is provisioned on an ExpressRoutePort resource.
-	ExpressRoutePort *SubResource_Status `json:"expressRoutePort,omitempty"`
-
-	//GatewayManagerEtag: The GatewayManager Etag.
-	GatewayManagerEtag *string `json:"gatewayManagerEtag,omitempty"`
-
-	//GlobalReachEnabled: Flag denoting global reach status.
-	GlobalReachEnabled *bool `json:"globalReachEnabled,omitempty"`
-
-	//Peerings: The list of peerings.
-	Peerings []ExpressRouteCircuitPeering_Status `json:"peerings,omitempty"`
-
-	//ProvisioningState: The provisioning state of the express route circuit resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//ServiceKey: The ServiceKey.
-	ServiceKey *string `json:"serviceKey,omitempty"`
-
-	//ServiceProviderNotes: The ServiceProviderNotes.
-	ServiceProviderNotes *string `json:"serviceProviderNotes,omitempty"`
-
-	//ServiceProviderProperties: The ServiceProviderProperties.
-	ServiceProviderProperties *ExpressRouteCircuitServiceProviderProperties_Status `json:"serviceProviderProperties,omitempty"`
-
-	//ServiceProviderProvisioningState: The ServiceProviderProvisioningState state of
-	//the resource.
-	ServiceProviderProvisioningState *ServiceProviderProvisioningState_Status `json:"serviceProviderProvisioningState,omitempty"`
-
-	//Stag: The identifier of the circuit traffic. Outer tag for QinQ encapsulation.
-	Stag *int `json:"stag,omitempty"`
-}
-
-//Generated from:
-type ExpressRouteCircuitSku_Status struct {
-
-	//Family: The family of the SKU.
-	Family *ExpressRouteCircuitSkuStatusFamily `json:"family,omitempty"`
-
-	//Name: The name of the SKU.
-	Name *string `json:"name,omitempty"`
-
-	//Tier: The tier of the SKU.
-	Tier *ExpressRouteCircuitSkuStatusTier `json:"tier,omitempty"`
 }
 
 type ExpressRouteCircuitsParameters struct {
@@ -194,16 +135,52 @@ type ExpressRouteCircuitPropertiesFormat struct {
 }
 
 //Generated from:
-type ExpressRouteCircuitServiceProviderProperties_Status struct {
+type ExpressRouteCircuitPropertiesFormat_Status struct {
 
-	//BandwidthInMbps: The BandwidthInMbps.
-	BandwidthInMbps *int `json:"bandwidthInMbps,omitempty"`
+	//AllowClassicOperations: Allow classic operations.
+	AllowClassicOperations *bool `json:"allowClassicOperations,omitempty"`
 
-	//PeeringLocation: The peering location.
-	PeeringLocation *string `json:"peeringLocation,omitempty"`
+	//Authorizations: The list of authorizations.
+	Authorizations []ExpressRouteCircuitAuthorization_Status `json:"authorizations,omitempty"`
 
-	//ServiceProviderName: The serviceProviderName.
-	ServiceProviderName *string `json:"serviceProviderName,omitempty"`
+	//BandwidthInGbps: The bandwidth of the circuit when the circuit is provisioned on
+	//an ExpressRoutePort resource.
+	BandwidthInGbps *float64 `json:"bandwidthInGbps,omitempty"`
+
+	//CircuitProvisioningState: The CircuitProvisioningState state of the resource.
+	CircuitProvisioningState *string `json:"circuitProvisioningState,omitempty"`
+
+	//ExpressRoutePort: The reference to the ExpressRoutePort resource when the
+	//circuit is provisioned on an ExpressRoutePort resource.
+	ExpressRoutePort *SubResource_Status `json:"expressRoutePort,omitempty"`
+
+	//GatewayManagerEtag: The GatewayManager Etag.
+	GatewayManagerEtag *string `json:"gatewayManagerEtag,omitempty"`
+
+	//GlobalReachEnabled: Flag denoting global reach status.
+	GlobalReachEnabled *bool `json:"globalReachEnabled,omitempty"`
+
+	//Peerings: The list of peerings.
+	Peerings []ExpressRouteCircuitPeering_Status `json:"peerings,omitempty"`
+
+	//ProvisioningState: The provisioning state of the express route circuit resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//ServiceKey: The ServiceKey.
+	ServiceKey *string `json:"serviceKey,omitempty"`
+
+	//ServiceProviderNotes: The ServiceProviderNotes.
+	ServiceProviderNotes *string `json:"serviceProviderNotes,omitempty"`
+
+	//ServiceProviderProperties: The ServiceProviderProperties.
+	ServiceProviderProperties *ExpressRouteCircuitServiceProviderProperties_Status `json:"serviceProviderProperties,omitempty"`
+
+	//ServiceProviderProvisioningState: The ServiceProviderProvisioningState state of
+	//the resource.
+	ServiceProviderProvisioningState *ServiceProviderProvisioningState_Status `json:"serviceProviderProvisioningState,omitempty"`
+
+	//Stag: The identifier of the circuit traffic. Outer tag for QinQ encapsulation.
+	Stag *int `json:"stag,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteCircuitSku
@@ -219,23 +196,18 @@ type ExpressRouteCircuitSku struct {
 	Tier *ExpressRouteCircuitSkuTier `json:"tier,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"MeteredData","UnlimitedData"}
-type ExpressRouteCircuitSkuStatusFamily string
+//Generated from:
+type ExpressRouteCircuitSku_Status struct {
 
-const (
-	ExpressRouteCircuitSkuStatusFamilyMeteredData   = ExpressRouteCircuitSkuStatusFamily("MeteredData")
-	ExpressRouteCircuitSkuStatusFamilyUnlimitedData = ExpressRouteCircuitSkuStatusFamily("UnlimitedData")
-)
+	//Family: The family of the SKU.
+	Family *ExpressRouteCircuitSkuStatusFamily `json:"family,omitempty"`
 
-// +kubebuilder:validation:Enum={"Basic","Local","Premium","Standard"}
-type ExpressRouteCircuitSkuStatusTier string
+	//Name: The name of the SKU.
+	Name *string `json:"name,omitempty"`
 
-const (
-	ExpressRouteCircuitSkuStatusTierBasic    = ExpressRouteCircuitSkuStatusTier("Basic")
-	ExpressRouteCircuitSkuStatusTierLocal    = ExpressRouteCircuitSkuStatusTier("Local")
-	ExpressRouteCircuitSkuStatusTierPremium  = ExpressRouteCircuitSkuStatusTier("Premium")
-	ExpressRouteCircuitSkuStatusTierStandard = ExpressRouteCircuitSkuStatusTier("Standard")
-)
+	//Tier: The tier of the SKU.
+	Tier *ExpressRouteCircuitSkuStatusTier `json:"tier,omitempty"`
+}
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type ExpressRouteCircuitsSpecApiVersion string
@@ -246,17 +218,6 @@ const ExpressRouteCircuitsSpecApiVersion20200501 = ExpressRouteCircuitsSpecApiVe
 type ExpressRouteCircuitsSpecType string
 
 const ExpressRouteCircuitsSpecTypeMicrosoftNetworkExpressRouteCircuits = ExpressRouteCircuitsSpecType("Microsoft.Network/expressRouteCircuits")
-
-//Generated from:
-// +kubebuilder:validation:Enum={"Deprovisioning","NotProvisioned","Provisioned","Provisioning"}
-type ServiceProviderProvisioningState_Status string
-
-const (
-	ServiceProviderProvisioningState_StatusDeprovisioning = ServiceProviderProvisioningState_Status("Deprovisioning")
-	ServiceProviderProvisioningState_StatusNotProvisioned = ServiceProviderProvisioningState_Status("NotProvisioned")
-	ServiceProviderProvisioningState_StatusProvisioned    = ServiceProviderProvisioningState_Status("Provisioned")
-	ServiceProviderProvisioningState_StatusProvisioning   = ServiceProviderProvisioningState_Status("Provisioning")
-)
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteCircuitAuthorization
 type ExpressRouteCircuitAuthorization struct {
@@ -293,12 +254,43 @@ type ExpressRouteCircuitServiceProviderProperties struct {
 	ServiceProviderName *string `json:"serviceProviderName,omitempty"`
 }
 
+//Generated from:
+type ExpressRouteCircuitServiceProviderProperties_Status struct {
+
+	//BandwidthInMbps: The BandwidthInMbps.
+	BandwidthInMbps *int `json:"bandwidthInMbps,omitempty"`
+
+	//PeeringLocation: The peering location.
+	PeeringLocation *string `json:"peeringLocation,omitempty"`
+
+	//ServiceProviderName: The serviceProviderName.
+	ServiceProviderName *string `json:"serviceProviderName,omitempty"`
+}
+
 // +kubebuilder:validation:Enum={"MeteredData","UnlimitedData"}
 type ExpressRouteCircuitSkuFamily string
 
 const (
 	ExpressRouteCircuitSkuFamilyMeteredData   = ExpressRouteCircuitSkuFamily("MeteredData")
 	ExpressRouteCircuitSkuFamilyUnlimitedData = ExpressRouteCircuitSkuFamily("UnlimitedData")
+)
+
+// +kubebuilder:validation:Enum={"MeteredData","UnlimitedData"}
+type ExpressRouteCircuitSkuStatusFamily string
+
+const (
+	ExpressRouteCircuitSkuStatusFamilyMeteredData   = ExpressRouteCircuitSkuStatusFamily("MeteredData")
+	ExpressRouteCircuitSkuStatusFamilyUnlimitedData = ExpressRouteCircuitSkuStatusFamily("UnlimitedData")
+)
+
+// +kubebuilder:validation:Enum={"Basic","Local","Premium","Standard"}
+type ExpressRouteCircuitSkuStatusTier string
+
+const (
+	ExpressRouteCircuitSkuStatusTierBasic    = ExpressRouteCircuitSkuStatusTier("Basic")
+	ExpressRouteCircuitSkuStatusTierLocal    = ExpressRouteCircuitSkuStatusTier("Local")
+	ExpressRouteCircuitSkuStatusTierPremium  = ExpressRouteCircuitSkuStatusTier("Premium")
+	ExpressRouteCircuitSkuStatusTierStandard = ExpressRouteCircuitSkuStatusTier("Standard")
 )
 
 // +kubebuilder:validation:Enum={"Basic","Local","Premium","Standard"}
@@ -309,6 +301,17 @@ const (
 	ExpressRouteCircuitSkuTierLocal    = ExpressRouteCircuitSkuTier("Local")
 	ExpressRouteCircuitSkuTierPremium  = ExpressRouteCircuitSkuTier("Premium")
 	ExpressRouteCircuitSkuTierStandard = ExpressRouteCircuitSkuTier("Standard")
+)
+
+//Generated from:
+// +kubebuilder:validation:Enum={"Deprovisioning","NotProvisioned","Provisioned","Provisioning"}
+type ServiceProviderProvisioningState_Status string
+
+const (
+	ServiceProviderProvisioningState_StatusDeprovisioning = ServiceProviderProvisioningState_Status("Deprovisioning")
+	ServiceProviderProvisioningState_StatusNotProvisioned = ServiceProviderProvisioningState_Status("NotProvisioned")
+	ServiceProviderProvisioningState_StatusProvisioned    = ServiceProviderProvisioningState_Status("Provisioned")
+	ServiceProviderProvisioningState_StatusProvisioning   = ServiceProviderProvisioningState_Status("Provisioning")
 )
 
 func init() {

@@ -31,8 +31,11 @@ type DdosCustomPolicies_Spec struct {
 	ForProvider DdosCustomPoliciesParameters `json:"forProvider"`
 }
 
-//Generated from:
 type DdosCustomPolicy_Status struct {
+	AtProvider DdosCustomPoliciesObservation `json:"atProvider"`
+}
+
+type DdosCustomPoliciesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -95,26 +98,6 @@ type DdosCustomPoliciesParameters struct {
 	Type DdosCustomPoliciesSpecType `json:"type"`
 }
 
-//Generated from:
-type DdosCustomPolicyPropertiesFormat_Status struct {
-
-	//ProtocolCustomSettings: The protocol-specific DDoS policy customization
-	//parameters.
-	ProtocolCustomSettings []ProtocolCustomSettingsFormat_Status `json:"protocolCustomSettings,omitempty"`
-
-	//ProvisioningState: The provisioning state of the DDoS custom policy resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//PublicIPAddresses: The list of public IPs associated with the DDoS custom policy
-	//resource. This list is read-only.
-	PublicIPAddresses []SubResource_Status `json:"publicIPAddresses,omitempty"`
-
-	//ResourceGuid: The resource GUID property of the DDoS custom policy resource. It
-	//uniquely identifies the resource, even if the user changes its name or migrate
-	//the resource across subscriptions or resource groups.
-	ResourceGuid *string `json:"resourceGuid,omitempty"`
-}
-
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type DdosCustomPoliciesSpecApiVersion string
 
@@ -134,23 +117,23 @@ type DdosCustomPolicyPropertiesFormat struct {
 }
 
 //Generated from:
-type ProtocolCustomSettingsFormat_Status struct {
+type DdosCustomPolicyPropertiesFormat_Status struct {
 
-	//Protocol: The protocol for which the DDoS protection policy is being customized.
-	Protocol *ProtocolCustomSettingsFormatStatusProtocol `json:"protocol,omitempty"`
+	//ProtocolCustomSettings: The protocol-specific DDoS policy customization
+	//parameters.
+	ProtocolCustomSettings []ProtocolCustomSettingsFormat_Status `json:"protocolCustomSettings,omitempty"`
 
-	//SourceRateOverride: The customized DDoS protection source rate.
-	SourceRateOverride *string `json:"sourceRateOverride,omitempty"`
+	//ProvisioningState: The provisioning state of the DDoS custom policy resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 
-	//TriggerRateOverride: The customized DDoS protection trigger rate.
-	TriggerRateOverride *string `json:"triggerRateOverride,omitempty"`
+	//PublicIPAddresses: The list of public IPs associated with the DDoS custom policy
+	//resource. This list is read-only.
+	PublicIPAddresses []SubResource_Status `json:"publicIPAddresses,omitempty"`
 
-	//TriggerSensitivityOverride: The customized DDoS protection trigger rate
-	//sensitivity degrees. High: Trigger rate set with most sensitivity w.r.t. normal
-	//traffic. Default: Trigger rate set with moderate sensitivity w.r.t. normal
-	//traffic. Low: Trigger rate set with less sensitivity w.r.t. normal traffic.
-	//Relaxed: Trigger rate set with least sensitivity w.r.t. normal traffic.
-	TriggerSensitivityOverride *ProtocolCustomSettingsFormatStatusTriggerSensitivityOverride `json:"triggerSensitivityOverride,omitempty"`
+	//ResourceGuid: The resource GUID property of the DDoS custom policy resource. It
+	//uniquely identifies the resource, even if the user changes its name or migrate
+	//the resource across subscriptions or resource groups.
+	ResourceGuid *string `json:"resourceGuid,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ProtocolCustomSettingsFormat
@@ -173,6 +156,35 @@ type ProtocolCustomSettingsFormat struct {
 	TriggerSensitivityOverride *ProtocolCustomSettingsFormatTriggerSensitivityOverride `json:"triggerSensitivityOverride,omitempty"`
 }
 
+//Generated from:
+type ProtocolCustomSettingsFormat_Status struct {
+
+	//Protocol: The protocol for which the DDoS protection policy is being customized.
+	Protocol *ProtocolCustomSettingsFormatStatusProtocol `json:"protocol,omitempty"`
+
+	//SourceRateOverride: The customized DDoS protection source rate.
+	SourceRateOverride *string `json:"sourceRateOverride,omitempty"`
+
+	//TriggerRateOverride: The customized DDoS protection trigger rate.
+	TriggerRateOverride *string `json:"triggerRateOverride,omitempty"`
+
+	//TriggerSensitivityOverride: The customized DDoS protection trigger rate
+	//sensitivity degrees. High: Trigger rate set with most sensitivity w.r.t. normal
+	//traffic. Default: Trigger rate set with moderate sensitivity w.r.t. normal
+	//traffic. Low: Trigger rate set with less sensitivity w.r.t. normal traffic.
+	//Relaxed: Trigger rate set with least sensitivity w.r.t. normal traffic.
+	TriggerSensitivityOverride *ProtocolCustomSettingsFormatStatusTriggerSensitivityOverride `json:"triggerSensitivityOverride,omitempty"`
+}
+
+// +kubebuilder:validation:Enum={"Syn","Tcp","Udp"}
+type ProtocolCustomSettingsFormatProtocol string
+
+const (
+	ProtocolCustomSettingsFormatProtocolSyn = ProtocolCustomSettingsFormatProtocol("Syn")
+	ProtocolCustomSettingsFormatProtocolTcp = ProtocolCustomSettingsFormatProtocol("Tcp")
+	ProtocolCustomSettingsFormatProtocolUdp = ProtocolCustomSettingsFormatProtocol("Udp")
+)
+
 // +kubebuilder:validation:Enum={"Syn","Tcp","Udp"}
 type ProtocolCustomSettingsFormatStatusProtocol string
 
@@ -190,15 +202,6 @@ const (
 	ProtocolCustomSettingsFormatStatusTriggerSensitivityOverrideHigh    = ProtocolCustomSettingsFormatStatusTriggerSensitivityOverride("High")
 	ProtocolCustomSettingsFormatStatusTriggerSensitivityOverrideLow     = ProtocolCustomSettingsFormatStatusTriggerSensitivityOverride("Low")
 	ProtocolCustomSettingsFormatStatusTriggerSensitivityOverrideRelaxed = ProtocolCustomSettingsFormatStatusTriggerSensitivityOverride("Relaxed")
-)
-
-// +kubebuilder:validation:Enum={"Syn","Tcp","Udp"}
-type ProtocolCustomSettingsFormatProtocol string
-
-const (
-	ProtocolCustomSettingsFormatProtocolSyn = ProtocolCustomSettingsFormatProtocol("Syn")
-	ProtocolCustomSettingsFormatProtocolTcp = ProtocolCustomSettingsFormatProtocol("Tcp")
-	ProtocolCustomSettingsFormatProtocolUdp = ProtocolCustomSettingsFormatProtocol("Udp")
 )
 
 // +kubebuilder:validation:Enum={"Default","High","Low","Relaxed"}

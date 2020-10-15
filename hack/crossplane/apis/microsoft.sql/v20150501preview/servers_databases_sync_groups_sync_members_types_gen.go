@@ -31,8 +31,11 @@ type ServersDatabasesSyncGroupsSyncMembers_Spec struct {
 	ForProvider ServersDatabasesSyncGroupsSyncMembersParameters `json:"forProvider"`
 }
 
-//Generated from:
 type SyncMember_Status struct {
+	AtProvider ServersDatabasesSyncGroupsSyncMembersObservation `json:"atProvider"`
+}
+
+type ServersDatabasesSyncGroupsSyncMembersObservation struct {
 
 	//Id: Resource ID.
 	Id *string `json:"id,omitempty"`
@@ -86,37 +89,6 @@ type ServersDatabasesSyncGroupsSyncMembersParameters struct {
 	Type ServersDatabasesSyncGroupsSyncMembersSpecType `json:"type"`
 }
 
-//Generated from:
-type SyncMemberProperties_Status struct {
-
-	//DatabaseName: Database name of the member database in the sync member.
-	DatabaseName *string `json:"databaseName,omitempty"`
-
-	//DatabaseType: Database type of the sync member.
-	DatabaseType *SyncMemberPropertiesStatusDatabaseType `json:"databaseType,omitempty"`
-
-	//Password: Password of the member database in the sync member.
-	Password *string `json:"password,omitempty"`
-
-	//ServerName: Server name of the member database in the sync member
-	ServerName *string `json:"serverName,omitempty"`
-
-	//SqlServerDatabaseId: SQL Server database id of the sync member.
-	SqlServerDatabaseId *string `json:"sqlServerDatabaseId,omitempty"`
-
-	//SyncAgentId: ARM resource id of the sync agent in the sync member.
-	SyncAgentId *string `json:"syncAgentId,omitempty"`
-
-	//SyncDirection: Sync direction of the sync member.
-	SyncDirection *SyncMemberPropertiesStatusSyncDirection `json:"syncDirection,omitempty"`
-
-	//SyncState: Sync state of the sync member.
-	SyncState *SyncMemberPropertiesStatusSyncState `json:"syncState,omitempty"`
-
-	//UserName: User name of the member database in the sync member.
-	UserName *string `json:"userName,omitempty"`
-}
-
 // +kubebuilder:validation:Enum={"2015-05-01-preview"}
 type ServersDatabasesSyncGroupsSyncMembersSpecApiVersion string
 
@@ -154,6 +126,45 @@ type SyncMemberProperties struct {
 	//UserName: User name of the member database in the sync member.
 	UserName *string `json:"userName,omitempty"`
 }
+
+//Generated from:
+type SyncMemberProperties_Status struct {
+
+	//DatabaseName: Database name of the member database in the sync member.
+	DatabaseName *string `json:"databaseName,omitempty"`
+
+	//DatabaseType: Database type of the sync member.
+	DatabaseType *SyncMemberPropertiesStatusDatabaseType `json:"databaseType,omitempty"`
+
+	//Password: Password of the member database in the sync member.
+	Password *string `json:"password,omitempty"`
+
+	//ServerName: Server name of the member database in the sync member
+	ServerName *string `json:"serverName,omitempty"`
+
+	//SqlServerDatabaseId: SQL Server database id of the sync member.
+	SqlServerDatabaseId *string `json:"sqlServerDatabaseId,omitempty"`
+
+	//SyncAgentId: ARM resource id of the sync agent in the sync member.
+	SyncAgentId *string `json:"syncAgentId,omitempty"`
+
+	//SyncDirection: Sync direction of the sync member.
+	SyncDirection *SyncMemberPropertiesStatusSyncDirection `json:"syncDirection,omitempty"`
+
+	//SyncState: Sync state of the sync member.
+	SyncState *SyncMemberPropertiesStatusSyncState `json:"syncState,omitempty"`
+
+	//UserName: User name of the member database in the sync member.
+	UserName *string `json:"userName,omitempty"`
+}
+
+// +kubebuilder:validation:Enum={"AzureSqlDatabase","SqlServerDatabase"}
+type SyncMemberPropertiesDatabaseType string
+
+const (
+	SyncMemberPropertiesDatabaseTypeAzureSqlDatabase  = SyncMemberPropertiesDatabaseType("AzureSqlDatabase")
+	SyncMemberPropertiesDatabaseTypeSqlServerDatabase = SyncMemberPropertiesDatabaseType("SqlServerDatabase")
+)
 
 // +kubebuilder:validation:Enum={"AzureSqlDatabase","SqlServerDatabase"}
 type SyncMemberPropertiesStatusDatabaseType string
@@ -194,14 +205,6 @@ const (
 	SyncMemberPropertiesStatusSyncStateSyncSucceededWithWarnings = SyncMemberPropertiesStatusSyncState("SyncSucceededWithWarnings")
 	SyncMemberPropertiesStatusSyncStateUnProvisioned             = SyncMemberPropertiesStatusSyncState("UnProvisioned")
 	SyncMemberPropertiesStatusSyncStateUnReprovisioned           = SyncMemberPropertiesStatusSyncState("UnReprovisioned")
-)
-
-// +kubebuilder:validation:Enum={"AzureSqlDatabase","SqlServerDatabase"}
-type SyncMemberPropertiesDatabaseType string
-
-const (
-	SyncMemberPropertiesDatabaseTypeAzureSqlDatabase  = SyncMemberPropertiesDatabaseType("AzureSqlDatabase")
-	SyncMemberPropertiesDatabaseTypeSqlServerDatabase = SyncMemberPropertiesDatabaseType("SqlServerDatabase")
 )
 
 // +kubebuilder:validation:Enum={"Bidirectional","OneWayHubToMember","OneWayMemberToHub"}

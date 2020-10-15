@@ -27,8 +27,15 @@ type NetworkInterfacesTapConfigurationsList struct {
 	Items           []NetworkInterfacesTapConfigurations `json:"items"`
 }
 
-//Generated from:
 type NetworkInterfaceTapConfiguration_Status struct {
+	AtProvider NetworkInterfacesTapConfigurationsObservation `json:"atProvider"`
+}
+
+type NetworkInterfacesTapConfigurations_Spec struct {
+	ForProvider NetworkInterfacesTapConfigurationsParameters `json:"forProvider"`
+}
+
+type NetworkInterfacesTapConfigurationsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -45,21 +52,6 @@ type NetworkInterfaceTapConfiguration_Status struct {
 
 	//Type: Sub Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type NetworkInterfacesTapConfigurations_Spec struct {
-	ForProvider NetworkInterfacesTapConfigurationsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type NetworkInterfaceTapConfigurationPropertiesFormat_Status struct {
-
-	//ProvisioningState: The provisioning state of the network interface tap
-	//configuration resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//VirtualNetworkTap: The reference to the Virtual Network Tap resource.
-	VirtualNetworkTap *VirtualNetworkTap_Status `json:"virtualNetworkTap,omitempty"`
 }
 
 type NetworkInterfacesTapConfigurationsParameters struct {
@@ -106,6 +98,17 @@ type NetworkInterfaceTapConfigurationPropertiesFormat struct {
 
 	//VirtualNetworkTap: The reference to the Virtual Network Tap resource.
 	VirtualNetworkTap *SubResource `json:"virtualNetworkTap,omitempty"`
+}
+
+//Generated from:
+type NetworkInterfaceTapConfigurationPropertiesFormat_Status struct {
+
+	//ProvisioningState: The provisioning state of the network interface tap
+	//configuration resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//VirtualNetworkTap: The reference to the Virtual Network Tap resource.
+	VirtualNetworkTap *VirtualNetworkTap_Status `json:"virtualNetworkTap,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}

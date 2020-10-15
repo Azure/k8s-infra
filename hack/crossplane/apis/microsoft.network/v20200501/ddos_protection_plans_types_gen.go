@@ -27,8 +27,15 @@ type DdosProtectionPlansList struct {
 	Items           []DdosProtectionPlans `json:"items"`
 }
 
-//Generated from:
 type DdosProtectionPlan_Status struct {
+	AtProvider DdosProtectionPlansObservation `json:"atProvider"`
+}
+
+type DdosProtectionPlans_Spec struct {
+	ForProvider DdosProtectionPlansParameters `json:"forProvider"`
+}
+
+type DdosProtectionPlansObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,26 +57,6 @@ type DdosProtectionPlan_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type DdosProtectionPlans_Spec struct {
-	ForProvider DdosProtectionPlansParameters `json:"forProvider"`
-}
-
-//Generated from:
-type DdosProtectionPlanPropertiesFormat_Status struct {
-
-	//ProvisioningState: The provisioning state of the DDoS protection plan resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//ResourceGuid: The resource GUID property of the DDoS protection plan resource.
-	//It uniquely identifies the resource, even if the user changes its name or
-	//migrate the resource across subscriptions or resource groups.
-	ResourceGuid *string `json:"resourceGuid,omitempty"`
-
-	//VirtualNetworks: The list of virtual networks associated with the DDoS
-	//protection plan resource. This list is read-only.
-	VirtualNetworks []SubResource_Status `json:"virtualNetworks,omitempty"`
 }
 
 type DdosProtectionPlansParameters struct {
@@ -109,6 +96,22 @@ type DdosProtectionPlansParameters struct {
 	// +kubebuilder:validation:Required
 	//Type: Resource type
 	Type DdosProtectionPlansSpecType `json:"type"`
+}
+
+//Generated from:
+type DdosProtectionPlanPropertiesFormat_Status struct {
+
+	//ProvisioningState: The provisioning state of the DDoS protection plan resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//ResourceGuid: The resource GUID property of the DDoS protection plan resource.
+	//It uniquely identifies the resource, even if the user changes its name or
+	//migrate the resource across subscriptions or resource groups.
+	ResourceGuid *string `json:"resourceGuid,omitempty"`
+
+	//VirtualNetworks: The list of virtual networks associated with the DDoS
+	//protection plan resource. This list is read-only.
+	VirtualNetworks []SubResource_Status `json:"virtualNetworks,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}

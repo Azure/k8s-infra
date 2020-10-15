@@ -27,8 +27,15 @@ type PrivateEndpointsList struct {
 	Items           []PrivateEndpoints `json:"items"`
 }
 
-//Generated from:
 type PrivateEndpoint_Status struct {
+	AtProvider PrivateEndpointsObservation `json:"atProvider"`
+}
+
+type PrivateEndpoints_Spec struct {
+	ForProvider PrivateEndpointsParameters `json:"forProvider"`
+}
+
+type PrivateEndpointsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,36 +57,6 @@ type PrivateEndpoint_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type PrivateEndpoints_Spec struct {
-	ForProvider PrivateEndpointsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type PrivateEndpointProperties_Status struct {
-
-	//CustomDnsConfigs: An array of custom dns configurations.
-	CustomDnsConfigs []CustomDnsConfigPropertiesFormat_Status `json:"customDnsConfigs,omitempty"`
-
-	//ManualPrivateLinkServiceConnections: A grouping of information about the
-	//connection to the remote resource. Used when the network admin does not have
-	//access to approve connections to the remote resource.
-	ManualPrivateLinkServiceConnections []PrivateLinkServiceConnection_Status `json:"manualPrivateLinkServiceConnections,omitempty"`
-
-	//NetworkInterfaces: An array of references to the network interfaces created for
-	//this private endpoint.
-	NetworkInterfaces []NetworkInterface_Status `json:"networkInterfaces,omitempty"`
-
-	//PrivateLinkServiceConnections: A grouping of information about the connection to
-	//the remote resource.
-	PrivateLinkServiceConnections []PrivateLinkServiceConnection_Status `json:"privateLinkServiceConnections,omitempty"`
-
-	//ProvisioningState: The provisioning state of the private endpoint resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//Subnet: The ID of the subnet from which the private IP will be allocated.
-	Subnet *Subnet_Status `json:"subnet,omitempty"`
 }
 
 type PrivateEndpointsParameters struct {
@@ -121,16 +98,6 @@ type PrivateEndpointsParameters struct {
 	Type PrivateEndpointsSpecType `json:"type"`
 }
 
-//Generated from:
-type CustomDnsConfigPropertiesFormat_Status struct {
-
-	//Fqdn: Fqdn that resolves to private endpoint ip address.
-	Fqdn *string `json:"fqdn,omitempty"`
-
-	//IpAddresses: A list of private ip addresses of the private endpoint.
-	IpAddresses []string `json:"ipAddresses,omitempty"`
-}
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateEndpointProperties
 type PrivateEndpointProperties struct {
 
@@ -150,6 +117,32 @@ type PrivateEndpointProperties struct {
 	Subnet *SubResource `json:"subnet,omitempty"`
 }
 
+//Generated from:
+type PrivateEndpointProperties_Status struct {
+
+	//CustomDnsConfigs: An array of custom dns configurations.
+	CustomDnsConfigs []CustomDnsConfigPropertiesFormat_Status `json:"customDnsConfigs,omitempty"`
+
+	//ManualPrivateLinkServiceConnections: A grouping of information about the
+	//connection to the remote resource. Used when the network admin does not have
+	//access to approve connections to the remote resource.
+	ManualPrivateLinkServiceConnections []PrivateLinkServiceConnection_Status `json:"manualPrivateLinkServiceConnections,omitempty"`
+
+	//NetworkInterfaces: An array of references to the network interfaces created for
+	//this private endpoint.
+	NetworkInterfaces []NetworkInterface_Status `json:"networkInterfaces,omitempty"`
+
+	//PrivateLinkServiceConnections: A grouping of information about the connection to
+	//the remote resource.
+	PrivateLinkServiceConnections []PrivateLinkServiceConnection_Status `json:"privateLinkServiceConnections,omitempty"`
+
+	//ProvisioningState: The provisioning state of the private endpoint resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//Subnet: The ID of the subnet from which the private IP will be allocated.
+	Subnet *Subnet_Status `json:"subnet,omitempty"`
+}
+
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type PrivateEndpointsSpecApiVersion string
 
@@ -159,6 +152,37 @@ const PrivateEndpointsSpecApiVersion20200501 = PrivateEndpointsSpecApiVersion("2
 type PrivateEndpointsSpecType string
 
 const PrivateEndpointsSpecTypeMicrosoftNetworkPrivateEndpoints = PrivateEndpointsSpecType("Microsoft.Network/privateEndpoints")
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/CustomDnsConfigPropertiesFormat
+type CustomDnsConfigPropertiesFormat struct {
+
+	//Fqdn: Fqdn that resolves to private endpoint ip address.
+	Fqdn *string `json:"fqdn,omitempty"`
+
+	//IpAddresses: A list of private ip addresses of the private endpoint.
+	IpAddresses []string `json:"ipAddresses,omitempty"`
+}
+
+//Generated from:
+type CustomDnsConfigPropertiesFormat_Status struct {
+
+	//Fqdn: Fqdn that resolves to private endpoint ip address.
+	Fqdn *string `json:"fqdn,omitempty"`
+
+	//IpAddresses: A list of private ip addresses of the private endpoint.
+	IpAddresses []string `json:"ipAddresses,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateLinkServiceConnection
+type PrivateLinkServiceConnection struct {
+
+	//Name: The name of the resource that is unique within a resource group. This name
+	//can be used to access the resource.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the private link service connection.
+	Properties *PrivateLinkServiceConnectionProperties `json:"properties,omitempty"`
+}
 
 //Generated from:
 type PrivateLinkServiceConnection_Status struct {
@@ -180,25 +204,23 @@ type PrivateLinkServiceConnection_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/CustomDnsConfigPropertiesFormat
-type CustomDnsConfigPropertiesFormat struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateLinkServiceConnectionProperties
+type PrivateLinkServiceConnectionProperties struct {
 
-	//Fqdn: Fqdn that resolves to private endpoint ip address.
-	Fqdn *string `json:"fqdn,omitempty"`
+	//GroupIds: The ID(s) of the group(s) obtained from the remote resource that this
+	//private endpoint should connect to.
+	GroupIds []string `json:"groupIds,omitempty"`
 
-	//IpAddresses: A list of private ip addresses of the private endpoint.
-	IpAddresses []string `json:"ipAddresses,omitempty"`
-}
+	//PrivateLinkServiceConnectionState: A collection of read-only information about
+	//the state of the connection to the remote resource.
+	PrivateLinkServiceConnectionState *PrivateLinkServiceConnectionState `json:"privateLinkServiceConnectionState,omitempty"`
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateLinkServiceConnection
-type PrivateLinkServiceConnection struct {
+	//PrivateLinkServiceId: The resource id of private link service.
+	PrivateLinkServiceId *string `json:"privateLinkServiceId,omitempty"`
 
-	//Name: The name of the resource that is unique within a resource group. This name
-	//can be used to access the resource.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of the private link service connection.
-	Properties *PrivateLinkServiceConnectionProperties `json:"properties,omitempty"`
+	//RequestMessage: A message passed to the owner of the remote resource with this
+	//connection request. Restricted to 140 chars.
+	RequestMessage *string `json:"requestMessage,omitempty"`
 }
 
 //Generated from:
@@ -218,25 +240,6 @@ type PrivateLinkServiceConnectionProperties_Status struct {
 	//ProvisioningState: The provisioning state of the private link service connection
 	//resource.
 	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//RequestMessage: A message passed to the owner of the remote resource with this
-	//connection request. Restricted to 140 chars.
-	RequestMessage *string `json:"requestMessage,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateLinkServiceConnectionProperties
-type PrivateLinkServiceConnectionProperties struct {
-
-	//GroupIds: The ID(s) of the group(s) obtained from the remote resource that this
-	//private endpoint should connect to.
-	GroupIds []string `json:"groupIds,omitempty"`
-
-	//PrivateLinkServiceConnectionState: A collection of read-only information about
-	//the state of the connection to the remote resource.
-	PrivateLinkServiceConnectionState *PrivateLinkServiceConnectionState `json:"privateLinkServiceConnectionState,omitempty"`
-
-	//PrivateLinkServiceId: The resource id of private link service.
-	PrivateLinkServiceId *string `json:"privateLinkServiceId,omitempty"`
 
 	//RequestMessage: A message passed to the owner of the remote resource with this
 	//connection request. Restricted to 140 chars.

@@ -31,8 +31,11 @@ type FirewallPolicies_Spec struct {
 	ForProvider FirewallPoliciesParameters `json:"forProvider"`
 }
 
-//Generated from:
 type FirewallPolicy_Status struct {
+	AtProvider FirewallPoliciesObservation `json:"atProvider"`
+}
+
+type FirewallPoliciesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -101,6 +104,38 @@ type FirewallPoliciesParameters struct {
 	Type FirewallPoliciesSpecType `json:"type"`
 }
 
+// +kubebuilder:validation:Enum={"2020-05-01"}
+type FirewallPoliciesSpecApiVersion string
+
+const FirewallPoliciesSpecApiVersion20200501 = FirewallPoliciesSpecApiVersion("2020-05-01")
+
+// +kubebuilder:validation:Enum={"Microsoft.Network/firewallPolicies"}
+type FirewallPoliciesSpecType string
+
+const FirewallPoliciesSpecTypeMicrosoftNetworkFirewallPolicies = FirewallPoliciesSpecType("Microsoft.Network/firewallPolicies")
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/FirewallPolicyPropertiesFormat
+type FirewallPolicyPropertiesFormat struct {
+
+	//BasePolicy: The parent firewall policy from which rules are inherited.
+	BasePolicy *SubResource `json:"basePolicy,omitempty"`
+
+	//DnsSettings: DNS Proxy Settings definition.
+	DnsSettings *DnsSettings `json:"dnsSettings,omitempty"`
+
+	//IntrusionSystemMode: The operation mode for Intrusion system.
+	IntrusionSystemMode *FirewallPolicyPropertiesFormatIntrusionSystemMode `json:"intrusionSystemMode,omitempty"`
+
+	//ThreatIntelMode: The operation mode for Threat Intelligence.
+	ThreatIntelMode *FirewallPolicyPropertiesFormatThreatIntelMode `json:"threatIntelMode,omitempty"`
+
+	//ThreatIntelWhitelist: ThreatIntel Whitelist for Firewall Policy.
+	ThreatIntelWhitelist *FirewallPolicyThreatIntelWhitelist `json:"threatIntelWhitelist,omitempty"`
+
+	//TransportSecurity: TLS Configuration definition.
+	TransportSecurity *FirewallPolicyTransportSecurity `json:"transportSecurity,omitempty"`
+}
+
 //Generated from:
 type FirewallPolicyPropertiesFormat_Status struct {
 
@@ -136,84 +171,6 @@ type FirewallPolicyPropertiesFormat_Status struct {
 	TransportSecurity *FirewallPolicyTransportSecurity_Status `json:"transportSecurity,omitempty"`
 }
 
-//Generated from:
-type DnsSettings_Status struct {
-
-	//EnableProxy: Enable DNS Proxy on Firewalls attached to the Firewall Policy.
-	EnableProxy *bool `json:"enableProxy,omitempty"`
-
-	//RequireProxyForNetworkRules: FQDNs in Network Rules are supported when set to
-	//true.
-	RequireProxyForNetworkRules *bool `json:"requireProxyForNetworkRules,omitempty"`
-
-	//Servers: List of Custom DNS Servers.
-	Servers []string `json:"servers,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"2020-05-01"}
-type FirewallPoliciesSpecApiVersion string
-
-const FirewallPoliciesSpecApiVersion20200501 = FirewallPoliciesSpecApiVersion("2020-05-01")
-
-// +kubebuilder:validation:Enum={"Microsoft.Network/firewallPolicies"}
-type FirewallPoliciesSpecType string
-
-const FirewallPoliciesSpecTypeMicrosoftNetworkFirewallPolicies = FirewallPoliciesSpecType("Microsoft.Network/firewallPolicies")
-
-//Generated from:
-// +kubebuilder:validation:Enum={"Disabled","Enabled"}
-type FirewallPolicyIntrusionSystemMode_Status string
-
-const (
-	FirewallPolicyIntrusionSystemMode_StatusDisabled = FirewallPolicyIntrusionSystemMode_Status("Disabled")
-	FirewallPolicyIntrusionSystemMode_StatusEnabled  = FirewallPolicyIntrusionSystemMode_Status("Enabled")
-)
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/FirewallPolicyPropertiesFormat
-type FirewallPolicyPropertiesFormat struct {
-
-	//BasePolicy: The parent firewall policy from which rules are inherited.
-	BasePolicy *SubResource `json:"basePolicy,omitempty"`
-
-	//DnsSettings: DNS Proxy Settings definition.
-	DnsSettings *DnsSettings `json:"dnsSettings,omitempty"`
-
-	//IntrusionSystemMode: The operation mode for Intrusion system.
-	IntrusionSystemMode *FirewallPolicyPropertiesFormatIntrusionSystemMode `json:"intrusionSystemMode,omitempty"`
-
-	//ThreatIntelMode: The operation mode for Threat Intelligence.
-	ThreatIntelMode *FirewallPolicyPropertiesFormatThreatIntelMode `json:"threatIntelMode,omitempty"`
-
-	//ThreatIntelWhitelist: ThreatIntel Whitelist for Firewall Policy.
-	ThreatIntelWhitelist *FirewallPolicyThreatIntelWhitelist `json:"threatIntelWhitelist,omitempty"`
-
-	//TransportSecurity: TLS Configuration definition.
-	TransportSecurity *FirewallPolicyTransportSecurity `json:"transportSecurity,omitempty"`
-}
-
-//Generated from:
-type FirewallPolicyThreatIntelWhitelist_Status struct {
-
-	//Fqdns: List of FQDNs for the ThreatIntel Whitelist.
-	Fqdns []string `json:"fqdns,omitempty"`
-
-	//IpAddresses: List of IP addresses for the ThreatIntel Whitelist.
-	IpAddresses []string `json:"ipAddresses,omitempty"`
-}
-
-//Generated from:
-type FirewallPolicyTransportSecurity_Status struct {
-
-	//CertificateAuthority: The CA used for intermediate CA generation.
-	CertificateAuthority *FirewallPolicyCertificateAuthority_Status `json:"certificateAuthority,omitempty"`
-
-	//ExcludedDomains: List of domains which are excluded from TLS termination.
-	ExcludedDomains []string `json:"excludedDomains,omitempty"`
-
-	//TrustedRootCertificates: Certificates which are to be trusted by the firewall.
-	TrustedRootCertificates []FirewallPolicyTrustedRootCertificate_Status `json:"trustedRootCertificates,omitempty"`
-}
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/DnsSettings
 type DnsSettings struct {
 
@@ -229,14 +186,27 @@ type DnsSettings struct {
 }
 
 //Generated from:
-type FirewallPolicyCertificateAuthority_Status struct {
+type DnsSettings_Status struct {
 
-	//Name: Name of the CA certificate.
-	Name *string `json:"name,omitempty"`
+	//EnableProxy: Enable DNS Proxy on Firewalls attached to the Firewall Policy.
+	EnableProxy *bool `json:"enableProxy,omitempty"`
 
-	//Properties: Properties of the certificate authority.
-	Properties *FirewallPolicyCertificateAuthorityPropertiesFormat_Status `json:"properties,omitempty"`
+	//RequireProxyForNetworkRules: FQDNs in Network Rules are supported when set to
+	//true.
+	RequireProxyForNetworkRules *bool `json:"requireProxyForNetworkRules,omitempty"`
+
+	//Servers: List of Custom DNS Servers.
+	Servers []string `json:"servers,omitempty"`
 }
+
+//Generated from:
+// +kubebuilder:validation:Enum={"Disabled","Enabled"}
+type FirewallPolicyIntrusionSystemMode_Status string
+
+const (
+	FirewallPolicyIntrusionSystemMode_StatusDisabled = FirewallPolicyIntrusionSystemMode_Status("Disabled")
+	FirewallPolicyIntrusionSystemMode_StatusEnabled  = FirewallPolicyIntrusionSystemMode_Status("Enabled")
+)
 
 // +kubebuilder:validation:Enum={"Disabled","Enabled"}
 type FirewallPolicyPropertiesFormatIntrusionSystemMode string
@@ -265,6 +235,16 @@ type FirewallPolicyThreatIntelWhitelist struct {
 	IpAddresses []string `json:"ipAddresses,omitempty"`
 }
 
+//Generated from:
+type FirewallPolicyThreatIntelWhitelist_Status struct {
+
+	//Fqdns: List of FQDNs for the ThreatIntel Whitelist.
+	Fqdns []string `json:"fqdns,omitempty"`
+
+	//IpAddresses: List of IP addresses for the ThreatIntel Whitelist.
+	IpAddresses []string `json:"ipAddresses,omitempty"`
+}
+
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/FirewallPolicyTransportSecurity
 type FirewallPolicyTransportSecurity struct {
 
@@ -279,14 +259,16 @@ type FirewallPolicyTransportSecurity struct {
 }
 
 //Generated from:
-type FirewallPolicyTrustedRootCertificate_Status struct {
+type FirewallPolicyTransportSecurity_Status struct {
 
-	//Name: Name of the trusted root certificate that is unique within a firewall
-	//policy.
-	Name *string `json:"name,omitempty"`
+	//CertificateAuthority: The CA used for intermediate CA generation.
+	CertificateAuthority *FirewallPolicyCertificateAuthority_Status `json:"certificateAuthority,omitempty"`
 
-	//Properties: Properties of the trusted root authorities.
-	Properties *FirewallPolicyTrustedRootCertificatePropertiesFormat_Status `json:"properties,omitempty"`
+	//ExcludedDomains: List of domains which are excluded from TLS termination.
+	ExcludedDomains []string `json:"excludedDomains,omitempty"`
+
+	//TrustedRootCertificates: Certificates which are to be trusted by the firewall.
+	TrustedRootCertificates []FirewallPolicyTrustedRootCertificate_Status `json:"trustedRootCertificates,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/FirewallPolicyCertificateAuthority
@@ -300,11 +282,13 @@ type FirewallPolicyCertificateAuthority struct {
 }
 
 //Generated from:
-type FirewallPolicyCertificateAuthorityPropertiesFormat_Status struct {
+type FirewallPolicyCertificateAuthority_Status struct {
 
-	//KeyVaultSecretId: Secret Id of (base-64 encoded unencrypted pfx) 'Secret' or
-	//'Certificate' object stored in KeyVault.
-	KeyVaultSecretId *string `json:"keyVaultSecretId,omitempty"`
+	//Name: Name of the CA certificate.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the certificate authority.
+	Properties *FirewallPolicyCertificateAuthorityPropertiesFormat_Status `json:"properties,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/FirewallPolicyTrustedRootCertificate
@@ -319,11 +303,14 @@ type FirewallPolicyTrustedRootCertificate struct {
 }
 
 //Generated from:
-type FirewallPolicyTrustedRootCertificatePropertiesFormat_Status struct {
+type FirewallPolicyTrustedRootCertificate_Status struct {
 
-	//KeyVaultSecretId: Secret Id of (base-64 encoded unencrypted pfx) the public
-	//certificate data stored in KeyVault.
-	KeyVaultSecretId *string `json:"keyVaultSecretId,omitempty"`
+	//Name: Name of the trusted root certificate that is unique within a firewall
+	//policy.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the trusted root authorities.
+	Properties *FirewallPolicyTrustedRootCertificatePropertiesFormat_Status `json:"properties,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/FirewallPolicyCertificateAuthorityPropertiesFormat
@@ -334,8 +321,24 @@ type FirewallPolicyCertificateAuthorityPropertiesFormat struct {
 	KeyVaultSecretId *string `json:"keyVaultSecretId,omitempty"`
 }
 
+//Generated from:
+type FirewallPolicyCertificateAuthorityPropertiesFormat_Status struct {
+
+	//KeyVaultSecretId: Secret Id of (base-64 encoded unencrypted pfx) 'Secret' or
+	//'Certificate' object stored in KeyVault.
+	KeyVaultSecretId *string `json:"keyVaultSecretId,omitempty"`
+}
+
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/FirewallPolicyTrustedRootCertificatePropertiesFormat
 type FirewallPolicyTrustedRootCertificatePropertiesFormat struct {
+
+	//KeyVaultSecretId: Secret Id of (base-64 encoded unencrypted pfx) the public
+	//certificate data stored in KeyVault.
+	KeyVaultSecretId *string `json:"keyVaultSecretId,omitempty"`
+}
+
+//Generated from:
+type FirewallPolicyTrustedRootCertificatePropertiesFormat_Status struct {
 
 	//KeyVaultSecretId: Secret Id of (base-64 encoded unencrypted pfx) the public
 	//certificate data stored in KeyVault.

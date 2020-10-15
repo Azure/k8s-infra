@@ -27,8 +27,15 @@ type VirtualNetworkTapsList struct {
 	Items           []VirtualNetworkTaps `json:"items"`
 }
 
-//Generated from:
 type VirtualNetworkTap_Status struct {
+	AtProvider VirtualNetworkTapsObservation `json:"atProvider"`
+}
+
+type VirtualNetworkTaps_Spec struct {
+	ForProvider VirtualNetworkTapsParameters `json:"forProvider"`
+}
+
+type VirtualNetworkTapsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,35 +57,6 @@ type VirtualNetworkTap_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type VirtualNetworkTaps_Spec struct {
-	ForProvider VirtualNetworkTapsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type VirtualNetworkTapPropertiesFormat_Status struct {
-
-	//DestinationLoadBalancerFrontEndIPConfiguration: The reference to the private IP
-	//address on the internal Load Balancer that will receive the tap.
-	DestinationLoadBalancerFrontEndIPConfiguration *FrontendIPConfiguration_Status `json:"destinationLoadBalancerFrontEndIPConfiguration,omitempty"`
-
-	//DestinationNetworkInterfaceIPConfiguration: The reference to the private IP
-	//Address of the collector nic that will receive the tap.
-	DestinationNetworkInterfaceIPConfiguration *NetworkInterfaceIPConfiguration_Status `json:"destinationNetworkInterfaceIPConfiguration,omitempty"`
-
-	//DestinationPort: The VXLAN destination port that will receive the tapped traffic.
-	DestinationPort *int `json:"destinationPort,omitempty"`
-
-	//NetworkInterfaceTapConfigurations: Specifies the list of resource IDs for the
-	//network interface IP configuration that needs to be tapped.
-	NetworkInterfaceTapConfigurations []NetworkInterfaceTapConfiguration_Status `json:"networkInterfaceTapConfigurations,omitempty"`
-
-	//ProvisioningState: The provisioning state of the virtual network tap resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//ResourceGuid: The resource GUID property of the virtual network tap resource.
-	ResourceGuid *string `json:"resourceGuid,omitempty"`
 }
 
 type VirtualNetworkTapsParameters struct {
@@ -133,6 +111,31 @@ type VirtualNetworkTapPropertiesFormat struct {
 
 	//DestinationPort: The VXLAN destination port that will receive the tapped traffic.
 	DestinationPort *int `json:"destinationPort,omitempty"`
+}
+
+//Generated from:
+type VirtualNetworkTapPropertiesFormat_Status struct {
+
+	//DestinationLoadBalancerFrontEndIPConfiguration: The reference to the private IP
+	//address on the internal Load Balancer that will receive the tap.
+	DestinationLoadBalancerFrontEndIPConfiguration *FrontendIPConfiguration_Status `json:"destinationLoadBalancerFrontEndIPConfiguration,omitempty"`
+
+	//DestinationNetworkInterfaceIPConfiguration: The reference to the private IP
+	//Address of the collector nic that will receive the tap.
+	DestinationNetworkInterfaceIPConfiguration *NetworkInterfaceIPConfiguration_Status `json:"destinationNetworkInterfaceIPConfiguration,omitempty"`
+
+	//DestinationPort: The VXLAN destination port that will receive the tapped traffic.
+	DestinationPort *int `json:"destinationPort,omitempty"`
+
+	//NetworkInterfaceTapConfigurations: Specifies the list of resource IDs for the
+	//network interface IP configuration that needs to be tapped.
+	NetworkInterfaceTapConfigurations []NetworkInterfaceTapConfiguration_Status `json:"networkInterfaceTapConfigurations,omitempty"`
+
+	//ProvisioningState: The provisioning state of the virtual network tap resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//ResourceGuid: The resource GUID property of the virtual network tap resource.
+	ResourceGuid *string `json:"resourceGuid,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}

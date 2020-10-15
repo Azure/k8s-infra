@@ -27,8 +27,15 @@ type ApplicationGatewaysPrivateEndpointConnectionsList struct {
 	Items           []ApplicationGatewaysPrivateEndpointConnections `json:"items"`
 }
 
-//Generated from:
 type ApplicationGatewayPrivateEndpointConnection_Status struct {
+	AtProvider ApplicationGatewaysPrivateEndpointConnectionsObservation `json:"atProvider"`
+}
+
+type ApplicationGatewaysPrivateEndpointConnections_Spec struct {
+	ForProvider ApplicationGatewaysPrivateEndpointConnectionsParameters `json:"forProvider"`
+}
+
+type ApplicationGatewaysPrivateEndpointConnectionsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -44,28 +51,6 @@ type ApplicationGatewayPrivateEndpointConnection_Status struct {
 
 	//Type: Type of the resource.
 	Type *string `json:"type,omitempty"`
-}
-
-type ApplicationGatewaysPrivateEndpointConnections_Spec struct {
-	ForProvider ApplicationGatewaysPrivateEndpointConnectionsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type ApplicationGatewayPrivateEndpointConnectionProperties_Status struct {
-
-	//LinkIdentifier: The consumer link id.
-	LinkIdentifier *string `json:"linkIdentifier,omitempty"`
-
-	//PrivateEndpoint: The resource of private end point.
-	PrivateEndpoint *PrivateEndpoint_Status `json:"privateEndpoint,omitempty"`
-
-	//PrivateLinkServiceConnectionState: A collection of information about the state
-	//of the connection between service consumer and provider.
-	PrivateLinkServiceConnectionState *PrivateLinkServiceConnectionState_Status `json:"privateLinkServiceConnectionState,omitempty"`
-
-	//ProvisioningState: The provisioning state of the application gateway private
-	//endpoint connection resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 type ApplicationGatewaysPrivateEndpointConnectionsParameters struct {
@@ -115,6 +100,24 @@ type ApplicationGatewayPrivateEndpointConnectionProperties struct {
 	PrivateLinkServiceConnectionState *PrivateLinkServiceConnectionState `json:"privateLinkServiceConnectionState,omitempty"`
 }
 
+//Generated from:
+type ApplicationGatewayPrivateEndpointConnectionProperties_Status struct {
+
+	//LinkIdentifier: The consumer link id.
+	LinkIdentifier *string `json:"linkIdentifier,omitempty"`
+
+	//PrivateEndpoint: The resource of private end point.
+	PrivateEndpoint *PrivateEndpoint_Status `json:"privateEndpoint,omitempty"`
+
+	//PrivateLinkServiceConnectionState: A collection of information about the state
+	//of the connection between service consumer and provider.
+	PrivateLinkServiceConnectionState *PrivateLinkServiceConnectionState_Status `json:"privateLinkServiceConnectionState,omitempty"`
+
+	//ProvisioningState: The provisioning state of the application gateway private
+	//endpoint connection resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+}
+
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type ApplicationGatewaysPrivateEndpointConnectionsSpecApiVersion string
 
@@ -125,8 +128,8 @@ type ApplicationGatewaysPrivateEndpointConnectionsSpecType string
 
 const ApplicationGatewaysPrivateEndpointConnectionsSpecTypeMicrosoftNetworkApplicationGatewaysPrivateEndpointConnections = ApplicationGatewaysPrivateEndpointConnectionsSpecType("Microsoft.Network/applicationGateways/privateEndpointConnections")
 
-//Generated from:
-type PrivateLinkServiceConnectionState_Status struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateLinkServiceConnectionState
+type PrivateLinkServiceConnectionState struct {
 
 	//ActionsRequired: A message indicating if changes on the service provider require
 	//any updates on the consumer.
@@ -140,8 +143,8 @@ type PrivateLinkServiceConnectionState_Status struct {
 	Status *string `json:"status,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateLinkServiceConnectionState
-type PrivateLinkServiceConnectionState struct {
+//Generated from:
+type PrivateLinkServiceConnectionState_Status struct {
 
 	//ActionsRequired: A message indicating if changes on the service provider require
 	//any updates on the consumer.

@@ -27,8 +27,15 @@ type NetworkWatchersConnectionMonitorsList struct {
 	Items           []NetworkWatchersConnectionMonitors `json:"items"`
 }
 
-//Generated from:
 type ConnectionMonitorResult_Status struct {
+	AtProvider NetworkWatchersConnectionMonitorsObservation `json:"atProvider"`
+}
+
+type NetworkWatchersConnectionMonitors_Spec struct {
+	ForProvider NetworkWatchersConnectionMonitorsParameters `json:"forProvider"`
+}
+
+type NetworkWatchersConnectionMonitorsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -52,8 +59,75 @@ type ConnectionMonitorResult_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
-type NetworkWatchersConnectionMonitors_Spec struct {
-	ForProvider NetworkWatchersConnectionMonitorsParameters `json:"forProvider"`
+type NetworkWatchersConnectionMonitorsParameters struct {
+
+	// +kubebuilder:validation:Required
+	//ApiVersion: API Version of the resource type, optional when apiProfile is used
+	//on the template
+	ApiVersion NetworkWatchersConnectionMonitorsSpecApiVersion `json:"apiVersion"`
+	Comments   *string                                         `json:"comments,omitempty"`
+
+	//Condition: Condition of the resource
+	Condition *bool                   `json:"condition,omitempty"`
+	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
+
+	//DependsOn: Collection of resources this resource depends on
+	DependsOn []string `json:"dependsOn,omitempty"`
+
+	//Location: Location to deploy resource to
+	Location *string `json:"location,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Name: Name of the resource
+	Name string `json:"name"`
+
+	// +kubebuilder:validation:Required
+	//Properties: Properties of the connection monitor.
+	Properties ConnectionMonitorParameters `json:"properties"`
+
+	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
+	//setting the scope for extension resources 2) deploying resources to the tenant
+	//scope in non-tenant scope deployments
+	Scope *string `json:"scope,omitempty"`
+
+	//Tags: Name-value pairs to add to the resource
+	Tags map[string]string `json:"tags,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Type: Resource type
+	Type NetworkWatchersConnectionMonitorsSpecType `json:"type"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ConnectionMonitorParameters
+type ConnectionMonitorParameters struct {
+
+	//AutoStart: Determines if the connection monitor will start automatically once
+	//created.
+	AutoStart *bool `json:"autoStart,omitempty"`
+
+	//Destination: Describes the destination of connection monitor.
+	Destination *ConnectionMonitorDestination `json:"destination,omitempty"`
+
+	//Endpoints: List of connection monitor endpoints.
+	Endpoints []ConnectionMonitorEndpoint `json:"endpoints,omitempty"`
+
+	//MonitoringIntervalInSeconds: Monitoring interval in seconds.
+	MonitoringIntervalInSeconds *int `json:"monitoringIntervalInSeconds,omitempty"`
+
+	//Notes: Optional notes to be associated with the connection monitor.
+	Notes *string `json:"notes,omitempty"`
+
+	//Outputs: List of connection monitor outputs.
+	Outputs []ConnectionMonitorOutput `json:"outputs,omitempty"`
+
+	//Source: Describes the source of connection monitor.
+	Source *ConnectionMonitorSource `json:"source,omitempty"`
+
+	//TestConfigurations: List of connection monitor test configurations.
+	TestConfigurations []ConnectionMonitorTestConfiguration `json:"testConfigurations,omitempty"`
+
+	//TestGroups: List of connection monitor test groups.
+	TestGroups []ConnectionMonitorTestGroup `json:"testGroups,omitempty"`
 }
 
 //Generated from:
@@ -100,193 +174,6 @@ type ConnectionMonitorResultProperties_Status struct {
 	TestGroups []ConnectionMonitorTestGroup_Status `json:"testGroups,omitempty"`
 }
 
-type NetworkWatchersConnectionMonitorsParameters struct {
-
-	// +kubebuilder:validation:Required
-	//ApiVersion: API Version of the resource type, optional when apiProfile is used
-	//on the template
-	ApiVersion NetworkWatchersConnectionMonitorsSpecApiVersion `json:"apiVersion"`
-	Comments   *string                                         `json:"comments,omitempty"`
-
-	//Condition: Condition of the resource
-	Condition *bool                   `json:"condition,omitempty"`
-	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
-
-	//DependsOn: Collection of resources this resource depends on
-	DependsOn []string `json:"dependsOn,omitempty"`
-
-	//Location: Location to deploy resource to
-	Location *string `json:"location,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Name: Name of the resource
-	Name string `json:"name"`
-
-	// +kubebuilder:validation:Required
-	//Properties: Properties of the connection monitor.
-	Properties ConnectionMonitorParameters `json:"properties"`
-
-	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
-	//setting the scope for extension resources 2) deploying resources to the tenant
-	//scope in non-tenant scope deployments
-	Scope *string `json:"scope,omitempty"`
-
-	//Tags: Name-value pairs to add to the resource
-	Tags map[string]string `json:"tags,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Type: Resource type
-	Type NetworkWatchersConnectionMonitorsSpecType `json:"type"`
-}
-
-//Generated from:
-type ConnectionMonitorDestination_Status struct {
-
-	//Address: Address of the connection monitor destination (IP or domain name).
-	Address *string `json:"address,omitempty"`
-
-	//Port: The destination port used by connection monitor.
-	Port *int `json:"port,omitempty"`
-
-	//ResourceId: The ID of the resource used as the destination by connection monitor.
-	ResourceId *string `json:"resourceId,omitempty"`
-}
-
-//Generated from:
-type ConnectionMonitorEndpoint_Status struct {
-
-	//Address: Address of the connection monitor endpoint (IP or domain name).
-	Address *string `json:"address,omitempty"`
-
-	//Filter: Filter for sub-items within the endpoint.
-	Filter *ConnectionMonitorEndpointFilter_Status `json:"filter,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Name: The name of the connection monitor endpoint.
-	Name string `json:"name"`
-
-	//ResourceId: Resource ID of the connection monitor endpoint.
-	ResourceId *string `json:"resourceId,omitempty"`
-}
-
-//Generated from:
-type ConnectionMonitorOutput_Status struct {
-
-	//Type: Connection monitor output destination type. Currently, only "Workspace" is
-	//supported.
-	Type *ConnectionMonitorOutputStatusType `json:"type,omitempty"`
-
-	//WorkspaceSettings: Describes the settings for producing output into a log
-	//analytics workspace.
-	WorkspaceSettings *ConnectionMonitorWorkspaceSettings_Status `json:"workspaceSettings,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ConnectionMonitorParameters
-type ConnectionMonitorParameters struct {
-
-	//AutoStart: Determines if the connection monitor will start automatically once
-	//created.
-	AutoStart *bool `json:"autoStart,omitempty"`
-
-	//Destination: Describes the destination of connection monitor.
-	Destination *ConnectionMonitorDestination `json:"destination,omitempty"`
-
-	//Endpoints: List of connection monitor endpoints.
-	Endpoints []ConnectionMonitorEndpoint `json:"endpoints,omitempty"`
-
-	//MonitoringIntervalInSeconds: Monitoring interval in seconds.
-	MonitoringIntervalInSeconds *int `json:"monitoringIntervalInSeconds,omitempty"`
-
-	//Notes: Optional notes to be associated with the connection monitor.
-	Notes *string `json:"notes,omitempty"`
-
-	//Outputs: List of connection monitor outputs.
-	Outputs []ConnectionMonitorOutput `json:"outputs,omitempty"`
-
-	//Source: Describes the source of connection monitor.
-	Source *ConnectionMonitorSource `json:"source,omitempty"`
-
-	//TestConfigurations: List of connection monitor test configurations.
-	TestConfigurations []ConnectionMonitorTestConfiguration `json:"testConfigurations,omitempty"`
-
-	//TestGroups: List of connection monitor test groups.
-	TestGroups []ConnectionMonitorTestGroup `json:"testGroups,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"MultiEndpoint","SingleSourceDestination"}
-type ConnectionMonitorResultPropertiesStatusConnectionMonitorType string
-
-const (
-	ConnectionMonitorResultPropertiesStatusConnectionMonitorTypeMultiEndpoint           = ConnectionMonitorResultPropertiesStatusConnectionMonitorType("MultiEndpoint")
-	ConnectionMonitorResultPropertiesStatusConnectionMonitorTypeSingleSourceDestination = ConnectionMonitorResultPropertiesStatusConnectionMonitorType("SingleSourceDestination")
-)
-
-//Generated from:
-type ConnectionMonitorSource_Status struct {
-
-	//Port: The source port used by connection monitor.
-	Port *int `json:"port,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//ResourceId: The ID of the resource used as the source by connection monitor.
-	ResourceId string `json:"resourceId"`
-}
-
-//Generated from:
-type ConnectionMonitorTestConfiguration_Status struct {
-
-	//HttpConfiguration: The parameters used to perform test evaluation over HTTP.
-	HttpConfiguration *ConnectionMonitorHttpConfiguration_Status `json:"httpConfiguration,omitempty"`
-
-	//IcmpConfiguration: The parameters used to perform test evaluation over ICMP.
-	IcmpConfiguration *ConnectionMonitorIcmpConfiguration_Status `json:"icmpConfiguration,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Name: The name of the connection monitor test configuration.
-	Name string `json:"name"`
-
-	//PreferredIPVersion: The preferred IP version to use in test evaluation. The
-	//connection monitor may choose to use a different version depending on other
-	//parameters.
-	PreferredIPVersion *ConnectionMonitorTestConfigurationStatusPreferredIPVersion `json:"preferredIPVersion,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Protocol: The protocol to use in test evaluation.
-	Protocol ConnectionMonitorTestConfigurationStatusProtocol `json:"protocol"`
-
-	//SuccessThreshold: The threshold for declaring a test successful.
-	SuccessThreshold *ConnectionMonitorSuccessThreshold_Status `json:"successThreshold,omitempty"`
-
-	//TcpConfiguration: The parameters used to perform test evaluation over TCP.
-	TcpConfiguration *ConnectionMonitorTcpConfiguration_Status `json:"tcpConfiguration,omitempty"`
-
-	//TestFrequencySec: The frequency of test evaluation, in seconds.
-	TestFrequencySec *int `json:"testFrequencySec,omitempty"`
-}
-
-//Generated from:
-type ConnectionMonitorTestGroup_Status struct {
-
-	// +kubebuilder:validation:Required
-	//Destinations: List of destination endpoint names.
-	Destinations []string `json:"destinations"`
-
-	//Disable: Value indicating whether test group is disabled.
-	Disable *bool `json:"disable,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Name: The name of the connection monitor test group.
-	Name string `json:"name"`
-
-	// +kubebuilder:validation:Required
-	//Sources: List of source endpoint names.
-	Sources []string `json:"sources"`
-
-	// +kubebuilder:validation:Required
-	//TestConfigurations: List of test configuration names.
-	TestConfigurations []string `json:"testConfigurations"`
-}
-
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type NetworkWatchersConnectionMonitorsSpecApiVersion string
 
@@ -299,6 +186,19 @@ const NetworkWatchersConnectionMonitorsSpecTypeMicrosoftNetworkNetworkWatchersCo
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ConnectionMonitorDestination
 type ConnectionMonitorDestination struct {
+
+	//Address: Address of the connection monitor destination (IP or domain name).
+	Address *string `json:"address,omitempty"`
+
+	//Port: The destination port used by connection monitor.
+	Port *int `json:"port,omitempty"`
+
+	//ResourceId: The ID of the resource used as the destination by connection monitor.
+	ResourceId *string `json:"resourceId,omitempty"`
+}
+
+//Generated from:
+type ConnectionMonitorDestination_Status struct {
 
 	//Address: Address of the connection monitor destination (IP or domain name).
 	Address *string `json:"address,omitempty"`
@@ -328,45 +228,20 @@ type ConnectionMonitorEndpoint struct {
 }
 
 //Generated from:
-type ConnectionMonitorEndpointFilter_Status struct {
+type ConnectionMonitorEndpoint_Status struct {
 
-	//Items: List of items in the filter.
-	Items []ConnectionMonitorEndpointFilterItem_Status `json:"items,omitempty"`
+	//Address: Address of the connection monitor endpoint (IP or domain name).
+	Address *string `json:"address,omitempty"`
 
-	//Type: The behavior of the endpoint filter. Currently only 'Include' is supported.
-	Type *ConnectionMonitorEndpointFilterStatusType `json:"type,omitempty"`
-}
+	//Filter: Filter for sub-items within the endpoint.
+	Filter *ConnectionMonitorEndpointFilter_Status `json:"filter,omitempty"`
 
-//Generated from:
-type ConnectionMonitorHttpConfiguration_Status struct {
+	// +kubebuilder:validation:Required
+	//Name: The name of the connection monitor endpoint.
+	Name string `json:"name"`
 
-	//Method: The HTTP method to use.
-	Method *ConnectionMonitorHttpConfigurationStatusMethod `json:"method,omitempty"`
-
-	//Path: The path component of the URI. For instance, "/dir1/dir2".
-	Path *string `json:"path,omitempty"`
-
-	//Port: The port to connect to.
-	Port *int `json:"port,omitempty"`
-
-	//PreferHTTPS: Value indicating whether HTTPS is preferred over HTTP in cases
-	//where the choice is not explicit.
-	PreferHTTPS *bool `json:"preferHTTPS,omitempty"`
-
-	//RequestHeaders: The HTTP headers to transmit with the request.
-	RequestHeaders []HTTPHeader_Status `json:"requestHeaders,omitempty"`
-
-	//ValidStatusCodeRanges: HTTP status codes to consider successful. For instance,
-	//"2xx,301-304,418".
-	ValidStatusCodeRanges []string `json:"validStatusCodeRanges,omitempty"`
-}
-
-//Generated from:
-type ConnectionMonitorIcmpConfiguration_Status struct {
-
-	//DisableTraceRoute: Value indicating whether path evaluation with trace route
-	//should be disabled.
-	DisableTraceRoute *bool `json:"disableTraceRoute,omitempty"`
+	//ResourceId: Resource ID of the connection monitor endpoint.
+	ResourceId *string `json:"resourceId,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ConnectionMonitorOutput
@@ -381,10 +256,25 @@ type ConnectionMonitorOutput struct {
 	WorkspaceSettings *ConnectionMonitorWorkspaceSettings `json:"workspaceSettings,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"Workspace"}
-type ConnectionMonitorOutputStatusType string
+//Generated from:
+type ConnectionMonitorOutput_Status struct {
 
-const ConnectionMonitorOutputStatusTypeWorkspace = ConnectionMonitorOutputStatusType("Workspace")
+	//Type: Connection monitor output destination type. Currently, only "Workspace" is
+	//supported.
+	Type *ConnectionMonitorOutputStatusType `json:"type,omitempty"`
+
+	//WorkspaceSettings: Describes the settings for producing output into a log
+	//analytics workspace.
+	WorkspaceSettings *ConnectionMonitorWorkspaceSettings_Status `json:"workspaceSettings,omitempty"`
+}
+
+// +kubebuilder:validation:Enum={"MultiEndpoint","SingleSourceDestination"}
+type ConnectionMonitorResultPropertiesStatusConnectionMonitorType string
+
+const (
+	ConnectionMonitorResultPropertiesStatusConnectionMonitorTypeMultiEndpoint           = ConnectionMonitorResultPropertiesStatusConnectionMonitorType("MultiEndpoint")
+	ConnectionMonitorResultPropertiesStatusConnectionMonitorTypeSingleSourceDestination = ConnectionMonitorResultPropertiesStatusConnectionMonitorType("SingleSourceDestination")
+)
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ConnectionMonitorSource
 type ConnectionMonitorSource struct {
@@ -398,26 +288,14 @@ type ConnectionMonitorSource struct {
 }
 
 //Generated from:
-type ConnectionMonitorSuccessThreshold_Status struct {
+type ConnectionMonitorSource_Status struct {
 
-	//ChecksFailedPercent: The maximum percentage of failed checks permitted for a
-	//test to evaluate as successful.
-	ChecksFailedPercent *int `json:"checksFailedPercent,omitempty"`
-
-	//RoundTripTimeMs: The maximum round-trip time in milliseconds permitted for a
-	//test to evaluate as successful.
-	RoundTripTimeMs *float64 `json:"roundTripTimeMs,omitempty"`
-}
-
-//Generated from:
-type ConnectionMonitorTcpConfiguration_Status struct {
-
-	//DisableTraceRoute: Value indicating whether path evaluation with trace route
-	//should be disabled.
-	DisableTraceRoute *bool `json:"disableTraceRoute,omitempty"`
-
-	//Port: The port to connect to.
+	//Port: The source port used by connection monitor.
 	Port *int `json:"port,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//ResourceId: The ID of the resource used as the source by connection monitor.
+	ResourceId string `json:"resourceId"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ConnectionMonitorTestConfiguration
@@ -452,22 +330,37 @@ type ConnectionMonitorTestConfiguration struct {
 	TestFrequencySec *int `json:"testFrequencySec,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"IPv4","IPv6"}
-type ConnectionMonitorTestConfigurationStatusPreferredIPVersion string
+//Generated from:
+type ConnectionMonitorTestConfiguration_Status struct {
 
-const (
-	ConnectionMonitorTestConfigurationStatusPreferredIPVersionIPv4 = ConnectionMonitorTestConfigurationStatusPreferredIPVersion("IPv4")
-	ConnectionMonitorTestConfigurationStatusPreferredIPVersionIPv6 = ConnectionMonitorTestConfigurationStatusPreferredIPVersion("IPv6")
-)
+	//HttpConfiguration: The parameters used to perform test evaluation over HTTP.
+	HttpConfiguration *ConnectionMonitorHttpConfiguration_Status `json:"httpConfiguration,omitempty"`
 
-// +kubebuilder:validation:Enum={"Http","Icmp","Tcp"}
-type ConnectionMonitorTestConfigurationStatusProtocol string
+	//IcmpConfiguration: The parameters used to perform test evaluation over ICMP.
+	IcmpConfiguration *ConnectionMonitorIcmpConfiguration_Status `json:"icmpConfiguration,omitempty"`
 
-const (
-	ConnectionMonitorTestConfigurationStatusProtocolHttp = ConnectionMonitorTestConfigurationStatusProtocol("Http")
-	ConnectionMonitorTestConfigurationStatusProtocolIcmp = ConnectionMonitorTestConfigurationStatusProtocol("Icmp")
-	ConnectionMonitorTestConfigurationStatusProtocolTcp  = ConnectionMonitorTestConfigurationStatusProtocol("Tcp")
-)
+	// +kubebuilder:validation:Required
+	//Name: The name of the connection monitor test configuration.
+	Name string `json:"name"`
+
+	//PreferredIPVersion: The preferred IP version to use in test evaluation. The
+	//connection monitor may choose to use a different version depending on other
+	//parameters.
+	PreferredIPVersion *ConnectionMonitorTestConfigurationStatusPreferredIPVersion `json:"preferredIPVersion,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Protocol: The protocol to use in test evaluation.
+	Protocol ConnectionMonitorTestConfigurationStatusProtocol `json:"protocol"`
+
+	//SuccessThreshold: The threshold for declaring a test successful.
+	SuccessThreshold *ConnectionMonitorSuccessThreshold_Status `json:"successThreshold,omitempty"`
+
+	//TcpConfiguration: The parameters used to perform test evaluation over TCP.
+	TcpConfiguration *ConnectionMonitorTcpConfiguration_Status `json:"tcpConfiguration,omitempty"`
+
+	//TestFrequencySec: The frequency of test evaluation, in seconds.
+	TestFrequencySec *int `json:"testFrequencySec,omitempty"`
+}
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ConnectionMonitorTestGroup
 type ConnectionMonitorTestGroup struct {
@@ -493,10 +386,26 @@ type ConnectionMonitorTestGroup struct {
 }
 
 //Generated from:
-type ConnectionMonitorWorkspaceSettings_Status struct {
+type ConnectionMonitorTestGroup_Status struct {
 
-	//WorkspaceResourceId: Log analytics workspace resource ID.
-	WorkspaceResourceId *string `json:"workspaceResourceId,omitempty"`
+	// +kubebuilder:validation:Required
+	//Destinations: List of destination endpoint names.
+	Destinations []string `json:"destinations"`
+
+	//Disable: Value indicating whether test group is disabled.
+	Disable *bool `json:"disable,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Name: The name of the connection monitor test group.
+	Name string `json:"name"`
+
+	// +kubebuilder:validation:Required
+	//Sources: List of source endpoint names.
+	Sources []string `json:"sources"`
+
+	// +kubebuilder:validation:Required
+	//TestConfigurations: List of test configuration names.
+	TestConfigurations []string `json:"testConfigurations"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ConnectionMonitorEndpointFilter
@@ -510,20 +419,14 @@ type ConnectionMonitorEndpointFilter struct {
 }
 
 //Generated from:
-type ConnectionMonitorEndpointFilterItem_Status struct {
+type ConnectionMonitorEndpointFilter_Status struct {
 
-	//Address: The address of the filter item.
-	Address *string `json:"address,omitempty"`
+	//Items: List of items in the filter.
+	Items []ConnectionMonitorEndpointFilterItem_Status `json:"items,omitempty"`
 
-	//Type: The type of item included in the filter. Currently only 'AgentAddress' is
-	//supported.
-	Type *ConnectionMonitorEndpointFilterItemStatusType `json:"type,omitempty"`
+	//Type: The behavior of the endpoint filter. Currently only 'Include' is supported.
+	Type *ConnectionMonitorEndpointFilterStatusType `json:"type,omitempty"`
 }
-
-// +kubebuilder:validation:Enum={"Include"}
-type ConnectionMonitorEndpointFilterStatusType string
-
-const ConnectionMonitorEndpointFilterStatusTypeInclude = ConnectionMonitorEndpointFilterStatusType("Include")
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ConnectionMonitorHttpConfiguration
 type ConnectionMonitorHttpConfiguration struct {
@@ -549,13 +452,29 @@ type ConnectionMonitorHttpConfiguration struct {
 	ValidStatusCodeRanges []string `json:"validStatusCodeRanges,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"Get","Post"}
-type ConnectionMonitorHttpConfigurationStatusMethod string
+//Generated from:
+type ConnectionMonitorHttpConfiguration_Status struct {
 
-const (
-	ConnectionMonitorHttpConfigurationStatusMethodGet  = ConnectionMonitorHttpConfigurationStatusMethod("Get")
-	ConnectionMonitorHttpConfigurationStatusMethodPost = ConnectionMonitorHttpConfigurationStatusMethod("Post")
-)
+	//Method: The HTTP method to use.
+	Method *ConnectionMonitorHttpConfigurationStatusMethod `json:"method,omitempty"`
+
+	//Path: The path component of the URI. For instance, "/dir1/dir2".
+	Path *string `json:"path,omitempty"`
+
+	//Port: The port to connect to.
+	Port *int `json:"port,omitempty"`
+
+	//PreferHTTPS: Value indicating whether HTTPS is preferred over HTTP in cases
+	//where the choice is not explicit.
+	PreferHTTPS *bool `json:"preferHTTPS,omitempty"`
+
+	//RequestHeaders: The HTTP headers to transmit with the request.
+	RequestHeaders []HTTPHeader_Status `json:"requestHeaders,omitempty"`
+
+	//ValidStatusCodeRanges: HTTP status codes to consider successful. For instance,
+	//"2xx,301-304,418".
+	ValidStatusCodeRanges []string `json:"validStatusCodeRanges,omitempty"`
+}
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ConnectionMonitorIcmpConfiguration
 type ConnectionMonitorIcmpConfiguration struct {
@@ -564,6 +483,19 @@ type ConnectionMonitorIcmpConfiguration struct {
 	//should be disabled.
 	DisableTraceRoute *bool `json:"disableTraceRoute,omitempty"`
 }
+
+//Generated from:
+type ConnectionMonitorIcmpConfiguration_Status struct {
+
+	//DisableTraceRoute: Value indicating whether path evaluation with trace route
+	//should be disabled.
+	DisableTraceRoute *bool `json:"disableTraceRoute,omitempty"`
+}
+
+// +kubebuilder:validation:Enum={"Workspace"}
+type ConnectionMonitorOutputStatusType string
+
+const ConnectionMonitorOutputStatusTypeWorkspace = ConnectionMonitorOutputStatusType("Workspace")
 
 // +kubebuilder:validation:Enum={"Workspace"}
 type ConnectionMonitorOutputType string
@@ -582,8 +514,31 @@ type ConnectionMonitorSuccessThreshold struct {
 	RoundTripTimeMs *float64 `json:"roundTripTimeMs,omitempty"`
 }
 
+//Generated from:
+type ConnectionMonitorSuccessThreshold_Status struct {
+
+	//ChecksFailedPercent: The maximum percentage of failed checks permitted for a
+	//test to evaluate as successful.
+	ChecksFailedPercent *int `json:"checksFailedPercent,omitempty"`
+
+	//RoundTripTimeMs: The maximum round-trip time in milliseconds permitted for a
+	//test to evaluate as successful.
+	RoundTripTimeMs *float64 `json:"roundTripTimeMs,omitempty"`
+}
+
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ConnectionMonitorTcpConfiguration
 type ConnectionMonitorTcpConfiguration struct {
+
+	//DisableTraceRoute: Value indicating whether path evaluation with trace route
+	//should be disabled.
+	DisableTraceRoute *bool `json:"disableTraceRoute,omitempty"`
+
+	//Port: The port to connect to.
+	Port *int `json:"port,omitempty"`
+}
+
+//Generated from:
+type ConnectionMonitorTcpConfiguration_Status struct {
 
 	//DisableTraceRoute: Value indicating whether path evaluation with trace route
 	//should be disabled.
@@ -610,6 +565,23 @@ const (
 	ConnectionMonitorTestConfigurationProtocolTcp  = ConnectionMonitorTestConfigurationProtocol("Tcp")
 )
 
+// +kubebuilder:validation:Enum={"IPv4","IPv6"}
+type ConnectionMonitorTestConfigurationStatusPreferredIPVersion string
+
+const (
+	ConnectionMonitorTestConfigurationStatusPreferredIPVersionIPv4 = ConnectionMonitorTestConfigurationStatusPreferredIPVersion("IPv4")
+	ConnectionMonitorTestConfigurationStatusPreferredIPVersionIPv6 = ConnectionMonitorTestConfigurationStatusPreferredIPVersion("IPv6")
+)
+
+// +kubebuilder:validation:Enum={"Http","Icmp","Tcp"}
+type ConnectionMonitorTestConfigurationStatusProtocol string
+
+const (
+	ConnectionMonitorTestConfigurationStatusProtocolHttp = ConnectionMonitorTestConfigurationStatusProtocol("Http")
+	ConnectionMonitorTestConfigurationStatusProtocolIcmp = ConnectionMonitorTestConfigurationStatusProtocol("Icmp")
+	ConnectionMonitorTestConfigurationStatusProtocolTcp  = ConnectionMonitorTestConfigurationStatusProtocol("Tcp")
+)
+
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ConnectionMonitorWorkspaceSettings
 type ConnectionMonitorWorkspaceSettings struct {
 
@@ -618,13 +590,10 @@ type ConnectionMonitorWorkspaceSettings struct {
 }
 
 //Generated from:
-type HTTPHeader_Status struct {
+type ConnectionMonitorWorkspaceSettings_Status struct {
 
-	//Name: The name in HTTP header.
-	Name *string `json:"name,omitempty"`
-
-	//Value: The value in HTTP header.
-	Value *string `json:"value,omitempty"`
+	//WorkspaceResourceId: Log analytics workspace resource ID.
+	WorkspaceResourceId *string `json:"workspaceResourceId,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ConnectionMonitorEndpointFilterItem
@@ -638,10 +607,21 @@ type ConnectionMonitorEndpointFilterItem struct {
 	Type *ConnectionMonitorEndpointFilterItemType `json:"type,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"AgentAddress"}
-type ConnectionMonitorEndpointFilterItemStatusType string
+//Generated from:
+type ConnectionMonitorEndpointFilterItem_Status struct {
 
-const ConnectionMonitorEndpointFilterItemStatusTypeAgentAddress = ConnectionMonitorEndpointFilterItemStatusType("AgentAddress")
+	//Address: The address of the filter item.
+	Address *string `json:"address,omitempty"`
+
+	//Type: The type of item included in the filter. Currently only 'AgentAddress' is
+	//supported.
+	Type *ConnectionMonitorEndpointFilterItemStatusType `json:"type,omitempty"`
+}
+
+// +kubebuilder:validation:Enum={"Include"}
+type ConnectionMonitorEndpointFilterStatusType string
+
+const ConnectionMonitorEndpointFilterStatusTypeInclude = ConnectionMonitorEndpointFilterStatusType("Include")
 
 // +kubebuilder:validation:Enum={"Include"}
 type ConnectionMonitorEndpointFilterType string
@@ -656,6 +636,14 @@ const (
 	ConnectionMonitorHttpConfigurationMethodPost = ConnectionMonitorHttpConfigurationMethod("Post")
 )
 
+// +kubebuilder:validation:Enum={"Get","Post"}
+type ConnectionMonitorHttpConfigurationStatusMethod string
+
+const (
+	ConnectionMonitorHttpConfigurationStatusMethodGet  = ConnectionMonitorHttpConfigurationStatusMethod("Get")
+	ConnectionMonitorHttpConfigurationStatusMethodPost = ConnectionMonitorHttpConfigurationStatusMethod("Post")
+)
+
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/HTTPHeader
 type HTTPHeader struct {
 
@@ -665,6 +653,21 @@ type HTTPHeader struct {
 	//Value: The value in HTTP header.
 	Value *string `json:"value,omitempty"`
 }
+
+//Generated from:
+type HTTPHeader_Status struct {
+
+	//Name: The name in HTTP header.
+	Name *string `json:"name,omitempty"`
+
+	//Value: The value in HTTP header.
+	Value *string `json:"value,omitempty"`
+}
+
+// +kubebuilder:validation:Enum={"AgentAddress"}
+type ConnectionMonitorEndpointFilterItemStatusType string
+
+const ConnectionMonitorEndpointFilterItemStatusTypeAgentAddress = ConnectionMonitorEndpointFilterItemStatusType("AgentAddress")
 
 // +kubebuilder:validation:Enum={"AgentAddress"}
 type ConnectionMonitorEndpointFilterItemType string

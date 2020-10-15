@@ -27,8 +27,15 @@ type ExpressRouteCrossConnectionsList struct {
 	Items           []ExpressRouteCrossConnections `json:"items"`
 }
 
-//Generated from:
 type ExpressRouteCrossConnection_Status struct {
+	AtProvider ExpressRouteCrossConnectionsObservation `json:"atProvider"`
+}
+
+type ExpressRouteCrossConnections_Spec struct {
+	ForProvider ExpressRouteCrossConnectionsParameters `json:"forProvider"`
+}
+
+type ExpressRouteCrossConnectionsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,47 +57,6 @@ type ExpressRouteCrossConnection_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type ExpressRouteCrossConnections_Spec struct {
-	ForProvider ExpressRouteCrossConnectionsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type ExpressRouteCrossConnectionProperties_Status struct {
-
-	//BandwidthInMbps: The circuit bandwidth In Mbps.
-	BandwidthInMbps *int `json:"bandwidthInMbps,omitempty"`
-
-	//ExpressRouteCircuit: The ExpressRouteCircuit.
-	ExpressRouteCircuit *ExpressRouteCircuitReference_Status `json:"expressRouteCircuit,omitempty"`
-
-	//PeeringLocation: The peering location of the ExpressRoute circuit.
-	PeeringLocation *string `json:"peeringLocation,omitempty"`
-
-	//Peerings: The list of peerings.
-	Peerings []ExpressRouteCrossConnectionPeering_Status `json:"peerings,omitempty"`
-
-	//PrimaryAzurePort: The name of the primary port.
-	PrimaryAzurePort *string `json:"primaryAzurePort,omitempty"`
-
-	//ProvisioningState: The provisioning state of the express route cross connection
-	//resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//STag: The identifier of the circuit traffic.
-	STag *int `json:"sTag,omitempty"`
-
-	//SecondaryAzurePort: The name of the secondary port.
-	SecondaryAzurePort *string `json:"secondaryAzurePort,omitempty"`
-
-	//ServiceProviderNotes: Additional read only notes set by the connectivity
-	//provider.
-	ServiceProviderNotes *string `json:"serviceProviderNotes,omitempty"`
-
-	//ServiceProviderProvisioningState: The provisioning state of the circuit in the
-	//connectivity provider system.
-	ServiceProviderProvisioningState *ServiceProviderProvisioningState_Status `json:"serviceProviderProvisioningState,omitempty"`
 }
 
 type ExpressRouteCrossConnectionsParameters struct {
@@ -132,13 +98,6 @@ type ExpressRouteCrossConnectionsParameters struct {
 	Type ExpressRouteCrossConnectionsSpecType `json:"type"`
 }
 
-//Generated from:
-type ExpressRouteCircuitReference_Status struct {
-
-	//Id: Corresponding Express Route Circuit Id.
-	Id *string `json:"id,omitempty"`
-}
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteCrossConnectionProperties
 type ExpressRouteCrossConnectionProperties struct {
 
@@ -163,6 +122,43 @@ type ExpressRouteCrossConnectionProperties struct {
 	ServiceProviderProvisioningState *ExpressRouteCrossConnectionPropertiesServiceProviderProvisioningState `json:"serviceProviderProvisioningState,omitempty"`
 }
 
+//Generated from:
+type ExpressRouteCrossConnectionProperties_Status struct {
+
+	//BandwidthInMbps: The circuit bandwidth In Mbps.
+	BandwidthInMbps *int `json:"bandwidthInMbps,omitempty"`
+
+	//ExpressRouteCircuit: The ExpressRouteCircuit.
+	ExpressRouteCircuit *ExpressRouteCircuitReference_Status `json:"expressRouteCircuit,omitempty"`
+
+	//PeeringLocation: The peering location of the ExpressRoute circuit.
+	PeeringLocation *string `json:"peeringLocation,omitempty"`
+
+	//Peerings: The list of peerings.
+	Peerings []ExpressRouteCrossConnectionPeering_Status `json:"peerings,omitempty"`
+
+	//PrimaryAzurePort: The name of the primary port.
+	PrimaryAzurePort *string `json:"primaryAzurePort,omitempty"`
+
+	//ProvisioningState: The provisioning state of the express route cross connection
+	//resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//STag: The identifier of the circuit traffic.
+	STag *int `json:"sTag,omitempty"`
+
+	//SecondaryAzurePort: The name of the secondary port.
+	SecondaryAzurePort *string `json:"secondaryAzurePort,omitempty"`
+
+	//ServiceProviderNotes: Additional read only notes set by the connectivity
+	//provider.
+	ServiceProviderNotes *string `json:"serviceProviderNotes,omitempty"`
+
+	//ServiceProviderProvisioningState: The provisioning state of the circuit in the
+	//connectivity provider system.
+	ServiceProviderProvisioningState *ServiceProviderProvisioningState_Status `json:"serviceProviderProvisioningState,omitempty"`
+}
+
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type ExpressRouteCrossConnectionsSpecApiVersion string
 
@@ -172,6 +168,13 @@ const ExpressRouteCrossConnectionsSpecApiVersion20200501 = ExpressRouteCrossConn
 type ExpressRouteCrossConnectionsSpecType string
 
 const ExpressRouteCrossConnectionsSpecTypeMicrosoftNetworkExpressRouteCrossConnections = ExpressRouteCrossConnectionsSpecType("Microsoft.Network/expressRouteCrossConnections")
+
+//Generated from:
+type ExpressRouteCircuitReference_Status struct {
+
+	//Id: Corresponding Express Route Circuit Id.
+	Id *string `json:"id,omitempty"`
+}
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteCrossConnectionPeering
 type ExpressRouteCrossConnectionPeering struct {

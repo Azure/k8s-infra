@@ -27,8 +27,15 @@ type VirtualNetworksSubnetsList struct {
 	Items           []VirtualNetworksSubnets `json:"items"`
 }
 
-//Generated from:
 type Subnet_Status struct {
+	AtProvider VirtualNetworksSubnetsObservation `json:"atProvider"`
+}
+
+type VirtualNetworksSubnets_Spec struct {
+	ForProvider VirtualNetworksSubnetsParameters `json:"forProvider"`
+}
+
+type VirtualNetworksSubnetsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -44,8 +51,83 @@ type Subnet_Status struct {
 	Properties *SubnetPropertiesFormat_Status `json:"properties,omitempty"`
 }
 
-type VirtualNetworksSubnets_Spec struct {
-	ForProvider VirtualNetworksSubnetsParameters `json:"forProvider"`
+type VirtualNetworksSubnetsParameters struct {
+
+	// +kubebuilder:validation:Required
+	//ApiVersion: API Version of the resource type, optional when apiProfile is used
+	//on the template
+	ApiVersion VirtualNetworksSubnetsSpecApiVersion `json:"apiVersion"`
+	Comments   *string                              `json:"comments,omitempty"`
+
+	//Condition: Condition of the resource
+	Condition *bool                   `json:"condition,omitempty"`
+	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
+
+	//DependsOn: Collection of resources this resource depends on
+	DependsOn []string `json:"dependsOn,omitempty"`
+
+	//Location: Location to deploy resource to
+	Location *v20150101.ResourceLocations `json:"location,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Name: Name of the resource
+	Name string `json:"name"`
+
+	// +kubebuilder:validation:Required
+	//Properties: Properties of the subnet.
+	Properties SubnetPropertiesFormat `json:"properties"`
+
+	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
+	//setting the scope for extension resources 2) deploying resources to the tenant
+	//scope in non-tenant scope deployments
+	Scope *string `json:"scope,omitempty"`
+
+	//Tags: Name-value pairs to add to the resource
+	Tags map[string]string `json:"tags,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Type: Resource type
+	Type VirtualNetworksSubnetsSpecType `json:"type"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/SubnetPropertiesFormat
+type SubnetPropertiesFormat struct {
+
+	// +kubebuilder:validation:Required
+	//AddressPrefix: The address prefix for the subnet.
+	AddressPrefix string `json:"addressPrefix"`
+
+	//AddressPrefixes: List of address prefixes for the subnet.
+	AddressPrefixes []string `json:"addressPrefixes,omitempty"`
+
+	//Delegations: An array of references to the delegations on the subnet.
+	Delegations []Delegation `json:"delegations,omitempty"`
+
+	//IpAllocations: Array of IpAllocation which reference this subnet.
+	IpAllocations []SubResource `json:"ipAllocations,omitempty"`
+
+	//NatGateway: Nat gateway associated with this subnet.
+	NatGateway *SubResource `json:"natGateway,omitempty"`
+
+	//NetworkSecurityGroup: The reference to the NetworkSecurityGroup resource.
+	NetworkSecurityGroup *SubResource `json:"networkSecurityGroup,omitempty"`
+
+	//PrivateEndpointNetworkPolicies: Enable or Disable apply network policies on
+	//private end point in the subnet.
+	PrivateEndpointNetworkPolicies *string `json:"privateEndpointNetworkPolicies,omitempty"`
+
+	//PrivateLinkServiceNetworkPolicies: Enable or Disable apply network policies on
+	//private link service in the subnet.
+	PrivateLinkServiceNetworkPolicies *string `json:"privateLinkServiceNetworkPolicies,omitempty"`
+
+	//RouteTable: The reference to the RouteTable resource.
+	RouteTable *SubResource `json:"routeTable,omitempty"`
+
+	//ServiceEndpointPolicies: An array of service endpoint policies.
+	ServiceEndpointPolicies []SubResource `json:"serviceEndpointPolicies,omitempty"`
+
+	//ServiceEndpoints: An array of service endpoints.
+	ServiceEndpoints []ServiceEndpointPropertiesFormat `json:"serviceEndpoints,omitempty"`
 }
 
 //Generated from:
@@ -113,43 +195,26 @@ type SubnetPropertiesFormat_Status struct {
 	ServiceEndpoints []ServiceEndpointPropertiesFormat_Status `json:"serviceEndpoints,omitempty"`
 }
 
-type VirtualNetworksSubnetsParameters struct {
+// +kubebuilder:validation:Enum={"2020-05-01"}
+type VirtualNetworksSubnetsSpecApiVersion string
+
+const VirtualNetworksSubnetsSpecApiVersion20200501 = VirtualNetworksSubnetsSpecApiVersion("2020-05-01")
+
+// +kubebuilder:validation:Enum={"Microsoft.Network/virtualNetworks/subnets"}
+type VirtualNetworksSubnetsSpecType string
+
+const VirtualNetworksSubnetsSpecTypeMicrosoftNetworkVirtualNetworksSubnets = VirtualNetworksSubnetsSpecType("Microsoft.Network/virtualNetworks/subnets")
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/Delegation
+type Delegation struct {
 
 	// +kubebuilder:validation:Required
-	//ApiVersion: API Version of the resource type, optional when apiProfile is used
-	//on the template
-	ApiVersion VirtualNetworksSubnetsSpecApiVersion `json:"apiVersion"`
-	Comments   *string                              `json:"comments,omitempty"`
-
-	//Condition: Condition of the resource
-	Condition *bool                   `json:"condition,omitempty"`
-	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
-
-	//DependsOn: Collection of resources this resource depends on
-	DependsOn []string `json:"dependsOn,omitempty"`
-
-	//Location: Location to deploy resource to
-	Location *v20150101.ResourceLocations `json:"location,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Name: Name of the resource
+	//Name: The name of the resource that is unique within a subnet. This name can be
+	//used to access the resource.
 	Name string `json:"name"`
 
-	// +kubebuilder:validation:Required
 	//Properties: Properties of the subnet.
-	Properties SubnetPropertiesFormat `json:"properties"`
-
-	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
-	//setting the scope for extension resources 2) deploying resources to the tenant
-	//scope in non-tenant scope deployments
-	Scope *string `json:"scope,omitempty"`
-
-	//Tags: Name-value pairs to add to the resource
-	Tags map[string]string `json:"tags,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Type: Resource type
-	Type VirtualNetworksSubnetsSpecType `json:"type"`
+	Properties *ServiceDelegationPropertiesFormat `json:"properties,omitempty"`
 }
 
 //Generated from:
@@ -228,6 +293,16 @@ type ServiceAssociationLink_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ServiceEndpointPropertiesFormat
+type ServiceEndpointPropertiesFormat struct {
+
+	//Locations: A list of locations.
+	Locations []string `json:"locations,omitempty"`
+
+	//Service: The type of the endpoint service.
+	Service *string `json:"service,omitempty"`
+}
+
 //Generated from:
 type ServiceEndpointPropertiesFormat_Status struct {
 
@@ -239,68 +314,6 @@ type ServiceEndpointPropertiesFormat_Status struct {
 
 	//Service: The type of the endpoint service.
 	Service *string `json:"service,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/SubnetPropertiesFormat
-type SubnetPropertiesFormat struct {
-
-	// +kubebuilder:validation:Required
-	//AddressPrefix: The address prefix for the subnet.
-	AddressPrefix string `json:"addressPrefix"`
-
-	//AddressPrefixes: List of address prefixes for the subnet.
-	AddressPrefixes []string `json:"addressPrefixes,omitempty"`
-
-	//Delegations: An array of references to the delegations on the subnet.
-	Delegations []Delegation `json:"delegations,omitempty"`
-
-	//IpAllocations: Array of IpAllocation which reference this subnet.
-	IpAllocations []SubResource `json:"ipAllocations,omitempty"`
-
-	//NatGateway: Nat gateway associated with this subnet.
-	NatGateway *SubResource `json:"natGateway,omitempty"`
-
-	//NetworkSecurityGroup: The reference to the NetworkSecurityGroup resource.
-	NetworkSecurityGroup *SubResource `json:"networkSecurityGroup,omitempty"`
-
-	//PrivateEndpointNetworkPolicies: Enable or Disable apply network policies on
-	//private end point in the subnet.
-	PrivateEndpointNetworkPolicies *string `json:"privateEndpointNetworkPolicies,omitempty"`
-
-	//PrivateLinkServiceNetworkPolicies: Enable or Disable apply network policies on
-	//private link service in the subnet.
-	PrivateLinkServiceNetworkPolicies *string `json:"privateLinkServiceNetworkPolicies,omitempty"`
-
-	//RouteTable: The reference to the RouteTable resource.
-	RouteTable *SubResource `json:"routeTable,omitempty"`
-
-	//ServiceEndpointPolicies: An array of service endpoint policies.
-	ServiceEndpointPolicies []SubResource `json:"serviceEndpointPolicies,omitempty"`
-
-	//ServiceEndpoints: An array of service endpoints.
-	ServiceEndpoints []ServiceEndpointPropertiesFormat `json:"serviceEndpoints,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"2020-05-01"}
-type VirtualNetworksSubnetsSpecApiVersion string
-
-const VirtualNetworksSubnetsSpecApiVersion20200501 = VirtualNetworksSubnetsSpecApiVersion("2020-05-01")
-
-// +kubebuilder:validation:Enum={"Microsoft.Network/virtualNetworks/subnets"}
-type VirtualNetworksSubnetsSpecType string
-
-const VirtualNetworksSubnetsSpecTypeMicrosoftNetworkVirtualNetworksSubnets = VirtualNetworksSubnetsSpecType("Microsoft.Network/virtualNetworks/subnets")
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/Delegation
-type Delegation struct {
-
-	// +kubebuilder:validation:Required
-	//Name: The name of the resource that is unique within a subnet. This name can be
-	//used to access the resource.
-	Name string `json:"name"`
-
-	//Properties: Properties of the subnet.
-	Properties *ServiceDelegationPropertiesFormat `json:"properties,omitempty"`
 }
 
 //Generated from:
@@ -349,6 +362,14 @@ type ServiceAssociationLinkPropertiesFormat_Status struct {
 	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ServiceDelegationPropertiesFormat
+type ServiceDelegationPropertiesFormat struct {
+
+	//ServiceName: The name of the service to whom the subnet should be delegated
+	//(e.g. Microsoft.Sql/servers).
+	ServiceName *string `json:"serviceName,omitempty"`
+}
+
 //Generated from:
 type ServiceDelegationPropertiesFormat_Status struct {
 
@@ -357,24 +378,6 @@ type ServiceDelegationPropertiesFormat_Status struct {
 
 	//ProvisioningState: The provisioning state of the service delegation resource.
 	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//ServiceName: The name of the service to whom the subnet should be delegated
-	//(e.g. Microsoft.Sql/servers).
-	ServiceName *string `json:"serviceName,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ServiceEndpointPropertiesFormat
-type ServiceEndpointPropertiesFormat struct {
-
-	//Locations: A list of locations.
-	Locations []string `json:"locations,omitempty"`
-
-	//Service: The type of the endpoint service.
-	Service *string `json:"service,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ServiceDelegationPropertiesFormat
-type ServiceDelegationPropertiesFormat struct {
 
 	//ServiceName: The name of the service to whom the subnet should be delegated
 	//(e.g. Microsoft.Sql/servers).

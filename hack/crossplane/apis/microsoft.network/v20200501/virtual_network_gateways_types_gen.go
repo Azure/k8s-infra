@@ -27,8 +27,15 @@ type VirtualNetworkGatewaysList struct {
 	Items           []VirtualNetworkGateways `json:"items"`
 }
 
-//Generated from:
 type VirtualNetworkGateway_Status struct {
+	AtProvider VirtualNetworkGatewaysObservation `json:"atProvider"`
+}
+
+type VirtualNetworkGateways_Spec struct {
+	ForProvider VirtualNetworkGatewaysParameters `json:"forProvider"`
+}
+
+type VirtualNetworkGatewaysObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -53,8 +60,94 @@ type VirtualNetworkGateway_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
-type VirtualNetworkGateways_Spec struct {
-	ForProvider VirtualNetworkGatewaysParameters `json:"forProvider"`
+type VirtualNetworkGatewaysParameters struct {
+
+	// +kubebuilder:validation:Required
+	//ApiVersion: API Version of the resource type, optional when apiProfile is used
+	//on the template
+	ApiVersion VirtualNetworkGatewaysSpecApiVersion `json:"apiVersion"`
+	Comments   *string                              `json:"comments,omitempty"`
+
+	//Condition: Condition of the resource
+	Condition *bool                   `json:"condition,omitempty"`
+	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
+
+	//DependsOn: Collection of resources this resource depends on
+	DependsOn []string `json:"dependsOn,omitempty"`
+
+	//Location: Location to deploy resource to
+	Location string `json:"location,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Name: Name of the resource
+	Name string `json:"name"`
+
+	// +kubebuilder:validation:Required
+	//Properties: Properties of the virtual network gateway.
+	Properties VirtualNetworkGatewayPropertiesFormat `json:"properties"`
+
+	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
+	//setting the scope for extension resources 2) deploying resources to the tenant
+	//scope in non-tenant scope deployments
+	Scope *string `json:"scope,omitempty"`
+
+	//Tags: Name-value pairs to add to the resource
+	Tags map[string]string `json:"tags,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Type: Resource type
+	Type VirtualNetworkGatewaysSpecType `json:"type"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualNetworkGatewayPropertiesFormat
+type VirtualNetworkGatewayPropertiesFormat struct {
+
+	//ActiveActive: ActiveActive flag.
+	ActiveActive *bool `json:"activeActive,omitempty"`
+
+	//BgpSettings: Virtual network gateway's BGP speaker settings.
+	BgpSettings *BgpSettings `json:"bgpSettings,omitempty"`
+
+	//CustomRoutes: The reference to the address space resource which represents the
+	//custom routes address space specified by the customer for virtual network
+	//gateway and VpnClient.
+	CustomRoutes *AddressSpace `json:"customRoutes,omitempty"`
+
+	//EnableBgp: Whether BGP is enabled for this virtual network gateway or not.
+	EnableBgp *bool `json:"enableBgp,omitempty"`
+
+	//EnableDnsForwarding: Whether dns forwarding is enabled or not.
+	EnableDnsForwarding *bool `json:"enableDnsForwarding,omitempty"`
+
+	//EnablePrivateIpAddress: Whether private IP needs to be enabled on this gateway
+	//for connections or not.
+	EnablePrivateIpAddress *bool `json:"enablePrivateIpAddress,omitempty"`
+
+	//GatewayDefaultSite: The reference to the LocalNetworkGateway resource which
+	//represents local network site having default routes. Assign Null value in case
+	//of removing existing default site setting.
+	GatewayDefaultSite *SubResource `json:"gatewayDefaultSite,omitempty"`
+
+	//GatewayType: The type of this virtual network gateway.
+	GatewayType *VirtualNetworkGatewayPropertiesFormatGatewayType `json:"gatewayType,omitempty"`
+
+	//IpConfigurations: IP configurations for virtual network gateway.
+	IpConfigurations []VirtualNetworkGatewayIPConfiguration `json:"ipConfigurations,omitempty"`
+
+	//Sku: The reference to the VirtualNetworkGatewaySku resource which represents the
+	//SKU selected for Virtual network gateway.
+	Sku *VirtualNetworkGatewaySku `json:"sku,omitempty"`
+
+	//VpnClientConfiguration: The reference to the VpnClientConfiguration resource
+	//which represents the P2S VpnClient configurations.
+	VpnClientConfiguration *VpnClientConfiguration `json:"vpnClientConfiguration,omitempty"`
+
+	//VpnGatewayGeneration: The generation for this VirtualNetworkGateway. Must be
+	//None if gatewayType is not VPN.
+	VpnGatewayGeneration *VirtualNetworkGatewayPropertiesFormatVpnGatewayGeneration `json:"vpnGatewayGeneration,omitempty"`
+
+	//VpnType: The type of this virtual network gateway.
+	VpnType *VirtualNetworkGatewayPropertiesFormatVpnType `json:"vpnType,omitempty"`
 }
 
 //Generated from:
@@ -119,43 +212,25 @@ type VirtualNetworkGatewayPropertiesFormat_Status struct {
 	VpnType *VirtualNetworkGatewayPropertiesFormatStatusVpnType `json:"vpnType,omitempty"`
 }
 
-type VirtualNetworkGatewaysParameters struct {
+// +kubebuilder:validation:Enum={"2020-05-01"}
+type VirtualNetworkGatewaysSpecApiVersion string
 
-	// +kubebuilder:validation:Required
-	//ApiVersion: API Version of the resource type, optional when apiProfile is used
-	//on the template
-	ApiVersion VirtualNetworkGatewaysSpecApiVersion `json:"apiVersion"`
-	Comments   *string                              `json:"comments,omitempty"`
+const VirtualNetworkGatewaysSpecApiVersion20200501 = VirtualNetworkGatewaysSpecApiVersion("2020-05-01")
 
-	//Condition: Condition of the resource
-	Condition *bool                   `json:"condition,omitempty"`
-	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
+// +kubebuilder:validation:Enum={"Microsoft.Network/virtualNetworkGateways"}
+type VirtualNetworkGatewaysSpecType string
 
-	//DependsOn: Collection of resources this resource depends on
-	DependsOn []string `json:"dependsOn,omitempty"`
+const VirtualNetworkGatewaysSpecTypeMicrosoftNetworkVirtualNetworkGateways = VirtualNetworkGatewaysSpecType("Microsoft.Network/virtualNetworkGateways")
 
-	//Location: Location to deploy resource to
-	Location string `json:"location,omitempty"`
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualNetworkGatewayIPConfiguration
+type VirtualNetworkGatewayIPConfiguration struct {
 
-	// +kubebuilder:validation:Required
-	//Name: Name of the resource
-	Name string `json:"name"`
+	//Name: The name of the resource that is unique within a resource group. This name
+	//can be used to access the resource.
+	Name *string `json:"name,omitempty"`
 
-	// +kubebuilder:validation:Required
-	//Properties: Properties of the virtual network gateway.
-	Properties VirtualNetworkGatewayPropertiesFormat `json:"properties"`
-
-	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
-	//setting the scope for extension resources 2) deploying resources to the tenant
-	//scope in non-tenant scope deployments
-	Scope *string `json:"scope,omitempty"`
-
-	//Tags: Name-value pairs to add to the resource
-	Tags map[string]string `json:"tags,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Type: Resource type
-	Type VirtualNetworkGatewaysSpecType `json:"type"`
+	//Properties: Properties of the virtual network gateway ip configuration.
+	Properties *VirtualNetworkGatewayIPConfigurationPropertiesFormat `json:"properties,omitempty"`
 }
 
 //Generated from:
@@ -175,56 +250,14 @@ type VirtualNetworkGatewayIPConfiguration_Status struct {
 	Properties *VirtualNetworkGatewayIPConfigurationPropertiesFormat_Status `json:"properties,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualNetworkGatewayPropertiesFormat
-type VirtualNetworkGatewayPropertiesFormat struct {
+// +kubebuilder:validation:Enum={"ExpressRoute","HyperNet","Vpn"}
+type VirtualNetworkGatewayPropertiesFormatGatewayType string
 
-	//ActiveActive: ActiveActive flag.
-	ActiveActive *bool `json:"activeActive,omitempty"`
-
-	//BgpSettings: Virtual network gateway's BGP speaker settings.
-	BgpSettings *BgpSettings `json:"bgpSettings,omitempty"`
-
-	//CustomRoutes: The reference to the address space resource which represents the
-	//custom routes address space specified by the customer for virtual network
-	//gateway and VpnClient.
-	CustomRoutes *AddressSpace `json:"customRoutes,omitempty"`
-
-	//EnableBgp: Whether BGP is enabled for this virtual network gateway or not.
-	EnableBgp *bool `json:"enableBgp,omitempty"`
-
-	//EnableDnsForwarding: Whether dns forwarding is enabled or not.
-	EnableDnsForwarding *bool `json:"enableDnsForwarding,omitempty"`
-
-	//EnablePrivateIpAddress: Whether private IP needs to be enabled on this gateway
-	//for connections or not.
-	EnablePrivateIpAddress *bool `json:"enablePrivateIpAddress,omitempty"`
-
-	//GatewayDefaultSite: The reference to the LocalNetworkGateway resource which
-	//represents local network site having default routes. Assign Null value in case
-	//of removing existing default site setting.
-	GatewayDefaultSite *SubResource `json:"gatewayDefaultSite,omitempty"`
-
-	//GatewayType: The type of this virtual network gateway.
-	GatewayType *VirtualNetworkGatewayPropertiesFormatGatewayType `json:"gatewayType,omitempty"`
-
-	//IpConfigurations: IP configurations for virtual network gateway.
-	IpConfigurations []VirtualNetworkGatewayIPConfiguration `json:"ipConfigurations,omitempty"`
-
-	//Sku: The reference to the VirtualNetworkGatewaySku resource which represents the
-	//SKU selected for Virtual network gateway.
-	Sku *VirtualNetworkGatewaySku `json:"sku,omitempty"`
-
-	//VpnClientConfiguration: The reference to the VpnClientConfiguration resource
-	//which represents the P2S VpnClient configurations.
-	VpnClientConfiguration *VpnClientConfiguration `json:"vpnClientConfiguration,omitempty"`
-
-	//VpnGatewayGeneration: The generation for this VirtualNetworkGateway. Must be
-	//None if gatewayType is not VPN.
-	VpnGatewayGeneration *VirtualNetworkGatewayPropertiesFormatVpnGatewayGeneration `json:"vpnGatewayGeneration,omitempty"`
-
-	//VpnType: The type of this virtual network gateway.
-	VpnType *VirtualNetworkGatewayPropertiesFormatVpnType `json:"vpnType,omitempty"`
-}
+const (
+	VirtualNetworkGatewayPropertiesFormatGatewayTypeExpressRoute = VirtualNetworkGatewayPropertiesFormatGatewayType("ExpressRoute")
+	VirtualNetworkGatewayPropertiesFormatGatewayTypeHyperNet     = VirtualNetworkGatewayPropertiesFormatGatewayType("HyperNet")
+	VirtualNetworkGatewayPropertiesFormatGatewayTypeVpn          = VirtualNetworkGatewayPropertiesFormatGatewayType("Vpn")
+)
 
 // +kubebuilder:validation:Enum={"ExpressRoute","Vpn"}
 type VirtualNetworkGatewayPropertiesFormatStatusGatewayType string
@@ -249,115 +282,6 @@ type VirtualNetworkGatewayPropertiesFormatStatusVpnType string
 const (
 	VirtualNetworkGatewayPropertiesFormatStatusVpnTypePolicyBased = VirtualNetworkGatewayPropertiesFormatStatusVpnType("PolicyBased")
 	VirtualNetworkGatewayPropertiesFormatStatusVpnTypeRouteBased  = VirtualNetworkGatewayPropertiesFormatStatusVpnType("RouteBased")
-)
-
-//Generated from:
-type VirtualNetworkGatewaySku_Status struct {
-
-	//Capacity: The capacity.
-	Capacity *int `json:"capacity,omitempty"`
-
-	//Name: Gateway SKU name.
-	Name *VirtualNetworkGatewaySkuStatusName `json:"name,omitempty"`
-
-	//Tier: Gateway SKU tier.
-	Tier *VirtualNetworkGatewaySkuStatusTier `json:"tier,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"2020-05-01"}
-type VirtualNetworkGatewaysSpecApiVersion string
-
-const VirtualNetworkGatewaysSpecApiVersion20200501 = VirtualNetworkGatewaysSpecApiVersion("2020-05-01")
-
-// +kubebuilder:validation:Enum={"Microsoft.Network/virtualNetworkGateways"}
-type VirtualNetworkGatewaysSpecType string
-
-const VirtualNetworkGatewaysSpecTypeMicrosoftNetworkVirtualNetworkGateways = VirtualNetworkGatewaysSpecType("Microsoft.Network/virtualNetworkGateways")
-
-//Generated from:
-type VpnClientConfiguration_Status struct {
-
-	//AadAudience: The AADAudience property of the VirtualNetworkGateway resource for
-	//vpn client connection used for AAD authentication.
-	AadAudience *string `json:"aadAudience,omitempty"`
-
-	//AadIssuer: The AADIssuer property of the VirtualNetworkGateway resource for vpn
-	//client connection used for AAD authentication.
-	AadIssuer *string `json:"aadIssuer,omitempty"`
-
-	//AadTenant: The AADTenant property of the VirtualNetworkGateway resource for vpn
-	//client connection used for AAD authentication.
-	AadTenant *string `json:"aadTenant,omitempty"`
-
-	//RadiusServerAddress: The radius server address property of the
-	//VirtualNetworkGateway resource for vpn client connection.
-	RadiusServerAddress *string `json:"radiusServerAddress,omitempty"`
-
-	//RadiusServerSecret: The radius secret property of the VirtualNetworkGateway
-	//resource for vpn client connection.
-	RadiusServerSecret *string `json:"radiusServerSecret,omitempty"`
-
-	//RadiusServers: The radiusServers property for multiple radius server
-	//configuration.
-	RadiusServers []RadiusServer_Status `json:"radiusServers,omitempty"`
-
-	//VpnClientAddressPool: The reference to the address space resource which
-	//represents Address space for P2S VpnClient.
-	VpnClientAddressPool *AddressSpace_Status `json:"vpnClientAddressPool,omitempty"`
-
-	//VpnClientIpsecPolicies: VpnClientIpsecPolicies for virtual network gateway P2S
-	//client.
-	VpnClientIpsecPolicies []IpsecPolicy_Status `json:"vpnClientIpsecPolicies,omitempty"`
-
-	//VpnClientProtocols: VpnClientProtocols for Virtual network gateway.
-	VpnClientProtocols []VpnClientConfigurationStatusVpnClientProtocols `json:"vpnClientProtocols,omitempty"`
-
-	//VpnClientRevokedCertificates: VpnClientRevokedCertificate for Virtual network
-	//gateway.
-	VpnClientRevokedCertificates []VpnClientRevokedCertificate_Status `json:"vpnClientRevokedCertificates,omitempty"`
-
-	//VpnClientRootCertificates: VpnClientRootCertificate for virtual network gateway.
-	VpnClientRootCertificates []VpnClientRootCertificate_Status `json:"vpnClientRootCertificates,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualNetworkGatewayIPConfiguration
-type VirtualNetworkGatewayIPConfiguration struct {
-
-	//Name: The name of the resource that is unique within a resource group. This name
-	//can be used to access the resource.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of the virtual network gateway ip configuration.
-	Properties *VirtualNetworkGatewayIPConfigurationPropertiesFormat `json:"properties,omitempty"`
-}
-
-//Generated from:
-type VirtualNetworkGatewayIPConfigurationPropertiesFormat_Status struct {
-
-	//PrivateIPAddress: Private IP Address for this gateway.
-	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
-
-	//PrivateIPAllocationMethod: The private IP address allocation method.
-	PrivateIPAllocationMethod *IPAllocationMethod_Status `json:"privateIPAllocationMethod,omitempty"`
-
-	//ProvisioningState: The provisioning state of the virtual network gateway IP
-	//configuration resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//PublicIPAddress: The reference to the public IP resource.
-	PublicIPAddress *SubResource_Status `json:"publicIPAddress,omitempty"`
-
-	//Subnet: The reference to the subnet resource.
-	Subnet *SubResource_Status `json:"subnet,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"ExpressRoute","HyperNet","Vpn"}
-type VirtualNetworkGatewayPropertiesFormatGatewayType string
-
-const (
-	VirtualNetworkGatewayPropertiesFormatGatewayTypeExpressRoute = VirtualNetworkGatewayPropertiesFormatGatewayType("ExpressRoute")
-	VirtualNetworkGatewayPropertiesFormatGatewayTypeHyperNet     = VirtualNetworkGatewayPropertiesFormatGatewayType("HyperNet")
-	VirtualNetworkGatewayPropertiesFormatGatewayTypeVpn          = VirtualNetworkGatewayPropertiesFormatGatewayType("Vpn")
 )
 
 // +kubebuilder:validation:Enum={"Generation1","Generation2","None"}
@@ -387,51 +311,18 @@ type VirtualNetworkGatewaySku struct {
 	Tier *VirtualNetworkGatewaySkuTier `json:"tier,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"Basic","ErGw1AZ","ErGw2AZ","ErGw3AZ","HighPerformance","Standard","UltraPerformance","VpnGw1","VpnGw1AZ","VpnGw2","VpnGw2AZ","VpnGw3","VpnGw3AZ","VpnGw4","VpnGw4AZ","VpnGw5","VpnGw5AZ"}
-type VirtualNetworkGatewaySkuStatusName string
+//Generated from:
+type VirtualNetworkGatewaySku_Status struct {
 
-const (
-	VirtualNetworkGatewaySkuStatusNameBasic            = VirtualNetworkGatewaySkuStatusName("Basic")
-	VirtualNetworkGatewaySkuStatusNameErGw1AZ          = VirtualNetworkGatewaySkuStatusName("ErGw1AZ")
-	VirtualNetworkGatewaySkuStatusNameErGw2AZ          = VirtualNetworkGatewaySkuStatusName("ErGw2AZ")
-	VirtualNetworkGatewaySkuStatusNameErGw3AZ          = VirtualNetworkGatewaySkuStatusName("ErGw3AZ")
-	VirtualNetworkGatewaySkuStatusNameHighPerformance  = VirtualNetworkGatewaySkuStatusName("HighPerformance")
-	VirtualNetworkGatewaySkuStatusNameStandard         = VirtualNetworkGatewaySkuStatusName("Standard")
-	VirtualNetworkGatewaySkuStatusNameUltraPerformance = VirtualNetworkGatewaySkuStatusName("UltraPerformance")
-	VirtualNetworkGatewaySkuStatusNameVpnGw1           = VirtualNetworkGatewaySkuStatusName("VpnGw1")
-	VirtualNetworkGatewaySkuStatusNameVpnGw1AZ         = VirtualNetworkGatewaySkuStatusName("VpnGw1AZ")
-	VirtualNetworkGatewaySkuStatusNameVpnGw2           = VirtualNetworkGatewaySkuStatusName("VpnGw2")
-	VirtualNetworkGatewaySkuStatusNameVpnGw2AZ         = VirtualNetworkGatewaySkuStatusName("VpnGw2AZ")
-	VirtualNetworkGatewaySkuStatusNameVpnGw3           = VirtualNetworkGatewaySkuStatusName("VpnGw3")
-	VirtualNetworkGatewaySkuStatusNameVpnGw3AZ         = VirtualNetworkGatewaySkuStatusName("VpnGw3AZ")
-	VirtualNetworkGatewaySkuStatusNameVpnGw4           = VirtualNetworkGatewaySkuStatusName("VpnGw4")
-	VirtualNetworkGatewaySkuStatusNameVpnGw4AZ         = VirtualNetworkGatewaySkuStatusName("VpnGw4AZ")
-	VirtualNetworkGatewaySkuStatusNameVpnGw5           = VirtualNetworkGatewaySkuStatusName("VpnGw5")
-	VirtualNetworkGatewaySkuStatusNameVpnGw5AZ         = VirtualNetworkGatewaySkuStatusName("VpnGw5AZ")
-)
+	//Capacity: The capacity.
+	Capacity *int `json:"capacity,omitempty"`
 
-// +kubebuilder:validation:Enum={"Basic","ErGw1AZ","ErGw2AZ","ErGw3AZ","HighPerformance","Standard","UltraPerformance","VpnGw1","VpnGw1AZ","VpnGw2","VpnGw2AZ","VpnGw3","VpnGw3AZ","VpnGw4","VpnGw4AZ","VpnGw5","VpnGw5AZ"}
-type VirtualNetworkGatewaySkuStatusTier string
+	//Name: Gateway SKU name.
+	Name *VirtualNetworkGatewaySkuStatusName `json:"name,omitempty"`
 
-const (
-	VirtualNetworkGatewaySkuStatusTierBasic            = VirtualNetworkGatewaySkuStatusTier("Basic")
-	VirtualNetworkGatewaySkuStatusTierErGw1AZ          = VirtualNetworkGatewaySkuStatusTier("ErGw1AZ")
-	VirtualNetworkGatewaySkuStatusTierErGw2AZ          = VirtualNetworkGatewaySkuStatusTier("ErGw2AZ")
-	VirtualNetworkGatewaySkuStatusTierErGw3AZ          = VirtualNetworkGatewaySkuStatusTier("ErGw3AZ")
-	VirtualNetworkGatewaySkuStatusTierHighPerformance  = VirtualNetworkGatewaySkuStatusTier("HighPerformance")
-	VirtualNetworkGatewaySkuStatusTierStandard         = VirtualNetworkGatewaySkuStatusTier("Standard")
-	VirtualNetworkGatewaySkuStatusTierUltraPerformance = VirtualNetworkGatewaySkuStatusTier("UltraPerformance")
-	VirtualNetworkGatewaySkuStatusTierVpnGw1           = VirtualNetworkGatewaySkuStatusTier("VpnGw1")
-	VirtualNetworkGatewaySkuStatusTierVpnGw1AZ         = VirtualNetworkGatewaySkuStatusTier("VpnGw1AZ")
-	VirtualNetworkGatewaySkuStatusTierVpnGw2           = VirtualNetworkGatewaySkuStatusTier("VpnGw2")
-	VirtualNetworkGatewaySkuStatusTierVpnGw2AZ         = VirtualNetworkGatewaySkuStatusTier("VpnGw2AZ")
-	VirtualNetworkGatewaySkuStatusTierVpnGw3           = VirtualNetworkGatewaySkuStatusTier("VpnGw3")
-	VirtualNetworkGatewaySkuStatusTierVpnGw3AZ         = VirtualNetworkGatewaySkuStatusTier("VpnGw3AZ")
-	VirtualNetworkGatewaySkuStatusTierVpnGw4           = VirtualNetworkGatewaySkuStatusTier("VpnGw4")
-	VirtualNetworkGatewaySkuStatusTierVpnGw4AZ         = VirtualNetworkGatewaySkuStatusTier("VpnGw4AZ")
-	VirtualNetworkGatewaySkuStatusTierVpnGw5           = VirtualNetworkGatewaySkuStatusTier("VpnGw5")
-	VirtualNetworkGatewaySkuStatusTierVpnGw5AZ         = VirtualNetworkGatewaySkuStatusTier("VpnGw5AZ")
-)
+	//Tier: Gateway SKU tier.
+	Tier *VirtualNetworkGatewaySkuStatusTier `json:"tier,omitempty"`
+}
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VpnClientConfiguration
 type VpnClientConfiguration struct {
@@ -479,48 +370,50 @@ type VpnClientConfiguration struct {
 	VpnClientRootCertificates []VpnClientRootCertificate `json:"vpnClientRootCertificates,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"IkeV2","OpenVPN","SSTP"}
-type VpnClientConfigurationStatusVpnClientProtocols string
-
-const (
-	VpnClientConfigurationStatusVpnClientProtocolsIkeV2   = VpnClientConfigurationStatusVpnClientProtocols("IkeV2")
-	VpnClientConfigurationStatusVpnClientProtocolsOpenVPN = VpnClientConfigurationStatusVpnClientProtocols("OpenVPN")
-	VpnClientConfigurationStatusVpnClientProtocolsSSTP    = VpnClientConfigurationStatusVpnClientProtocols("SSTP")
-)
-
 //Generated from:
-type VpnClientRevokedCertificate_Status struct {
+type VpnClientConfiguration_Status struct {
 
-	//Etag: A unique read-only string that changes whenever the resource is updated.
-	Etag *string `json:"etag,omitempty"`
+	//AadAudience: The AADAudience property of the VirtualNetworkGateway resource for
+	//vpn client connection used for AAD authentication.
+	AadAudience *string `json:"aadAudience,omitempty"`
 
-	//Id: Resource ID.
-	Id *string `json:"id,omitempty"`
+	//AadIssuer: The AADIssuer property of the VirtualNetworkGateway resource for vpn
+	//client connection used for AAD authentication.
+	AadIssuer *string `json:"aadIssuer,omitempty"`
 
-	//Name: The name of the resource that is unique within a resource group. This name
-	//can be used to access the resource.
-	Name *string `json:"name,omitempty"`
+	//AadTenant: The AADTenant property of the VirtualNetworkGateway resource for vpn
+	//client connection used for AAD authentication.
+	AadTenant *string `json:"aadTenant,omitempty"`
 
-	//Properties: Properties of the vpn client revoked certificate.
-	Properties *VpnClientRevokedCertificatePropertiesFormat_Status `json:"properties,omitempty"`
-}
+	//RadiusServerAddress: The radius server address property of the
+	//VirtualNetworkGateway resource for vpn client connection.
+	RadiusServerAddress *string `json:"radiusServerAddress,omitempty"`
 
-//Generated from:
-type VpnClientRootCertificate_Status struct {
+	//RadiusServerSecret: The radius secret property of the VirtualNetworkGateway
+	//resource for vpn client connection.
+	RadiusServerSecret *string `json:"radiusServerSecret,omitempty"`
 
-	//Etag: A unique read-only string that changes whenever the resource is updated.
-	Etag *string `json:"etag,omitempty"`
+	//RadiusServers: The radiusServers property for multiple radius server
+	//configuration.
+	RadiusServers []RadiusServer_Status `json:"radiusServers,omitempty"`
 
-	//Id: Resource ID.
-	Id *string `json:"id,omitempty"`
+	//VpnClientAddressPool: The reference to the address space resource which
+	//represents Address space for P2S VpnClient.
+	VpnClientAddressPool *AddressSpace_Status `json:"vpnClientAddressPool,omitempty"`
 
-	//Name: The name of the resource that is unique within a resource group. This name
-	//can be used to access the resource.
-	Name *string `json:"name,omitempty"`
+	//VpnClientIpsecPolicies: VpnClientIpsecPolicies for virtual network gateway P2S
+	//client.
+	VpnClientIpsecPolicies []IpsecPolicy_Status `json:"vpnClientIpsecPolicies,omitempty"`
 
-	// +kubebuilder:validation:Required
-	//Properties: Properties of the vpn client root certificate.
-	Properties VpnClientRootCertificatePropertiesFormat_Status `json:"properties"`
+	//VpnClientProtocols: VpnClientProtocols for Virtual network gateway.
+	VpnClientProtocols []VpnClientConfigurationStatusVpnClientProtocols `json:"vpnClientProtocols,omitempty"`
+
+	//VpnClientRevokedCertificates: VpnClientRevokedCertificate for Virtual network
+	//gateway.
+	VpnClientRevokedCertificates []VpnClientRevokedCertificate_Status `json:"vpnClientRevokedCertificates,omitempty"`
+
+	//VpnClientRootCertificates: VpnClientRootCertificate for virtual network gateway.
+	VpnClientRootCertificates []VpnClientRootCertificate_Status `json:"vpnClientRootCertificates,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualNetworkGatewayIPConfigurationPropertiesFormat
@@ -534,6 +427,26 @@ type VirtualNetworkGatewayIPConfigurationPropertiesFormat struct {
 
 	//Subnet: The reference to the subnet resource.
 	Subnet *SubResource `json:"subnet,omitempty"`
+}
+
+//Generated from:
+type VirtualNetworkGatewayIPConfigurationPropertiesFormat_Status struct {
+
+	//PrivateIPAddress: Private IP Address for this gateway.
+	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
+
+	//PrivateIPAllocationMethod: The private IP address allocation method.
+	PrivateIPAllocationMethod *IPAllocationMethod_Status `json:"privateIPAllocationMethod,omitempty"`
+
+	//ProvisioningState: The provisioning state of the virtual network gateway IP
+	//configuration resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//PublicIPAddress: The reference to the public IP resource.
+	PublicIPAddress *SubResource_Status `json:"publicIPAddress,omitempty"`
+
+	//Subnet: The reference to the subnet resource.
+	Subnet *SubResource_Status `json:"subnet,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"Basic","ErGw1AZ","ErGw2AZ","ErGw3AZ","HighPerformance","Standard","UltraPerformance","VpnGw1","VpnGw1AZ","VpnGw2","VpnGw2AZ","VpnGw3","VpnGw3AZ","VpnGw4","VpnGw4AZ","VpnGw5","VpnGw5AZ"}
@@ -560,6 +473,52 @@ const (
 )
 
 // +kubebuilder:validation:Enum={"Basic","ErGw1AZ","ErGw2AZ","ErGw3AZ","HighPerformance","Standard","UltraPerformance","VpnGw1","VpnGw1AZ","VpnGw2","VpnGw2AZ","VpnGw3","VpnGw3AZ","VpnGw4","VpnGw4AZ","VpnGw5","VpnGw5AZ"}
+type VirtualNetworkGatewaySkuStatusName string
+
+const (
+	VirtualNetworkGatewaySkuStatusNameBasic            = VirtualNetworkGatewaySkuStatusName("Basic")
+	VirtualNetworkGatewaySkuStatusNameErGw1AZ          = VirtualNetworkGatewaySkuStatusName("ErGw1AZ")
+	VirtualNetworkGatewaySkuStatusNameErGw2AZ          = VirtualNetworkGatewaySkuStatusName("ErGw2AZ")
+	VirtualNetworkGatewaySkuStatusNameErGw3AZ          = VirtualNetworkGatewaySkuStatusName("ErGw3AZ")
+	VirtualNetworkGatewaySkuStatusNameHighPerformance  = VirtualNetworkGatewaySkuStatusName("HighPerformance")
+	VirtualNetworkGatewaySkuStatusNameStandard         = VirtualNetworkGatewaySkuStatusName("Standard")
+	VirtualNetworkGatewaySkuStatusNameUltraPerformance = VirtualNetworkGatewaySkuStatusName("UltraPerformance")
+	VirtualNetworkGatewaySkuStatusNameVpnGw1           = VirtualNetworkGatewaySkuStatusName("VpnGw1")
+	VirtualNetworkGatewaySkuStatusNameVpnGw1AZ         = VirtualNetworkGatewaySkuStatusName("VpnGw1AZ")
+	VirtualNetworkGatewaySkuStatusNameVpnGw2           = VirtualNetworkGatewaySkuStatusName("VpnGw2")
+	VirtualNetworkGatewaySkuStatusNameVpnGw2AZ         = VirtualNetworkGatewaySkuStatusName("VpnGw2AZ")
+	VirtualNetworkGatewaySkuStatusNameVpnGw3           = VirtualNetworkGatewaySkuStatusName("VpnGw3")
+	VirtualNetworkGatewaySkuStatusNameVpnGw3AZ         = VirtualNetworkGatewaySkuStatusName("VpnGw3AZ")
+	VirtualNetworkGatewaySkuStatusNameVpnGw4           = VirtualNetworkGatewaySkuStatusName("VpnGw4")
+	VirtualNetworkGatewaySkuStatusNameVpnGw4AZ         = VirtualNetworkGatewaySkuStatusName("VpnGw4AZ")
+	VirtualNetworkGatewaySkuStatusNameVpnGw5           = VirtualNetworkGatewaySkuStatusName("VpnGw5")
+	VirtualNetworkGatewaySkuStatusNameVpnGw5AZ         = VirtualNetworkGatewaySkuStatusName("VpnGw5AZ")
+)
+
+// +kubebuilder:validation:Enum={"Basic","ErGw1AZ","ErGw2AZ","ErGw3AZ","HighPerformance","Standard","UltraPerformance","VpnGw1","VpnGw1AZ","VpnGw2","VpnGw2AZ","VpnGw3","VpnGw3AZ","VpnGw4","VpnGw4AZ","VpnGw5","VpnGw5AZ"}
+type VirtualNetworkGatewaySkuStatusTier string
+
+const (
+	VirtualNetworkGatewaySkuStatusTierBasic            = VirtualNetworkGatewaySkuStatusTier("Basic")
+	VirtualNetworkGatewaySkuStatusTierErGw1AZ          = VirtualNetworkGatewaySkuStatusTier("ErGw1AZ")
+	VirtualNetworkGatewaySkuStatusTierErGw2AZ          = VirtualNetworkGatewaySkuStatusTier("ErGw2AZ")
+	VirtualNetworkGatewaySkuStatusTierErGw3AZ          = VirtualNetworkGatewaySkuStatusTier("ErGw3AZ")
+	VirtualNetworkGatewaySkuStatusTierHighPerformance  = VirtualNetworkGatewaySkuStatusTier("HighPerformance")
+	VirtualNetworkGatewaySkuStatusTierStandard         = VirtualNetworkGatewaySkuStatusTier("Standard")
+	VirtualNetworkGatewaySkuStatusTierUltraPerformance = VirtualNetworkGatewaySkuStatusTier("UltraPerformance")
+	VirtualNetworkGatewaySkuStatusTierVpnGw1           = VirtualNetworkGatewaySkuStatusTier("VpnGw1")
+	VirtualNetworkGatewaySkuStatusTierVpnGw1AZ         = VirtualNetworkGatewaySkuStatusTier("VpnGw1AZ")
+	VirtualNetworkGatewaySkuStatusTierVpnGw2           = VirtualNetworkGatewaySkuStatusTier("VpnGw2")
+	VirtualNetworkGatewaySkuStatusTierVpnGw2AZ         = VirtualNetworkGatewaySkuStatusTier("VpnGw2AZ")
+	VirtualNetworkGatewaySkuStatusTierVpnGw3           = VirtualNetworkGatewaySkuStatusTier("VpnGw3")
+	VirtualNetworkGatewaySkuStatusTierVpnGw3AZ         = VirtualNetworkGatewaySkuStatusTier("VpnGw3AZ")
+	VirtualNetworkGatewaySkuStatusTierVpnGw4           = VirtualNetworkGatewaySkuStatusTier("VpnGw4")
+	VirtualNetworkGatewaySkuStatusTierVpnGw4AZ         = VirtualNetworkGatewaySkuStatusTier("VpnGw4AZ")
+	VirtualNetworkGatewaySkuStatusTierVpnGw5           = VirtualNetworkGatewaySkuStatusTier("VpnGw5")
+	VirtualNetworkGatewaySkuStatusTierVpnGw5AZ         = VirtualNetworkGatewaySkuStatusTier("VpnGw5AZ")
+)
+
+// +kubebuilder:validation:Enum={"Basic","ErGw1AZ","ErGw2AZ","ErGw3AZ","HighPerformance","Standard","UltraPerformance","VpnGw1","VpnGw1AZ","VpnGw2","VpnGw2AZ","VpnGw3","VpnGw3AZ","VpnGw4","VpnGw4AZ","VpnGw5","VpnGw5AZ"}
 type VirtualNetworkGatewaySkuTier string
 
 const (
@@ -583,6 +542,15 @@ const (
 )
 
 // +kubebuilder:validation:Enum={"IkeV2","OpenVPN","SSTP"}
+type VpnClientConfigurationStatusVpnClientProtocols string
+
+const (
+	VpnClientConfigurationStatusVpnClientProtocolsIkeV2   = VpnClientConfigurationStatusVpnClientProtocols("IkeV2")
+	VpnClientConfigurationStatusVpnClientProtocolsOpenVPN = VpnClientConfigurationStatusVpnClientProtocols("OpenVPN")
+	VpnClientConfigurationStatusVpnClientProtocolsSSTP    = VpnClientConfigurationStatusVpnClientProtocols("SSTP")
+)
+
+// +kubebuilder:validation:Enum={"IkeV2","OpenVPN","SSTP"}
 type VpnClientConfigurationVpnClientProtocols string
 
 const (
@@ -603,14 +571,20 @@ type VpnClientRevokedCertificate struct {
 }
 
 //Generated from:
-type VpnClientRevokedCertificatePropertiesFormat_Status struct {
+type VpnClientRevokedCertificate_Status struct {
 
-	//ProvisioningState: The provisioning state of the VPN client revoked certificate
-	//resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+	//Etag: A unique read-only string that changes whenever the resource is updated.
+	Etag *string `json:"etag,omitempty"`
 
-	//Thumbprint: The revoked VPN client certificate thumbprint.
-	Thumbprint *string `json:"thumbprint,omitempty"`
+	//Id: Resource ID.
+	Id *string `json:"id,omitempty"`
+
+	//Name: The name of the resource that is unique within a resource group. This name
+	//can be used to access the resource.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the vpn client revoked certificate.
+	Properties *VpnClientRevokedCertificatePropertiesFormat_Status `json:"properties,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VpnClientRootCertificate
@@ -626,15 +600,21 @@ type VpnClientRootCertificate struct {
 }
 
 //Generated from:
-type VpnClientRootCertificatePropertiesFormat_Status struct {
+type VpnClientRootCertificate_Status struct {
 
-	//ProvisioningState: The provisioning state of the VPN client root certificate
-	//resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+	//Etag: A unique read-only string that changes whenever the resource is updated.
+	Etag *string `json:"etag,omitempty"`
+
+	//Id: Resource ID.
+	Id *string `json:"id,omitempty"`
+
+	//Name: The name of the resource that is unique within a resource group. This name
+	//can be used to access the resource.
+	Name *string `json:"name,omitempty"`
 
 	// +kubebuilder:validation:Required
-	//PublicCertData: The certificate public data.
-	PublicCertData string `json:"publicCertData"`
+	//Properties: Properties of the vpn client root certificate.
+	Properties VpnClientRootCertificatePropertiesFormat_Status `json:"properties"`
 }
 
 // +kubebuilder:validation:Enum={"Dynamic","Static"}
@@ -652,8 +632,31 @@ type VpnClientRevokedCertificatePropertiesFormat struct {
 	Thumbprint *string `json:"thumbprint,omitempty"`
 }
 
+//Generated from:
+type VpnClientRevokedCertificatePropertiesFormat_Status struct {
+
+	//ProvisioningState: The provisioning state of the VPN client revoked certificate
+	//resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//Thumbprint: The revoked VPN client certificate thumbprint.
+	Thumbprint *string `json:"thumbprint,omitempty"`
+}
+
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VpnClientRootCertificatePropertiesFormat
 type VpnClientRootCertificatePropertiesFormat struct {
+
+	// +kubebuilder:validation:Required
+	//PublicCertData: The certificate public data.
+	PublicCertData string `json:"publicCertData"`
+}
+
+//Generated from:
+type VpnClientRootCertificatePropertiesFormat_Status struct {
+
+	//ProvisioningState: The provisioning state of the VPN client root certificate
+	//resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 
 	// +kubebuilder:validation:Required
 	//PublicCertData: The certificate public data.

@@ -27,8 +27,15 @@ type ApplicationGatewaysList struct {
 	Items           []ApplicationGateways `json:"items"`
 }
 
-//Generated from:
 type ApplicationGateway_Status struct {
+	AtProvider ApplicationGatewaysObservation `json:"atProvider"`
+}
+
+type ApplicationGateways_Spec struct {
+	ForProvider ApplicationGatewaysParameters `json:"forProvider"`
+}
+
+type ApplicationGatewaysObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -59,8 +66,150 @@ type ApplicationGateway_Status struct {
 	Zones []string `json:"zones,omitempty"`
 }
 
-type ApplicationGateways_Spec struct {
-	ForProvider ApplicationGatewaysParameters `json:"forProvider"`
+type ApplicationGatewaysParameters struct {
+
+	// +kubebuilder:validation:Required
+	//ApiVersion: API Version of the resource type, optional when apiProfile is used
+	//on the template
+	ApiVersion ApplicationGatewaysSpecApiVersion `json:"apiVersion"`
+	Comments   *string                           `json:"comments,omitempty"`
+
+	//Condition: Condition of the resource
+	Condition *bool                   `json:"condition,omitempty"`
+	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
+
+	//DependsOn: Collection of resources this resource depends on
+	DependsOn []string `json:"dependsOn,omitempty"`
+
+	//Identity: The identity of the application gateway, if configured.
+	Identity *ManagedServiceIdentity `json:"identity,omitempty"`
+
+	//Location: Location to deploy resource to
+	Location string `json:"location,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Name: Name of the resource
+	Name string `json:"name"`
+
+	// +kubebuilder:validation:Required
+	//Properties: Properties of the application gateway.
+	Properties ApplicationGatewayPropertiesFormat `json:"properties"`
+
+	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
+	//setting the scope for extension resources 2) deploying resources to the tenant
+	//scope in non-tenant scope deployments
+	Scope *string `json:"scope,omitempty"`
+
+	//Tags: Name-value pairs to add to the resource
+	Tags map[string]string `json:"tags,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Type: Resource type
+	Type ApplicationGatewaysSpecType `json:"type"`
+
+	//Zones: A list of availability zones denoting where the resource needs to come
+	//from.
+	Zones []string `json:"zones,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayPropertiesFormat
+type ApplicationGatewayPropertiesFormat struct {
+
+	//AuthenticationCertificates: Authentication certificates of the application
+	//gateway resource. For default limits, see [Application Gateway
+	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+	AuthenticationCertificates []ApplicationGatewayAuthenticationCertificate `json:"authenticationCertificates,omitempty"`
+
+	//AutoscaleConfiguration: Autoscale Configuration.
+	AutoscaleConfiguration *ApplicationGatewayAutoscaleConfiguration `json:"autoscaleConfiguration,omitempty"`
+
+	//BackendAddressPools: Backend address pool of the application gateway resource.
+	//For default limits, see [Application Gateway
+	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+	BackendAddressPools []ApplicationGatewayBackendAddressPool `json:"backendAddressPools,omitempty"`
+
+	//BackendHttpSettingsCollection: Backend http settings of the application gateway
+	//resource. For default limits, see [Application Gateway
+	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+	BackendHttpSettingsCollection []ApplicationGatewayBackendHttpSettings `json:"backendHttpSettingsCollection,omitempty"`
+
+	//CustomErrorConfigurations: Custom error configurations of the application
+	//gateway resource.
+	CustomErrorConfigurations []ApplicationGatewayCustomError `json:"customErrorConfigurations,omitempty"`
+
+	//EnableFips: Whether FIPS is enabled on the application gateway resource.
+	EnableFips *bool `json:"enableFips,omitempty"`
+
+	//EnableHttp2: Whether HTTP2 is enabled on the application gateway resource.
+	EnableHttp2 *bool `json:"enableHttp2,omitempty"`
+
+	//FirewallPolicy: Reference to the FirewallPolicy resource.
+	FirewallPolicy *SubResource `json:"firewallPolicy,omitempty"`
+
+	//ForceFirewallPolicyAssociation: If true, associates a firewall policy with an
+	//application gateway regardless whether the policy differs from the WAF Config.
+	ForceFirewallPolicyAssociation *bool `json:"forceFirewallPolicyAssociation,omitempty"`
+
+	//FrontendIPConfigurations: Frontend IP addresses of the application gateway
+	//resource. For default limits, see [Application Gateway
+	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+	FrontendIPConfigurations []ApplicationGatewayFrontendIPConfiguration `json:"frontendIPConfigurations,omitempty"`
+
+	//FrontendPorts: Frontend ports of the application gateway resource. For default
+	//limits, see [Application Gateway
+	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+	FrontendPorts []ApplicationGatewayFrontendPort `json:"frontendPorts,omitempty"`
+
+	//GatewayIPConfigurations: Subnets of the application gateway resource. For
+	//default limits, see [Application Gateway
+	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+	GatewayIPConfigurations []ApplicationGatewayIPConfiguration `json:"gatewayIPConfigurations,omitempty"`
+
+	//HttpListeners: Http listeners of the application gateway resource. For default
+	//limits, see [Application Gateway
+	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+	HttpListeners []ApplicationGatewayHttpListener `json:"httpListeners,omitempty"`
+
+	//PrivateLinkConfigurations: PrivateLink configurations on application gateway.
+	PrivateLinkConfigurations []ApplicationGatewayPrivateLinkConfiguration `json:"privateLinkConfigurations,omitempty"`
+
+	//Probes: Probes of the application gateway resource.
+	Probes []ApplicationGatewayProbe `json:"probes,omitempty"`
+
+	//RedirectConfigurations: Redirect configurations of the application gateway
+	//resource. For default limits, see [Application Gateway
+	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+	RedirectConfigurations []ApplicationGatewayRedirectConfiguration `json:"redirectConfigurations,omitempty"`
+
+	//RequestRoutingRules: Request routing rules of the application gateway resource.
+	RequestRoutingRules []ApplicationGatewayRequestRoutingRule `json:"requestRoutingRules,omitempty"`
+
+	//RewriteRuleSets: Rewrite rules for the application gateway resource.
+	RewriteRuleSets []ApplicationGatewayRewriteRuleSet `json:"rewriteRuleSets,omitempty"`
+
+	//Sku: SKU of the application gateway resource.
+	Sku *ApplicationGatewaySku `json:"sku,omitempty"`
+
+	//SslCertificates: SSL certificates of the application gateway resource. For
+	//default limits, see [Application Gateway
+	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+	SslCertificates []ApplicationGatewaySslCertificate `json:"sslCertificates,omitempty"`
+
+	//SslPolicy: SSL policy of the application gateway resource.
+	SslPolicy *ApplicationGatewaySslPolicy `json:"sslPolicy,omitempty"`
+
+	//TrustedRootCertificates: Trusted Root certificates of the application gateway
+	//resource. For default limits, see [Application Gateway
+	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+	TrustedRootCertificates []ApplicationGatewayTrustedRootCertificate `json:"trustedRootCertificates,omitempty"`
+
+	//UrlPathMaps: URL path map of the application gateway resource. For default
+	//limits, see [Application Gateway
+	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+	UrlPathMaps []ApplicationGatewayUrlPathMap `json:"urlPathMaps,omitempty"`
+
+	//WebApplicationFirewallConfiguration: Web application firewall configuration.
+	WebApplicationFirewallConfiguration *ApplicationGatewayWebApplicationFirewallConfiguration `json:"webApplicationFirewallConfiguration,omitempty"`
 }
 
 //Generated from:
@@ -175,50 +324,30 @@ type ApplicationGatewayPropertiesFormat_Status struct {
 	WebApplicationFirewallConfiguration *ApplicationGatewayWebApplicationFirewallConfiguration_Status `json:"webApplicationFirewallConfiguration,omitempty"`
 }
 
-type ApplicationGatewaysParameters struct {
+// +kubebuilder:validation:Enum={"2020-05-01"}
+type ApplicationGatewaysSpecApiVersion string
 
-	// +kubebuilder:validation:Required
-	//ApiVersion: API Version of the resource type, optional when apiProfile is used
-	//on the template
-	ApiVersion ApplicationGatewaysSpecApiVersion `json:"apiVersion"`
-	Comments   *string                           `json:"comments,omitempty"`
+const ApplicationGatewaysSpecApiVersion20200501 = ApplicationGatewaysSpecApiVersion("2020-05-01")
 
-	//Condition: Condition of the resource
-	Condition *bool                   `json:"condition,omitempty"`
-	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
+// +kubebuilder:validation:Enum={"Microsoft.Network/applicationGateways"}
+type ApplicationGatewaysSpecType string
 
-	//DependsOn: Collection of resources this resource depends on
-	DependsOn []string `json:"dependsOn,omitempty"`
+const ApplicationGatewaysSpecTypeMicrosoftNetworkApplicationGateways = ApplicationGatewaysSpecType("Microsoft.Network/applicationGateways")
 
-	//Identity: The identity of the application gateway, if configured.
-	Identity *ManagedServiceIdentity `json:"identity,omitempty"`
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ManagedServiceIdentity
+type ManagedServiceIdentity struct {
 
-	//Location: Location to deploy resource to
-	Location string `json:"location,omitempty"`
+	//Type: The type of identity used for the resource. The type 'SystemAssigned,
+	//UserAssigned' includes both an implicitly created identity and a set of user
+	//assigned identities. The type 'None' will remove any identities from the virtual
+	//machine.
+	Type *ManagedServiceIdentityType `json:"type,omitempty"`
 
-	// +kubebuilder:validation:Required
-	//Name: Name of the resource
-	Name string `json:"name"`
-
-	// +kubebuilder:validation:Required
-	//Properties: Properties of the application gateway.
-	Properties ApplicationGatewayPropertiesFormat `json:"properties"`
-
-	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
-	//setting the scope for extension resources 2) deploying resources to the tenant
-	//scope in non-tenant scope deployments
-	Scope *string `json:"scope,omitempty"`
-
-	//Tags: Name-value pairs to add to the resource
-	Tags map[string]string `json:"tags,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Type: Resource type
-	Type ApplicationGatewaysSpecType `json:"type"`
-
-	//Zones: A list of availability zones denoting where the resource needs to come
-	//from.
-	Zones []string `json:"zones,omitempty"`
+	//UserAssignedIdentities: The list of user identities associated with resource.
+	//The user identity dictionary key references will be ARM resource ids in the
+	//form:
+	//'/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'.
+	UserAssignedIdentities interface{} `json:"userAssignedIdentities,omitempty"`
 }
 
 //Generated from:
@@ -245,6 +374,17 @@ type ManagedServiceIdentity_Status struct {
 	UserAssignedIdentities map[string]ManagedServiceIdentity_Status_UserAssignedIdentities `json:"userAssignedIdentities,omitempty"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayAuthenticationCertificate
+type ApplicationGatewayAuthenticationCertificate struct {
+
+	//Name: Name of the authentication certificate that is unique within an
+	//Application Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway authentication certificate.
+	Properties *ApplicationGatewayAuthenticationCertificatePropertiesFormat `json:"properties,omitempty"`
+}
+
 //Generated from:
 type ApplicationGatewayAuthenticationCertificate_Status struct {
 
@@ -265,6 +405,17 @@ type ApplicationGatewayAuthenticationCertificate_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayAutoscaleConfiguration
+type ApplicationGatewayAutoscaleConfiguration struct {
+
+	//MaxCapacity: Upper bound on number of Application Gateway capacity.
+	MaxCapacity *int `json:"maxCapacity,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//MinCapacity: Lower bound on number of Application Gateway capacity.
+	MinCapacity int `json:"minCapacity"`
+}
+
 //Generated from:
 type ApplicationGatewayAutoscaleConfiguration_Status struct {
 
@@ -274,6 +425,17 @@ type ApplicationGatewayAutoscaleConfiguration_Status struct {
 	// +kubebuilder:validation:Required
 	//MinCapacity: Lower bound on number of Application Gateway capacity.
 	MinCapacity int `json:"minCapacity"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayBackendAddressPool
+type ApplicationGatewayBackendAddressPool struct {
+
+	//Name: Name of the backend address pool that is unique within an Application
+	//Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway backend address pool.
+	Properties *ApplicationGatewayBackendAddressPoolPropertiesFormat `json:"properties,omitempty"`
 }
 
 //Generated from:
@@ -296,6 +458,17 @@ type ApplicationGatewayBackendAddressPool_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayBackendHttpSettings
+type ApplicationGatewayBackendHttpSettings struct {
+
+	//Name: Name of the backend http settings that is unique within an Application
+	//Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway backend HTTP settings.
+	Properties *ApplicationGatewayBackendHttpSettingsPropertiesFormat `json:"properties,omitempty"`
+}
+
 //Generated from:
 type ApplicationGatewayBackendHttpSettings_Status struct {
 
@@ -316,6 +489,16 @@ type ApplicationGatewayBackendHttpSettings_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayCustomError
+type ApplicationGatewayCustomError struct {
+
+	//CustomErrorPageUrl: Error page URL of the application gateway customer error.
+	CustomErrorPageUrl *string `json:"customErrorPageUrl,omitempty"`
+
+	//StatusCode: Status code of the application gateway customer error.
+	StatusCode *ApplicationGatewayCustomErrorStatusCode `json:"statusCode,omitempty"`
+}
+
 //Generated from:
 type ApplicationGatewayCustomError_Status struct {
 
@@ -324,6 +507,17 @@ type ApplicationGatewayCustomError_Status struct {
 
 	//StatusCode: Status code of the application gateway customer error.
 	StatusCode *ApplicationGatewayCustomErrorStatusStatusCode `json:"statusCode,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayFrontendIPConfiguration
+type ApplicationGatewayFrontendIPConfiguration struct {
+
+	//Name: Name of the frontend IP configuration that is unique within an Application
+	//Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway frontend IP configuration.
+	Properties *ApplicationGatewayFrontendIPConfigurationPropertiesFormat `json:"properties,omitempty"`
 }
 
 //Generated from:
@@ -346,6 +540,16 @@ type ApplicationGatewayFrontendIPConfiguration_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayFrontendPort
+type ApplicationGatewayFrontendPort struct {
+
+	//Name: Name of the frontend port that is unique within an Application Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway frontend port.
+	Properties *ApplicationGatewayFrontendPortPropertiesFormat `json:"properties,omitempty"`
+}
+
 //Generated from:
 type ApplicationGatewayFrontendPort_Status struct {
 
@@ -363,6 +567,16 @@ type ApplicationGatewayFrontendPort_Status struct {
 
 	//Type: Type of the resource.
 	Type *string `json:"type,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayHttpListener
+type ApplicationGatewayHttpListener struct {
+
+	//Name: Name of the HTTP listener that is unique within an Application Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway HTTP listener.
+	Properties *ApplicationGatewayHttpListenerPropertiesFormat `json:"properties,omitempty"`
 }
 
 //Generated from:
@@ -384,6 +598,16 @@ type ApplicationGatewayHttpListener_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayIPConfiguration
+type ApplicationGatewayIPConfiguration struct {
+
+	//Name: Name of the IP configuration that is unique within an Application Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway IP configuration.
+	Properties *ApplicationGatewayIPConfigurationPropertiesFormat `json:"properties,omitempty"`
+}
+
 //Generated from:
 type ApplicationGatewayIPConfiguration_Status struct {
 
@@ -401,6 +625,17 @@ type ApplicationGatewayIPConfiguration_Status struct {
 
 	//Type: Type of the resource.
 	Type *string `json:"type,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayPrivateLinkConfiguration
+type ApplicationGatewayPrivateLinkConfiguration struct {
+
+	//Name: Name of the private link configuration that is unique within an
+	//Application Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway private link configuration.
+	Properties *ApplicationGatewayPrivateLinkConfigurationProperties `json:"properties,omitempty"`
 }
 
 //Generated from:
@@ -423,6 +658,16 @@ type ApplicationGatewayPrivateLinkConfiguration_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayProbe
+type ApplicationGatewayProbe struct {
+
+	//Name: Name of the probe that is unique within an Application Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway probe.
+	Properties *ApplicationGatewayProbePropertiesFormat `json:"properties,omitempty"`
+}
+
 //Generated from:
 type ApplicationGatewayProbe_Status struct {
 
@@ -442,106 +687,6 @@ type ApplicationGatewayProbe_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayPropertiesFormat
-type ApplicationGatewayPropertiesFormat struct {
-
-	//AuthenticationCertificates: Authentication certificates of the application
-	//gateway resource. For default limits, see [Application Gateway
-	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
-	AuthenticationCertificates []ApplicationGatewayAuthenticationCertificate `json:"authenticationCertificates,omitempty"`
-
-	//AutoscaleConfiguration: Autoscale Configuration.
-	AutoscaleConfiguration *ApplicationGatewayAutoscaleConfiguration `json:"autoscaleConfiguration,omitempty"`
-
-	//BackendAddressPools: Backend address pool of the application gateway resource.
-	//For default limits, see [Application Gateway
-	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
-	BackendAddressPools []ApplicationGatewayBackendAddressPool `json:"backendAddressPools,omitempty"`
-
-	//BackendHttpSettingsCollection: Backend http settings of the application gateway
-	//resource. For default limits, see [Application Gateway
-	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
-	BackendHttpSettingsCollection []ApplicationGatewayBackendHttpSettings `json:"backendHttpSettingsCollection,omitempty"`
-
-	//CustomErrorConfigurations: Custom error configurations of the application
-	//gateway resource.
-	CustomErrorConfigurations []ApplicationGatewayCustomError `json:"customErrorConfigurations,omitempty"`
-
-	//EnableFips: Whether FIPS is enabled on the application gateway resource.
-	EnableFips *bool `json:"enableFips,omitempty"`
-
-	//EnableHttp2: Whether HTTP2 is enabled on the application gateway resource.
-	EnableHttp2 *bool `json:"enableHttp2,omitempty"`
-
-	//FirewallPolicy: Reference to the FirewallPolicy resource.
-	FirewallPolicy *SubResource `json:"firewallPolicy,omitempty"`
-
-	//ForceFirewallPolicyAssociation: If true, associates a firewall policy with an
-	//application gateway regardless whether the policy differs from the WAF Config.
-	ForceFirewallPolicyAssociation *bool `json:"forceFirewallPolicyAssociation,omitempty"`
-
-	//FrontendIPConfigurations: Frontend IP addresses of the application gateway
-	//resource. For default limits, see [Application Gateway
-	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
-	FrontendIPConfigurations []ApplicationGatewayFrontendIPConfiguration `json:"frontendIPConfigurations,omitempty"`
-
-	//FrontendPorts: Frontend ports of the application gateway resource. For default
-	//limits, see [Application Gateway
-	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
-	FrontendPorts []ApplicationGatewayFrontendPort `json:"frontendPorts,omitempty"`
-
-	//GatewayIPConfigurations: Subnets of the application gateway resource. For
-	//default limits, see [Application Gateway
-	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
-	GatewayIPConfigurations []ApplicationGatewayIPConfiguration `json:"gatewayIPConfigurations,omitempty"`
-
-	//HttpListeners: Http listeners of the application gateway resource. For default
-	//limits, see [Application Gateway
-	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
-	HttpListeners []ApplicationGatewayHttpListener `json:"httpListeners,omitempty"`
-
-	//PrivateLinkConfigurations: PrivateLink configurations on application gateway.
-	PrivateLinkConfigurations []ApplicationGatewayPrivateLinkConfiguration `json:"privateLinkConfigurations,omitempty"`
-
-	//Probes: Probes of the application gateway resource.
-	Probes []ApplicationGatewayProbe `json:"probes,omitempty"`
-
-	//RedirectConfigurations: Redirect configurations of the application gateway
-	//resource. For default limits, see [Application Gateway
-	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
-	RedirectConfigurations []ApplicationGatewayRedirectConfiguration `json:"redirectConfigurations,omitempty"`
-
-	//RequestRoutingRules: Request routing rules of the application gateway resource.
-	RequestRoutingRules []ApplicationGatewayRequestRoutingRule `json:"requestRoutingRules,omitempty"`
-
-	//RewriteRuleSets: Rewrite rules for the application gateway resource.
-	RewriteRuleSets []ApplicationGatewayRewriteRuleSet `json:"rewriteRuleSets,omitempty"`
-
-	//Sku: SKU of the application gateway resource.
-	Sku *ApplicationGatewaySku `json:"sku,omitempty"`
-
-	//SslCertificates: SSL certificates of the application gateway resource. For
-	//default limits, see [Application Gateway
-	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
-	SslCertificates []ApplicationGatewaySslCertificate `json:"sslCertificates,omitempty"`
-
-	//SslPolicy: SSL policy of the application gateway resource.
-	SslPolicy *ApplicationGatewaySslPolicy `json:"sslPolicy,omitempty"`
-
-	//TrustedRootCertificates: Trusted Root certificates of the application gateway
-	//resource. For default limits, see [Application Gateway
-	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
-	TrustedRootCertificates []ApplicationGatewayTrustedRootCertificate `json:"trustedRootCertificates,omitempty"`
-
-	//UrlPathMaps: URL path map of the application gateway resource. For default
-	//limits, see [Application Gateway
-	//limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
-	UrlPathMaps []ApplicationGatewayUrlPathMap `json:"urlPathMaps,omitempty"`
-
-	//WebApplicationFirewallConfiguration: Web application firewall configuration.
-	WebApplicationFirewallConfiguration *ApplicationGatewayWebApplicationFirewallConfiguration `json:"webApplicationFirewallConfiguration,omitempty"`
-}
-
 // +kubebuilder:validation:Enum={"Running","Starting","Stopped","Stopping"}
 type ApplicationGatewayPropertiesFormatStatusOperationalState string
 
@@ -551,6 +696,17 @@ const (
 	ApplicationGatewayPropertiesFormatStatusOperationalStateStopped  = ApplicationGatewayPropertiesFormatStatusOperationalState("Stopped")
 	ApplicationGatewayPropertiesFormatStatusOperationalStateStopping = ApplicationGatewayPropertiesFormatStatusOperationalState("Stopping")
 )
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRedirectConfiguration
+type ApplicationGatewayRedirectConfiguration struct {
+
+	//Name: Name of the redirect configuration that is unique within an Application
+	//Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway redirect configuration.
+	Properties *ApplicationGatewayRedirectConfigurationPropertiesFormat `json:"properties,omitempty"`
+}
 
 //Generated from:
 type ApplicationGatewayRedirectConfiguration_Status struct {
@@ -570,6 +726,17 @@ type ApplicationGatewayRedirectConfiguration_Status struct {
 
 	//Type: Type of the resource.
 	Type *string `json:"type,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRequestRoutingRule
+type ApplicationGatewayRequestRoutingRule struct {
+
+	//Name: Name of the request routing rule that is unique within an Application
+	//Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway request routing rule.
+	Properties *ApplicationGatewayRequestRoutingRulePropertiesFormat `json:"properties,omitempty"`
 }
 
 //Generated from:
@@ -592,6 +759,16 @@ type ApplicationGatewayRequestRoutingRule_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRewriteRuleSet
+type ApplicationGatewayRewriteRuleSet struct {
+
+	//Name: Name of the rewrite rule set that is unique within an Application Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway rewrite rule set.
+	Properties *ApplicationGatewayRewriteRuleSetPropertiesFormat `json:"properties,omitempty"`
+}
+
 //Generated from:
 type ApplicationGatewayRewriteRuleSet_Status struct {
 
@@ -608,6 +785,19 @@ type ApplicationGatewayRewriteRuleSet_Status struct {
 	Properties *ApplicationGatewayRewriteRuleSetPropertiesFormat_Status `json:"properties,omitempty"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewaySku
+type ApplicationGatewaySku struct {
+
+	//Capacity: Capacity (instance count) of an application gateway.
+	Capacity *int `json:"capacity,omitempty"`
+
+	//Name: Name of an application gateway SKU.
+	Name *ApplicationGatewaySkuName `json:"name,omitempty"`
+
+	//Tier: Tier of an application gateway.
+	Tier *ApplicationGatewaySkuTier `json:"tier,omitempty"`
+}
+
 //Generated from:
 type ApplicationGatewaySku_Status struct {
 
@@ -619,6 +809,16 @@ type ApplicationGatewaySku_Status struct {
 
 	//Tier: Tier of an application gateway.
 	Tier *ApplicationGatewaySkuStatusTier `json:"tier,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewaySslCertificate
+type ApplicationGatewaySslCertificate struct {
+
+	//Name: Name of the SSL certificate that is unique within an Application Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway SSL certificate.
+	Properties *ApplicationGatewaySslCertificatePropertiesFormat `json:"properties,omitempty"`
 }
 
 //Generated from:
@@ -638,6 +838,27 @@ type ApplicationGatewaySslCertificate_Status struct {
 
 	//Type: Type of the resource.
 	Type *string `json:"type,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewaySslPolicy
+type ApplicationGatewaySslPolicy struct {
+
+	//CipherSuites: Ssl cipher suites to be enabled in the specified order to
+	//application gateway.
+	CipherSuites []ApplicationGatewaySslPolicyCipherSuites `json:"cipherSuites,omitempty"`
+
+	//DisabledSslProtocols: Ssl protocols to be disabled on application gateway.
+	DisabledSslProtocols []ApplicationGatewaySslPolicyDisabledSslProtocols `json:"disabledSslProtocols,omitempty"`
+
+	//MinProtocolVersion: Minimum version of Ssl protocol to be supported on
+	//application gateway.
+	MinProtocolVersion *ApplicationGatewaySslPolicyMinProtocolVersion `json:"minProtocolVersion,omitempty"`
+
+	//PolicyName: Name of Ssl predefined policy.
+	PolicyName *ApplicationGatewaySslPolicyPolicyName `json:"policyName,omitempty"`
+
+	//PolicyType: Type of Ssl Policy.
+	PolicyType *ApplicationGatewaySslPolicyPolicyType `json:"policyType,omitempty"`
 }
 
 //Generated from:
@@ -661,6 +882,17 @@ type ApplicationGatewaySslPolicy_Status struct {
 	PolicyType *ApplicationGatewaySslPolicyStatusPolicyType `json:"policyType,omitempty"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayTrustedRootCertificate
+type ApplicationGatewayTrustedRootCertificate struct {
+
+	//Name: Name of the trusted root certificate that is unique within an Application
+	//Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway trusted root certificate.
+	Properties *ApplicationGatewayTrustedRootCertificatePropertiesFormat `json:"properties,omitempty"`
+}
+
 //Generated from:
 type ApplicationGatewayTrustedRootCertificate_Status struct {
 
@@ -681,6 +913,16 @@ type ApplicationGatewayTrustedRootCertificate_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayUrlPathMap
+type ApplicationGatewayUrlPathMap struct {
+
+	//Name: Name of the URL path map that is unique within an Application Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway URL path map.
+	Properties *ApplicationGatewayUrlPathMapPropertiesFormat `json:"properties,omitempty"`
+}
+
 //Generated from:
 type ApplicationGatewayUrlPathMap_Status struct {
 
@@ -698,6 +940,45 @@ type ApplicationGatewayUrlPathMap_Status struct {
 
 	//Type: Type of the resource.
 	Type *string `json:"type,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayWebApplicationFirewallConfiguration
+type ApplicationGatewayWebApplicationFirewallConfiguration struct {
+
+	//DisabledRuleGroups: The disabled rule groups.
+	DisabledRuleGroups []ApplicationGatewayFirewallDisabledRuleGroup `json:"disabledRuleGroups,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Enabled: Whether the web application firewall is enabled or not.
+	Enabled bool `json:"enabled"`
+
+	//Exclusions: The exclusion list.
+	Exclusions []ApplicationGatewayFirewallExclusion `json:"exclusions,omitempty"`
+
+	//FileUploadLimitInMb: Maximum file upload size in Mb for WAF.
+	FileUploadLimitInMb *int `json:"fileUploadLimitInMb,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//FirewallMode: Web application firewall mode.
+	FirewallMode ApplicationGatewayWebApplicationFirewallConfigurationFirewallMode `json:"firewallMode"`
+
+	//MaxRequestBodySize: Maximum request body size for WAF.
+	MaxRequestBodySize *int `json:"maxRequestBodySize,omitempty"`
+
+	//MaxRequestBodySizeInKb: Maximum request body size in Kb for WAF.
+	MaxRequestBodySizeInKb *int `json:"maxRequestBodySizeInKb,omitempty"`
+
+	//RequestBodyCheck: Whether allow WAF to check request Body.
+	RequestBodyCheck *bool `json:"requestBodyCheck,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//RuleSetType: The type of the web application firewall rule set. Possible values
+	//are: 'OWASP'.
+	RuleSetType string `json:"ruleSetType"`
+
+	// +kubebuilder:validation:Required
+	//RuleSetVersion: The version of the rule set type.
+	RuleSetVersion string `json:"ruleSetVersion"`
 }
 
 //Generated from:
@@ -739,32 +1020,6 @@ type ApplicationGatewayWebApplicationFirewallConfiguration_Status struct {
 	RuleSetVersion string `json:"ruleSetVersion"`
 }
 
-// +kubebuilder:validation:Enum={"2020-05-01"}
-type ApplicationGatewaysSpecApiVersion string
-
-const ApplicationGatewaysSpecApiVersion20200501 = ApplicationGatewaysSpecApiVersion("2020-05-01")
-
-// +kubebuilder:validation:Enum={"Microsoft.Network/applicationGateways"}
-type ApplicationGatewaysSpecType string
-
-const ApplicationGatewaysSpecTypeMicrosoftNetworkApplicationGateways = ApplicationGatewaysSpecType("Microsoft.Network/applicationGateways")
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ManagedServiceIdentity
-type ManagedServiceIdentity struct {
-
-	//Type: The type of identity used for the resource. The type 'SystemAssigned,
-	//UserAssigned' includes both an implicitly created identity and a set of user
-	//assigned identities. The type 'None' will remove any identities from the virtual
-	//machine.
-	Type *ManagedServiceIdentityType `json:"type,omitempty"`
-
-	//UserAssignedIdentities: The list of user identities associated with resource.
-	//The user identity dictionary key references will be ARM resource ids in the
-	//form:
-	//'/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'.
-	UserAssignedIdentities interface{} `json:"userAssignedIdentities,omitempty"`
-}
-
 // +kubebuilder:validation:Enum={"None","SystemAssigned","SystemAssigned, UserAssigned","UserAssigned"}
 type ManagedServiceIdentityStatusType string
 
@@ -773,6 +1028,16 @@ const (
 	ManagedServiceIdentityStatusTypeSystemAssigned             = ManagedServiceIdentityStatusType("SystemAssigned")
 	ManagedServiceIdentityStatusTypeSystemAssignedUserAssigned = ManagedServiceIdentityStatusType("SystemAssigned, UserAssigned")
 	ManagedServiceIdentityStatusTypeUserAssigned               = ManagedServiceIdentityStatusType("UserAssigned")
+)
+
+// +kubebuilder:validation:Enum={"None","SystemAssigned","SystemAssigned, UserAssigned","UserAssigned"}
+type ManagedServiceIdentityType string
+
+const (
+	ManagedServiceIdentityTypeNone                       = ManagedServiceIdentityType("None")
+	ManagedServiceIdentityTypeSystemAssigned             = ManagedServiceIdentityType("SystemAssigned")
+	ManagedServiceIdentityTypeSystemAssignedUserAssigned = ManagedServiceIdentityType("SystemAssigned, UserAssigned")
+	ManagedServiceIdentityTypeUserAssigned               = ManagedServiceIdentityType("UserAssigned")
 )
 
 type ManagedServiceIdentity_Status_UserAssignedIdentities struct {
@@ -784,15 +1049,19 @@ type ManagedServiceIdentity_Status_UserAssignedIdentities struct {
 	PrincipalId *string `json:"principalId,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayAuthenticationCertificate
-type ApplicationGatewayAuthenticationCertificate struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/SubResource
+type SubResource struct {
 
-	//Name: Name of the authentication certificate that is unique within an
-	//Application Gateway.
-	Name *string `json:"name,omitempty"`
+	// +kubebuilder:validation:Required
+	//Id: Resource ID.
+	Id string `json:"id"`
+}
 
-	//Properties: Properties of the application gateway authentication certificate.
-	Properties *ApplicationGatewayAuthenticationCertificatePropertiesFormat `json:"properties,omitempty"`
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayAuthenticationCertificatePropertiesFormat
+type ApplicationGatewayAuthenticationCertificatePropertiesFormat struct {
+
+	//Data: Certificate public data.
+	Data *string `json:"data,omitempty"`
 }
 
 //Generated from:
@@ -806,26 +1075,11 @@ type ApplicationGatewayAuthenticationCertificatePropertiesFormat_Status struct {
 	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayAutoscaleConfiguration
-type ApplicationGatewayAutoscaleConfiguration struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayBackendAddressPoolPropertiesFormat
+type ApplicationGatewayBackendAddressPoolPropertiesFormat struct {
 
-	//MaxCapacity: Upper bound on number of Application Gateway capacity.
-	MaxCapacity *int `json:"maxCapacity,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//MinCapacity: Lower bound on number of Application Gateway capacity.
-	MinCapacity int `json:"minCapacity"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayBackendAddressPool
-type ApplicationGatewayBackendAddressPool struct {
-
-	//Name: Name of the backend address pool that is unique within an Application
-	//Gateway.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of the application gateway backend address pool.
-	Properties *ApplicationGatewayBackendAddressPoolPropertiesFormat `json:"properties,omitempty"`
+	//BackendAddresses: Backend addresses.
+	BackendAddresses []ApplicationGatewayBackendAddress `json:"backendAddresses,omitempty"`
 }
 
 //Generated from:
@@ -842,15 +1096,53 @@ type ApplicationGatewayBackendAddressPoolPropertiesFormat_Status struct {
 	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayBackendHttpSettings
-type ApplicationGatewayBackendHttpSettings struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayBackendHttpSettingsPropertiesFormat
+type ApplicationGatewayBackendHttpSettingsPropertiesFormat struct {
 
-	//Name: Name of the backend http settings that is unique within an Application
-	//Gateway.
-	Name *string `json:"name,omitempty"`
+	//AffinityCookieName: Cookie name to use for the affinity cookie.
+	AffinityCookieName *string `json:"affinityCookieName,omitempty"`
 
-	//Properties: Properties of the application gateway backend HTTP settings.
-	Properties *ApplicationGatewayBackendHttpSettingsPropertiesFormat `json:"properties,omitempty"`
+	//AuthenticationCertificates: Array of references to application gateway
+	//authentication certificates.
+	AuthenticationCertificates []SubResource `json:"authenticationCertificates,omitempty"`
+
+	//ConnectionDraining: Connection draining of the backend http settings resource.
+	ConnectionDraining *ApplicationGatewayConnectionDraining `json:"connectionDraining,omitempty"`
+
+	//CookieBasedAffinity: Cookie based affinity.
+	CookieBasedAffinity *ApplicationGatewayBackendHttpSettingsPropertiesFormatCookieBasedAffinity `json:"cookieBasedAffinity,omitempty"`
+
+	//HostName: Host header to be sent to the backend servers.
+	HostName *string `json:"hostName,omitempty"`
+
+	//Path: Path which should be used as a prefix for all HTTP requests. Null means no
+	//path will be prefixed. Default value is null.
+	Path *string `json:"path,omitempty"`
+
+	//PickHostNameFromBackendAddress: Whether to pick host header should be picked
+	//from the host name of the backend server. Default value is false.
+	PickHostNameFromBackendAddress *bool `json:"pickHostNameFromBackendAddress,omitempty"`
+
+	//Port: The destination port on the backend.
+	Port *int `json:"port,omitempty"`
+
+	//Probe: Probe resource of an application gateway.
+	Probe *SubResource `json:"probe,omitempty"`
+
+	//ProbeEnabled: Whether the probe is enabled. Default value is false.
+	ProbeEnabled *bool `json:"probeEnabled,omitempty"`
+
+	//Protocol: The protocol used to communicate with the backend.
+	Protocol *ApplicationGatewayBackendHttpSettingsPropertiesFormatProtocol `json:"protocol,omitempty"`
+
+	//RequestTimeout: Request timeout in seconds. Application Gateway will fail the
+	//request if response is not received within RequestTimeout. Acceptable values are
+	//from 1 second to 86400 seconds.
+	RequestTimeout *int `json:"requestTimeout,omitempty"`
+
+	//TrustedRootCertificates: Array of references to application gateway trusted root
+	//certificates.
+	TrustedRootCertificates []SubResource `json:"trustedRootCertificates,omitempty"`
 }
 
 //Generated from:
@@ -905,15 +1197,13 @@ type ApplicationGatewayBackendHttpSettingsPropertiesFormat_Status struct {
 	TrustedRootCertificates []SubResource_Status `json:"trustedRootCertificates,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayCustomError
-type ApplicationGatewayCustomError struct {
+// +kubebuilder:validation:Enum={"HttpStatus403","HttpStatus502"}
+type ApplicationGatewayCustomErrorStatusCode string
 
-	//CustomErrorPageUrl: Error page URL of the application gateway customer error.
-	CustomErrorPageUrl *string `json:"customErrorPageUrl,omitempty"`
-
-	//StatusCode: Status code of the application gateway customer error.
-	StatusCode *ApplicationGatewayCustomErrorStatusCode `json:"statusCode,omitempty"`
-}
+const (
+	ApplicationGatewayCustomErrorStatusCodeHttpStatus403 = ApplicationGatewayCustomErrorStatusCode("HttpStatus403")
+	ApplicationGatewayCustomErrorStatusCodeHttpStatus502 = ApplicationGatewayCustomErrorStatusCode("HttpStatus502")
+)
 
 // +kubebuilder:validation:Enum={"HttpStatus403","HttpStatus502"}
 type ApplicationGatewayCustomErrorStatusStatusCode string
@@ -922,6 +1212,18 @@ const (
 	ApplicationGatewayCustomErrorStatusStatusCodeHttpStatus403 = ApplicationGatewayCustomErrorStatusStatusCode("HttpStatus403")
 	ApplicationGatewayCustomErrorStatusStatusCodeHttpStatus502 = ApplicationGatewayCustomErrorStatusStatusCode("HttpStatus502")
 )
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayFirewallDisabledRuleGroup
+type ApplicationGatewayFirewallDisabledRuleGroup struct {
+
+	// +kubebuilder:validation:Required
+	//RuleGroupName: The name of the rule group that will be disabled.
+	RuleGroupName string `json:"ruleGroupName"`
+
+	//Rules: The list of rules that will be disabled. If null, all rules of the rule
+	//group will be disabled.
+	Rules []int `json:"rules,omitempty"`
+}
 
 //Generated from:
 type ApplicationGatewayFirewallDisabledRuleGroup_Status struct {
@@ -933,6 +1235,24 @@ type ApplicationGatewayFirewallDisabledRuleGroup_Status struct {
 	//Rules: The list of rules that will be disabled. If null, all rules of the rule
 	//group will be disabled.
 	Rules []int `json:"rules,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayFirewallExclusion
+type ApplicationGatewayFirewallExclusion struct {
+
+	// +kubebuilder:validation:Required
+	//MatchVariable: The variable to be excluded.
+	MatchVariable string `json:"matchVariable"`
+
+	// +kubebuilder:validation:Required
+	//Selector: When matchVariable is a collection, operator used to specify which
+	//elements in the collection this exclusion applies to.
+	Selector string `json:"selector"`
+
+	// +kubebuilder:validation:Required
+	//SelectorMatchOperator: When matchVariable is a collection, operate on the
+	//selector to specify which elements in the collection this exclusion applies to.
+	SelectorMatchOperator string `json:"selectorMatchOperator"`
 }
 
 //Generated from:
@@ -953,15 +1273,24 @@ type ApplicationGatewayFirewallExclusion_Status struct {
 	SelectorMatchOperator string `json:"selectorMatchOperator"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayFrontendIPConfiguration
-type ApplicationGatewayFrontendIPConfiguration struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayFrontendIPConfigurationPropertiesFormat
+type ApplicationGatewayFrontendIPConfigurationPropertiesFormat struct {
 
-	//Name: Name of the frontend IP configuration that is unique within an Application
-	//Gateway.
-	Name *string `json:"name,omitempty"`
+	//PrivateIPAddress: PrivateIPAddress of the network interface IP Configuration.
+	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
 
-	//Properties: Properties of the application gateway frontend IP configuration.
-	Properties *ApplicationGatewayFrontendIPConfigurationPropertiesFormat `json:"properties,omitempty"`
+	//PrivateIPAllocationMethod: The private IP address allocation method.
+	PrivateIPAllocationMethod *ApplicationGatewayFrontendIPConfigurationPropertiesFormatPrivateIPAllocationMethod `json:"privateIPAllocationMethod,omitempty"`
+
+	//PrivateLinkConfiguration: Reference to the application gateway private link
+	//configuration.
+	PrivateLinkConfiguration *SubResource `json:"privateLinkConfiguration,omitempty"`
+
+	//PublicIPAddress: Reference to the PublicIP resource.
+	PublicIPAddress *SubResource `json:"publicIPAddress,omitempty"`
+
+	//Subnet: Reference to the subnet resource.
+	Subnet *SubResource `json:"subnet,omitempty"`
 }
 
 //Generated from:
@@ -988,14 +1317,11 @@ type ApplicationGatewayFrontendIPConfigurationPropertiesFormat_Status struct {
 	Subnet *SubResource_Status `json:"subnet,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayFrontendPort
-type ApplicationGatewayFrontendPort struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayFrontendPortPropertiesFormat
+type ApplicationGatewayFrontendPortPropertiesFormat struct {
 
-	//Name: Name of the frontend port that is unique within an Application Gateway.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of the application gateway frontend port.
-	Properties *ApplicationGatewayFrontendPortPropertiesFormat `json:"properties,omitempty"`
+	//Port: Frontend port.
+	Port *int `json:"port,omitempty"`
 }
 
 //Generated from:
@@ -1008,14 +1334,38 @@ type ApplicationGatewayFrontendPortPropertiesFormat_Status struct {
 	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayHttpListener
-type ApplicationGatewayHttpListener struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayHttpListenerPropertiesFormat
+type ApplicationGatewayHttpListenerPropertiesFormat struct {
 
-	//Name: Name of the HTTP listener that is unique within an Application Gateway.
-	Name *string `json:"name,omitempty"`
+	//CustomErrorConfigurations: Custom error configurations of the HTTP listener.
+	CustomErrorConfigurations []ApplicationGatewayCustomError `json:"customErrorConfigurations,omitempty"`
 
-	//Properties: Properties of the application gateway HTTP listener.
-	Properties *ApplicationGatewayHttpListenerPropertiesFormat `json:"properties,omitempty"`
+	//FirewallPolicy: Reference to the FirewallPolicy resource.
+	FirewallPolicy *SubResource `json:"firewallPolicy,omitempty"`
+
+	//FrontendIPConfiguration: Frontend IP configuration resource of an application
+	//gateway.
+	FrontendIPConfiguration *SubResource `json:"frontendIPConfiguration,omitempty"`
+
+	//FrontendPort: Frontend port resource of an application gateway.
+	FrontendPort *SubResource `json:"frontendPort,omitempty"`
+
+	//HostName: Host name of HTTP listener.
+	HostName *string `json:"hostName,omitempty"`
+
+	//HostNames: List of Host names for HTTP Listener that allows special wildcard
+	//characters as well.
+	HostNames []string `json:"hostNames,omitempty"`
+
+	//Protocol: Protocol of the HTTP listener.
+	Protocol *ApplicationGatewayHttpListenerPropertiesFormatProtocol `json:"protocol,omitempty"`
+
+	//RequireServerNameIndication: Applicable only if protocol is https. Enables SNI
+	//for multi-hosting.
+	RequireServerNameIndication *bool `json:"requireServerNameIndication,omitempty"`
+
+	//SslCertificate: SSL certificate resource of an application gateway.
+	SslCertificate *SubResource `json:"sslCertificate,omitempty"`
 }
 
 //Generated from:
@@ -1055,14 +1405,12 @@ type ApplicationGatewayHttpListenerPropertiesFormat_Status struct {
 	SslCertificate *SubResource_Status `json:"sslCertificate,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayIPConfiguration
-type ApplicationGatewayIPConfiguration struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayIPConfigurationPropertiesFormat
+type ApplicationGatewayIPConfigurationPropertiesFormat struct {
 
-	//Name: Name of the IP configuration that is unique within an Application Gateway.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of the application gateway IP configuration.
-	Properties *ApplicationGatewayIPConfigurationPropertiesFormat `json:"properties,omitempty"`
+	//Subnet: Reference to the subnet resource. A subnet from where application
+	//gateway gets its private address.
+	Subnet *SubResource `json:"subnet,omitempty"`
 }
 
 //Generated from:
@@ -1077,15 +1425,11 @@ type ApplicationGatewayIPConfigurationPropertiesFormat_Status struct {
 	Subnet *SubResource_Status `json:"subnet,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayPrivateLinkConfiguration
-type ApplicationGatewayPrivateLinkConfiguration struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayPrivateLinkConfigurationProperties
+type ApplicationGatewayPrivateLinkConfigurationProperties struct {
 
-	//Name: Name of the private link configuration that is unique within an
-	//Application Gateway.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of the application gateway private link configuration.
-	Properties *ApplicationGatewayPrivateLinkConfigurationProperties `json:"properties,omitempty"`
+	//IpConfigurations: An array of application gateway private link ip configurations.
+	IpConfigurations []ApplicationGatewayPrivateLinkIpConfiguration `json:"ipConfigurations,omitempty"`
 }
 
 //Generated from:
@@ -1099,14 +1443,48 @@ type ApplicationGatewayPrivateLinkConfigurationProperties_Status struct {
 	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayProbe
-type ApplicationGatewayProbe struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayProbePropertiesFormat
+type ApplicationGatewayProbePropertiesFormat struct {
 
-	//Name: Name of the probe that is unique within an Application Gateway.
-	Name *string `json:"name,omitempty"`
+	//Host: Host name to send the probe to.
+	Host *string `json:"host,omitempty"`
 
-	//Properties: Properties of the application gateway probe.
-	Properties *ApplicationGatewayProbePropertiesFormat `json:"properties,omitempty"`
+	//Interval: The probing interval in seconds. This is the time interval between two
+	//consecutive probes. Acceptable values are from 1 second to 86400 seconds.
+	Interval *int `json:"interval,omitempty"`
+
+	//Match: Criterion for classifying a healthy probe response.
+	Match *ApplicationGatewayProbeHealthResponseMatch `json:"match,omitempty"`
+
+	//MinServers: Minimum number of servers that are always marked healthy. Default
+	//value is 0.
+	MinServers *int `json:"minServers,omitempty"`
+
+	//Path: Relative path of probe. Valid path starts from '/'. Probe is sent to
+	//<Protocol>://<host>:<port><path>.
+	Path *string `json:"path,omitempty"`
+
+	//PickHostNameFromBackendHttpSettings: Whether the host header should be picked
+	//from the backend http settings. Default value is false.
+	PickHostNameFromBackendHttpSettings *bool `json:"pickHostNameFromBackendHttpSettings,omitempty"`
+
+	//Port: Custom port which will be used for probing the backend servers. The valid
+	//value ranges from 1 to 65535. In case not set, port from http settings will be
+	//used. This property is valid for Standard_v2 and WAF_v2 only.
+	Port *int `json:"port,omitempty"`
+
+	//Protocol: The protocol used for the probe.
+	Protocol *ApplicationGatewayProbePropertiesFormatProtocol `json:"protocol,omitempty"`
+
+	//Timeout: The probe timeout in seconds. Probe marked as failed if valid response
+	//is not received with this timeout period. Acceptable values are from 1 second to
+	//86400 seconds.
+	Timeout *int `json:"timeout,omitempty"`
+
+	//UnhealthyThreshold: The probe retry count. Backend server is marked down after
+	//consecutive probe failure count reaches UnhealthyThreshold. Acceptable values
+	//are from 1 second to 20.
+	UnhealthyThreshold *int `json:"unhealthyThreshold,omitempty"`
 }
 
 //Generated from:
@@ -1156,15 +1534,32 @@ type ApplicationGatewayProbePropertiesFormat_Status struct {
 	UnhealthyThreshold *int `json:"unhealthyThreshold,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRedirectConfiguration
-type ApplicationGatewayRedirectConfiguration struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRedirectConfigurationPropertiesFormat
+type ApplicationGatewayRedirectConfigurationPropertiesFormat struct {
 
-	//Name: Name of the redirect configuration that is unique within an Application
-	//Gateway.
-	Name *string `json:"name,omitempty"`
+	//IncludePath: Include path in the redirected url.
+	IncludePath *bool `json:"includePath,omitempty"`
 
-	//Properties: Properties of the application gateway redirect configuration.
-	Properties *ApplicationGatewayRedirectConfigurationPropertiesFormat `json:"properties,omitempty"`
+	//IncludeQueryString: Include query string in the redirected url.
+	IncludeQueryString *bool `json:"includeQueryString,omitempty"`
+
+	//PathRules: Path rules specifying redirect configuration.
+	PathRules []SubResource `json:"pathRules,omitempty"`
+
+	//RedirectType: HTTP redirection type.
+	RedirectType *ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectType `json:"redirectType,omitempty"`
+
+	//RequestRoutingRules: Request routing specifying redirect configuration.
+	RequestRoutingRules []SubResource `json:"requestRoutingRules,omitempty"`
+
+	//TargetListener: Reference to a listener to redirect the request to.
+	TargetListener *SubResource `json:"targetListener,omitempty"`
+
+	//TargetUrl: Url to redirect the request to.
+	TargetUrl *string `json:"targetUrl,omitempty"`
+
+	//UrlPathMaps: Url path maps specifying default redirect configuration.
+	UrlPathMaps []SubResource `json:"urlPathMaps,omitempty"`
 }
 
 //Generated from:
@@ -1195,15 +1590,34 @@ type ApplicationGatewayRedirectConfigurationPropertiesFormat_Status struct {
 	UrlPathMaps []SubResource_Status `json:"urlPathMaps,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRequestRoutingRule
-type ApplicationGatewayRequestRoutingRule struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRequestRoutingRulePropertiesFormat
+type ApplicationGatewayRequestRoutingRulePropertiesFormat struct {
 
-	//Name: Name of the request routing rule that is unique within an Application
-	//Gateway.
-	Name *string `json:"name,omitempty"`
+	//BackendAddressPool: Backend address pool resource of the application gateway.
+	BackendAddressPool *SubResource `json:"backendAddressPool,omitempty"`
 
-	//Properties: Properties of the application gateway request routing rule.
-	Properties *ApplicationGatewayRequestRoutingRulePropertiesFormat `json:"properties,omitempty"`
+	//BackendHttpSettings: Backend http settings resource of the application gateway.
+	BackendHttpSettings *SubResource `json:"backendHttpSettings,omitempty"`
+
+	//HttpListener: Http listener resource of the application gateway.
+	HttpListener *SubResource `json:"httpListener,omitempty"`
+
+	//Priority: Priority of the request routing rule.
+	Priority *int `json:"priority,omitempty"`
+
+	//RedirectConfiguration: Redirect configuration resource of the application
+	//gateway.
+	RedirectConfiguration *SubResource `json:"redirectConfiguration,omitempty"`
+
+	//RewriteRuleSet: Rewrite Rule Set resource in Basic rule of the application
+	//gateway.
+	RewriteRuleSet *SubResource `json:"rewriteRuleSet,omitempty"`
+
+	//RuleType: Rule type.
+	RuleType *ApplicationGatewayRequestRoutingRulePropertiesFormatRuleType `json:"ruleType,omitempty"`
+
+	//UrlPathMap: URL path map resource of the application gateway.
+	UrlPathMap *SubResource `json:"urlPathMap,omitempty"`
 }
 
 //Generated from:
@@ -1239,14 +1653,11 @@ type ApplicationGatewayRequestRoutingRulePropertiesFormat_Status struct {
 	UrlPathMap *SubResource_Status `json:"urlPathMap,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRewriteRuleSet
-type ApplicationGatewayRewriteRuleSet struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRewriteRuleSetPropertiesFormat
+type ApplicationGatewayRewriteRuleSetPropertiesFormat struct {
 
-	//Name: Name of the rewrite rule set that is unique within an Application Gateway.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of the application gateway rewrite rule set.
-	Properties *ApplicationGatewayRewriteRuleSetPropertiesFormat `json:"properties,omitempty"`
+	//RewriteRules: Rewrite rules in the rewrite rule set.
+	RewriteRules []ApplicationGatewayRewriteRule `json:"rewriteRules,omitempty"`
 }
 
 //Generated from:
@@ -1259,18 +1670,18 @@ type ApplicationGatewayRewriteRuleSetPropertiesFormat_Status struct {
 	RewriteRules []ApplicationGatewayRewriteRule_Status `json:"rewriteRules,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewaySku
-type ApplicationGatewaySku struct {
+// +kubebuilder:validation:Enum={"Standard_Large","Standard_Medium","Standard_Small","Standard_v2","WAF_Large","WAF_Medium","WAF_v2"}
+type ApplicationGatewaySkuName string
 
-	//Capacity: Capacity (instance count) of an application gateway.
-	Capacity *int `json:"capacity,omitempty"`
-
-	//Name: Name of an application gateway SKU.
-	Name *ApplicationGatewaySkuName `json:"name,omitempty"`
-
-	//Tier: Tier of an application gateway.
-	Tier *ApplicationGatewaySkuTier `json:"tier,omitempty"`
-}
+const (
+	ApplicationGatewaySkuNameStandardLarge  = ApplicationGatewaySkuName("Standard_Large")
+	ApplicationGatewaySkuNameStandardMedium = ApplicationGatewaySkuName("Standard_Medium")
+	ApplicationGatewaySkuNameStandardSmall  = ApplicationGatewaySkuName("Standard_Small")
+	ApplicationGatewaySkuNameStandardV2     = ApplicationGatewaySkuName("Standard_v2")
+	ApplicationGatewaySkuNameWAFLarge       = ApplicationGatewaySkuName("WAF_Large")
+	ApplicationGatewaySkuNameWAFMedium      = ApplicationGatewaySkuName("WAF_Medium")
+	ApplicationGatewaySkuNameWAFV2          = ApplicationGatewaySkuName("WAF_v2")
+)
 
 // +kubebuilder:validation:Enum={"Standard_Large","Standard_Medium","Standard_Small","Standard_v2","WAF_Large","WAF_Medium","WAF_v2"}
 type ApplicationGatewaySkuStatusName string
@@ -1293,660 +1704,6 @@ const (
 	ApplicationGatewaySkuStatusTierStandardV2 = ApplicationGatewaySkuStatusTier("Standard_v2")
 	ApplicationGatewaySkuStatusTierWAF        = ApplicationGatewaySkuStatusTier("WAF")
 	ApplicationGatewaySkuStatusTierWAFV2      = ApplicationGatewaySkuStatusTier("WAF_v2")
-)
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewaySslCertificate
-type ApplicationGatewaySslCertificate struct {
-
-	//Name: Name of the SSL certificate that is unique within an Application Gateway.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of the application gateway SSL certificate.
-	Properties *ApplicationGatewaySslCertificatePropertiesFormat `json:"properties,omitempty"`
-}
-
-//Generated from:
-type ApplicationGatewaySslCertificatePropertiesFormat_Status struct {
-
-	//Data: Base-64 encoded pfx certificate. Only applicable in PUT Request.
-	Data *string `json:"data,omitempty"`
-
-	//KeyVaultSecretId: Secret Id of (base-64 encoded unencrypted pfx) 'Secret' or
-	//'Certificate' object stored in KeyVault.
-	KeyVaultSecretId *string `json:"keyVaultSecretId,omitempty"`
-
-	//Password: Password for the pfx file specified in data. Only applicable in PUT
-	//request.
-	Password *string `json:"password,omitempty"`
-
-	//ProvisioningState: The provisioning state of the SSL certificate resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//PublicCertData: Base-64 encoded Public cert data corresponding to pfx specified
-	//in data. Only applicable in GET request.
-	PublicCertData *string `json:"publicCertData,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewaySslPolicy
-type ApplicationGatewaySslPolicy struct {
-
-	//CipherSuites: Ssl cipher suites to be enabled in the specified order to
-	//application gateway.
-	CipherSuites []ApplicationGatewaySslPolicyCipherSuites `json:"cipherSuites,omitempty"`
-
-	//DisabledSslProtocols: Ssl protocols to be disabled on application gateway.
-	DisabledSslProtocols []ApplicationGatewaySslPolicyDisabledSslProtocols `json:"disabledSslProtocols,omitempty"`
-
-	//MinProtocolVersion: Minimum version of Ssl protocol to be supported on
-	//application gateway.
-	MinProtocolVersion *ApplicationGatewaySslPolicyMinProtocolVersion `json:"minProtocolVersion,omitempty"`
-
-	//PolicyName: Name of Ssl predefined policy.
-	PolicyName *ApplicationGatewaySslPolicyPolicyName `json:"policyName,omitempty"`
-
-	//PolicyType: Type of Ssl Policy.
-	PolicyType *ApplicationGatewaySslPolicyPolicyType `json:"policyType,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"Custom","Predefined"}
-type ApplicationGatewaySslPolicyStatusPolicyType string
-
-const (
-	ApplicationGatewaySslPolicyStatusPolicyTypeCustom     = ApplicationGatewaySslPolicyStatusPolicyType("Custom")
-	ApplicationGatewaySslPolicyStatusPolicyTypePredefined = ApplicationGatewaySslPolicyStatusPolicyType("Predefined")
-)
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayTrustedRootCertificate
-type ApplicationGatewayTrustedRootCertificate struct {
-
-	//Name: Name of the trusted root certificate that is unique within an Application
-	//Gateway.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of the application gateway trusted root certificate.
-	Properties *ApplicationGatewayTrustedRootCertificatePropertiesFormat `json:"properties,omitempty"`
-}
-
-//Generated from:
-type ApplicationGatewayTrustedRootCertificatePropertiesFormat_Status struct {
-
-	//Data: Certificate public data.
-	Data *string `json:"data,omitempty"`
-
-	//KeyVaultSecretId: Secret Id of (base-64 encoded unencrypted pfx) 'Secret' or
-	//'Certificate' object stored in KeyVault.
-	KeyVaultSecretId *string `json:"keyVaultSecretId,omitempty"`
-
-	//ProvisioningState: The provisioning state of the trusted root certificate
-	//resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayUrlPathMap
-type ApplicationGatewayUrlPathMap struct {
-
-	//Name: Name of the URL path map that is unique within an Application Gateway.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of the application gateway URL path map.
-	Properties *ApplicationGatewayUrlPathMapPropertiesFormat `json:"properties,omitempty"`
-}
-
-//Generated from:
-type ApplicationGatewayUrlPathMapPropertiesFormat_Status struct {
-
-	//DefaultBackendAddressPool: Default backend address pool resource of URL path map.
-	DefaultBackendAddressPool *SubResource_Status `json:"defaultBackendAddressPool,omitempty"`
-
-	//DefaultBackendHttpSettings: Default backend http settings resource of URL path
-	//map.
-	DefaultBackendHttpSettings *SubResource_Status `json:"defaultBackendHttpSettings,omitempty"`
-
-	//DefaultRedirectConfiguration: Default redirect configuration resource of URL
-	//path map.
-	DefaultRedirectConfiguration *SubResource_Status `json:"defaultRedirectConfiguration,omitempty"`
-
-	//DefaultRewriteRuleSet: Default Rewrite rule set resource of URL path map.
-	DefaultRewriteRuleSet *SubResource_Status `json:"defaultRewriteRuleSet,omitempty"`
-
-	//PathRules: Path rule of URL path map resource.
-	PathRules []ApplicationGatewayPathRule_Status `json:"pathRules,omitempty"`
-
-	//ProvisioningState: The provisioning state of the URL path map resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayWebApplicationFirewallConfiguration
-type ApplicationGatewayWebApplicationFirewallConfiguration struct {
-
-	//DisabledRuleGroups: The disabled rule groups.
-	DisabledRuleGroups []ApplicationGatewayFirewallDisabledRuleGroup `json:"disabledRuleGroups,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Enabled: Whether the web application firewall is enabled or not.
-	Enabled bool `json:"enabled"`
-
-	//Exclusions: The exclusion list.
-	Exclusions []ApplicationGatewayFirewallExclusion `json:"exclusions,omitempty"`
-
-	//FileUploadLimitInMb: Maximum file upload size in Mb for WAF.
-	FileUploadLimitInMb *int `json:"fileUploadLimitInMb,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//FirewallMode: Web application firewall mode.
-	FirewallMode ApplicationGatewayWebApplicationFirewallConfigurationFirewallMode `json:"firewallMode"`
-
-	//MaxRequestBodySize: Maximum request body size for WAF.
-	MaxRequestBodySize *int `json:"maxRequestBodySize,omitempty"`
-
-	//MaxRequestBodySizeInKb: Maximum request body size in Kb for WAF.
-	MaxRequestBodySizeInKb *int `json:"maxRequestBodySizeInKb,omitempty"`
-
-	//RequestBodyCheck: Whether allow WAF to check request Body.
-	RequestBodyCheck *bool `json:"requestBodyCheck,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//RuleSetType: The type of the web application firewall rule set. Possible values
-	//are: 'OWASP'.
-	RuleSetType string `json:"ruleSetType"`
-
-	// +kubebuilder:validation:Required
-	//RuleSetVersion: The version of the rule set type.
-	RuleSetVersion string `json:"ruleSetVersion"`
-}
-
-// +kubebuilder:validation:Enum={"Detection","Prevention"}
-type ApplicationGatewayWebApplicationFirewallConfigurationStatusFirewallMode string
-
-const (
-	ApplicationGatewayWebApplicationFirewallConfigurationStatusFirewallModeDetection  = ApplicationGatewayWebApplicationFirewallConfigurationStatusFirewallMode("Detection")
-	ApplicationGatewayWebApplicationFirewallConfigurationStatusFirewallModePrevention = ApplicationGatewayWebApplicationFirewallConfigurationStatusFirewallMode("Prevention")
-)
-
-//Generated from:
-// +kubebuilder:validation:Enum={"TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA","TLS_DHE_DSS_WITH_AES_128_CBC_SHA","TLS_DHE_DSS_WITH_AES_128_CBC_SHA256","TLS_DHE_DSS_WITH_AES_256_CBC_SHA","TLS_DHE_DSS_WITH_AES_256_CBC_SHA256","TLS_DHE_RSA_WITH_AES_128_CBC_SHA","TLS_DHE_RSA_WITH_AES_128_GCM_SHA256","TLS_DHE_RSA_WITH_AES_256_CBC_SHA","TLS_DHE_RSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384","TLS_RSA_WITH_3DES_EDE_CBC_SHA","TLS_RSA_WITH_AES_128_CBC_SHA","TLS_RSA_WITH_AES_128_CBC_SHA256","TLS_RSA_WITH_AES_128_GCM_SHA256","TLS_RSA_WITH_AES_256_CBC_SHA","TLS_RSA_WITH_AES_256_CBC_SHA256","TLS_RSA_WITH_AES_256_GCM_SHA384"}
-type CipherSuitesEnum_Status string
-
-const (
-	CipherSuitesEnum_StatusTLSDHEDSSWITH3DESEDECBCSHA       = CipherSuitesEnum_Status("TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA")
-	CipherSuitesEnum_StatusTLSDHEDSSWITHAES128CBCSHA        = CipherSuitesEnum_Status("TLS_DHE_DSS_WITH_AES_128_CBC_SHA")
-	CipherSuitesEnum_StatusTLSDHEDSSWITHAES128CBCSHA256     = CipherSuitesEnum_Status("TLS_DHE_DSS_WITH_AES_128_CBC_SHA256")
-	CipherSuitesEnum_StatusTLSDHEDSSWITHAES256CBCSHA        = CipherSuitesEnum_Status("TLS_DHE_DSS_WITH_AES_256_CBC_SHA")
-	CipherSuitesEnum_StatusTLSDHEDSSWITHAES256CBCSHA256     = CipherSuitesEnum_Status("TLS_DHE_DSS_WITH_AES_256_CBC_SHA256")
-	CipherSuitesEnum_StatusTLSDHERSAWITHAES128CBCSHA        = CipherSuitesEnum_Status("TLS_DHE_RSA_WITH_AES_128_CBC_SHA")
-	CipherSuitesEnum_StatusTLSDHERSAWITHAES128GCMSHA256     = CipherSuitesEnum_Status("TLS_DHE_RSA_WITH_AES_128_GCM_SHA256")
-	CipherSuitesEnum_StatusTLSDHERSAWITHAES256CBCSHA        = CipherSuitesEnum_Status("TLS_DHE_RSA_WITH_AES_256_CBC_SHA")
-	CipherSuitesEnum_StatusTLSDHERSAWITHAES256GCMSHA384     = CipherSuitesEnum_Status("TLS_DHE_RSA_WITH_AES_256_GCM_SHA384")
-	CipherSuitesEnum_StatusTLSECDHEECDSAWITHAES128CBCSHA    = CipherSuitesEnum_Status("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA")
-	CipherSuitesEnum_StatusTLSECDHEECDSAWITHAES128CBCSHA256 = CipherSuitesEnum_Status("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256")
-	CipherSuitesEnum_StatusTLSECDHEECDSAWITHAES128GCMSHA256 = CipherSuitesEnum_Status("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256")
-	CipherSuitesEnum_StatusTLSECDHEECDSAWITHAES256CBCSHA    = CipherSuitesEnum_Status("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA")
-	CipherSuitesEnum_StatusTLSECDHEECDSAWITHAES256CBCSHA384 = CipherSuitesEnum_Status("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384")
-	CipherSuitesEnum_StatusTLSECDHEECDSAWITHAES256GCMSHA384 = CipherSuitesEnum_Status("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384")
-	CipherSuitesEnum_StatusTLSECDHERSAWITHAES128CBCSHA      = CipherSuitesEnum_Status("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA")
-	CipherSuitesEnum_StatusTLSECDHERSAWITHAES128CBCSHA256   = CipherSuitesEnum_Status("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256")
-	CipherSuitesEnum_StatusTLSECDHERSAWITHAES128GCMSHA256   = CipherSuitesEnum_Status("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
-	CipherSuitesEnum_StatusTLSECDHERSAWITHAES256CBCSHA      = CipherSuitesEnum_Status("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA")
-	CipherSuitesEnum_StatusTLSECDHERSAWITHAES256CBCSHA384   = CipherSuitesEnum_Status("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384")
-	CipherSuitesEnum_StatusTLSECDHERSAWITHAES256GCMSHA384   = CipherSuitesEnum_Status("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384")
-	CipherSuitesEnum_StatusTLSRSAWITH3DESEDECBCSHA          = CipherSuitesEnum_Status("TLS_RSA_WITH_3DES_EDE_CBC_SHA")
-	CipherSuitesEnum_StatusTLSRSAWITHAES128CBCSHA           = CipherSuitesEnum_Status("TLS_RSA_WITH_AES_128_CBC_SHA")
-	CipherSuitesEnum_StatusTLSRSAWITHAES128CBCSHA256        = CipherSuitesEnum_Status("TLS_RSA_WITH_AES_128_CBC_SHA256")
-	CipherSuitesEnum_StatusTLSRSAWITHAES128GCMSHA256        = CipherSuitesEnum_Status("TLS_RSA_WITH_AES_128_GCM_SHA256")
-	CipherSuitesEnum_StatusTLSRSAWITHAES256CBCSHA           = CipherSuitesEnum_Status("TLS_RSA_WITH_AES_256_CBC_SHA")
-	CipherSuitesEnum_StatusTLSRSAWITHAES256CBCSHA256        = CipherSuitesEnum_Status("TLS_RSA_WITH_AES_256_CBC_SHA256")
-	CipherSuitesEnum_StatusTLSRSAWITHAES256GCMSHA384        = CipherSuitesEnum_Status("TLS_RSA_WITH_AES_256_GCM_SHA384")
-)
-
-// +kubebuilder:validation:Enum={"None","SystemAssigned","SystemAssigned, UserAssigned","UserAssigned"}
-type ManagedServiceIdentityType string
-
-const (
-	ManagedServiceIdentityTypeNone                       = ManagedServiceIdentityType("None")
-	ManagedServiceIdentityTypeSystemAssigned             = ManagedServiceIdentityType("SystemAssigned")
-	ManagedServiceIdentityTypeSystemAssignedUserAssigned = ManagedServiceIdentityType("SystemAssigned, UserAssigned")
-	ManagedServiceIdentityTypeUserAssigned               = ManagedServiceIdentityType("UserAssigned")
-)
-
-//Generated from:
-// +kubebuilder:validation:Enum={"AppGwSslPolicy20150501","AppGwSslPolicy20170401","AppGwSslPolicy20170401S"}
-type PolicyNameEnum_Status string
-
-const (
-	PolicyNameEnum_StatusAppGwSslPolicy20150501  = PolicyNameEnum_Status("AppGwSslPolicy20150501")
-	PolicyNameEnum_StatusAppGwSslPolicy20170401  = PolicyNameEnum_Status("AppGwSslPolicy20170401")
-	PolicyNameEnum_StatusAppGwSslPolicy20170401S = PolicyNameEnum_Status("AppGwSslPolicy20170401S")
-)
-
-//Generated from:
-// +kubebuilder:validation:Enum={"TLSv1_0","TLSv1_1","TLSv1_2"}
-type ProtocolsEnum_Status string
-
-const (
-	ProtocolsEnum_StatusTLSv10 = ProtocolsEnum_Status("TLSv1_0")
-	ProtocolsEnum_StatusTLSv11 = ProtocolsEnum_Status("TLSv1_1")
-	ProtocolsEnum_StatusTLSv12 = ProtocolsEnum_Status("TLSv1_2")
-)
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/SubResource
-type SubResource struct {
-
-	// +kubebuilder:validation:Required
-	//Id: Resource ID.
-	Id string `json:"id"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayAuthenticationCertificatePropertiesFormat
-type ApplicationGatewayAuthenticationCertificatePropertiesFormat struct {
-
-	//Data: Certificate public data.
-	Data *string `json:"data,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayBackendAddressPoolPropertiesFormat
-type ApplicationGatewayBackendAddressPoolPropertiesFormat struct {
-
-	//BackendAddresses: Backend addresses.
-	BackendAddresses []ApplicationGatewayBackendAddress `json:"backendAddresses,omitempty"`
-}
-
-//Generated from:
-type ApplicationGatewayBackendAddress_Status struct {
-
-	//Fqdn: Fully qualified domain name (FQDN).
-	Fqdn *string `json:"fqdn,omitempty"`
-
-	//IpAddress: IP address.
-	IpAddress *string `json:"ipAddress,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayBackendHttpSettingsPropertiesFormat
-type ApplicationGatewayBackendHttpSettingsPropertiesFormat struct {
-
-	//AffinityCookieName: Cookie name to use for the affinity cookie.
-	AffinityCookieName *string `json:"affinityCookieName,omitempty"`
-
-	//AuthenticationCertificates: Array of references to application gateway
-	//authentication certificates.
-	AuthenticationCertificates []SubResource `json:"authenticationCertificates,omitempty"`
-
-	//ConnectionDraining: Connection draining of the backend http settings resource.
-	ConnectionDraining *ApplicationGatewayConnectionDraining `json:"connectionDraining,omitempty"`
-
-	//CookieBasedAffinity: Cookie based affinity.
-	CookieBasedAffinity *ApplicationGatewayBackendHttpSettingsPropertiesFormatCookieBasedAffinity `json:"cookieBasedAffinity,omitempty"`
-
-	//HostName: Host header to be sent to the backend servers.
-	HostName *string `json:"hostName,omitempty"`
-
-	//Path: Path which should be used as a prefix for all HTTP requests. Null means no
-	//path will be prefixed. Default value is null.
-	Path *string `json:"path,omitempty"`
-
-	//PickHostNameFromBackendAddress: Whether to pick host header should be picked
-	//from the host name of the backend server. Default value is false.
-	PickHostNameFromBackendAddress *bool `json:"pickHostNameFromBackendAddress,omitempty"`
-
-	//Port: The destination port on the backend.
-	Port *int `json:"port,omitempty"`
-
-	//Probe: Probe resource of an application gateway.
-	Probe *SubResource `json:"probe,omitempty"`
-
-	//ProbeEnabled: Whether the probe is enabled. Default value is false.
-	ProbeEnabled *bool `json:"probeEnabled,omitempty"`
-
-	//Protocol: The protocol used to communicate with the backend.
-	Protocol *ApplicationGatewayBackendHttpSettingsPropertiesFormatProtocol `json:"protocol,omitempty"`
-
-	//RequestTimeout: Request timeout in seconds. Application Gateway will fail the
-	//request if response is not received within RequestTimeout. Acceptable values are
-	//from 1 second to 86400 seconds.
-	RequestTimeout *int `json:"requestTimeout,omitempty"`
-
-	//TrustedRootCertificates: Array of references to application gateway trusted root
-	//certificates.
-	TrustedRootCertificates []SubResource `json:"trustedRootCertificates,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"Disabled","Enabled"}
-type ApplicationGatewayBackendHttpSettingsPropertiesFormatStatusCookieBasedAffinity string
-
-const (
-	ApplicationGatewayBackendHttpSettingsPropertiesFormatStatusCookieBasedAffinityDisabled = ApplicationGatewayBackendHttpSettingsPropertiesFormatStatusCookieBasedAffinity("Disabled")
-	ApplicationGatewayBackendHttpSettingsPropertiesFormatStatusCookieBasedAffinityEnabled  = ApplicationGatewayBackendHttpSettingsPropertiesFormatStatusCookieBasedAffinity("Enabled")
-)
-
-//Generated from:
-type ApplicationGatewayConnectionDraining_Status struct {
-
-	// +kubebuilder:validation:Required
-	//DrainTimeoutInSec: The number of seconds connection draining is active.
-	//Acceptable values are from 1 second to 3600 seconds.
-	DrainTimeoutInSec int `json:"drainTimeoutInSec"`
-
-	// +kubebuilder:validation:Required
-	//Enabled: Whether connection draining is enabled or not.
-	Enabled bool `json:"enabled"`
-}
-
-// +kubebuilder:validation:Enum={"HttpStatus403","HttpStatus502"}
-type ApplicationGatewayCustomErrorStatusCode string
-
-const (
-	ApplicationGatewayCustomErrorStatusCodeHttpStatus403 = ApplicationGatewayCustomErrorStatusCode("HttpStatus403")
-	ApplicationGatewayCustomErrorStatusCodeHttpStatus502 = ApplicationGatewayCustomErrorStatusCode("HttpStatus502")
-)
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayFirewallDisabledRuleGroup
-type ApplicationGatewayFirewallDisabledRuleGroup struct {
-
-	// +kubebuilder:validation:Required
-	//RuleGroupName: The name of the rule group that will be disabled.
-	RuleGroupName string `json:"ruleGroupName"`
-
-	//Rules: The list of rules that will be disabled. If null, all rules of the rule
-	//group will be disabled.
-	Rules []int `json:"rules,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayFirewallExclusion
-type ApplicationGatewayFirewallExclusion struct {
-
-	// +kubebuilder:validation:Required
-	//MatchVariable: The variable to be excluded.
-	MatchVariable string `json:"matchVariable"`
-
-	// +kubebuilder:validation:Required
-	//Selector: When matchVariable is a collection, operator used to specify which
-	//elements in the collection this exclusion applies to.
-	Selector string `json:"selector"`
-
-	// +kubebuilder:validation:Required
-	//SelectorMatchOperator: When matchVariable is a collection, operate on the
-	//selector to specify which elements in the collection this exclusion applies to.
-	SelectorMatchOperator string `json:"selectorMatchOperator"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayFrontendIPConfigurationPropertiesFormat
-type ApplicationGatewayFrontendIPConfigurationPropertiesFormat struct {
-
-	//PrivateIPAddress: PrivateIPAddress of the network interface IP Configuration.
-	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
-
-	//PrivateIPAllocationMethod: The private IP address allocation method.
-	PrivateIPAllocationMethod *ApplicationGatewayFrontendIPConfigurationPropertiesFormatPrivateIPAllocationMethod `json:"privateIPAllocationMethod,omitempty"`
-
-	//PrivateLinkConfiguration: Reference to the application gateway private link
-	//configuration.
-	PrivateLinkConfiguration *SubResource `json:"privateLinkConfiguration,omitempty"`
-
-	//PublicIPAddress: Reference to the PublicIP resource.
-	PublicIPAddress *SubResource `json:"publicIPAddress,omitempty"`
-
-	//Subnet: Reference to the subnet resource.
-	Subnet *SubResource `json:"subnet,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayFrontendPortPropertiesFormat
-type ApplicationGatewayFrontendPortPropertiesFormat struct {
-
-	//Port: Frontend port.
-	Port *int `json:"port,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayHttpListenerPropertiesFormat
-type ApplicationGatewayHttpListenerPropertiesFormat struct {
-
-	//CustomErrorConfigurations: Custom error configurations of the HTTP listener.
-	CustomErrorConfigurations []ApplicationGatewayCustomError `json:"customErrorConfigurations,omitempty"`
-
-	//FirewallPolicy: Reference to the FirewallPolicy resource.
-	FirewallPolicy *SubResource `json:"firewallPolicy,omitempty"`
-
-	//FrontendIPConfiguration: Frontend IP configuration resource of an application
-	//gateway.
-	FrontendIPConfiguration *SubResource `json:"frontendIPConfiguration,omitempty"`
-
-	//FrontendPort: Frontend port resource of an application gateway.
-	FrontendPort *SubResource `json:"frontendPort,omitempty"`
-
-	//HostName: Host name of HTTP listener.
-	HostName *string `json:"hostName,omitempty"`
-
-	//HostNames: List of Host names for HTTP Listener that allows special wildcard
-	//characters as well.
-	HostNames []string `json:"hostNames,omitempty"`
-
-	//Protocol: Protocol of the HTTP listener.
-	Protocol *ApplicationGatewayHttpListenerPropertiesFormatProtocol `json:"protocol,omitempty"`
-
-	//RequireServerNameIndication: Applicable only if protocol is https. Enables SNI
-	//for multi-hosting.
-	RequireServerNameIndication *bool `json:"requireServerNameIndication,omitempty"`
-
-	//SslCertificate: SSL certificate resource of an application gateway.
-	SslCertificate *SubResource `json:"sslCertificate,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayIPConfigurationPropertiesFormat
-type ApplicationGatewayIPConfigurationPropertiesFormat struct {
-
-	//Subnet: Reference to the subnet resource. A subnet from where application
-	//gateway gets its private address.
-	Subnet *SubResource `json:"subnet,omitempty"`
-}
-
-//Generated from:
-type ApplicationGatewayPathRule_Status struct {
-
-	//Etag: A unique read-only string that changes whenever the resource is updated.
-	Etag *string `json:"etag,omitempty"`
-
-	//Id: Resource ID.
-	Id *string `json:"id,omitempty"`
-
-	//Name: Name of the path rule that is unique within an Application Gateway.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of the application gateway path rule.
-	Properties *ApplicationGatewayPathRulePropertiesFormat_Status `json:"properties,omitempty"`
-
-	//Type: Type of the resource.
-	Type *string `json:"type,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayPrivateLinkConfigurationProperties
-type ApplicationGatewayPrivateLinkConfigurationProperties struct {
-
-	//IpConfigurations: An array of application gateway private link ip configurations.
-	IpConfigurations []ApplicationGatewayPrivateLinkIpConfiguration `json:"ipConfigurations,omitempty"`
-}
-
-//Generated from:
-type ApplicationGatewayPrivateLinkIpConfiguration_Status struct {
-
-	//Etag: A unique read-only string that changes whenever the resource is updated.
-	Etag *string `json:"etag,omitempty"`
-
-	//Id: Resource ID.
-	Id *string `json:"id,omitempty"`
-
-	//Name: The name of application gateway private link ip configuration.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of an application gateway private link ip configuration.
-	Properties *ApplicationGatewayPrivateLinkIpConfigurationProperties_Status `json:"properties,omitempty"`
-
-	//Type: The resource type.
-	Type *string `json:"type,omitempty"`
-}
-
-//Generated from:
-type ApplicationGatewayProbeHealthResponseMatch_Status struct {
-
-	//Body: Body that must be contained in the health response. Default value is empty.
-	Body *string `json:"body,omitempty"`
-
-	//StatusCodes: Allowed ranges of healthy status codes. Default range of healthy
-	//status codes is 200-399.
-	StatusCodes []string `json:"statusCodes,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayProbePropertiesFormat
-type ApplicationGatewayProbePropertiesFormat struct {
-
-	//Host: Host name to send the probe to.
-	Host *string `json:"host,omitempty"`
-
-	//Interval: The probing interval in seconds. This is the time interval between two
-	//consecutive probes. Acceptable values are from 1 second to 86400 seconds.
-	Interval *int `json:"interval,omitempty"`
-
-	//Match: Criterion for classifying a healthy probe response.
-	Match *ApplicationGatewayProbeHealthResponseMatch `json:"match,omitempty"`
-
-	//MinServers: Minimum number of servers that are always marked healthy. Default
-	//value is 0.
-	MinServers *int `json:"minServers,omitempty"`
-
-	//Path: Relative path of probe. Valid path starts from '/'. Probe is sent to
-	//<Protocol>://<host>:<port><path>.
-	Path *string `json:"path,omitempty"`
-
-	//PickHostNameFromBackendHttpSettings: Whether the host header should be picked
-	//from the backend http settings. Default value is false.
-	PickHostNameFromBackendHttpSettings *bool `json:"pickHostNameFromBackendHttpSettings,omitempty"`
-
-	//Port: Custom port which will be used for probing the backend servers. The valid
-	//value ranges from 1 to 65535. In case not set, port from http settings will be
-	//used. This property is valid for Standard_v2 and WAF_v2 only.
-	Port *int `json:"port,omitempty"`
-
-	//Protocol: The protocol used for the probe.
-	Protocol *ApplicationGatewayProbePropertiesFormatProtocol `json:"protocol,omitempty"`
-
-	//Timeout: The probe timeout in seconds. Probe marked as failed if valid response
-	//is not received with this timeout period. Acceptable values are from 1 second to
-	//86400 seconds.
-	Timeout *int `json:"timeout,omitempty"`
-
-	//UnhealthyThreshold: The probe retry count. Backend server is marked down after
-	//consecutive probe failure count reaches UnhealthyThreshold. Acceptable values
-	//are from 1 second to 20.
-	UnhealthyThreshold *int `json:"unhealthyThreshold,omitempty"`
-}
-
-//Generated from:
-// +kubebuilder:validation:Enum={"Http","Https"}
-type ApplicationGatewayProtocol_Status string
-
-const (
-	ApplicationGatewayProtocol_StatusHttp  = ApplicationGatewayProtocol_Status("Http")
-	ApplicationGatewayProtocol_StatusHttps = ApplicationGatewayProtocol_Status("Https")
-)
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRedirectConfigurationPropertiesFormat
-type ApplicationGatewayRedirectConfigurationPropertiesFormat struct {
-
-	//IncludePath: Include path in the redirected url.
-	IncludePath *bool `json:"includePath,omitempty"`
-
-	//IncludeQueryString: Include query string in the redirected url.
-	IncludeQueryString *bool `json:"includeQueryString,omitempty"`
-
-	//PathRules: Path rules specifying redirect configuration.
-	PathRules []SubResource `json:"pathRules,omitempty"`
-
-	//RedirectType: HTTP redirection type.
-	RedirectType *ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectType `json:"redirectType,omitempty"`
-
-	//RequestRoutingRules: Request routing specifying redirect configuration.
-	RequestRoutingRules []SubResource `json:"requestRoutingRules,omitempty"`
-
-	//TargetListener: Reference to a listener to redirect the request to.
-	TargetListener *SubResource `json:"targetListener,omitempty"`
-
-	//TargetUrl: Url to redirect the request to.
-	TargetUrl *string `json:"targetUrl,omitempty"`
-
-	//UrlPathMaps: Url path maps specifying default redirect configuration.
-	UrlPathMaps []SubResource `json:"urlPathMaps,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRequestRoutingRulePropertiesFormat
-type ApplicationGatewayRequestRoutingRulePropertiesFormat struct {
-
-	//BackendAddressPool: Backend address pool resource of the application gateway.
-	BackendAddressPool *SubResource `json:"backendAddressPool,omitempty"`
-
-	//BackendHttpSettings: Backend http settings resource of the application gateway.
-	BackendHttpSettings *SubResource `json:"backendHttpSettings,omitempty"`
-
-	//HttpListener: Http listener resource of the application gateway.
-	HttpListener *SubResource `json:"httpListener,omitempty"`
-
-	//Priority: Priority of the request routing rule.
-	Priority *int `json:"priority,omitempty"`
-
-	//RedirectConfiguration: Redirect configuration resource of the application
-	//gateway.
-	RedirectConfiguration *SubResource `json:"redirectConfiguration,omitempty"`
-
-	//RewriteRuleSet: Rewrite Rule Set resource in Basic rule of the application
-	//gateway.
-	RewriteRuleSet *SubResource `json:"rewriteRuleSet,omitempty"`
-
-	//RuleType: Rule type.
-	RuleType *ApplicationGatewayRequestRoutingRulePropertiesFormatRuleType `json:"ruleType,omitempty"`
-
-	//UrlPathMap: URL path map resource of the application gateway.
-	UrlPathMap *SubResource `json:"urlPathMap,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"Basic","PathBasedRouting"}
-type ApplicationGatewayRequestRoutingRulePropertiesFormatStatusRuleType string
-
-const (
-	ApplicationGatewayRequestRoutingRulePropertiesFormatStatusRuleTypeBasic            = ApplicationGatewayRequestRoutingRulePropertiesFormatStatusRuleType("Basic")
-	ApplicationGatewayRequestRoutingRulePropertiesFormatStatusRuleTypePathBasedRouting = ApplicationGatewayRequestRoutingRulePropertiesFormatStatusRuleType("PathBasedRouting")
-)
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRewriteRuleSetPropertiesFormat
-type ApplicationGatewayRewriteRuleSetPropertiesFormat struct {
-
-	//RewriteRules: Rewrite rules in the rewrite rule set.
-	RewriteRules []ApplicationGatewayRewriteRule `json:"rewriteRules,omitempty"`
-}
-
-//Generated from:
-type ApplicationGatewayRewriteRule_Status struct {
-
-	//ActionSet: Set of actions to be done as part of the rewrite Rule.
-	ActionSet *ApplicationGatewayRewriteRuleActionSet_Status `json:"actionSet,omitempty"`
-
-	//Conditions: Conditions based on which the action set execution will be evaluated.
-	Conditions []ApplicationGatewayRewriteRuleCondition_Status `json:"conditions,omitempty"`
-
-	//Name: Name of the rewrite rule that is unique within an Application Gateway.
-	Name *string `json:"name,omitempty"`
-
-	//RuleSequence: Rule Sequence of the rewrite rule that determines the order of
-	//execution of a particular rule in a RewriteRuleSet.
-	RuleSequence *int `json:"ruleSequence,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"Standard_Large","Standard_Medium","Standard_Small","Standard_v2","WAF_Large","WAF_Medium","WAF_v2"}
-type ApplicationGatewaySkuName string
-
-const (
-	ApplicationGatewaySkuNameStandardLarge  = ApplicationGatewaySkuName("Standard_Large")
-	ApplicationGatewaySkuNameStandardMedium = ApplicationGatewaySkuName("Standard_Medium")
-	ApplicationGatewaySkuNameStandardSmall  = ApplicationGatewaySkuName("Standard_Small")
-	ApplicationGatewaySkuNameStandardV2     = ApplicationGatewaySkuName("Standard_v2")
-	ApplicationGatewaySkuNameWAFLarge       = ApplicationGatewaySkuName("WAF_Large")
-	ApplicationGatewaySkuNameWAFMedium      = ApplicationGatewaySkuName("WAF_Medium")
-	ApplicationGatewaySkuNameWAFV2          = ApplicationGatewaySkuName("WAF_v2")
 )
 
 // +kubebuilder:validation:Enum={"Standard","Standard_v2","WAF","WAF_v2"}
@@ -1972,6 +1729,28 @@ type ApplicationGatewaySslCertificatePropertiesFormat struct {
 	//Password: Password for the pfx file specified in data. Only applicable in PUT
 	//request.
 	Password *string `json:"password,omitempty"`
+}
+
+//Generated from:
+type ApplicationGatewaySslCertificatePropertiesFormat_Status struct {
+
+	//Data: Base-64 encoded pfx certificate. Only applicable in PUT Request.
+	Data *string `json:"data,omitempty"`
+
+	//KeyVaultSecretId: Secret Id of (base-64 encoded unencrypted pfx) 'Secret' or
+	//'Certificate' object stored in KeyVault.
+	KeyVaultSecretId *string `json:"keyVaultSecretId,omitempty"`
+
+	//Password: Password for the pfx file specified in data. Only applicable in PUT
+	//request.
+	Password *string `json:"password,omitempty"`
+
+	//ProvisioningState: The provisioning state of the SSL certificate resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//PublicCertData: Base-64 encoded Public cert data corresponding to pfx specified
+	//in data. Only applicable in GET request.
+	PublicCertData *string `json:"publicCertData,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA","TLS_DHE_DSS_WITH_AES_128_CBC_SHA","TLS_DHE_DSS_WITH_AES_128_CBC_SHA256","TLS_DHE_DSS_WITH_AES_256_CBC_SHA","TLS_DHE_DSS_WITH_AES_256_CBC_SHA256","TLS_DHE_RSA_WITH_AES_128_CBC_SHA","TLS_DHE_RSA_WITH_AES_128_GCM_SHA256","TLS_DHE_RSA_WITH_AES_256_CBC_SHA","TLS_DHE_RSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384","TLS_RSA_WITH_3DES_EDE_CBC_SHA","TLS_RSA_WITH_AES_128_CBC_SHA","TLS_RSA_WITH_AES_128_CBC_SHA256","TLS_RSA_WITH_AES_128_GCM_SHA256","TLS_RSA_WITH_AES_256_CBC_SHA","TLS_RSA_WITH_AES_256_CBC_SHA256","TLS_RSA_WITH_AES_256_GCM_SHA384"}
@@ -2043,6 +1822,14 @@ const (
 	ApplicationGatewaySslPolicyPolicyTypePredefined = ApplicationGatewaySslPolicyPolicyType("Predefined")
 )
 
+// +kubebuilder:validation:Enum={"Custom","Predefined"}
+type ApplicationGatewaySslPolicyStatusPolicyType string
+
+const (
+	ApplicationGatewaySslPolicyStatusPolicyTypeCustom     = ApplicationGatewaySslPolicyStatusPolicyType("Custom")
+	ApplicationGatewaySslPolicyStatusPolicyTypePredefined = ApplicationGatewaySslPolicyStatusPolicyType("Predefined")
+)
+
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayTrustedRootCertificatePropertiesFormat
 type ApplicationGatewayTrustedRootCertificatePropertiesFormat struct {
 
@@ -2052,6 +1839,21 @@ type ApplicationGatewayTrustedRootCertificatePropertiesFormat struct {
 	//KeyVaultSecretId: Secret Id of (base-64 encoded unencrypted pfx) 'Secret' or
 	//'Certificate' object stored in KeyVault.
 	KeyVaultSecretId *string `json:"keyVaultSecretId,omitempty"`
+}
+
+//Generated from:
+type ApplicationGatewayTrustedRootCertificatePropertiesFormat_Status struct {
+
+	//Data: Certificate public data.
+	Data *string `json:"data,omitempty"`
+
+	//KeyVaultSecretId: Secret Id of (base-64 encoded unencrypted pfx) 'Secret' or
+	//'Certificate' object stored in KeyVault.
+	KeyVaultSecretId *string `json:"keyVaultSecretId,omitempty"`
+
+	//ProvisioningState: The provisioning state of the trusted root certificate
+	//resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayUrlPathMapPropertiesFormat
@@ -2075,6 +1877,30 @@ type ApplicationGatewayUrlPathMapPropertiesFormat struct {
 	PathRules []ApplicationGatewayPathRule `json:"pathRules,omitempty"`
 }
 
+//Generated from:
+type ApplicationGatewayUrlPathMapPropertiesFormat_Status struct {
+
+	//DefaultBackendAddressPool: Default backend address pool resource of URL path map.
+	DefaultBackendAddressPool *SubResource_Status `json:"defaultBackendAddressPool,omitempty"`
+
+	//DefaultBackendHttpSettings: Default backend http settings resource of URL path
+	//map.
+	DefaultBackendHttpSettings *SubResource_Status `json:"defaultBackendHttpSettings,omitempty"`
+
+	//DefaultRedirectConfiguration: Default redirect configuration resource of URL
+	//path map.
+	DefaultRedirectConfiguration *SubResource_Status `json:"defaultRedirectConfiguration,omitempty"`
+
+	//DefaultRewriteRuleSet: Default Rewrite rule set resource of URL path map.
+	DefaultRewriteRuleSet *SubResource_Status `json:"defaultRewriteRuleSet,omitempty"`
+
+	//PathRules: Path rule of URL path map resource.
+	PathRules []ApplicationGatewayPathRule_Status `json:"pathRules,omitempty"`
+
+	//ProvisioningState: The provisioning state of the URL path map resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+}
+
 // +kubebuilder:validation:Enum={"Detection","Prevention"}
 type ApplicationGatewayWebApplicationFirewallConfigurationFirewallMode string
 
@@ -2083,19 +1909,81 @@ const (
 	ApplicationGatewayWebApplicationFirewallConfigurationFirewallModePrevention = ApplicationGatewayWebApplicationFirewallConfigurationFirewallMode("Prevention")
 )
 
-//Generated from:
-// +kubebuilder:validation:Enum={"Found","Permanent","SeeOther","Temporary"}
-type RedirectTypeEnum_Status string
+// +kubebuilder:validation:Enum={"Detection","Prevention"}
+type ApplicationGatewayWebApplicationFirewallConfigurationStatusFirewallMode string
 
 const (
-	RedirectTypeEnum_StatusFound     = RedirectTypeEnum_Status("Found")
-	RedirectTypeEnum_StatusPermanent = RedirectTypeEnum_Status("Permanent")
-	RedirectTypeEnum_StatusSeeOther  = RedirectTypeEnum_Status("SeeOther")
-	RedirectTypeEnum_StatusTemporary = RedirectTypeEnum_Status("Temporary")
+	ApplicationGatewayWebApplicationFirewallConfigurationStatusFirewallModeDetection  = ApplicationGatewayWebApplicationFirewallConfigurationStatusFirewallMode("Detection")
+	ApplicationGatewayWebApplicationFirewallConfigurationStatusFirewallModePrevention = ApplicationGatewayWebApplicationFirewallConfigurationStatusFirewallMode("Prevention")
+)
+
+//Generated from:
+// +kubebuilder:validation:Enum={"TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA","TLS_DHE_DSS_WITH_AES_128_CBC_SHA","TLS_DHE_DSS_WITH_AES_128_CBC_SHA256","TLS_DHE_DSS_WITH_AES_256_CBC_SHA","TLS_DHE_DSS_WITH_AES_256_CBC_SHA256","TLS_DHE_RSA_WITH_AES_128_CBC_SHA","TLS_DHE_RSA_WITH_AES_128_GCM_SHA256","TLS_DHE_RSA_WITH_AES_256_CBC_SHA","TLS_DHE_RSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384","TLS_RSA_WITH_3DES_EDE_CBC_SHA","TLS_RSA_WITH_AES_128_CBC_SHA","TLS_RSA_WITH_AES_128_CBC_SHA256","TLS_RSA_WITH_AES_128_GCM_SHA256","TLS_RSA_WITH_AES_256_CBC_SHA","TLS_RSA_WITH_AES_256_CBC_SHA256","TLS_RSA_WITH_AES_256_GCM_SHA384"}
+type CipherSuitesEnum_Status string
+
+const (
+	CipherSuitesEnum_StatusTLSDHEDSSWITH3DESEDECBCSHA       = CipherSuitesEnum_Status("TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA")
+	CipherSuitesEnum_StatusTLSDHEDSSWITHAES128CBCSHA        = CipherSuitesEnum_Status("TLS_DHE_DSS_WITH_AES_128_CBC_SHA")
+	CipherSuitesEnum_StatusTLSDHEDSSWITHAES128CBCSHA256     = CipherSuitesEnum_Status("TLS_DHE_DSS_WITH_AES_128_CBC_SHA256")
+	CipherSuitesEnum_StatusTLSDHEDSSWITHAES256CBCSHA        = CipherSuitesEnum_Status("TLS_DHE_DSS_WITH_AES_256_CBC_SHA")
+	CipherSuitesEnum_StatusTLSDHEDSSWITHAES256CBCSHA256     = CipherSuitesEnum_Status("TLS_DHE_DSS_WITH_AES_256_CBC_SHA256")
+	CipherSuitesEnum_StatusTLSDHERSAWITHAES128CBCSHA        = CipherSuitesEnum_Status("TLS_DHE_RSA_WITH_AES_128_CBC_SHA")
+	CipherSuitesEnum_StatusTLSDHERSAWITHAES128GCMSHA256     = CipherSuitesEnum_Status("TLS_DHE_RSA_WITH_AES_128_GCM_SHA256")
+	CipherSuitesEnum_StatusTLSDHERSAWITHAES256CBCSHA        = CipherSuitesEnum_Status("TLS_DHE_RSA_WITH_AES_256_CBC_SHA")
+	CipherSuitesEnum_StatusTLSDHERSAWITHAES256GCMSHA384     = CipherSuitesEnum_Status("TLS_DHE_RSA_WITH_AES_256_GCM_SHA384")
+	CipherSuitesEnum_StatusTLSECDHEECDSAWITHAES128CBCSHA    = CipherSuitesEnum_Status("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA")
+	CipherSuitesEnum_StatusTLSECDHEECDSAWITHAES128CBCSHA256 = CipherSuitesEnum_Status("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256")
+	CipherSuitesEnum_StatusTLSECDHEECDSAWITHAES128GCMSHA256 = CipherSuitesEnum_Status("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256")
+	CipherSuitesEnum_StatusTLSECDHEECDSAWITHAES256CBCSHA    = CipherSuitesEnum_Status("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA")
+	CipherSuitesEnum_StatusTLSECDHEECDSAWITHAES256CBCSHA384 = CipherSuitesEnum_Status("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384")
+	CipherSuitesEnum_StatusTLSECDHEECDSAWITHAES256GCMSHA384 = CipherSuitesEnum_Status("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384")
+	CipherSuitesEnum_StatusTLSECDHERSAWITHAES128CBCSHA      = CipherSuitesEnum_Status("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA")
+	CipherSuitesEnum_StatusTLSECDHERSAWITHAES128CBCSHA256   = CipherSuitesEnum_Status("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256")
+	CipherSuitesEnum_StatusTLSECDHERSAWITHAES128GCMSHA256   = CipherSuitesEnum_Status("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
+	CipherSuitesEnum_StatusTLSECDHERSAWITHAES256CBCSHA      = CipherSuitesEnum_Status("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA")
+	CipherSuitesEnum_StatusTLSECDHERSAWITHAES256CBCSHA384   = CipherSuitesEnum_Status("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384")
+	CipherSuitesEnum_StatusTLSECDHERSAWITHAES256GCMSHA384   = CipherSuitesEnum_Status("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384")
+	CipherSuitesEnum_StatusTLSRSAWITH3DESEDECBCSHA          = CipherSuitesEnum_Status("TLS_RSA_WITH_3DES_EDE_CBC_SHA")
+	CipherSuitesEnum_StatusTLSRSAWITHAES128CBCSHA           = CipherSuitesEnum_Status("TLS_RSA_WITH_AES_128_CBC_SHA")
+	CipherSuitesEnum_StatusTLSRSAWITHAES128CBCSHA256        = CipherSuitesEnum_Status("TLS_RSA_WITH_AES_128_CBC_SHA256")
+	CipherSuitesEnum_StatusTLSRSAWITHAES128GCMSHA256        = CipherSuitesEnum_Status("TLS_RSA_WITH_AES_128_GCM_SHA256")
+	CipherSuitesEnum_StatusTLSRSAWITHAES256CBCSHA           = CipherSuitesEnum_Status("TLS_RSA_WITH_AES_256_CBC_SHA")
+	CipherSuitesEnum_StatusTLSRSAWITHAES256CBCSHA256        = CipherSuitesEnum_Status("TLS_RSA_WITH_AES_256_CBC_SHA256")
+	CipherSuitesEnum_StatusTLSRSAWITHAES256GCMSHA384        = CipherSuitesEnum_Status("TLS_RSA_WITH_AES_256_GCM_SHA384")
+)
+
+//Generated from:
+// +kubebuilder:validation:Enum={"AppGwSslPolicy20150501","AppGwSslPolicy20170401","AppGwSslPolicy20170401S"}
+type PolicyNameEnum_Status string
+
+const (
+	PolicyNameEnum_StatusAppGwSslPolicy20150501  = PolicyNameEnum_Status("AppGwSslPolicy20150501")
+	PolicyNameEnum_StatusAppGwSslPolicy20170401  = PolicyNameEnum_Status("AppGwSslPolicy20170401")
+	PolicyNameEnum_StatusAppGwSslPolicy20170401S = PolicyNameEnum_Status("AppGwSslPolicy20170401S")
+)
+
+//Generated from:
+// +kubebuilder:validation:Enum={"TLSv1_0","TLSv1_1","TLSv1_2"}
+type ProtocolsEnum_Status string
+
+const (
+	ProtocolsEnum_StatusTLSv10 = ProtocolsEnum_Status("TLSv1_0")
+	ProtocolsEnum_StatusTLSv11 = ProtocolsEnum_Status("TLSv1_1")
+	ProtocolsEnum_StatusTLSv12 = ProtocolsEnum_Status("TLSv1_2")
 )
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayBackendAddress
 type ApplicationGatewayBackendAddress struct {
+
+	//Fqdn: Fully qualified domain name (FQDN).
+	Fqdn *string `json:"fqdn,omitempty"`
+
+	//IpAddress: IP address.
+	IpAddress *string `json:"ipAddress,omitempty"`
+}
+
+//Generated from:
+type ApplicationGatewayBackendAddress_Status struct {
 
 	//Fqdn: Fully qualified domain name (FQDN).
 	Fqdn *string `json:"fqdn,omitempty"`
@@ -2120,8 +2008,29 @@ const (
 	ApplicationGatewayBackendHttpSettingsPropertiesFormatProtocolHttps = ApplicationGatewayBackendHttpSettingsPropertiesFormatProtocol("Https")
 )
 
+// +kubebuilder:validation:Enum={"Disabled","Enabled"}
+type ApplicationGatewayBackendHttpSettingsPropertiesFormatStatusCookieBasedAffinity string
+
+const (
+	ApplicationGatewayBackendHttpSettingsPropertiesFormatStatusCookieBasedAffinityDisabled = ApplicationGatewayBackendHttpSettingsPropertiesFormatStatusCookieBasedAffinity("Disabled")
+	ApplicationGatewayBackendHttpSettingsPropertiesFormatStatusCookieBasedAffinityEnabled  = ApplicationGatewayBackendHttpSettingsPropertiesFormatStatusCookieBasedAffinity("Enabled")
+)
+
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayConnectionDraining
 type ApplicationGatewayConnectionDraining struct {
+
+	// +kubebuilder:validation:Required
+	//DrainTimeoutInSec: The number of seconds connection draining is active.
+	//Acceptable values are from 1 second to 3600 seconds.
+	DrainTimeoutInSec int `json:"drainTimeoutInSec"`
+
+	// +kubebuilder:validation:Required
+	//Enabled: Whether connection draining is enabled or not.
+	Enabled bool `json:"enabled"`
+}
+
+//Generated from:
+type ApplicationGatewayConnectionDraining_Status struct {
 
 	// +kubebuilder:validation:Required
 	//DrainTimeoutInSec: The number of seconds connection draining is active.
@@ -2160,6 +2069,186 @@ type ApplicationGatewayPathRule struct {
 }
 
 //Generated from:
+type ApplicationGatewayPathRule_Status struct {
+
+	//Etag: A unique read-only string that changes whenever the resource is updated.
+	Etag *string `json:"etag,omitempty"`
+
+	//Id: Resource ID.
+	Id *string `json:"id,omitempty"`
+
+	//Name: Name of the path rule that is unique within an Application Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the application gateway path rule.
+	Properties *ApplicationGatewayPathRulePropertiesFormat_Status `json:"properties,omitempty"`
+
+	//Type: Type of the resource.
+	Type *string `json:"type,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayPrivateLinkIpConfiguration
+type ApplicationGatewayPrivateLinkIpConfiguration struct {
+
+	//Name: The name of application gateway private link ip configuration.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of an application gateway private link ip configuration.
+	Properties *ApplicationGatewayPrivateLinkIpConfigurationProperties `json:"properties,omitempty"`
+}
+
+//Generated from:
+type ApplicationGatewayPrivateLinkIpConfiguration_Status struct {
+
+	//Etag: A unique read-only string that changes whenever the resource is updated.
+	Etag *string `json:"etag,omitempty"`
+
+	//Id: Resource ID.
+	Id *string `json:"id,omitempty"`
+
+	//Name: The name of application gateway private link ip configuration.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of an application gateway private link ip configuration.
+	Properties *ApplicationGatewayPrivateLinkIpConfigurationProperties_Status `json:"properties,omitempty"`
+
+	//Type: The resource type.
+	Type *string `json:"type,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayProbeHealthResponseMatch
+type ApplicationGatewayProbeHealthResponseMatch struct {
+
+	//Body: Body that must be contained in the health response. Default value is empty.
+	Body *string `json:"body,omitempty"`
+
+	//StatusCodes: Allowed ranges of healthy status codes. Default range of healthy
+	//status codes is 200-399.
+	StatusCodes []string `json:"statusCodes,omitempty"`
+}
+
+//Generated from:
+type ApplicationGatewayProbeHealthResponseMatch_Status struct {
+
+	//Body: Body that must be contained in the health response. Default value is empty.
+	Body *string `json:"body,omitempty"`
+
+	//StatusCodes: Allowed ranges of healthy status codes. Default range of healthy
+	//status codes is 200-399.
+	StatusCodes []string `json:"statusCodes,omitempty"`
+}
+
+// +kubebuilder:validation:Enum={"Http","Https"}
+type ApplicationGatewayProbePropertiesFormatProtocol string
+
+const (
+	ApplicationGatewayProbePropertiesFormatProtocolHttp  = ApplicationGatewayProbePropertiesFormatProtocol("Http")
+	ApplicationGatewayProbePropertiesFormatProtocolHttps = ApplicationGatewayProbePropertiesFormatProtocol("Https")
+)
+
+//Generated from:
+// +kubebuilder:validation:Enum={"Http","Https"}
+type ApplicationGatewayProtocol_Status string
+
+const (
+	ApplicationGatewayProtocol_StatusHttp  = ApplicationGatewayProtocol_Status("Http")
+	ApplicationGatewayProtocol_StatusHttps = ApplicationGatewayProtocol_Status("Https")
+)
+
+// +kubebuilder:validation:Enum={"Found","Permanent","SeeOther","Temporary"}
+type ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectType string
+
+const (
+	ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectTypeFound     = ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectType("Found")
+	ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectTypePermanent = ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectType("Permanent")
+	ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectTypeSeeOther  = ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectType("SeeOther")
+	ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectTypeTemporary = ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectType("Temporary")
+)
+
+// +kubebuilder:validation:Enum={"Basic","PathBasedRouting"}
+type ApplicationGatewayRequestRoutingRulePropertiesFormatRuleType string
+
+const (
+	ApplicationGatewayRequestRoutingRulePropertiesFormatRuleTypeBasic            = ApplicationGatewayRequestRoutingRulePropertiesFormatRuleType("Basic")
+	ApplicationGatewayRequestRoutingRulePropertiesFormatRuleTypePathBasedRouting = ApplicationGatewayRequestRoutingRulePropertiesFormatRuleType("PathBasedRouting")
+)
+
+// +kubebuilder:validation:Enum={"Basic","PathBasedRouting"}
+type ApplicationGatewayRequestRoutingRulePropertiesFormatStatusRuleType string
+
+const (
+	ApplicationGatewayRequestRoutingRulePropertiesFormatStatusRuleTypeBasic            = ApplicationGatewayRequestRoutingRulePropertiesFormatStatusRuleType("Basic")
+	ApplicationGatewayRequestRoutingRulePropertiesFormatStatusRuleTypePathBasedRouting = ApplicationGatewayRequestRoutingRulePropertiesFormatStatusRuleType("PathBasedRouting")
+)
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRewriteRule
+type ApplicationGatewayRewriteRule struct {
+
+	//ActionSet: Set of actions to be done as part of the rewrite Rule.
+	ActionSet *ApplicationGatewayRewriteRuleActionSet `json:"actionSet,omitempty"`
+
+	//Conditions: Conditions based on which the action set execution will be evaluated.
+	Conditions []ApplicationGatewayRewriteRuleCondition `json:"conditions,omitempty"`
+
+	//Name: Name of the rewrite rule that is unique within an Application Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//RuleSequence: Rule Sequence of the rewrite rule that determines the order of
+	//execution of a particular rule in a RewriteRuleSet.
+	RuleSequence *int `json:"ruleSequence,omitempty"`
+}
+
+//Generated from:
+type ApplicationGatewayRewriteRule_Status struct {
+
+	//ActionSet: Set of actions to be done as part of the rewrite Rule.
+	ActionSet *ApplicationGatewayRewriteRuleActionSet_Status `json:"actionSet,omitempty"`
+
+	//Conditions: Conditions based on which the action set execution will be evaluated.
+	Conditions []ApplicationGatewayRewriteRuleCondition_Status `json:"conditions,omitempty"`
+
+	//Name: Name of the rewrite rule that is unique within an Application Gateway.
+	Name *string `json:"name,omitempty"`
+
+	//RuleSequence: Rule Sequence of the rewrite rule that determines the order of
+	//execution of a particular rule in a RewriteRuleSet.
+	RuleSequence *int `json:"ruleSequence,omitempty"`
+}
+
+//Generated from:
+// +kubebuilder:validation:Enum={"Found","Permanent","SeeOther","Temporary"}
+type RedirectTypeEnum_Status string
+
+const (
+	RedirectTypeEnum_StatusFound     = RedirectTypeEnum_Status("Found")
+	RedirectTypeEnum_StatusPermanent = RedirectTypeEnum_Status("Permanent")
+	RedirectTypeEnum_StatusSeeOther  = RedirectTypeEnum_Status("SeeOther")
+	RedirectTypeEnum_StatusTemporary = RedirectTypeEnum_Status("Temporary")
+)
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayPathRulePropertiesFormat
+type ApplicationGatewayPathRulePropertiesFormat struct {
+
+	//BackendAddressPool: Backend address pool resource of URL path map path rule.
+	BackendAddressPool *SubResource `json:"backendAddressPool,omitempty"`
+
+	//BackendHttpSettings: Backend http settings resource of URL path map path rule.
+	BackendHttpSettings *SubResource `json:"backendHttpSettings,omitempty"`
+
+	//FirewallPolicy: Reference to the FirewallPolicy resource.
+	FirewallPolicy *SubResource `json:"firewallPolicy,omitempty"`
+
+	//Paths: Path rules of URL path map.
+	Paths []string `json:"paths,omitempty"`
+
+	//RedirectConfiguration: Redirect configuration resource of URL path map path rule.
+	RedirectConfiguration *SubResource `json:"redirectConfiguration,omitempty"`
+
+	//RewriteRuleSet: Rewrite rule set resource of URL path map path rule.
+	RewriteRuleSet *SubResource `json:"rewriteRuleSet,omitempty"`
+}
+
+//Generated from:
 type ApplicationGatewayPathRulePropertiesFormat_Status struct {
 
 	//BackendAddressPool: Backend address pool resource of URL path map path rule.
@@ -2184,14 +2273,20 @@ type ApplicationGatewayPathRulePropertiesFormat_Status struct {
 	RewriteRuleSet *SubResource_Status `json:"rewriteRuleSet,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayPrivateLinkIpConfiguration
-type ApplicationGatewayPrivateLinkIpConfiguration struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayPrivateLinkIpConfigurationProperties
+type ApplicationGatewayPrivateLinkIpConfigurationProperties struct {
 
-	//Name: The name of application gateway private link ip configuration.
-	Name *string `json:"name,omitempty"`
+	//Primary: Whether the ip configuration is primary or not.
+	Primary *bool `json:"primary,omitempty"`
 
-	//Properties: Properties of an application gateway private link ip configuration.
-	Properties *ApplicationGatewayPrivateLinkIpConfigurationProperties `json:"properties,omitempty"`
+	//PrivateIPAddress: The private IP address of the IP configuration.
+	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
+
+	//PrivateIPAllocationMethod: The private IP address allocation method.
+	PrivateIPAllocationMethod *ApplicationGatewayPrivateLinkIpConfigurationPropertiesPrivateIPAllocationMethod `json:"privateIPAllocationMethod,omitempty"`
+
+	//Subnet: Reference to the subnet resource.
+	Subnet *SubResource `json:"subnet,omitempty"`
 }
 
 //Generated from:
@@ -2214,58 +2309,17 @@ type ApplicationGatewayPrivateLinkIpConfigurationProperties_Status struct {
 	Subnet *SubResource_Status `json:"subnet,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayProbeHealthResponseMatch
-type ApplicationGatewayProbeHealthResponseMatch struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRewriteRuleActionSet
+type ApplicationGatewayRewriteRuleActionSet struct {
 
-	//Body: Body that must be contained in the health response. Default value is empty.
-	Body *string `json:"body,omitempty"`
+	//RequestHeaderConfigurations: Request Header Actions in the Action Set.
+	RequestHeaderConfigurations []ApplicationGatewayHeaderConfiguration `json:"requestHeaderConfigurations,omitempty"`
 
-	//StatusCodes: Allowed ranges of healthy status codes. Default range of healthy
-	//status codes is 200-399.
-	StatusCodes []string `json:"statusCodes,omitempty"`
-}
+	//ResponseHeaderConfigurations: Response Header Actions in the Action Set.
+	ResponseHeaderConfigurations []ApplicationGatewayHeaderConfiguration `json:"responseHeaderConfigurations,omitempty"`
 
-// +kubebuilder:validation:Enum={"Http","Https"}
-type ApplicationGatewayProbePropertiesFormatProtocol string
-
-const (
-	ApplicationGatewayProbePropertiesFormatProtocolHttp  = ApplicationGatewayProbePropertiesFormatProtocol("Http")
-	ApplicationGatewayProbePropertiesFormatProtocolHttps = ApplicationGatewayProbePropertiesFormatProtocol("Https")
-)
-
-// +kubebuilder:validation:Enum={"Found","Permanent","SeeOther","Temporary"}
-type ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectType string
-
-const (
-	ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectTypeFound     = ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectType("Found")
-	ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectTypePermanent = ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectType("Permanent")
-	ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectTypeSeeOther  = ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectType("SeeOther")
-	ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectTypeTemporary = ApplicationGatewayRedirectConfigurationPropertiesFormatRedirectType("Temporary")
-)
-
-// +kubebuilder:validation:Enum={"Basic","PathBasedRouting"}
-type ApplicationGatewayRequestRoutingRulePropertiesFormatRuleType string
-
-const (
-	ApplicationGatewayRequestRoutingRulePropertiesFormatRuleTypeBasic            = ApplicationGatewayRequestRoutingRulePropertiesFormatRuleType("Basic")
-	ApplicationGatewayRequestRoutingRulePropertiesFormatRuleTypePathBasedRouting = ApplicationGatewayRequestRoutingRulePropertiesFormatRuleType("PathBasedRouting")
-)
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRewriteRule
-type ApplicationGatewayRewriteRule struct {
-
-	//ActionSet: Set of actions to be done as part of the rewrite Rule.
-	ActionSet *ApplicationGatewayRewriteRuleActionSet `json:"actionSet,omitempty"`
-
-	//Conditions: Conditions based on which the action set execution will be evaluated.
-	Conditions []ApplicationGatewayRewriteRuleCondition `json:"conditions,omitempty"`
-
-	//Name: Name of the rewrite rule that is unique within an Application Gateway.
-	Name *string `json:"name,omitempty"`
-
-	//RuleSequence: Rule Sequence of the rewrite rule that determines the order of
-	//execution of a particular rule in a RewriteRuleSet.
-	RuleSequence *int `json:"ruleSequence,omitempty"`
+	//UrlConfiguration: Url Configuration Action in the Action Set.
+	UrlConfiguration *ApplicationGatewayUrlConfiguration `json:"urlConfiguration,omitempty"`
 }
 
 //Generated from:
@@ -2279,86 +2333,6 @@ type ApplicationGatewayRewriteRuleActionSet_Status struct {
 
 	//UrlConfiguration: Url Configuration Action in the Action Set.
 	UrlConfiguration *ApplicationGatewayUrlConfiguration_Status `json:"urlConfiguration,omitempty"`
-}
-
-//Generated from:
-type ApplicationGatewayRewriteRuleCondition_Status struct {
-
-	//IgnoreCase: Setting this paramter to truth value with force the pattern to do a
-	//case in-sensitive comparison.
-	IgnoreCase *bool `json:"ignoreCase,omitempty"`
-
-	//Negate: Setting this value as truth will force to check the negation of the
-	//condition given by the user.
-	Negate *bool `json:"negate,omitempty"`
-
-	//Pattern: The pattern, either fixed string or regular expression, that evaluates
-	//the truthfulness of the condition.
-	Pattern *string `json:"pattern,omitempty"`
-
-	//Variable: The condition parameter of the RewriteRuleCondition.
-	Variable *string `json:"variable,omitempty"`
-}
-
-//Generated from:
-type ApplicationGatewayHeaderConfiguration_Status struct {
-
-	//HeaderName: Header name of the header configuration.
-	HeaderName *string `json:"headerName,omitempty"`
-
-	//HeaderValue: Header value of the header configuration.
-	HeaderValue *string `json:"headerValue,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayPathRulePropertiesFormat
-type ApplicationGatewayPathRulePropertiesFormat struct {
-
-	//BackendAddressPool: Backend address pool resource of URL path map path rule.
-	BackendAddressPool *SubResource `json:"backendAddressPool,omitempty"`
-
-	//BackendHttpSettings: Backend http settings resource of URL path map path rule.
-	BackendHttpSettings *SubResource `json:"backendHttpSettings,omitempty"`
-
-	//FirewallPolicy: Reference to the FirewallPolicy resource.
-	FirewallPolicy *SubResource `json:"firewallPolicy,omitempty"`
-
-	//Paths: Path rules of URL path map.
-	Paths []string `json:"paths,omitempty"`
-
-	//RedirectConfiguration: Redirect configuration resource of URL path map path rule.
-	RedirectConfiguration *SubResource `json:"redirectConfiguration,omitempty"`
-
-	//RewriteRuleSet: Rewrite rule set resource of URL path map path rule.
-	RewriteRuleSet *SubResource `json:"rewriteRuleSet,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayPrivateLinkIpConfigurationProperties
-type ApplicationGatewayPrivateLinkIpConfigurationProperties struct {
-
-	//Primary: Whether the ip configuration is primary or not.
-	Primary *bool `json:"primary,omitempty"`
-
-	//PrivateIPAddress: The private IP address of the IP configuration.
-	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
-
-	//PrivateIPAllocationMethod: The private IP address allocation method.
-	PrivateIPAllocationMethod *ApplicationGatewayPrivateLinkIpConfigurationPropertiesPrivateIPAllocationMethod `json:"privateIPAllocationMethod,omitempty"`
-
-	//Subnet: Reference to the subnet resource.
-	Subnet *SubResource `json:"subnet,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRewriteRuleActionSet
-type ApplicationGatewayRewriteRuleActionSet struct {
-
-	//RequestHeaderConfigurations: Request Header Actions in the Action Set.
-	RequestHeaderConfigurations []ApplicationGatewayHeaderConfiguration `json:"requestHeaderConfigurations,omitempty"`
-
-	//ResponseHeaderConfigurations: Response Header Actions in the Action Set.
-	ResponseHeaderConfigurations []ApplicationGatewayHeaderConfiguration `json:"responseHeaderConfigurations,omitempty"`
-
-	//UrlConfiguration: Url Configuration Action in the Action Set.
-	UrlConfiguration *ApplicationGatewayUrlConfiguration `json:"urlConfiguration,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayRewriteRuleCondition
@@ -2381,23 +2355,36 @@ type ApplicationGatewayRewriteRuleCondition struct {
 }
 
 //Generated from:
-type ApplicationGatewayUrlConfiguration_Status struct {
+type ApplicationGatewayRewriteRuleCondition_Status struct {
 
-	//ModifiedPath: Url path which user has provided for url rewrite. Null means no
-	//path will be updated. Default value is null.
-	ModifiedPath *string `json:"modifiedPath,omitempty"`
+	//IgnoreCase: Setting this paramter to truth value with force the pattern to do a
+	//case in-sensitive comparison.
+	IgnoreCase *bool `json:"ignoreCase,omitempty"`
 
-	//ModifiedQueryString: Query string which user has provided for url rewrite. Null
-	//means no query string will be updated. Default value is null.
-	ModifiedQueryString *string `json:"modifiedQueryString,omitempty"`
+	//Negate: Setting this value as truth will force to check the negation of the
+	//condition given by the user.
+	Negate *bool `json:"negate,omitempty"`
 
-	//Reroute: If set as true, it will re-evaluate the url path map provided in path
-	//based request routing rules using modified path. Default value is false.
-	Reroute *bool `json:"reroute,omitempty"`
+	//Pattern: The pattern, either fixed string or regular expression, that evaluates
+	//the truthfulness of the condition.
+	Pattern *string `json:"pattern,omitempty"`
+
+	//Variable: The condition parameter of the RewriteRuleCondition.
+	Variable *string `json:"variable,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayHeaderConfiguration
 type ApplicationGatewayHeaderConfiguration struct {
+
+	//HeaderName: Header name of the header configuration.
+	HeaderName *string `json:"headerName,omitempty"`
+
+	//HeaderValue: Header value of the header configuration.
+	HeaderValue *string `json:"headerValue,omitempty"`
+}
+
+//Generated from:
+type ApplicationGatewayHeaderConfiguration_Status struct {
 
 	//HeaderName: Header name of the header configuration.
 	HeaderName *string `json:"headerName,omitempty"`
@@ -2416,6 +2403,22 @@ const (
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ApplicationGatewayUrlConfiguration
 type ApplicationGatewayUrlConfiguration struct {
+
+	//ModifiedPath: Url path which user has provided for url rewrite. Null means no
+	//path will be updated. Default value is null.
+	ModifiedPath *string `json:"modifiedPath,omitempty"`
+
+	//ModifiedQueryString: Query string which user has provided for url rewrite. Null
+	//means no query string will be updated. Default value is null.
+	ModifiedQueryString *string `json:"modifiedQueryString,omitempty"`
+
+	//Reroute: If set as true, it will re-evaluate the url path map provided in path
+	//based request routing rules using modified path. Default value is false.
+	Reroute *bool `json:"reroute,omitempty"`
+}
+
+//Generated from:
+type ApplicationGatewayUrlConfiguration_Status struct {
 
 	//ModifiedPath: Url path which user has provided for url rewrite. Null means no
 	//path will be updated. Default value is null.

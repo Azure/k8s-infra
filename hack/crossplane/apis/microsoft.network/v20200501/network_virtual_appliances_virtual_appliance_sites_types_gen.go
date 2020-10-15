@@ -31,8 +31,11 @@ type NetworkVirtualAppliancesVirtualApplianceSites_Spec struct {
 	ForProvider NetworkVirtualAppliancesVirtualApplianceSitesParameters `json:"forProvider"`
 }
 
-//Generated from:
 type VirtualApplianceSite_Status struct {
+	AtProvider NetworkVirtualAppliancesVirtualApplianceSitesObservation `json:"atProvider"`
+}
+
+type NetworkVirtualAppliancesVirtualApplianceSitesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -89,6 +92,26 @@ type NetworkVirtualAppliancesVirtualApplianceSitesParameters struct {
 	Type NetworkVirtualAppliancesVirtualApplianceSitesSpecType `json:"type"`
 }
 
+// +kubebuilder:validation:Enum={"2020-05-01"}
+type NetworkVirtualAppliancesVirtualApplianceSitesSpecApiVersion string
+
+const NetworkVirtualAppliancesVirtualApplianceSitesSpecApiVersion20200501 = NetworkVirtualAppliancesVirtualApplianceSitesSpecApiVersion("2020-05-01")
+
+// +kubebuilder:validation:Enum={"Microsoft.Network/networkVirtualAppliances/virtualApplianceSites"}
+type NetworkVirtualAppliancesVirtualApplianceSitesSpecType string
+
+const NetworkVirtualAppliancesVirtualApplianceSitesSpecTypeMicrosoftNetworkNetworkVirtualAppliancesVirtualApplianceSites = NetworkVirtualAppliancesVirtualApplianceSitesSpecType("Microsoft.Network/networkVirtualAppliances/virtualApplianceSites")
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualApplianceSiteProperties
+type VirtualApplianceSiteProperties struct {
+
+	//AddressPrefix: Address Prefix.
+	AddressPrefix *string `json:"addressPrefix,omitempty"`
+
+	//O365Policy: Office 365 Policy.
+	O365Policy *Office365PolicyProperties `json:"o365Policy,omitempty"`
+}
+
 //Generated from:
 type VirtualApplianceSiteProperties_Status struct {
 
@@ -102,15 +125,12 @@ type VirtualApplianceSiteProperties_Status struct {
 	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"2020-05-01"}
-type NetworkVirtualAppliancesVirtualApplianceSitesSpecApiVersion string
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/Office365PolicyProperties
+type Office365PolicyProperties struct {
 
-const NetworkVirtualAppliancesVirtualApplianceSitesSpecApiVersion20200501 = NetworkVirtualAppliancesVirtualApplianceSitesSpecApiVersion("2020-05-01")
-
-// +kubebuilder:validation:Enum={"Microsoft.Network/networkVirtualAppliances/virtualApplianceSites"}
-type NetworkVirtualAppliancesVirtualApplianceSitesSpecType string
-
-const NetworkVirtualAppliancesVirtualApplianceSitesSpecTypeMicrosoftNetworkNetworkVirtualAppliancesVirtualApplianceSites = NetworkVirtualAppliancesVirtualApplianceSitesSpecType("Microsoft.Network/networkVirtualAppliances/virtualApplianceSites")
+	//BreakOutCategories: Office 365 breakout categories.
+	BreakOutCategories *BreakOutCategoryPolicies `json:"breakOutCategories,omitempty"`
+}
 
 //Generated from:
 type Office365PolicyProperties_Status struct {
@@ -119,18 +139,8 @@ type Office365PolicyProperties_Status struct {
 	BreakOutCategories *BreakOutCategoryPolicies_Status `json:"breakOutCategories,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualApplianceSiteProperties
-type VirtualApplianceSiteProperties struct {
-
-	//AddressPrefix: Address Prefix.
-	AddressPrefix *string `json:"addressPrefix,omitempty"`
-
-	//O365Policy: Office 365 Policy.
-	O365Policy *Office365PolicyProperties `json:"o365Policy,omitempty"`
-}
-
-//Generated from:
-type BreakOutCategoryPolicies_Status struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/BreakOutCategoryPolicies
+type BreakOutCategoryPolicies struct {
 
 	//Allow: Flag to control breakout of o365 allow category.
 	Allow *bool `json:"allow,omitempty"`
@@ -142,15 +152,8 @@ type BreakOutCategoryPolicies_Status struct {
 	Optimize *bool `json:"optimize,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/Office365PolicyProperties
-type Office365PolicyProperties struct {
-
-	//BreakOutCategories: Office 365 breakout categories.
-	BreakOutCategories *BreakOutCategoryPolicies `json:"breakOutCategories,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/BreakOutCategoryPolicies
-type BreakOutCategoryPolicies struct {
+//Generated from:
+type BreakOutCategoryPolicies_Status struct {
 
 	//Allow: Flag to control breakout of o365 allow category.
 	Allow *bool `json:"allow,omitempty"`

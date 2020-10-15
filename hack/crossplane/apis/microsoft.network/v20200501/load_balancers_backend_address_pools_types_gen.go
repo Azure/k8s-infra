@@ -27,8 +27,15 @@ type LoadBalancersBackendAddressPoolsList struct {
 	Items           []LoadBalancersBackendAddressPools `json:"items"`
 }
 
-//Generated from:
 type BackendAddressPool_Status struct {
+	AtProvider LoadBalancersBackendAddressPoolsObservation `json:"atProvider"`
+}
+
+type LoadBalancersBackendAddressPools_Spec struct {
+	ForProvider LoadBalancersBackendAddressPoolsParameters `json:"forProvider"`
+}
+
+type LoadBalancersBackendAddressPoolsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -45,36 +52,6 @@ type BackendAddressPool_Status struct {
 
 	//Type: Type of the resource.
 	Type *string `json:"type,omitempty"`
-}
-
-type LoadBalancersBackendAddressPools_Spec struct {
-	ForProvider LoadBalancersBackendAddressPoolsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type BackendAddressPoolPropertiesFormat_Status struct {
-
-	//BackendIPConfigurations: An array of references to IP addresses defined in
-	//network interfaces.
-	BackendIPConfigurations []NetworkInterfaceIPConfiguration_Status `json:"backendIPConfigurations,omitempty"`
-
-	//LoadBalancerBackendAddresses: An array of backend addresses.
-	LoadBalancerBackendAddresses []LoadBalancerBackendAddress_Status `json:"loadBalancerBackendAddresses,omitempty"`
-
-	//LoadBalancingRules: An array of references to load balancing rules that use this
-	//backend address pool.
-	LoadBalancingRules []SubResource_Status `json:"loadBalancingRules,omitempty"`
-
-	//OutboundRule: A reference to an outbound rule that uses this backend address
-	//pool.
-	OutboundRule *SubResource_Status `json:"outboundRule,omitempty"`
-
-	//OutboundRules: An array of references to outbound rules that use this backend
-	//address pool.
-	OutboundRules []SubResource_Status `json:"outboundRules,omitempty"`
-
-	//ProvisioningState: The provisioning state of the backend address pool resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 type LoadBalancersBackendAddressPoolsParameters struct {
@@ -124,13 +101,29 @@ type BackendAddressPoolPropertiesFormat struct {
 }
 
 //Generated from:
-type LoadBalancerBackendAddress_Status struct {
+type BackendAddressPoolPropertiesFormat_Status struct {
 
-	//Name: Name of the backend address.
-	Name *string `json:"name,omitempty"`
+	//BackendIPConfigurations: An array of references to IP addresses defined in
+	//network interfaces.
+	BackendIPConfigurations []NetworkInterfaceIPConfiguration_Status `json:"backendIPConfigurations,omitempty"`
 
-	//Properties: Properties of load balancer backend address pool.
-	Properties *LoadBalancerBackendAddressPropertiesFormat_Status `json:"properties,omitempty"`
+	//LoadBalancerBackendAddresses: An array of backend addresses.
+	LoadBalancerBackendAddresses []LoadBalancerBackendAddress_Status `json:"loadBalancerBackendAddresses,omitempty"`
+
+	//LoadBalancingRules: An array of references to load balancing rules that use this
+	//backend address pool.
+	LoadBalancingRules []SubResource_Status `json:"loadBalancingRules,omitempty"`
+
+	//OutboundRule: A reference to an outbound rule that uses this backend address
+	//pool.
+	OutboundRule *SubResource_Status `json:"outboundRule,omitempty"`
+
+	//OutboundRules: An array of references to outbound rules that use this backend
+	//address pool.
+	OutboundRules []SubResource_Status `json:"outboundRules,omitempty"`
+
+	//ProvisioningState: The provisioning state of the backend address pool resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
@@ -142,6 +135,26 @@ const LoadBalancersBackendAddressPoolsSpecApiVersion20200501 = LoadBalancersBack
 type LoadBalancersBackendAddressPoolsSpecType string
 
 const LoadBalancersBackendAddressPoolsSpecTypeMicrosoftNetworkLoadBalancersBackendAddressPools = LoadBalancersBackendAddressPoolsSpecType("Microsoft.Network/loadBalancers/backendAddressPools")
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/LoadBalancerBackendAddress
+type LoadBalancerBackendAddress struct {
+
+	//Name: Name of the backend address.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of load balancer backend address pool.
+	Properties *LoadBalancerBackendAddressPropertiesFormat `json:"properties,omitempty"`
+}
+
+//Generated from:
+type LoadBalancerBackendAddress_Status struct {
+
+	//Name: Name of the backend address.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of load balancer backend address pool.
+	Properties *LoadBalancerBackendAddressPropertiesFormat_Status `json:"properties,omitempty"`
+}
 
 //Generated from:
 type NetworkInterfaceIPConfiguration_Status struct {
@@ -160,14 +173,14 @@ type NetworkInterfaceIPConfiguration_Status struct {
 	Properties *NetworkInterfaceIPConfigurationPropertiesFormat_Status `json:"properties,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/LoadBalancerBackendAddress
-type LoadBalancerBackendAddress struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/LoadBalancerBackendAddressPropertiesFormat
+type LoadBalancerBackendAddressPropertiesFormat struct {
 
-	//Name: Name of the backend address.
-	Name *string `json:"name,omitempty"`
+	//IpAddress: IP Address belonging to the referenced virtual network.
+	IpAddress *string `json:"ipAddress,omitempty"`
 
-	//Properties: Properties of load balancer backend address pool.
-	Properties *LoadBalancerBackendAddressPropertiesFormat `json:"properties,omitempty"`
+	//VirtualNetwork: Reference to an existing virtual network.
+	VirtualNetwork *SubResource `json:"virtualNetwork,omitempty"`
 }
 
 //Generated from:
@@ -231,16 +244,6 @@ type NetworkInterfaceIPConfigurationPropertiesFormat_Status struct {
 
 	//VirtualNetworkTaps: The reference to Virtual Network Taps.
 	VirtualNetworkTaps []VirtualNetworkTap_Status `json:"virtualNetworkTaps,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/LoadBalancerBackendAddressPropertiesFormat
-type LoadBalancerBackendAddressPropertiesFormat struct {
-
-	//IpAddress: IP Address belonging to the referenced virtual network.
-	IpAddress *string `json:"ipAddress,omitempty"`
-
-	//VirtualNetwork: Reference to an existing virtual network.
-	VirtualNetwork *SubResource `json:"virtualNetwork,omitempty"`
 }
 
 //Generated from:

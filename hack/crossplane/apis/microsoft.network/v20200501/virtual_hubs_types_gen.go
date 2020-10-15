@@ -27,8 +27,15 @@ type VirtualHubsList struct {
 	Items           []VirtualHubs `json:"items"`
 }
 
-//Generated from:
 type VirtualHub_Status struct {
+	AtProvider VirtualHubsObservation `json:"atProvider"`
+}
+
+type VirtualHubs_Spec struct {
+	ForProvider VirtualHubsParameters `json:"forProvider"`
+}
+
+type VirtualHubsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -52,8 +59,91 @@ type VirtualHub_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
-type VirtualHubs_Spec struct {
-	ForProvider VirtualHubsParameters `json:"forProvider"`
+type VirtualHubsParameters struct {
+
+	// +kubebuilder:validation:Required
+	//ApiVersion: API Version of the resource type, optional when apiProfile is used
+	//on the template
+	ApiVersion VirtualHubsSpecApiVersion `json:"apiVersion"`
+	Comments   *string                   `json:"comments,omitempty"`
+
+	//Condition: Condition of the resource
+	Condition *bool                   `json:"condition,omitempty"`
+	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
+
+	//DependsOn: Collection of resources this resource depends on
+	DependsOn []string `json:"dependsOn,omitempty"`
+
+	//Location: Location to deploy resource to
+	Location string `json:"location,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Name: Name of the resource
+	Name string `json:"name"`
+
+	// +kubebuilder:validation:Required
+	//Properties: Properties of the virtual hub.
+	Properties VirtualHubProperties `json:"properties"`
+
+	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
+	//setting the scope for extension resources 2) deploying resources to the tenant
+	//scope in non-tenant scope deployments
+	Scope *string `json:"scope,omitempty"`
+
+	//Tags: Name-value pairs to add to the resource
+	Tags map[string]string `json:"tags,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Type: Resource type
+	Type VirtualHubsSpecType `json:"type"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualHubProperties
+type VirtualHubProperties struct {
+
+	//AddressPrefix: Address-prefix for this VirtualHub.
+	AddressPrefix *string `json:"addressPrefix,omitempty"`
+
+	//AzureFirewall: The azureFirewall associated with this VirtualHub.
+	AzureFirewall *SubResource `json:"azureFirewall,omitempty"`
+
+	//ExpressRouteGateway: The expressRouteGateway associated with this VirtualHub.
+	ExpressRouteGateway *SubResource `json:"expressRouteGateway,omitempty"`
+
+	//P2SVpnGateway: The P2SVpnGateway associated with this VirtualHub.
+	P2SVpnGateway *SubResource `json:"p2SVpnGateway,omitempty"`
+
+	//RouteTable: The routeTable associated with this virtual hub.
+	RouteTable *VirtualHubRouteTable `json:"routeTable,omitempty"`
+
+	//RoutingState: The routing state.
+	RoutingState *VirtualHubPropertiesRoutingState `json:"routingState,omitempty"`
+
+	//SecurityPartnerProvider: The securityPartnerProvider associated with this
+	//VirtualHub.
+	SecurityPartnerProvider *SubResource `json:"securityPartnerProvider,omitempty"`
+
+	//SecurityProviderName: The Security Provider name.
+	SecurityProviderName *string `json:"securityProviderName,omitempty"`
+
+	//Sku: The sku of this VirtualHub.
+	Sku *string `json:"sku,omitempty"`
+
+	//VirtualHubRouteTableV2s: List of all virtual hub route table v2s associated with
+	//this VirtualHub.
+	VirtualHubRouteTableV2s []VirtualHubRouteTableV2 `json:"virtualHubRouteTableV2s,omitempty"`
+
+	//VirtualRouterAsn: VirtualRouter ASN.
+	VirtualRouterAsn *int `json:"virtualRouterAsn,omitempty"`
+
+	//VirtualRouterIps: VirtualRouter IPs.
+	VirtualRouterIps []string `json:"virtualRouterIps,omitempty"`
+
+	//VirtualWan: The VirtualWAN to which the VirtualHub belongs.
+	VirtualWan *SubResource `json:"virtualWan,omitempty"`
+
+	//VpnGateway: The VpnGateway associated with this VirtualHub.
+	VpnGateway *SubResource `json:"vpnGateway,omitempty"`
 }
 
 //Generated from:
@@ -113,44 +203,15 @@ type VirtualHubProperties_Status struct {
 	VpnGateway *SubResource_Status `json:"vpnGateway,omitempty"`
 }
 
-type VirtualHubsParameters struct {
+// +kubebuilder:validation:Enum={"2020-05-01"}
+type VirtualHubsSpecApiVersion string
 
-	// +kubebuilder:validation:Required
-	//ApiVersion: API Version of the resource type, optional when apiProfile is used
-	//on the template
-	ApiVersion VirtualHubsSpecApiVersion `json:"apiVersion"`
-	Comments   *string                   `json:"comments,omitempty"`
+const VirtualHubsSpecApiVersion20200501 = VirtualHubsSpecApiVersion("2020-05-01")
 
-	//Condition: Condition of the resource
-	Condition *bool                   `json:"condition,omitempty"`
-	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
+// +kubebuilder:validation:Enum={"Microsoft.Network/virtualHubs"}
+type VirtualHubsSpecType string
 
-	//DependsOn: Collection of resources this resource depends on
-	DependsOn []string `json:"dependsOn,omitempty"`
-
-	//Location: Location to deploy resource to
-	Location string `json:"location,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Name: Name of the resource
-	Name string `json:"name"`
-
-	// +kubebuilder:validation:Required
-	//Properties: Properties of the virtual hub.
-	Properties VirtualHubProperties `json:"properties"`
-
-	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
-	//setting the scope for extension resources 2) deploying resources to the tenant
-	//scope in non-tenant scope deployments
-	Scope *string `json:"scope,omitempty"`
-
-	//Tags: Name-value pairs to add to the resource
-	Tags map[string]string `json:"tags,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Type: Resource type
-	Type VirtualHubsSpecType `json:"type"`
-}
+const VirtualHubsSpecTypeMicrosoftNetworkVirtualHubs = VirtualHubsSpecType("Microsoft.Network/virtualHubs")
 
 //Generated from:
 // +kubebuilder:validation:Enum={"Failed","None","Provisioned","Provisioning"}
@@ -162,71 +223,6 @@ const (
 	RoutingState_StatusProvisioned  = RoutingState_Status("Provisioned")
 	RoutingState_StatusProvisioning = RoutingState_Status("Provisioning")
 )
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualHubProperties
-type VirtualHubProperties struct {
-
-	//AddressPrefix: Address-prefix for this VirtualHub.
-	AddressPrefix *string `json:"addressPrefix,omitempty"`
-
-	//AzureFirewall: The azureFirewall associated with this VirtualHub.
-	AzureFirewall *SubResource `json:"azureFirewall,omitempty"`
-
-	//ExpressRouteGateway: The expressRouteGateway associated with this VirtualHub.
-	ExpressRouteGateway *SubResource `json:"expressRouteGateway,omitempty"`
-
-	//P2SVpnGateway: The P2SVpnGateway associated with this VirtualHub.
-	P2SVpnGateway *SubResource `json:"p2SVpnGateway,omitempty"`
-
-	//RouteTable: The routeTable associated with this virtual hub.
-	RouteTable *VirtualHubRouteTable `json:"routeTable,omitempty"`
-
-	//RoutingState: The routing state.
-	RoutingState *VirtualHubPropertiesRoutingState `json:"routingState,omitempty"`
-
-	//SecurityPartnerProvider: The securityPartnerProvider associated with this
-	//VirtualHub.
-	SecurityPartnerProvider *SubResource `json:"securityPartnerProvider,omitempty"`
-
-	//SecurityProviderName: The Security Provider name.
-	SecurityProviderName *string `json:"securityProviderName,omitempty"`
-
-	//Sku: The sku of this VirtualHub.
-	Sku *string `json:"sku,omitempty"`
-
-	//VirtualHubRouteTableV2s: List of all virtual hub route table v2s associated with
-	//this VirtualHub.
-	VirtualHubRouteTableV2s []VirtualHubRouteTableV2 `json:"virtualHubRouteTableV2s,omitempty"`
-
-	//VirtualRouterAsn: VirtualRouter ASN.
-	VirtualRouterAsn *int `json:"virtualRouterAsn,omitempty"`
-
-	//VirtualRouterIps: VirtualRouter IPs.
-	VirtualRouterIps []string `json:"virtualRouterIps,omitempty"`
-
-	//VirtualWan: The VirtualWAN to which the VirtualHub belongs.
-	VirtualWan *SubResource `json:"virtualWan,omitempty"`
-
-	//VpnGateway: The VpnGateway associated with this VirtualHub.
-	VpnGateway *SubResource `json:"vpnGateway,omitempty"`
-}
-
-//Generated from:
-type VirtualHubRouteTable_Status struct {
-
-	//Routes: List of all routes.
-	Routes []VirtualHubRoute_Status `json:"routes,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"2020-05-01"}
-type VirtualHubsSpecApiVersion string
-
-const VirtualHubsSpecApiVersion20200501 = VirtualHubsSpecApiVersion("2020-05-01")
-
-// +kubebuilder:validation:Enum={"Microsoft.Network/virtualHubs"}
-type VirtualHubsSpecType string
-
-const VirtualHubsSpecTypeMicrosoftNetworkVirtualHubs = VirtualHubsSpecType("Microsoft.Network/virtualHubs")
 
 // +kubebuilder:validation:Enum={"Failed","None","Provisioned","Provisioning"}
 type VirtualHubPropertiesRoutingState string
@@ -257,7 +253,14 @@ type VirtualHubRouteTableV2 struct {
 }
 
 //Generated from:
-type VirtualHubRoute_Status struct {
+type VirtualHubRouteTable_Status struct {
+
+	//Routes: List of all routes.
+	Routes []VirtualHubRoute_Status `json:"routes,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualHubRoute
+type VirtualHubRoute struct {
 
 	//AddressPrefixes: List of all addressPrefixes.
 	AddressPrefixes []string `json:"addressPrefixes,omitempty"`
@@ -266,8 +269,8 @@ type VirtualHubRoute_Status struct {
 	NextHopIpAddress *string `json:"nextHopIpAddress,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualHubRoute
-type VirtualHubRoute struct {
+//Generated from:
+type VirtualHubRoute_Status struct {
 
 	//AddressPrefixes: List of all addressPrefixes.
 	AddressPrefixes []string `json:"addressPrefixes,omitempty"`

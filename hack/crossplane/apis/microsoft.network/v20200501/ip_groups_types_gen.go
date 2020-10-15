@@ -27,8 +27,15 @@ type IpGroupsList struct {
 	Items           []IpGroups `json:"items"`
 }
 
-//Generated from:
 type IpGroup_Status struct {
+	AtProvider IpGroupsObservation `json:"atProvider"`
+}
+
+type IpGroups_Spec struct {
+	ForProvider IpGroupsParameters `json:"forProvider"`
+}
+
+type IpGroupsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,24 +57,6 @@ type IpGroup_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type IpGroups_Spec struct {
-	ForProvider IpGroupsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type IpGroupPropertiesFormat_Status struct {
-
-	//Firewalls: List of references to Azure resources that this IpGroups is
-	//associated with.
-	Firewalls []SubResource_Status `json:"firewalls,omitempty"`
-
-	//IpAddresses: IpAddresses/IpAddressPrefixes in the IpGroups resource.
-	IpAddresses []string `json:"ipAddresses,omitempty"`
-
-	//ProvisioningState: The provisioning state of the IpGroups resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 type IpGroupsParameters struct {
@@ -114,6 +103,20 @@ type IpGroupPropertiesFormat struct {
 
 	//IpAddresses: IpAddresses/IpAddressPrefixes in the IpGroups resource.
 	IpAddresses []string `json:"ipAddresses,omitempty"`
+}
+
+//Generated from:
+type IpGroupPropertiesFormat_Status struct {
+
+	//Firewalls: List of references to Azure resources that this IpGroups is
+	//associated with.
+	Firewalls []SubResource_Status `json:"firewalls,omitempty"`
+
+	//IpAddresses: IpAddresses/IpAddressPrefixes in the IpGroups resource.
+	IpAddresses []string `json:"ipAddresses,omitempty"`
+
+	//ProvisioningState: The provisioning state of the IpGroups resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}

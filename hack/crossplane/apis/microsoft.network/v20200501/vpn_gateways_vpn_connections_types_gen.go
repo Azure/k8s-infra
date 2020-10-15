@@ -27,8 +27,15 @@ type VpnGatewaysVpnConnectionsList struct {
 	Items           []VpnGatewaysVpnConnections `json:"items"`
 }
 
-//Generated from:
 type VpnConnection_Status struct {
+	AtProvider VpnGatewaysVpnConnectionsObservation `json:"atProvider"`
+}
+
+type VpnGatewaysVpnConnections_Spec struct {
+	ForProvider VpnGatewaysVpnConnectionsParameters `json:"forProvider"`
+}
+
+type VpnGatewaysVpnConnectionsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -42,70 +49,6 @@ type VpnConnection_Status struct {
 
 	//Properties: Properties of the VPN connection.
 	Properties *VpnConnectionProperties_Status `json:"properties,omitempty"`
-}
-
-type VpnGatewaysVpnConnections_Spec struct {
-	ForProvider VpnGatewaysVpnConnectionsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type VpnConnectionProperties_Status struct {
-
-	//ConnectionBandwidth: Expected bandwidth in MBPS.
-	ConnectionBandwidth *int `json:"connectionBandwidth,omitempty"`
-
-	//ConnectionStatus: The connection status.
-	ConnectionStatus *VpnConnectionStatus_Status `json:"connectionStatus,omitempty"`
-
-	//DpdTimeoutSeconds: The dead peer detection timeout for a vpn connection in
-	//seconds.
-	DpdTimeoutSeconds *int `json:"dpdTimeoutSeconds,omitempty"`
-
-	//EgressBytesTransferred: Egress bytes transferred.
-	EgressBytesTransferred *int `json:"egressBytesTransferred,omitempty"`
-
-	//EnableBgp: EnableBgp flag.
-	EnableBgp *bool `json:"enableBgp,omitempty"`
-
-	//EnableInternetSecurity: Enable internet security.
-	EnableInternetSecurity *bool `json:"enableInternetSecurity,omitempty"`
-
-	//EnableRateLimiting: EnableBgp flag.
-	EnableRateLimiting *bool `json:"enableRateLimiting,omitempty"`
-
-	//IngressBytesTransferred: Ingress bytes transferred.
-	IngressBytesTransferred *int `json:"ingressBytesTransferred,omitempty"`
-
-	//IpsecPolicies: The IPSec Policies to be considered by this connection.
-	IpsecPolicies []IpsecPolicy_Status `json:"ipsecPolicies,omitempty"`
-
-	//ProvisioningState: The provisioning state of the VPN connection resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//RemoteVpnSite: Id of the connected vpn site.
-	RemoteVpnSite *SubResource_Status `json:"remoteVpnSite,omitempty"`
-
-	//RoutingConfiguration: The Routing Configuration indicating the associated and
-	//propagated route tables on this connection.
-	RoutingConfiguration *RoutingConfiguration_Status `json:"routingConfiguration,omitempty"`
-
-	//RoutingWeight: Routing weight for vpn connection.
-	RoutingWeight *int `json:"routingWeight,omitempty"`
-
-	//SharedKey: SharedKey for the vpn connection.
-	SharedKey *string `json:"sharedKey,omitempty"`
-
-	//UseLocalAzureIpAddress: Use local azure ip to initiate connection.
-	UseLocalAzureIpAddress *bool `json:"useLocalAzureIpAddress,omitempty"`
-
-	//UsePolicyBasedTrafficSelectors: Enable policy-based traffic selectors.
-	UsePolicyBasedTrafficSelectors *bool `json:"usePolicyBasedTrafficSelectors,omitempty"`
-
-	//VpnConnectionProtocolType: Connection protocol used for this connection.
-	VpnConnectionProtocolType *ConnectionProtocol_Status `json:"vpnConnectionProtocolType,omitempty"`
-
-	//VpnLinkConnections: List of all vpn site link connections to the gateway.
-	VpnLinkConnections []VpnSiteLinkConnection_Status `json:"vpnLinkConnections,omitempty"`
 }
 
 type VpnGatewaysVpnConnectionsParameters struct {
@@ -199,15 +142,64 @@ type VpnConnectionProperties struct {
 }
 
 //Generated from:
-// +kubebuilder:validation:Enum={"Connected","Connecting","NotConnected","Unknown"}
-type VpnConnectionStatus_Status string
+type VpnConnectionProperties_Status struct {
 
-const (
-	VpnConnectionStatus_StatusConnected    = VpnConnectionStatus_Status("Connected")
-	VpnConnectionStatus_StatusConnecting   = VpnConnectionStatus_Status("Connecting")
-	VpnConnectionStatus_StatusNotConnected = VpnConnectionStatus_Status("NotConnected")
-	VpnConnectionStatus_StatusUnknown      = VpnConnectionStatus_Status("Unknown")
-)
+	//ConnectionBandwidth: Expected bandwidth in MBPS.
+	ConnectionBandwidth *int `json:"connectionBandwidth,omitempty"`
+
+	//ConnectionStatus: The connection status.
+	ConnectionStatus *VpnConnectionStatus_Status `json:"connectionStatus,omitempty"`
+
+	//DpdTimeoutSeconds: The dead peer detection timeout for a vpn connection in
+	//seconds.
+	DpdTimeoutSeconds *int `json:"dpdTimeoutSeconds,omitempty"`
+
+	//EgressBytesTransferred: Egress bytes transferred.
+	EgressBytesTransferred *int `json:"egressBytesTransferred,omitempty"`
+
+	//EnableBgp: EnableBgp flag.
+	EnableBgp *bool `json:"enableBgp,omitempty"`
+
+	//EnableInternetSecurity: Enable internet security.
+	EnableInternetSecurity *bool `json:"enableInternetSecurity,omitempty"`
+
+	//EnableRateLimiting: EnableBgp flag.
+	EnableRateLimiting *bool `json:"enableRateLimiting,omitempty"`
+
+	//IngressBytesTransferred: Ingress bytes transferred.
+	IngressBytesTransferred *int `json:"ingressBytesTransferred,omitempty"`
+
+	//IpsecPolicies: The IPSec Policies to be considered by this connection.
+	IpsecPolicies []IpsecPolicy_Status `json:"ipsecPolicies,omitempty"`
+
+	//ProvisioningState: The provisioning state of the VPN connection resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//RemoteVpnSite: Id of the connected vpn site.
+	RemoteVpnSite *SubResource_Status `json:"remoteVpnSite,omitempty"`
+
+	//RoutingConfiguration: The Routing Configuration indicating the associated and
+	//propagated route tables on this connection.
+	RoutingConfiguration *RoutingConfiguration_Status `json:"routingConfiguration,omitempty"`
+
+	//RoutingWeight: Routing weight for vpn connection.
+	RoutingWeight *int `json:"routingWeight,omitempty"`
+
+	//SharedKey: SharedKey for the vpn connection.
+	SharedKey *string `json:"sharedKey,omitempty"`
+
+	//UseLocalAzureIpAddress: Use local azure ip to initiate connection.
+	UseLocalAzureIpAddress *bool `json:"useLocalAzureIpAddress,omitempty"`
+
+	//UsePolicyBasedTrafficSelectors: Enable policy-based traffic selectors.
+	UsePolicyBasedTrafficSelectors *bool `json:"usePolicyBasedTrafficSelectors,omitempty"`
+
+	//VpnConnectionProtocolType: Connection protocol used for this connection.
+	VpnConnectionProtocolType *ConnectionProtocol_Status `json:"vpnConnectionProtocolType,omitempty"`
+
+	//VpnLinkConnections: List of all vpn site link connections to the gateway.
+	VpnLinkConnections []VpnSiteLinkConnection_Status `json:"vpnLinkConnections,omitempty"`
+}
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type VpnGatewaysVpnConnectionsSpecApiVersion string
@@ -218,6 +210,46 @@ const VpnGatewaysVpnConnectionsSpecApiVersion20200501 = VpnGatewaysVpnConnection
 type VpnGatewaysVpnConnectionsSpecType string
 
 const VpnGatewaysVpnConnectionsSpecTypeMicrosoftNetworkVpnGatewaysVpnConnections = VpnGatewaysVpnConnectionsSpecType("Microsoft.Network/vpnGateways/vpnConnections")
+
+// +kubebuilder:validation:Enum={"Connected","Connecting","NotConnected","Unknown"}
+type VpnConnectionPropertiesConnectionStatus string
+
+const (
+	VpnConnectionPropertiesConnectionStatusConnected    = VpnConnectionPropertiesConnectionStatus("Connected")
+	VpnConnectionPropertiesConnectionStatusConnecting   = VpnConnectionPropertiesConnectionStatus("Connecting")
+	VpnConnectionPropertiesConnectionStatusNotConnected = VpnConnectionPropertiesConnectionStatus("NotConnected")
+	VpnConnectionPropertiesConnectionStatusUnknown      = VpnConnectionPropertiesConnectionStatus("Unknown")
+)
+
+// +kubebuilder:validation:Enum={"IKEv1","IKEv2"}
+type VpnConnectionPropertiesVpnConnectionProtocolType string
+
+const (
+	VpnConnectionPropertiesVpnConnectionProtocolTypeIKEv1 = VpnConnectionPropertiesVpnConnectionProtocolType("IKEv1")
+	VpnConnectionPropertiesVpnConnectionProtocolTypeIKEv2 = VpnConnectionPropertiesVpnConnectionProtocolType("IKEv2")
+)
+
+//Generated from:
+// +kubebuilder:validation:Enum={"Connected","Connecting","NotConnected","Unknown"}
+type VpnConnectionStatus_Status string
+
+const (
+	VpnConnectionStatus_StatusConnected    = VpnConnectionStatus_Status("Connected")
+	VpnConnectionStatus_StatusConnecting   = VpnConnectionStatus_Status("Connecting")
+	VpnConnectionStatus_StatusNotConnected = VpnConnectionStatus_Status("NotConnected")
+	VpnConnectionStatus_StatusUnknown      = VpnConnectionStatus_Status("Unknown")
+)
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VpnSiteLinkConnection
+type VpnSiteLinkConnection struct {
+
+	//Name: The name of the resource that is unique within a resource group. This name
+	//can be used to access the resource.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the VPN site link connection.
+	Properties *VpnSiteLinkConnectionProperties `json:"properties,omitempty"`
+}
 
 //Generated from:
 type VpnSiteLinkConnection_Status struct {
@@ -239,33 +271,41 @@ type VpnSiteLinkConnection_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"Connected","Connecting","NotConnected","Unknown"}
-type VpnConnectionPropertiesConnectionStatus string
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VpnSiteLinkConnectionProperties
+type VpnSiteLinkConnectionProperties struct {
 
-const (
-	VpnConnectionPropertiesConnectionStatusConnected    = VpnConnectionPropertiesConnectionStatus("Connected")
-	VpnConnectionPropertiesConnectionStatusConnecting   = VpnConnectionPropertiesConnectionStatus("Connecting")
-	VpnConnectionPropertiesConnectionStatusNotConnected = VpnConnectionPropertiesConnectionStatus("NotConnected")
-	VpnConnectionPropertiesConnectionStatusUnknown      = VpnConnectionPropertiesConnectionStatus("Unknown")
-)
+	//ConnectionBandwidth: Expected bandwidth in MBPS.
+	ConnectionBandwidth *int `json:"connectionBandwidth,omitempty"`
 
-// +kubebuilder:validation:Enum={"IKEv1","IKEv2"}
-type VpnConnectionPropertiesVpnConnectionProtocolType string
+	//ConnectionStatus: The connection status.
+	ConnectionStatus *VpnSiteLinkConnectionPropertiesConnectionStatus `json:"connectionStatus,omitempty"`
 
-const (
-	VpnConnectionPropertiesVpnConnectionProtocolTypeIKEv1 = VpnConnectionPropertiesVpnConnectionProtocolType("IKEv1")
-	VpnConnectionPropertiesVpnConnectionProtocolTypeIKEv2 = VpnConnectionPropertiesVpnConnectionProtocolType("IKEv2")
-)
+	//EnableBgp: EnableBgp flag.
+	EnableBgp *bool `json:"enableBgp,omitempty"`
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VpnSiteLinkConnection
-type VpnSiteLinkConnection struct {
+	//EnableRateLimiting: EnableBgp flag.
+	EnableRateLimiting *bool `json:"enableRateLimiting,omitempty"`
 
-	//Name: The name of the resource that is unique within a resource group. This name
-	//can be used to access the resource.
-	Name *string `json:"name,omitempty"`
+	//IpsecPolicies: The IPSec Policies to be considered by this connection.
+	IpsecPolicies []IpsecPolicy `json:"ipsecPolicies,omitempty"`
 
-	//Properties: Properties of the VPN site link connection.
-	Properties *VpnSiteLinkConnectionProperties `json:"properties,omitempty"`
+	//RoutingWeight: Routing weight for vpn connection.
+	RoutingWeight *int `json:"routingWeight,omitempty"`
+
+	//SharedKey: SharedKey for the vpn connection.
+	SharedKey *string `json:"sharedKey,omitempty"`
+
+	//UseLocalAzureIpAddress: Use local azure ip to initiate connection.
+	UseLocalAzureIpAddress *bool `json:"useLocalAzureIpAddress,omitempty"`
+
+	//UsePolicyBasedTrafficSelectors: Enable policy-based traffic selectors.
+	UsePolicyBasedTrafficSelectors *bool `json:"usePolicyBasedTrafficSelectors,omitempty"`
+
+	//VpnConnectionProtocolType: Connection protocol used for this connection.
+	VpnConnectionProtocolType *VpnSiteLinkConnectionPropertiesVpnConnectionProtocolType `json:"vpnConnectionProtocolType,omitempty"`
+
+	//VpnSiteLink: Id of the connected vpn site link.
+	VpnSiteLink *SubResource `json:"vpnSiteLink,omitempty"`
 }
 
 //Generated from:
@@ -313,43 +353,6 @@ type VpnSiteLinkConnectionProperties_Status struct {
 
 	//VpnSiteLink: Id of the connected vpn site link.
 	VpnSiteLink *SubResource_Status `json:"vpnSiteLink,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VpnSiteLinkConnectionProperties
-type VpnSiteLinkConnectionProperties struct {
-
-	//ConnectionBandwidth: Expected bandwidth in MBPS.
-	ConnectionBandwidth *int `json:"connectionBandwidth,omitempty"`
-
-	//ConnectionStatus: The connection status.
-	ConnectionStatus *VpnSiteLinkConnectionPropertiesConnectionStatus `json:"connectionStatus,omitempty"`
-
-	//EnableBgp: EnableBgp flag.
-	EnableBgp *bool `json:"enableBgp,omitempty"`
-
-	//EnableRateLimiting: EnableBgp flag.
-	EnableRateLimiting *bool `json:"enableRateLimiting,omitempty"`
-
-	//IpsecPolicies: The IPSec Policies to be considered by this connection.
-	IpsecPolicies []IpsecPolicy `json:"ipsecPolicies,omitempty"`
-
-	//RoutingWeight: Routing weight for vpn connection.
-	RoutingWeight *int `json:"routingWeight,omitempty"`
-
-	//SharedKey: SharedKey for the vpn connection.
-	SharedKey *string `json:"sharedKey,omitempty"`
-
-	//UseLocalAzureIpAddress: Use local azure ip to initiate connection.
-	UseLocalAzureIpAddress *bool `json:"useLocalAzureIpAddress,omitempty"`
-
-	//UsePolicyBasedTrafficSelectors: Enable policy-based traffic selectors.
-	UsePolicyBasedTrafficSelectors *bool `json:"usePolicyBasedTrafficSelectors,omitempty"`
-
-	//VpnConnectionProtocolType: Connection protocol used for this connection.
-	VpnConnectionProtocolType *VpnSiteLinkConnectionPropertiesVpnConnectionProtocolType `json:"vpnConnectionProtocolType,omitempty"`
-
-	//VpnSiteLink: Id of the connected vpn site link.
-	VpnSiteLink *SubResource `json:"vpnSiteLink,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"Connected","Connecting","NotConnected","Unknown"}

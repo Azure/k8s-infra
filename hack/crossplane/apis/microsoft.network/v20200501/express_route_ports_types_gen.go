@@ -27,8 +27,15 @@ type ExpressRoutePortsList struct {
 	Items           []ExpressRoutePorts `json:"items"`
 }
 
-//Generated from:
 type ExpressRoutePort_Status struct {
+	AtProvider ExpressRoutePortsObservation `json:"atProvider"`
+}
+
+type ExpressRoutePorts_Spec struct {
+	ForProvider ExpressRoutePortsParameters `json:"forProvider"`
+}
+
+type ExpressRoutePortsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -53,50 +60,6 @@ type ExpressRoutePort_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type ExpressRoutePorts_Spec struct {
-	ForProvider ExpressRoutePortsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type ExpressRoutePortPropertiesFormat_Status struct {
-
-	//AllocationDate: Date of the physical port allocation to be used in Letter of
-	//Authorization.
-	AllocationDate *string `json:"allocationDate,omitempty"`
-
-	//BandwidthInGbps: Bandwidth of procured ports in Gbps.
-	BandwidthInGbps *int `json:"bandwidthInGbps,omitempty"`
-
-	//Circuits: Reference the ExpressRoute circuit(s) that are provisioned on this
-	//ExpressRoutePort resource.
-	Circuits []SubResource_Status `json:"circuits,omitempty"`
-
-	//Encapsulation: Encapsulation method on physical ports.
-	Encapsulation *ExpressRoutePortPropertiesFormatStatusEncapsulation `json:"encapsulation,omitempty"`
-
-	//EtherType: Ether type of the physical port.
-	EtherType *string `json:"etherType,omitempty"`
-
-	//Links: The set of physical links of the ExpressRoutePort resource.
-	Links []ExpressRouteLink_Status `json:"links,omitempty"`
-
-	//Mtu: Maximum transmission unit of the physical port pair(s).
-	Mtu *string `json:"mtu,omitempty"`
-
-	//PeeringLocation: The name of the peering location that the ExpressRoutePort is
-	//mapped to physically.
-	PeeringLocation *string `json:"peeringLocation,omitempty"`
-
-	//ProvisionedBandwidthInGbps: Aggregate Gbps of associated circuit bandwidths.
-	ProvisionedBandwidthInGbps *float64 `json:"provisionedBandwidthInGbps,omitempty"`
-
-	//ProvisioningState: The provisioning state of the express route port resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//ResourceGuid: The resource GUID property of the express route port resource.
-	ResourceGuid *string `json:"resourceGuid,omitempty"`
 }
 
 type ExpressRoutePortsParameters struct {
@@ -141,23 +104,6 @@ type ExpressRoutePortsParameters struct {
 	Type ExpressRoutePortsSpecType `json:"type"`
 }
 
-//Generated from:
-type ExpressRouteLink_Status struct {
-
-	//Etag: A unique read-only string that changes whenever the resource is updated.
-	Etag *string `json:"etag,omitempty"`
-
-	//Id: Resource ID.
-	Id *string `json:"id,omitempty"`
-
-	//Name: Name of child port resource that is unique among child port resources of
-	//the parent.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: ExpressRouteLink properties.
-	Properties *ExpressRouteLinkPropertiesFormat_Status `json:"properties,omitempty"`
-}
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRoutePortPropertiesFormat
 type ExpressRoutePortPropertiesFormat struct {
 
@@ -175,13 +121,45 @@ type ExpressRoutePortPropertiesFormat struct {
 	PeeringLocation *string `json:"peeringLocation,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"Dot1Q","QinQ"}
-type ExpressRoutePortPropertiesFormatStatusEncapsulation string
+//Generated from:
+type ExpressRoutePortPropertiesFormat_Status struct {
 
-const (
-	ExpressRoutePortPropertiesFormatStatusEncapsulationDot1Q = ExpressRoutePortPropertiesFormatStatusEncapsulation("Dot1Q")
-	ExpressRoutePortPropertiesFormatStatusEncapsulationQinQ  = ExpressRoutePortPropertiesFormatStatusEncapsulation("QinQ")
-)
+	//AllocationDate: Date of the physical port allocation to be used in Letter of
+	//Authorization.
+	AllocationDate *string `json:"allocationDate,omitempty"`
+
+	//BandwidthInGbps: Bandwidth of procured ports in Gbps.
+	BandwidthInGbps *int `json:"bandwidthInGbps,omitempty"`
+
+	//Circuits: Reference the ExpressRoute circuit(s) that are provisioned on this
+	//ExpressRoutePort resource.
+	Circuits []SubResource_Status `json:"circuits,omitempty"`
+
+	//Encapsulation: Encapsulation method on physical ports.
+	Encapsulation *ExpressRoutePortPropertiesFormatStatusEncapsulation `json:"encapsulation,omitempty"`
+
+	//EtherType: Ether type of the physical port.
+	EtherType *string `json:"etherType,omitempty"`
+
+	//Links: The set of physical links of the ExpressRoutePort resource.
+	Links []ExpressRouteLink_Status `json:"links,omitempty"`
+
+	//Mtu: Maximum transmission unit of the physical port pair(s).
+	Mtu *string `json:"mtu,omitempty"`
+
+	//PeeringLocation: The name of the peering location that the ExpressRoutePort is
+	//mapped to physically.
+	PeeringLocation *string `json:"peeringLocation,omitempty"`
+
+	//ProvisionedBandwidthInGbps: Aggregate Gbps of associated circuit bandwidths.
+	ProvisionedBandwidthInGbps *float64 `json:"provisionedBandwidthInGbps,omitempty"`
+
+	//ProvisioningState: The provisioning state of the express route port resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//ResourceGuid: The resource GUID property of the express route port resource.
+	ResourceGuid *string `json:"resourceGuid,omitempty"`
+}
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type ExpressRoutePortsSpecApiVersion string
@@ -202,6 +180,49 @@ type ExpressRouteLink struct {
 
 	//Properties: ExpressRouteLink properties.
 	Properties *ExpressRouteLinkPropertiesFormat `json:"properties,omitempty"`
+}
+
+//Generated from:
+type ExpressRouteLink_Status struct {
+
+	//Etag: A unique read-only string that changes whenever the resource is updated.
+	Etag *string `json:"etag,omitempty"`
+
+	//Id: Resource ID.
+	Id *string `json:"id,omitempty"`
+
+	//Name: Name of child port resource that is unique among child port resources of
+	//the parent.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: ExpressRouteLink properties.
+	Properties *ExpressRouteLinkPropertiesFormat_Status `json:"properties,omitempty"`
+}
+
+// +kubebuilder:validation:Enum={"Dot1Q","QinQ"}
+type ExpressRoutePortPropertiesFormatEncapsulation string
+
+const (
+	ExpressRoutePortPropertiesFormatEncapsulationDot1Q = ExpressRoutePortPropertiesFormatEncapsulation("Dot1Q")
+	ExpressRoutePortPropertiesFormatEncapsulationQinQ  = ExpressRoutePortPropertiesFormatEncapsulation("QinQ")
+)
+
+// +kubebuilder:validation:Enum={"Dot1Q","QinQ"}
+type ExpressRoutePortPropertiesFormatStatusEncapsulation string
+
+const (
+	ExpressRoutePortPropertiesFormatStatusEncapsulationDot1Q = ExpressRoutePortPropertiesFormatStatusEncapsulation("Dot1Q")
+	ExpressRoutePortPropertiesFormatStatusEncapsulationQinQ  = ExpressRoutePortPropertiesFormatStatusEncapsulation("QinQ")
+)
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteLinkPropertiesFormat
+type ExpressRouteLinkPropertiesFormat struct {
+
+	//AdminState: Administrative state of the physical port.
+	AdminState *ExpressRouteLinkPropertiesFormatAdminState `json:"adminState,omitempty"`
+
+	//MacSecConfig: MacSec configuration.
+	MacSecConfig *ExpressRouteLinkMacSecConfig `json:"macSecConfig,omitempty"`
 }
 
 //Generated from:
@@ -232,13 +253,20 @@ type ExpressRouteLinkPropertiesFormat_Status struct {
 	RouterName *string `json:"routerName,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"Dot1Q","QinQ"}
-type ExpressRoutePortPropertiesFormatEncapsulation string
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteLinkMacSecConfig
+type ExpressRouteLinkMacSecConfig struct {
 
-const (
-	ExpressRoutePortPropertiesFormatEncapsulationDot1Q = ExpressRoutePortPropertiesFormatEncapsulation("Dot1Q")
-	ExpressRoutePortPropertiesFormatEncapsulationQinQ  = ExpressRoutePortPropertiesFormatEncapsulation("QinQ")
-)
+	//CakSecretIdentifier: Keyvault Secret Identifier URL containing Mac security CAK
+	//key.
+	CakSecretIdentifier *string `json:"cakSecretIdentifier,omitempty"`
+
+	//Cipher: Mac security cipher.
+	Cipher *ExpressRouteLinkMacSecConfigCipher `json:"cipher,omitempty"`
+
+	//CknSecretIdentifier: Keyvault Secret Identifier URL containing Mac security CKN
+	//key.
+	CknSecretIdentifier *string `json:"cknSecretIdentifier,omitempty"`
+}
 
 //Generated from:
 type ExpressRouteLinkMacSecConfig_Status struct {
@@ -255,15 +283,13 @@ type ExpressRouteLinkMacSecConfig_Status struct {
 	CknSecretIdentifier *string `json:"cknSecretIdentifier,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteLinkPropertiesFormat
-type ExpressRouteLinkPropertiesFormat struct {
+// +kubebuilder:validation:Enum={"Disabled","Enabled"}
+type ExpressRouteLinkPropertiesFormatAdminState string
 
-	//AdminState: Administrative state of the physical port.
-	AdminState *ExpressRouteLinkPropertiesFormatAdminState `json:"adminState,omitempty"`
-
-	//MacSecConfig: MacSec configuration.
-	MacSecConfig *ExpressRouteLinkMacSecConfig `json:"macSecConfig,omitempty"`
-}
+const (
+	ExpressRouteLinkPropertiesFormatAdminStateDisabled = ExpressRouteLinkPropertiesFormatAdminState("Disabled")
+	ExpressRouteLinkPropertiesFormatAdminStateEnabled  = ExpressRouteLinkPropertiesFormatAdminState("Enabled")
+)
 
 // +kubebuilder:validation:Enum={"Disabled","Enabled"}
 type ExpressRouteLinkPropertiesFormatStatusAdminState string
@@ -281,20 +307,13 @@ const (
 	ExpressRouteLinkPropertiesFormatStatusConnectorTypeSC = ExpressRouteLinkPropertiesFormatStatusConnectorType("SC")
 )
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteLinkMacSecConfig
-type ExpressRouteLinkMacSecConfig struct {
+// +kubebuilder:validation:Enum={"gcm-aes-128","gcm-aes-256"}
+type ExpressRouteLinkMacSecConfigCipher string
 
-	//CakSecretIdentifier: Keyvault Secret Identifier URL containing Mac security CAK
-	//key.
-	CakSecretIdentifier *string `json:"cakSecretIdentifier,omitempty"`
-
-	//Cipher: Mac security cipher.
-	Cipher *ExpressRouteLinkMacSecConfigCipher `json:"cipher,omitempty"`
-
-	//CknSecretIdentifier: Keyvault Secret Identifier URL containing Mac security CKN
-	//key.
-	CknSecretIdentifier *string `json:"cknSecretIdentifier,omitempty"`
-}
+const (
+	ExpressRouteLinkMacSecConfigCipherGcmAes128 = ExpressRouteLinkMacSecConfigCipher("gcm-aes-128")
+	ExpressRouteLinkMacSecConfigCipherGcmAes256 = ExpressRouteLinkMacSecConfigCipher("gcm-aes-256")
+)
 
 // +kubebuilder:validation:Enum={"gcm-aes-128","gcm-aes-256"}
 type ExpressRouteLinkMacSecConfigStatusCipher string
@@ -302,22 +321,6 @@ type ExpressRouteLinkMacSecConfigStatusCipher string
 const (
 	ExpressRouteLinkMacSecConfigStatusCipherGcmAes128 = ExpressRouteLinkMacSecConfigStatusCipher("gcm-aes-128")
 	ExpressRouteLinkMacSecConfigStatusCipherGcmAes256 = ExpressRouteLinkMacSecConfigStatusCipher("gcm-aes-256")
-)
-
-// +kubebuilder:validation:Enum={"Disabled","Enabled"}
-type ExpressRouteLinkPropertiesFormatAdminState string
-
-const (
-	ExpressRouteLinkPropertiesFormatAdminStateDisabled = ExpressRouteLinkPropertiesFormatAdminState("Disabled")
-	ExpressRouteLinkPropertiesFormatAdminStateEnabled  = ExpressRouteLinkPropertiesFormatAdminState("Enabled")
-)
-
-// +kubebuilder:validation:Enum={"gcm-aes-128","gcm-aes-256"}
-type ExpressRouteLinkMacSecConfigCipher string
-
-const (
-	ExpressRouteLinkMacSecConfigCipherGcmAes128 = ExpressRouteLinkMacSecConfigCipher("gcm-aes-128")
-	ExpressRouteLinkMacSecConfigCipherGcmAes256 = ExpressRouteLinkMacSecConfigCipher("gcm-aes-256")
 )
 
 func init() {

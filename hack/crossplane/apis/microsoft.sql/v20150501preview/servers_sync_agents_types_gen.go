@@ -31,8 +31,11 @@ type ServersSyncAgents_Spec struct {
 	ForProvider ServersSyncAgentsParameters `json:"forProvider"`
 }
 
-//Generated from:
 type SyncAgent_Status struct {
+	AtProvider ServersSyncAgentsObservation `json:"atProvider"`
+}
+
+type ServersSyncAgentsObservation struct {
 
 	//Id: Resource ID.
 	Id *string `json:"id,omitempty"`
@@ -86,6 +89,23 @@ type ServersSyncAgentsParameters struct {
 	Type ServersSyncAgentsSpecType `json:"type"`
 }
 
+// +kubebuilder:validation:Enum={"2015-05-01-preview"}
+type ServersSyncAgentsSpecApiVersion string
+
+const ServersSyncAgentsSpecApiVersion20150501Preview = ServersSyncAgentsSpecApiVersion("2015-05-01-preview")
+
+// +kubebuilder:validation:Enum={"Microsoft.Sql/servers/syncAgents"}
+type ServersSyncAgentsSpecType string
+
+const ServersSyncAgentsSpecTypeMicrosoftSqlServersSyncAgents = ServersSyncAgentsSpecType("Microsoft.Sql/servers/syncAgents")
+
+//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/SyncAgentProperties
+type SyncAgentProperties struct {
+
+	//SyncDatabaseId: ARM resource id of the sync database in the sync agent.
+	SyncDatabaseId *string `json:"syncDatabaseId,omitempty"`
+}
+
 //Generated from:
 type SyncAgentProperties_Status struct {
 
@@ -109,23 +129,6 @@ type SyncAgentProperties_Status struct {
 
 	//Version: Version of the sync agent.
 	Version *string `json:"version,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"2015-05-01-preview"}
-type ServersSyncAgentsSpecApiVersion string
-
-const ServersSyncAgentsSpecApiVersion20150501Preview = ServersSyncAgentsSpecApiVersion("2015-05-01-preview")
-
-// +kubebuilder:validation:Enum={"Microsoft.Sql/servers/syncAgents"}
-type ServersSyncAgentsSpecType string
-
-const ServersSyncAgentsSpecTypeMicrosoftSqlServersSyncAgents = ServersSyncAgentsSpecType("Microsoft.Sql/servers/syncAgents")
-
-//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/SyncAgentProperties
-type SyncAgentProperties struct {
-
-	//SyncDatabaseId: ARM resource id of the sync database in the sync agent.
-	SyncDatabaseId *string `json:"syncDatabaseId,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"NeverConnected","Offline","Online"}

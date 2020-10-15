@@ -27,8 +27,15 @@ type ManagedInstancesList struct {
 	Items           []ManagedInstances `json:"items"`
 }
 
-//Generated from:
 type ManagedInstance_Status struct {
+	AtProvider ManagedInstancesObservation `json:"atProvider"`
+}
+
+type ManagedInstances_Spec struct {
+	ForProvider ManagedInstancesParameters `json:"forProvider"`
+}
+
+type ManagedInstancesObservation struct {
 
 	//Id: Resource ID.
 	Id *string `json:"id,omitempty"`
@@ -57,8 +64,127 @@ type ManagedInstance_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
-type ManagedInstances_Spec struct {
-	ForProvider ManagedInstancesParameters `json:"forProvider"`
+type ManagedInstancesParameters struct {
+
+	// +kubebuilder:validation:Required
+	//ApiVersion: API Version of the resource type, optional when apiProfile is used
+	//on the template
+	ApiVersion ManagedInstancesSpecApiVersion `json:"apiVersion"`
+	Comments   *string                        `json:"comments,omitempty"`
+
+	//Condition: Condition of the resource
+	Condition *bool                   `json:"condition,omitempty"`
+	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
+
+	//DependsOn: Collection of resources this resource depends on
+	DependsOn []string `json:"dependsOn,omitempty"`
+
+	//Identity: Azure Active Directory identity configuration for a resource.
+	Identity *ResourceIdentity `json:"identity,omitempty"`
+
+	//Location: Location to deploy resource to
+	Location string `json:"location,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Name: Name of the resource
+	Name string `json:"name"`
+
+	// +kubebuilder:validation:Required
+	//Properties: The properties of a managed instance.
+	Properties ManagedInstanceProperties `json:"properties"`
+
+	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
+	//setting the scope for extension resources 2) deploying resources to the tenant
+	//scope in non-tenant scope deployments
+	Scope *string `json:"scope,omitempty"`
+
+	//Sku: An ARM Resource SKU.
+	Sku *Sku `json:"sku,omitempty"`
+
+	//Tags: Name-value pairs to add to the resource
+	Tags map[string]string `json:"tags,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Type: Resource type
+	Type ManagedInstancesSpecType `json:"type"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/ManagedInstanceProperties
+type ManagedInstanceProperties struct {
+
+	//AdministratorLogin: Administrator username for the managed instance. Can only be
+	//specified when the managed instance is being created (and is required for
+	//creation).
+	AdministratorLogin *string `json:"administratorLogin,omitempty"`
+
+	//AdministratorLoginPassword: The administrator login password (required for
+	//managed instance creation).
+	AdministratorLoginPassword *string `json:"administratorLoginPassword,omitempty"`
+
+	//Collation: Collation of the managed instance.
+	Collation *string `json:"collation,omitempty"`
+
+	//DnsZonePartner: The resource id of another managed instance whose DNS zone this
+	//managed instance will share after creation.
+	DnsZonePartner *string `json:"dnsZonePartner,omitempty"`
+
+	//InstancePoolId: The Id of the instance pool this managed server belongs to.
+	InstancePoolId *string `json:"instancePoolId,omitempty"`
+
+	//LicenseType: The license type. Possible values are 'LicenseIncluded' (regular
+	//price inclusive of a new SQL license) and 'BasePrice' (discounted AHB price for
+	//bringing your own SQL licenses).
+	LicenseType *ManagedInstancePropertiesLicenseType `json:"licenseType,omitempty"`
+
+	//MaintenanceConfigurationId: Specifies maintenance configuration id to apply to
+	//this managed instance.
+	MaintenanceConfigurationId *string `json:"maintenanceConfigurationId,omitempty"`
+
+	//ManagedInstanceCreateMode: Specifies the mode of database creation.
+	//Default: Regular instance creation.
+	//Restore: Creates an instance by restoring a set of backups to specific point in
+	//time. RestorePointInTime and SourceManagedInstanceId must be specified.
+	ManagedInstanceCreateMode *ManagedInstancePropertiesManagedInstanceCreateMode `json:"managedInstanceCreateMode,omitempty"`
+
+	//MinimalTlsVersion: Minimal TLS version. Allowed values: 'None', '1.0', '1.1',
+	//'1.2'
+	MinimalTlsVersion *string `json:"minimalTlsVersion,omitempty"`
+
+	//ProxyOverride: Connection type used for connecting to the instance.
+	ProxyOverride *ManagedInstancePropertiesProxyOverride `json:"proxyOverride,omitempty"`
+
+	//PublicDataEndpointEnabled: Whether or not the public data endpoint is enabled.
+	PublicDataEndpointEnabled *bool `json:"publicDataEndpointEnabled,omitempty"`
+
+	//RestorePointInTime: Specifies the point in time (ISO8601 format) of the source
+	//database that will be restored to create the new database.
+	RestorePointInTime *string `json:"restorePointInTime,omitempty"`
+
+	//SourceManagedInstanceId: The resource identifier of the source managed instance
+	//associated with create operation of this instance.
+	SourceManagedInstanceId *string `json:"sourceManagedInstanceId,omitempty"`
+
+	//StorageSizeInGB: Storage size in GB. Minimum value: 32. Maximum value: 8192.
+	//Increments of 32 GB allowed only.
+	StorageSizeInGB *int `json:"storageSizeInGB,omitempty"`
+
+	//SubnetId: Subnet resource ID for the managed instance.
+	SubnetId *string `json:"subnetId,omitempty"`
+
+	//TimezoneId: Id of the timezone. Allowed values are timezones supported by
+	//Windows.
+	//Windows keeps details on supported timezones, including the id, in registry under
+	//KEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones.
+	//You can get those registry values via SQL Server by querying SELECT name AS
+	//timezone_id FROM sys.time_zone_info.
+	//List of Ids can also be obtained by executing
+	//[System.TimeZoneInfo]::GetSystemTimeZones() in PowerShell.
+	//An example of valid timezone id is "Pacific Standard Time" or "W. Europe
+	//Standard Time".
+	TimezoneId *string `json:"timezoneId,omitempty"`
+
+	//VCores: The number of vCores. Allowed values: 8, 16, 24, 32, 40, 64, 80.
+	VCores *int `json:"vCores,omitempty"`
 }
 
 //Generated from:
@@ -149,49 +275,22 @@ type ManagedInstanceProperties_Status struct {
 	VCores *int `json:"vCores,omitempty"`
 }
 
-type ManagedInstancesParameters struct {
+// +kubebuilder:validation:Enum={"2015-05-01-preview"}
+type ManagedInstancesSpecApiVersion string
 
-	// +kubebuilder:validation:Required
-	//ApiVersion: API Version of the resource type, optional when apiProfile is used
-	//on the template
-	ApiVersion ManagedInstancesSpecApiVersion `json:"apiVersion"`
-	Comments   *string                        `json:"comments,omitempty"`
+const ManagedInstancesSpecApiVersion20150501Preview = ManagedInstancesSpecApiVersion("2015-05-01-preview")
 
-	//Condition: Condition of the resource
-	Condition *bool                   `json:"condition,omitempty"`
-	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
+// +kubebuilder:validation:Enum={"Microsoft.Sql/managedInstances"}
+type ManagedInstancesSpecType string
 
-	//DependsOn: Collection of resources this resource depends on
-	DependsOn []string `json:"dependsOn,omitempty"`
+const ManagedInstancesSpecTypeMicrosoftSqlManagedInstances = ManagedInstancesSpecType("Microsoft.Sql/managedInstances")
 
-	//Identity: Azure Active Directory identity configuration for a resource.
-	Identity *ResourceIdentity `json:"identity,omitempty"`
+//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/ResourceIdentity
+type ResourceIdentity struct {
 
-	//Location: Location to deploy resource to
-	Location string `json:"location,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Name: Name of the resource
-	Name string `json:"name"`
-
-	// +kubebuilder:validation:Required
-	//Properties: The properties of a managed instance.
-	Properties ManagedInstanceProperties `json:"properties"`
-
-	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
-	//setting the scope for extension resources 2) deploying resources to the tenant
-	//scope in non-tenant scope deployments
-	Scope *string `json:"scope,omitempty"`
-
-	//Sku: An ARM Resource SKU.
-	Sku *Sku `json:"sku,omitempty"`
-
-	//Tags: Name-value pairs to add to the resource
-	Tags map[string]string `json:"tags,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Type: Resource type
-	Type ManagedInstancesSpecType `json:"type"`
+	//Type: The identity type. Set this to 'SystemAssigned' in order to automatically
+	//create and assign an Azure Active Directory principal for the resource.
+	Type *ResourceIdentityType `json:"type,omitempty"`
 }
 
 //Generated from:
@@ -208,8 +307,8 @@ type ResourceIdentity_Status struct {
 	Type *ResourceIdentityStatusType `json:"type,omitempty"`
 }
 
-//Generated from:
-type Sku_Status struct {
+//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/Sku
+type Sku struct {
 
 	//Capacity: Capacity of the particular SKU.
 	Capacity *int `json:"capacity,omitempty"`
@@ -229,134 +328,8 @@ type Sku_Status struct {
 	Tier *string `json:"tier,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/ManagedInstanceProperties
-type ManagedInstanceProperties struct {
-
-	//AdministratorLogin: Administrator username for the managed instance. Can only be
-	//specified when the managed instance is being created (and is required for
-	//creation).
-	AdministratorLogin *string `json:"administratorLogin,omitempty"`
-
-	//AdministratorLoginPassword: The administrator login password (required for
-	//managed instance creation).
-	AdministratorLoginPassword *string `json:"administratorLoginPassword,omitempty"`
-
-	//Collation: Collation of the managed instance.
-	Collation *string `json:"collation,omitempty"`
-
-	//DnsZonePartner: The resource id of another managed instance whose DNS zone this
-	//managed instance will share after creation.
-	DnsZonePartner *string `json:"dnsZonePartner,omitempty"`
-
-	//InstancePoolId: The Id of the instance pool this managed server belongs to.
-	InstancePoolId *string `json:"instancePoolId,omitempty"`
-
-	//LicenseType: The license type. Possible values are 'LicenseIncluded' (regular
-	//price inclusive of a new SQL license) and 'BasePrice' (discounted AHB price for
-	//bringing your own SQL licenses).
-	LicenseType *ManagedInstancePropertiesLicenseType `json:"licenseType,omitempty"`
-
-	//MaintenanceConfigurationId: Specifies maintenance configuration id to apply to
-	//this managed instance.
-	MaintenanceConfigurationId *string `json:"maintenanceConfigurationId,omitempty"`
-
-	//ManagedInstanceCreateMode: Specifies the mode of database creation.
-	//Default: Regular instance creation.
-	//Restore: Creates an instance by restoring a set of backups to specific point in
-	//time. RestorePointInTime and SourceManagedInstanceId must be specified.
-	ManagedInstanceCreateMode *ManagedInstancePropertiesManagedInstanceCreateMode `json:"managedInstanceCreateMode,omitempty"`
-
-	//MinimalTlsVersion: Minimal TLS version. Allowed values: 'None', '1.0', '1.1',
-	//'1.2'
-	MinimalTlsVersion *string `json:"minimalTlsVersion,omitempty"`
-
-	//ProxyOverride: Connection type used for connecting to the instance.
-	ProxyOverride *ManagedInstancePropertiesProxyOverride `json:"proxyOverride,omitempty"`
-
-	//PublicDataEndpointEnabled: Whether or not the public data endpoint is enabled.
-	PublicDataEndpointEnabled *bool `json:"publicDataEndpointEnabled,omitempty"`
-
-	//RestorePointInTime: Specifies the point in time (ISO8601 format) of the source
-	//database that will be restored to create the new database.
-	RestorePointInTime *string `json:"restorePointInTime,omitempty"`
-
-	//SourceManagedInstanceId: The resource identifier of the source managed instance
-	//associated with create operation of this instance.
-	SourceManagedInstanceId *string `json:"sourceManagedInstanceId,omitempty"`
-
-	//StorageSizeInGB: Storage size in GB. Minimum value: 32. Maximum value: 8192.
-	//Increments of 32 GB allowed only.
-	StorageSizeInGB *int `json:"storageSizeInGB,omitempty"`
-
-	//SubnetId: Subnet resource ID for the managed instance.
-	SubnetId *string `json:"subnetId,omitempty"`
-
-	//TimezoneId: Id of the timezone. Allowed values are timezones supported by
-	//Windows.
-	//Windows keeps details on supported timezones, including the id, in registry under
-	//KEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones.
-	//You can get those registry values via SQL Server by querying SELECT name AS
-	//timezone_id FROM sys.time_zone_info.
-	//List of Ids can also be obtained by executing
-	//[System.TimeZoneInfo]::GetSystemTimeZones() in PowerShell.
-	//An example of valid timezone id is "Pacific Standard Time" or "W. Europe
-	//Standard Time".
-	TimezoneId *string `json:"timezoneId,omitempty"`
-
-	//VCores: The number of vCores. Allowed values: 8, 16, 24, 32, 40, 64, 80.
-	VCores *int `json:"vCores,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"BasePrice","LicenseIncluded"}
-type ManagedInstancePropertiesStatusLicenseType string
-
-const (
-	ManagedInstancePropertiesStatusLicenseTypeBasePrice       = ManagedInstancePropertiesStatusLicenseType("BasePrice")
-	ManagedInstancePropertiesStatusLicenseTypeLicenseIncluded = ManagedInstancePropertiesStatusLicenseType("LicenseIncluded")
-)
-
-// +kubebuilder:validation:Enum={"Default","PointInTimeRestore"}
-type ManagedInstancePropertiesStatusManagedInstanceCreateMode string
-
-const (
-	ManagedInstancePropertiesStatusManagedInstanceCreateModeDefault            = ManagedInstancePropertiesStatusManagedInstanceCreateMode("Default")
-	ManagedInstancePropertiesStatusManagedInstanceCreateModePointInTimeRestore = ManagedInstancePropertiesStatusManagedInstanceCreateMode("PointInTimeRestore")
-)
-
-// +kubebuilder:validation:Enum={"Default","Proxy","Redirect"}
-type ManagedInstancePropertiesStatusProxyOverride string
-
-const (
-	ManagedInstancePropertiesStatusProxyOverrideDefault  = ManagedInstancePropertiesStatusProxyOverride("Default")
-	ManagedInstancePropertiesStatusProxyOverrideProxy    = ManagedInstancePropertiesStatusProxyOverride("Proxy")
-	ManagedInstancePropertiesStatusProxyOverrideRedirect = ManagedInstancePropertiesStatusProxyOverride("Redirect")
-)
-
-// +kubebuilder:validation:Enum={"2015-05-01-preview"}
-type ManagedInstancesSpecApiVersion string
-
-const ManagedInstancesSpecApiVersion20150501Preview = ManagedInstancesSpecApiVersion("2015-05-01-preview")
-
-// +kubebuilder:validation:Enum={"Microsoft.Sql/managedInstances"}
-type ManagedInstancesSpecType string
-
-const ManagedInstancesSpecTypeMicrosoftSqlManagedInstances = ManagedInstancesSpecType("Microsoft.Sql/managedInstances")
-
-//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/ResourceIdentity
-type ResourceIdentity struct {
-
-	//Type: The identity type. Set this to 'SystemAssigned' in order to automatically
-	//create and assign an Azure Active Directory principal for the resource.
-	Type *ResourceIdentityType `json:"type,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"SystemAssigned"}
-type ResourceIdentityStatusType string
-
-const ResourceIdentityStatusTypeSystemAssigned = ResourceIdentityStatusType("SystemAssigned")
-
-//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/Sku
-type Sku struct {
+//Generated from:
+type Sku_Status struct {
 
 	//Capacity: Capacity of the particular SKU.
 	Capacity *int `json:"capacity,omitempty"`
@@ -400,6 +373,36 @@ const (
 	ManagedInstancePropertiesProxyOverrideProxy    = ManagedInstancePropertiesProxyOverride("Proxy")
 	ManagedInstancePropertiesProxyOverrideRedirect = ManagedInstancePropertiesProxyOverride("Redirect")
 )
+
+// +kubebuilder:validation:Enum={"BasePrice","LicenseIncluded"}
+type ManagedInstancePropertiesStatusLicenseType string
+
+const (
+	ManagedInstancePropertiesStatusLicenseTypeBasePrice       = ManagedInstancePropertiesStatusLicenseType("BasePrice")
+	ManagedInstancePropertiesStatusLicenseTypeLicenseIncluded = ManagedInstancePropertiesStatusLicenseType("LicenseIncluded")
+)
+
+// +kubebuilder:validation:Enum={"Default","PointInTimeRestore"}
+type ManagedInstancePropertiesStatusManagedInstanceCreateMode string
+
+const (
+	ManagedInstancePropertiesStatusManagedInstanceCreateModeDefault            = ManagedInstancePropertiesStatusManagedInstanceCreateMode("Default")
+	ManagedInstancePropertiesStatusManagedInstanceCreateModePointInTimeRestore = ManagedInstancePropertiesStatusManagedInstanceCreateMode("PointInTimeRestore")
+)
+
+// +kubebuilder:validation:Enum={"Default","Proxy","Redirect"}
+type ManagedInstancePropertiesStatusProxyOverride string
+
+const (
+	ManagedInstancePropertiesStatusProxyOverrideDefault  = ManagedInstancePropertiesStatusProxyOverride("Default")
+	ManagedInstancePropertiesStatusProxyOverrideProxy    = ManagedInstancePropertiesStatusProxyOverride("Proxy")
+	ManagedInstancePropertiesStatusProxyOverrideRedirect = ManagedInstancePropertiesStatusProxyOverride("Redirect")
+)
+
+// +kubebuilder:validation:Enum={"SystemAssigned"}
+type ResourceIdentityStatusType string
+
+const ResourceIdentityStatusTypeSystemAssigned = ResourceIdentityStatusType("SystemAssigned")
 
 // +kubebuilder:validation:Enum={"SystemAssigned"}
 type ResourceIdentityType string

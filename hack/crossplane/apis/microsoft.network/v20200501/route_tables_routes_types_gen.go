@@ -31,8 +31,11 @@ type RouteTablesRoutes_Spec struct {
 	ForProvider RouteTablesRoutesParameters `json:"forProvider"`
 }
 
-//Generated from:
 type Route_Status struct {
+	AtProvider RouteTablesRoutesObservation `json:"atProvider"`
+}
+
+type RouteTablesRoutesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -46,24 +49,6 @@ type Route_Status struct {
 
 	//Properties: Properties of the route.
 	Properties *RoutePropertiesFormat_Status `json:"properties,omitempty"`
-}
-
-//Generated from:
-type RoutePropertiesFormat_Status struct {
-
-	//AddressPrefix: The destination CIDR to which the route applies.
-	AddressPrefix *string `json:"addressPrefix,omitempty"`
-
-	//NextHopIpAddress: The IP address packets should be forwarded to. Next hop values
-	//are only allowed in routes where the next hop type is VirtualAppliance.
-	NextHopIpAddress *string `json:"nextHopIpAddress,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//NextHopType: The type of Azure hop the packet should be sent to.
-	NextHopType RouteNextHopType_Status `json:"nextHopType"`
-
-	//ProvisioningState: The provisioning state of the route resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 type RouteTablesRoutesParameters struct {
@@ -105,18 +90,6 @@ type RouteTablesRoutesParameters struct {
 	Type RouteTablesRoutesSpecType `json:"type"`
 }
 
-//Generated from:
-// +kubebuilder:validation:Enum={"Internet","None","VirtualAppliance","VirtualNetworkGateway","VnetLocal"}
-type RouteNextHopType_Status string
-
-const (
-	RouteNextHopType_StatusInternet              = RouteNextHopType_Status("Internet")
-	RouteNextHopType_StatusNone                  = RouteNextHopType_Status("None")
-	RouteNextHopType_StatusVirtualAppliance      = RouteNextHopType_Status("VirtualAppliance")
-	RouteNextHopType_StatusVirtualNetworkGateway = RouteNextHopType_Status("VirtualNetworkGateway")
-	RouteNextHopType_StatusVnetLocal             = RouteNextHopType_Status("VnetLocal")
-)
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/RoutePropertiesFormat
 type RoutePropertiesFormat struct {
 
@@ -133,6 +106,24 @@ type RoutePropertiesFormat struct {
 	NextHopType RoutePropertiesFormatNextHopType `json:"nextHopType"`
 }
 
+//Generated from:
+type RoutePropertiesFormat_Status struct {
+
+	//AddressPrefix: The destination CIDR to which the route applies.
+	AddressPrefix *string `json:"addressPrefix,omitempty"`
+
+	//NextHopIpAddress: The IP address packets should be forwarded to. Next hop values
+	//are only allowed in routes where the next hop type is VirtualAppliance.
+	NextHopIpAddress *string `json:"nextHopIpAddress,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//NextHopType: The type of Azure hop the packet should be sent to.
+	NextHopType RouteNextHopType_Status `json:"nextHopType"`
+
+	//ProvisioningState: The provisioning state of the route resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+}
+
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type RouteTablesRoutesSpecApiVersion string
 
@@ -142,6 +133,18 @@ const RouteTablesRoutesSpecApiVersion20200501 = RouteTablesRoutesSpecApiVersion(
 type RouteTablesRoutesSpecType string
 
 const RouteTablesRoutesSpecTypeMicrosoftNetworkRouteTablesRoutes = RouteTablesRoutesSpecType("Microsoft.Network/routeTables/routes")
+
+//Generated from:
+// +kubebuilder:validation:Enum={"Internet","None","VirtualAppliance","VirtualNetworkGateway","VnetLocal"}
+type RouteNextHopType_Status string
+
+const (
+	RouteNextHopType_StatusInternet              = RouteNextHopType_Status("Internet")
+	RouteNextHopType_StatusNone                  = RouteNextHopType_Status("None")
+	RouteNextHopType_StatusVirtualAppliance      = RouteNextHopType_Status("VirtualAppliance")
+	RouteNextHopType_StatusVirtualNetworkGateway = RouteNextHopType_Status("VirtualNetworkGateway")
+	RouteNextHopType_StatusVnetLocal             = RouteNextHopType_Status("VnetLocal")
+)
 
 // +kubebuilder:validation:Enum={"Internet","None","VirtualAppliance","VirtualNetworkGateway","VnetLocal"}
 type RoutePropertiesFormatNextHopType string

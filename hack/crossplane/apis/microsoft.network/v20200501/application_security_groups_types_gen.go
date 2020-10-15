@@ -27,8 +27,15 @@ type ApplicationSecurityGroupsList struct {
 	Items           []ApplicationSecurityGroups `json:"items"`
 }
 
-//Generated from:
 type ApplicationSecurityGroup_Status struct {
+	AtProvider ApplicationSecurityGroupsObservation `json:"atProvider"`
+}
+
+type ApplicationSecurityGroups_Spec struct {
+	ForProvider ApplicationSecurityGroupsParameters `json:"forProvider"`
+}
+
+type ApplicationSecurityGroupsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,23 +57,6 @@ type ApplicationSecurityGroup_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type ApplicationSecurityGroups_Spec struct {
-	ForProvider ApplicationSecurityGroupsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type ApplicationSecurityGroupPropertiesFormat_Status struct {
-
-	//ProvisioningState: The provisioning state of the application security group
-	//resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//ResourceGuid: The resource GUID property of the application security group
-	//resource. It uniquely identifies a resource, even if the user changes its name
-	//or migrate the resource across subscriptions or resource groups.
-	ResourceGuid *string `json:"resourceGuid,omitempty"`
 }
 
 type ApplicationSecurityGroupsParameters struct {
@@ -106,6 +96,19 @@ type ApplicationSecurityGroupsParameters struct {
 	// +kubebuilder:validation:Required
 	//Type: Resource type
 	Type ApplicationSecurityGroupsSpecType `json:"type"`
+}
+
+//Generated from:
+type ApplicationSecurityGroupPropertiesFormat_Status struct {
+
+	//ProvisioningState: The provisioning state of the application security group
+	//resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//ResourceGuid: The resource GUID property of the application security group
+	//resource. It uniquely identifies a resource, even if the user changes its name
+	//or migrate the resource across subscriptions or resource groups.
+	ResourceGuid *string `json:"resourceGuid,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}

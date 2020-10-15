@@ -27,8 +27,15 @@ type IpAllocationsList struct {
 	Items           []IpAllocations `json:"items"`
 }
 
-//Generated from:
 type IpAllocation_Status struct {
+	AtProvider IpAllocationsObservation `json:"atProvider"`
+}
+
+type IpAllocations_Spec struct {
+	ForProvider IpAllocationsParameters `json:"forProvider"`
+}
+
+type IpAllocationsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,39 +57,6 @@ type IpAllocation_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type IpAllocations_Spec struct {
-	ForProvider IpAllocationsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type IpAllocationPropertiesFormat_Status struct {
-
-	//AllocationTags: IpAllocation tags.
-	AllocationTags map[string]string `json:"allocationTags,omitempty"`
-
-	//IpamAllocationId: The IPAM allocation ID.
-	IpamAllocationId *string `json:"ipamAllocationId,omitempty"`
-
-	//Prefix: The address prefix for the IpAllocation.
-	Prefix *string `json:"prefix,omitempty"`
-
-	//PrefixLength: The address prefix length for the IpAllocation.
-	PrefixLength *int `json:"prefixLength,omitempty"`
-
-	//PrefixType: The address prefix Type for the IpAllocation.
-	PrefixType *IPVersion_Status `json:"prefixType,omitempty"`
-
-	//Subnet: The Subnet that using the prefix of this IpAllocation resource.
-	Subnet *SubResource_Status `json:"subnet,omitempty"`
-
-	//Type: The type for the IpAllocation.
-	Type *IpAllocationType_Status `json:"type,omitempty"`
-
-	//VirtualNetwork: The VirtualNetwork that using the prefix of this IpAllocation
-	//resource.
-	VirtualNetwork *SubResource_Status `json:"virtualNetwork,omitempty"`
 }
 
 type IpAllocationsParameters struct {
@@ -124,15 +98,6 @@ type IpAllocationsParameters struct {
 	Type IpAllocationsSpecType `json:"type"`
 }
 
-//Generated from:
-// +kubebuilder:validation:Enum={"IPv4","IPv6"}
-type IPVersion_Status string
-
-const (
-	IPVersion_StatusIPv4 = IPVersion_Status("IPv4")
-	IPVersion_StatusIPv6 = IPVersion_Status("IPv6")
-)
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/IpAllocationPropertiesFormat
 type IpAllocationPropertiesFormat struct {
 
@@ -156,13 +121,33 @@ type IpAllocationPropertiesFormat struct {
 }
 
 //Generated from:
-// +kubebuilder:validation:Enum={"Hypernet","Undefined"}
-type IpAllocationType_Status string
+type IpAllocationPropertiesFormat_Status struct {
 
-const (
-	IpAllocationType_StatusHypernet  = IpAllocationType_Status("Hypernet")
-	IpAllocationType_StatusUndefined = IpAllocationType_Status("Undefined")
-)
+	//AllocationTags: IpAllocation tags.
+	AllocationTags map[string]string `json:"allocationTags,omitempty"`
+
+	//IpamAllocationId: The IPAM allocation ID.
+	IpamAllocationId *string `json:"ipamAllocationId,omitempty"`
+
+	//Prefix: The address prefix for the IpAllocation.
+	Prefix *string `json:"prefix,omitempty"`
+
+	//PrefixLength: The address prefix length for the IpAllocation.
+	PrefixLength *int `json:"prefixLength,omitempty"`
+
+	//PrefixType: The address prefix Type for the IpAllocation.
+	PrefixType *IPVersion_Status `json:"prefixType,omitempty"`
+
+	//Subnet: The Subnet that using the prefix of this IpAllocation resource.
+	Subnet *SubResource_Status `json:"subnet,omitempty"`
+
+	//Type: The type for the IpAllocation.
+	Type *IpAllocationType_Status `json:"type,omitempty"`
+
+	//VirtualNetwork: The VirtualNetwork that using the prefix of this IpAllocation
+	//resource.
+	VirtualNetwork *SubResource_Status `json:"virtualNetwork,omitempty"`
+}
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type IpAllocationsSpecApiVersion string
@@ -173,6 +158,15 @@ const IpAllocationsSpecApiVersion20200501 = IpAllocationsSpecApiVersion("2020-05
 type IpAllocationsSpecType string
 
 const IpAllocationsSpecTypeMicrosoftNetworkIpAllocations = IpAllocationsSpecType("Microsoft.Network/IpAllocations")
+
+//Generated from:
+// +kubebuilder:validation:Enum={"IPv4","IPv6"}
+type IPVersion_Status string
+
+const (
+	IPVersion_StatusIPv4 = IPVersion_Status("IPv4")
+	IPVersion_StatusIPv6 = IPVersion_Status("IPv6")
+)
 
 // +kubebuilder:validation:Enum={"IPv4","IPv6"}
 type IpAllocationPropertiesFormatPrefixType string
@@ -188,6 +182,15 @@ type IpAllocationPropertiesFormatType string
 const (
 	IpAllocationPropertiesFormatTypeHypernet  = IpAllocationPropertiesFormatType("Hypernet")
 	IpAllocationPropertiesFormatTypeUndefined = IpAllocationPropertiesFormatType("Undefined")
+)
+
+//Generated from:
+// +kubebuilder:validation:Enum={"Hypernet","Undefined"}
+type IpAllocationType_Status string
+
+const (
+	IpAllocationType_StatusHypernet  = IpAllocationType_Status("Hypernet")
+	IpAllocationType_StatusUndefined = IpAllocationType_Status("Undefined")
 )
 
 func init() {

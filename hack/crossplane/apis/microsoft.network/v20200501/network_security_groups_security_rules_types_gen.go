@@ -31,8 +31,11 @@ type NetworkSecurityGroupsSecurityRules_Spec struct {
 	ForProvider NetworkSecurityGroupsSecurityRulesParameters `json:"forProvider"`
 }
 
-//Generated from:
 type SecurityRule_Status struct {
+	AtProvider NetworkSecurityGroupsSecurityRulesObservation `json:"atProvider"`
+}
+
+type NetworkSecurityGroupsSecurityRulesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -85,6 +88,82 @@ type NetworkSecurityGroupsSecurityRulesParameters struct {
 	// +kubebuilder:validation:Required
 	//Type: Resource type
 	Type NetworkSecurityGroupsSecurityRulesSpecType `json:"type"`
+}
+
+// +kubebuilder:validation:Enum={"2020-05-01"}
+type NetworkSecurityGroupsSecurityRulesSpecApiVersion string
+
+const NetworkSecurityGroupsSecurityRulesSpecApiVersion20200501 = NetworkSecurityGroupsSecurityRulesSpecApiVersion("2020-05-01")
+
+// +kubebuilder:validation:Enum={"Microsoft.Network/networkSecurityGroups/securityRules"}
+type NetworkSecurityGroupsSecurityRulesSpecType string
+
+const NetworkSecurityGroupsSecurityRulesSpecTypeMicrosoftNetworkNetworkSecurityGroupsSecurityRules = NetworkSecurityGroupsSecurityRulesSpecType("Microsoft.Network/networkSecurityGroups/securityRules")
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/SecurityRulePropertiesFormat
+type SecurityRulePropertiesFormat struct {
+
+	// +kubebuilder:validation:Required
+	//Access: The network traffic is allowed or denied.
+	Access SecurityRulePropertiesFormatAccess `json:"access"`
+
+	//Description: A description for this rule. Restricted to 140 chars.
+	Description *string `json:"description,omitempty"`
+
+	//DestinationAddressPrefix: The destination address prefix. CIDR or destination IP
+	//range. Asterisk '*' can also be used to match all source IPs. Default tags such
+	//as 'VirtualNetwork', 'AzureLoadBalancer' and 'Internet' can also be used.
+	DestinationAddressPrefix *string `json:"destinationAddressPrefix,omitempty"`
+
+	//DestinationAddressPrefixes: The destination address prefixes. CIDR or
+	//destination IP ranges.
+	DestinationAddressPrefixes []string `json:"destinationAddressPrefixes,omitempty"`
+
+	//DestinationApplicationSecurityGroups: The application security group specified
+	//as destination.
+	DestinationApplicationSecurityGroups []SubResource `json:"destinationApplicationSecurityGroups,omitempty"`
+
+	//DestinationPortRange: The destination port or range. Integer or range between 0
+	//and 65535. Asterisk '*' can also be used to match all ports.
+	DestinationPortRange *string `json:"destinationPortRange,omitempty"`
+
+	//DestinationPortRanges: The destination port ranges.
+	DestinationPortRanges []string `json:"destinationPortRanges,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Direction: The direction of the rule. The direction specifies if rule will be
+	//evaluated on incoming or outgoing traffic.
+	Direction SecurityRulePropertiesFormatDirection `json:"direction"`
+
+	// +kubebuilder:validation:Required
+	//Priority: The priority of the rule. The value can be between 100 and 4096. The
+	//priority number must be unique for each rule in the collection. The lower the
+	//priority number, the higher the priority of the rule.
+	Priority int `json:"priority"`
+
+	// +kubebuilder:validation:Required
+	//Protocol: Network protocol this rule applies to.
+	Protocol SecurityRulePropertiesFormatProtocol `json:"protocol"`
+
+	//SourceAddressPrefix: The CIDR or source IP range. Asterisk '*' can also be used
+	//to match all source IPs. Default tags such as 'VirtualNetwork',
+	//'AzureLoadBalancer' and 'Internet' can also be used. If this is an ingress rule,
+	//specifies where network traffic originates from.
+	SourceAddressPrefix *string `json:"sourceAddressPrefix,omitempty"`
+
+	//SourceAddressPrefixes: The CIDR or source IP ranges.
+	SourceAddressPrefixes []string `json:"sourceAddressPrefixes,omitempty"`
+
+	//SourceApplicationSecurityGroups: The application security group specified as
+	//source.
+	SourceApplicationSecurityGroups []SubResource `json:"sourceApplicationSecurityGroups,omitempty"`
+
+	//SourcePortRange: The source port or range. Integer or range between 0 and 65535.
+	//Asterisk '*' can also be used to match all ports.
+	SourcePortRange *string `json:"sourcePortRange,omitempty"`
+
+	//SourcePortRanges: The source port ranges.
+	SourcePortRanges []string `json:"sourcePortRanges,omitempty"`
 }
 
 //Generated from:
@@ -155,16 +234,6 @@ type SecurityRulePropertiesFormat_Status struct {
 	SourcePortRanges []string `json:"sourcePortRanges,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"2020-05-01"}
-type NetworkSecurityGroupsSecurityRulesSpecApiVersion string
-
-const NetworkSecurityGroupsSecurityRulesSpecApiVersion20200501 = NetworkSecurityGroupsSecurityRulesSpecApiVersion("2020-05-01")
-
-// +kubebuilder:validation:Enum={"Microsoft.Network/networkSecurityGroups/securityRules"}
-type NetworkSecurityGroupsSecurityRulesSpecType string
-
-const NetworkSecurityGroupsSecurityRulesSpecTypeMicrosoftNetworkNetworkSecurityGroupsSecurityRules = NetworkSecurityGroupsSecurityRulesSpecType("Microsoft.Network/networkSecurityGroups/securityRules")
-
 //Generated from:
 // +kubebuilder:validation:Enum={"Allow","Deny"}
 type SecurityRuleAccess_Status string
@@ -181,84 +250,6 @@ type SecurityRuleDirection_Status string
 const (
 	SecurityRuleDirection_StatusInbound  = SecurityRuleDirection_Status("Inbound")
 	SecurityRuleDirection_StatusOutbound = SecurityRuleDirection_Status("Outbound")
-)
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/SecurityRulePropertiesFormat
-type SecurityRulePropertiesFormat struct {
-
-	// +kubebuilder:validation:Required
-	//Access: The network traffic is allowed or denied.
-	Access SecurityRulePropertiesFormatAccess `json:"access"`
-
-	//Description: A description for this rule. Restricted to 140 chars.
-	Description *string `json:"description,omitempty"`
-
-	//DestinationAddressPrefix: The destination address prefix. CIDR or destination IP
-	//range. Asterisk '*' can also be used to match all source IPs. Default tags such
-	//as 'VirtualNetwork', 'AzureLoadBalancer' and 'Internet' can also be used.
-	DestinationAddressPrefix *string `json:"destinationAddressPrefix,omitempty"`
-
-	//DestinationAddressPrefixes: The destination address prefixes. CIDR or
-	//destination IP ranges.
-	DestinationAddressPrefixes []string `json:"destinationAddressPrefixes,omitempty"`
-
-	//DestinationApplicationSecurityGroups: The application security group specified
-	//as destination.
-	DestinationApplicationSecurityGroups []SubResource `json:"destinationApplicationSecurityGroups,omitempty"`
-
-	//DestinationPortRange: The destination port or range. Integer or range between 0
-	//and 65535. Asterisk '*' can also be used to match all ports.
-	DestinationPortRange *string `json:"destinationPortRange,omitempty"`
-
-	//DestinationPortRanges: The destination port ranges.
-	DestinationPortRanges []string `json:"destinationPortRanges,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Direction: The direction of the rule. The direction specifies if rule will be
-	//evaluated on incoming or outgoing traffic.
-	Direction SecurityRulePropertiesFormatDirection `json:"direction"`
-
-	// +kubebuilder:validation:Required
-	//Priority: The priority of the rule. The value can be between 100 and 4096. The
-	//priority number must be unique for each rule in the collection. The lower the
-	//priority number, the higher the priority of the rule.
-	Priority int `json:"priority"`
-
-	// +kubebuilder:validation:Required
-	//Protocol: Network protocol this rule applies to.
-	Protocol SecurityRulePropertiesFormatProtocol `json:"protocol"`
-
-	//SourceAddressPrefix: The CIDR or source IP range. Asterisk '*' can also be used
-	//to match all source IPs. Default tags such as 'VirtualNetwork',
-	//'AzureLoadBalancer' and 'Internet' can also be used. If this is an ingress rule,
-	//specifies where network traffic originates from.
-	SourceAddressPrefix *string `json:"sourceAddressPrefix,omitempty"`
-
-	//SourceAddressPrefixes: The CIDR or source IP ranges.
-	SourceAddressPrefixes []string `json:"sourceAddressPrefixes,omitempty"`
-
-	//SourceApplicationSecurityGroups: The application security group specified as
-	//source.
-	SourceApplicationSecurityGroups []SubResource `json:"sourceApplicationSecurityGroups,omitempty"`
-
-	//SourcePortRange: The source port or range. Integer or range between 0 and 65535.
-	//Asterisk '*' can also be used to match all ports.
-	SourcePortRange *string `json:"sourcePortRange,omitempty"`
-
-	//SourcePortRanges: The source port ranges.
-	SourcePortRanges []string `json:"sourcePortRanges,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"Ah","Esp","Icmp","*","Tcp","Udp"}
-type SecurityRulePropertiesFormatStatusProtocol string
-
-const (
-	SecurityRulePropertiesFormatStatusProtocolAh   = SecurityRulePropertiesFormatStatusProtocol("Ah")
-	SecurityRulePropertiesFormatStatusProtocolEsp  = SecurityRulePropertiesFormatStatusProtocol("Esp")
-	SecurityRulePropertiesFormatStatusProtocolIcmp = SecurityRulePropertiesFormatStatusProtocol("Icmp")
-	SecurityRulePropertiesFormatStatusProtocolStar = SecurityRulePropertiesFormatStatusProtocol("*")
-	SecurityRulePropertiesFormatStatusProtocolTcp  = SecurityRulePropertiesFormatStatusProtocol("Tcp")
-	SecurityRulePropertiesFormatStatusProtocolUdp  = SecurityRulePropertiesFormatStatusProtocol("Udp")
 )
 
 // +kubebuilder:validation:Enum={"Allow","Deny"}
@@ -287,6 +278,18 @@ const (
 	SecurityRulePropertiesFormatProtocolStar = SecurityRulePropertiesFormatProtocol("*")
 	SecurityRulePropertiesFormatProtocolTcp  = SecurityRulePropertiesFormatProtocol("Tcp")
 	SecurityRulePropertiesFormatProtocolUdp  = SecurityRulePropertiesFormatProtocol("Udp")
+)
+
+// +kubebuilder:validation:Enum={"Ah","Esp","Icmp","*","Tcp","Udp"}
+type SecurityRulePropertiesFormatStatusProtocol string
+
+const (
+	SecurityRulePropertiesFormatStatusProtocolAh   = SecurityRulePropertiesFormatStatusProtocol("Ah")
+	SecurityRulePropertiesFormatStatusProtocolEsp  = SecurityRulePropertiesFormatStatusProtocol("Esp")
+	SecurityRulePropertiesFormatStatusProtocolIcmp = SecurityRulePropertiesFormatStatusProtocol("Icmp")
+	SecurityRulePropertiesFormatStatusProtocolStar = SecurityRulePropertiesFormatStatusProtocol("*")
+	SecurityRulePropertiesFormatStatusProtocolTcp  = SecurityRulePropertiesFormatStatusProtocol("Tcp")
+	SecurityRulePropertiesFormatStatusProtocolUdp  = SecurityRulePropertiesFormatStatusProtocol("Udp")
 )
 
 func init() {

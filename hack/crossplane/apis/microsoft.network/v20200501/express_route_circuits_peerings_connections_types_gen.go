@@ -27,8 +27,15 @@ type ExpressRouteCircuitsPeeringsConnectionsList struct {
 	Items           []ExpressRouteCircuitsPeeringsConnections `json:"items"`
 }
 
-//Generated from:
 type ExpressRouteCircuitConnection_Status struct {
+	AtProvider ExpressRouteCircuitsPeeringsConnectionsObservation `json:"atProvider"`
+}
+
+type ExpressRouteCircuitsPeeringsConnections_Spec struct {
+	ForProvider ExpressRouteCircuitsPeeringsConnectionsParameters `json:"forProvider"`
+}
+
+type ExpressRouteCircuitsPeeringsConnectionsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -45,39 +52,6 @@ type ExpressRouteCircuitConnection_Status struct {
 
 	//Type: Type of the resource.
 	Type *string `json:"type,omitempty"`
-}
-
-type ExpressRouteCircuitsPeeringsConnections_Spec struct {
-	ForProvider ExpressRouteCircuitsPeeringsConnectionsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type ExpressRouteCircuitConnectionPropertiesFormat_Status struct {
-
-	//AddressPrefix: /29 IP address space to carve out Customer addresses for tunnels.
-	AddressPrefix *string `json:"addressPrefix,omitempty"`
-
-	//AuthorizationKey: The authorization key.
-	AuthorizationKey *string `json:"authorizationKey,omitempty"`
-
-	//CircuitConnectionStatus: Express Route Circuit connection state.
-	CircuitConnectionStatus *CircuitConnectionStatus_Status `json:"circuitConnectionStatus,omitempty"`
-
-	//ExpressRouteCircuitPeering: Reference to Express Route Circuit Private Peering
-	//Resource of the circuit initiating connection.
-	ExpressRouteCircuitPeering *SubResource_Status `json:"expressRouteCircuitPeering,omitempty"`
-
-	//Ipv6CircuitConnectionConfig: IPv6 Address PrefixProperties of the express route
-	//circuit connection.
-	Ipv6CircuitConnectionConfig *Ipv6CircuitConnectionConfig_Status `json:"ipv6CircuitConnectionConfig,omitempty"`
-
-	//PeerExpressRouteCircuitPeering: Reference to Express Route Circuit Private
-	//Peering Resource of the peered circuit.
-	PeerExpressRouteCircuitPeering *SubResource_Status `json:"peerExpressRouteCircuitPeering,omitempty"`
-
-	//ProvisioningState: The provisioning state of the express route circuit
-	//connection resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 type ExpressRouteCircuitsPeeringsConnectionsParameters struct {
@@ -119,16 +93,6 @@ type ExpressRouteCircuitsPeeringsConnectionsParameters struct {
 	Type ExpressRouteCircuitsPeeringsConnectionsSpecType `json:"type"`
 }
 
-//Generated from:
-// +kubebuilder:validation:Enum={"Connected","Connecting","Disconnected"}
-type CircuitConnectionStatus_Status string
-
-const (
-	CircuitConnectionStatus_StatusConnected    = CircuitConnectionStatus_Status("Connected")
-	CircuitConnectionStatus_StatusConnecting   = CircuitConnectionStatus_Status("Connecting")
-	CircuitConnectionStatus_StatusDisconnected = CircuitConnectionStatus_Status("Disconnected")
-)
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteCircuitConnectionPropertiesFormat
 type ExpressRouteCircuitConnectionPropertiesFormat struct {
 
@@ -151,6 +115,35 @@ type ExpressRouteCircuitConnectionPropertiesFormat struct {
 	PeerExpressRouteCircuitPeering *SubResource `json:"peerExpressRouteCircuitPeering,omitempty"`
 }
 
+//Generated from:
+type ExpressRouteCircuitConnectionPropertiesFormat_Status struct {
+
+	//AddressPrefix: /29 IP address space to carve out Customer addresses for tunnels.
+	AddressPrefix *string `json:"addressPrefix,omitempty"`
+
+	//AuthorizationKey: The authorization key.
+	AuthorizationKey *string `json:"authorizationKey,omitempty"`
+
+	//CircuitConnectionStatus: Express Route Circuit connection state.
+	CircuitConnectionStatus *CircuitConnectionStatus_Status `json:"circuitConnectionStatus,omitempty"`
+
+	//ExpressRouteCircuitPeering: Reference to Express Route Circuit Private Peering
+	//Resource of the circuit initiating connection.
+	ExpressRouteCircuitPeering *SubResource_Status `json:"expressRouteCircuitPeering,omitempty"`
+
+	//Ipv6CircuitConnectionConfig: IPv6 Address PrefixProperties of the express route
+	//circuit connection.
+	Ipv6CircuitConnectionConfig *Ipv6CircuitConnectionConfig_Status `json:"ipv6CircuitConnectionConfig,omitempty"`
+
+	//PeerExpressRouteCircuitPeering: Reference to Express Route Circuit Private
+	//Peering Resource of the peered circuit.
+	PeerExpressRouteCircuitPeering *SubResource_Status `json:"peerExpressRouteCircuitPeering,omitempty"`
+
+	//ProvisioningState: The provisioning state of the express route circuit
+	//connection resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+}
+
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type ExpressRouteCircuitsPeeringsConnectionsSpecApiVersion string
 
@@ -162,6 +155,24 @@ type ExpressRouteCircuitsPeeringsConnectionsSpecType string
 const ExpressRouteCircuitsPeeringsConnectionsSpecTypeMicrosoftNetworkExpressRouteCircuitsPeeringsConnections = ExpressRouteCircuitsPeeringsConnectionsSpecType("Microsoft.Network/expressRouteCircuits/peerings/connections")
 
 //Generated from:
+// +kubebuilder:validation:Enum={"Connected","Connecting","Disconnected"}
+type CircuitConnectionStatus_Status string
+
+const (
+	CircuitConnectionStatus_StatusConnected    = CircuitConnectionStatus_Status("Connected")
+	CircuitConnectionStatus_StatusConnecting   = CircuitConnectionStatus_Status("Connecting")
+	CircuitConnectionStatus_StatusDisconnected = CircuitConnectionStatus_Status("Disconnected")
+)
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/Ipv6CircuitConnectionConfig
+type Ipv6CircuitConnectionConfig struct {
+
+	//AddressPrefix: /125 IP address space to carve out customer addresses for global
+	//reach.
+	AddressPrefix *string `json:"addressPrefix,omitempty"`
+}
+
+//Generated from:
 type Ipv6CircuitConnectionConfig_Status struct {
 
 	//AddressPrefix: /125 IP address space to carve out customer addresses for global
@@ -170,14 +181,6 @@ type Ipv6CircuitConnectionConfig_Status struct {
 
 	//CircuitConnectionStatus: Express Route Circuit connection state.
 	CircuitConnectionStatus *CircuitConnectionStatus_Status `json:"circuitConnectionStatus,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/Ipv6CircuitConnectionConfig
-type Ipv6CircuitConnectionConfig struct {
-
-	//AddressPrefix: /125 IP address space to carve out customer addresses for global
-	//reach.
-	AddressPrefix *string `json:"addressPrefix,omitempty"`
 }
 
 func init() {

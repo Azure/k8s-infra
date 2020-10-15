@@ -31,8 +31,11 @@ type ServiceEndpointPoliciesServiceEndpointPolicyDefinitions_Spec struct {
 	ForProvider ServiceEndpointPoliciesServiceEndpointPolicyDefinitionsParameters `json:"forProvider"`
 }
 
-//Generated from:
 type ServiceEndpointPolicyDefinition_Status struct {
+	AtProvider ServiceEndpointPoliciesServiceEndpointPolicyDefinitionsObservation `json:"atProvider"`
+}
+
+type ServiceEndpointPoliciesServiceEndpointPolicyDefinitionsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -87,23 +90,6 @@ type ServiceEndpointPoliciesServiceEndpointPolicyDefinitionsParameters struct {
 	Type ServiceEndpointPoliciesServiceEndpointPolicyDefinitionsSpecType `json:"type"`
 }
 
-//Generated from:
-type ServiceEndpointPolicyDefinitionPropertiesFormat_Status struct {
-
-	//Description: A description for this rule. Restricted to 140 chars.
-	Description *string `json:"description,omitempty"`
-
-	//ProvisioningState: The provisioning state of the service endpoint policy
-	//definition resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//Service: Service endpoint name.
-	Service *string `json:"service,omitempty"`
-
-	//ServiceResources: A list of service resources.
-	ServiceResources []string `json:"serviceResources,omitempty"`
-}
-
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type ServiceEndpointPoliciesServiceEndpointPolicyDefinitionsSpecApiVersion string
 
@@ -119,6 +105,23 @@ type ServiceEndpointPolicyDefinitionPropertiesFormat struct {
 
 	//Description: A description for this rule. Restricted to 140 chars.
 	Description *string `json:"description,omitempty"`
+
+	//Service: Service endpoint name.
+	Service *string `json:"service,omitempty"`
+
+	//ServiceResources: A list of service resources.
+	ServiceResources []string `json:"serviceResources,omitempty"`
+}
+
+//Generated from:
+type ServiceEndpointPolicyDefinitionPropertiesFormat_Status struct {
+
+	//Description: A description for this rule. Restricted to 140 chars.
+	Description *string `json:"description,omitempty"`
+
+	//ProvisioningState: The provisioning state of the service endpoint policy
+	//definition resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 
 	//Service: Service endpoint name.
 	Service *string `json:"service,omitempty"`

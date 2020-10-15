@@ -27,8 +27,15 @@ type VirtualHubsHubVirtualNetworkConnectionsList struct {
 	Items           []VirtualHubsHubVirtualNetworkConnections `json:"items"`
 }
 
-//Generated from:
 type HubVirtualNetworkConnection_Status struct {
+	AtProvider VirtualHubsHubVirtualNetworkConnectionsObservation `json:"atProvider"`
+}
+
+type VirtualHubsHubVirtualNetworkConnections_Spec struct {
+	ForProvider VirtualHubsHubVirtualNetworkConnectionsParameters `json:"forProvider"`
+}
+
+type VirtualHubsHubVirtualNetworkConnectionsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -42,36 +49,6 @@ type HubVirtualNetworkConnection_Status struct {
 
 	//Properties: Properties of the hub virtual network connection.
 	Properties *HubVirtualNetworkConnectionProperties_Status `json:"properties,omitempty"`
-}
-
-type VirtualHubsHubVirtualNetworkConnections_Spec struct {
-	ForProvider VirtualHubsHubVirtualNetworkConnectionsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type HubVirtualNetworkConnectionProperties_Status struct {
-
-	//AllowHubToRemoteVnetTransit: Deprecated: VirtualHub to RemoteVnet transit to
-	//enabled or not.
-	AllowHubToRemoteVnetTransit *bool `json:"allowHubToRemoteVnetTransit,omitempty"`
-
-	//AllowRemoteVnetToUseHubVnetGateways: Deprecated: Allow RemoteVnet to use Virtual
-	//Hub's gateways.
-	AllowRemoteVnetToUseHubVnetGateways *bool `json:"allowRemoteVnetToUseHubVnetGateways,omitempty"`
-
-	//EnableInternetSecurity: Enable internet security.
-	EnableInternetSecurity *bool `json:"enableInternetSecurity,omitempty"`
-
-	//ProvisioningState: The provisioning state of the hub virtual network connection
-	//resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//RemoteVirtualNetwork: Reference to the remote virtual network.
-	RemoteVirtualNetwork *SubResource_Status `json:"remoteVirtualNetwork,omitempty"`
-
-	//RoutingConfiguration: The Routing Configuration indicating the associated and
-	//propagated route tables on this connection.
-	RoutingConfiguration *RoutingConfiguration_Status `json:"routingConfiguration,omitempty"`
 }
 
 type VirtualHubsHubVirtualNetworkConnectionsParameters struct {
@@ -133,6 +110,32 @@ type HubVirtualNetworkConnectionProperties struct {
 	//RoutingConfiguration: The Routing Configuration indicating the associated and
 	//propagated route tables on this connection.
 	RoutingConfiguration *RoutingConfiguration `json:"routingConfiguration,omitempty"`
+}
+
+//Generated from:
+type HubVirtualNetworkConnectionProperties_Status struct {
+
+	//AllowHubToRemoteVnetTransit: Deprecated: VirtualHub to RemoteVnet transit to
+	//enabled or not.
+	AllowHubToRemoteVnetTransit *bool `json:"allowHubToRemoteVnetTransit,omitempty"`
+
+	//AllowRemoteVnetToUseHubVnetGateways: Deprecated: Allow RemoteVnet to use Virtual
+	//Hub's gateways.
+	AllowRemoteVnetToUseHubVnetGateways *bool `json:"allowRemoteVnetToUseHubVnetGateways,omitempty"`
+
+	//EnableInternetSecurity: Enable internet security.
+	EnableInternetSecurity *bool `json:"enableInternetSecurity,omitempty"`
+
+	//ProvisioningState: The provisioning state of the hub virtual network connection
+	//resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//RemoteVirtualNetwork: Reference to the remote virtual network.
+	RemoteVirtualNetwork *SubResource_Status `json:"remoteVirtualNetwork,omitempty"`
+
+	//RoutingConfiguration: The Routing Configuration indicating the associated and
+	//propagated route tables on this connection.
+	RoutingConfiguration *RoutingConfiguration_Status `json:"routingConfiguration,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}

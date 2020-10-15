@@ -27,8 +27,15 @@ type NetworkWatchersList struct {
 	Items           []NetworkWatchers `json:"items"`
 }
 
-//Generated from:
 type NetworkWatcher_Status struct {
+	AtProvider NetworkWatchersObservation `json:"atProvider"`
+}
+
+type NetworkWatchers_Spec struct {
+	ForProvider NetworkWatchersParameters `json:"forProvider"`
+}
+
+type NetworkWatchersObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,17 +57,6 @@ type NetworkWatcher_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type NetworkWatchers_Spec struct {
-	ForProvider NetworkWatchersParameters `json:"forProvider"`
-}
-
-//Generated from:
-type NetworkWatcherPropertiesFormat_Status struct {
-
-	//ProvisioningState: The provisioning state of the network watcher resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 type NetworkWatchersParameters struct {
@@ -100,6 +96,13 @@ type NetworkWatchersParameters struct {
 	// +kubebuilder:validation:Required
 	//Type: Resource type
 	Type NetworkWatchersSpecType `json:"type"`
+}
+
+//Generated from:
+type NetworkWatcherPropertiesFormat_Status struct {
+
+	//ProvisioningState: The provisioning state of the network watcher resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}

@@ -27,8 +27,15 @@ type RouteTablesList struct {
 	Items           []RouteTables `json:"items"`
 }
 
-//Generated from:
 type RouteTable_Status struct {
+	AtProvider RouteTablesObservation `json:"atProvider"`
+}
+
+type RouteTables_Spec struct {
+	ForProvider RouteTablesParameters `json:"forProvider"`
+}
+
+type RouteTablesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,27 +57,6 @@ type RouteTable_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type RouteTables_Spec struct {
-	ForProvider RouteTablesParameters `json:"forProvider"`
-}
-
-//Generated from:
-type RouteTablePropertiesFormat_Status struct {
-
-	//DisableBgpRoutePropagation: Whether to disable the routes learned by BGP on that
-	//route table. True means disable.
-	DisableBgpRoutePropagation *bool `json:"disableBgpRoutePropagation,omitempty"`
-
-	//ProvisioningState: The provisioning state of the route table resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//Routes: Collection of routes contained within a route table.
-	Routes []Route_Status `json:"routes,omitempty"`
-
-	//Subnets: A collection of references to subnets.
-	Subnets []Subnet_Status `json:"subnets,omitempty"`
 }
 
 type RouteTablesParameters struct {
@@ -121,6 +107,23 @@ type RouteTablePropertiesFormat struct {
 
 	//Routes: Collection of routes contained within a route table.
 	Routes []Route `json:"routes,omitempty"`
+}
+
+//Generated from:
+type RouteTablePropertiesFormat_Status struct {
+
+	//DisableBgpRoutePropagation: Whether to disable the routes learned by BGP on that
+	//route table. True means disable.
+	DisableBgpRoutePropagation *bool `json:"disableBgpRoutePropagation,omitempty"`
+
+	//ProvisioningState: The provisioning state of the route table resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//Routes: Collection of routes contained within a route table.
+	Routes []Route_Status `json:"routes,omitempty"`
+
+	//Subnets: A collection of references to subnets.
+	Subnets []Subnet_Status `json:"subnets,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}

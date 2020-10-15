@@ -31,8 +31,11 @@ type ServersDatabasesSyncGroups_Spec struct {
 	ForProvider ServersDatabasesSyncGroupsParameters `json:"forProvider"`
 }
 
-//Generated from:
 type SyncGroup_Status struct {
+	AtProvider ServersDatabasesSyncGroupsObservation `json:"atProvider"`
+}
+
+type ServersDatabasesSyncGroupsObservation struct {
 
 	//Id: Resource ID.
 	Id *string `json:"id,omitempty"`
@@ -86,34 +89,6 @@ type ServersDatabasesSyncGroupsParameters struct {
 	Type ServersDatabasesSyncGroupsSpecType `json:"type"`
 }
 
-//Generated from:
-type SyncGroupProperties_Status struct {
-
-	//ConflictResolutionPolicy: Conflict resolution policy of the sync group.
-	ConflictResolutionPolicy *SyncGroupPropertiesStatusConflictResolutionPolicy `json:"conflictResolutionPolicy,omitempty"`
-
-	//HubDatabasePassword: Password for the sync group hub database credential.
-	HubDatabasePassword *string `json:"hubDatabasePassword,omitempty"`
-
-	//HubDatabaseUserName: User name for the sync group hub database credential.
-	HubDatabaseUserName *string `json:"hubDatabaseUserName,omitempty"`
-
-	//Interval: Sync interval of the sync group.
-	Interval *int `json:"interval,omitempty"`
-
-	//LastSyncTime: Last sync time of the sync group.
-	LastSyncTime *string `json:"lastSyncTime,omitempty"`
-
-	//Schema: Sync schema of the sync group.
-	Schema *SyncGroupSchema_Status `json:"schema,omitempty"`
-
-	//SyncDatabaseId: ARM resource id of the sync database in the sync group.
-	SyncDatabaseId *string `json:"syncDatabaseId,omitempty"`
-
-	//SyncState: Sync state of the sync group.
-	SyncState *SyncGroupPropertiesStatusSyncState `json:"syncState,omitempty"`
-}
-
 // +kubebuilder:validation:Enum={"2015-05-01-preview"}
 type ServersDatabasesSyncGroupsSpecApiVersion string
 
@@ -146,6 +121,42 @@ type SyncGroupProperties struct {
 	SyncDatabaseId *string `json:"syncDatabaseId,omitempty"`
 }
 
+//Generated from:
+type SyncGroupProperties_Status struct {
+
+	//ConflictResolutionPolicy: Conflict resolution policy of the sync group.
+	ConflictResolutionPolicy *SyncGroupPropertiesStatusConflictResolutionPolicy `json:"conflictResolutionPolicy,omitempty"`
+
+	//HubDatabasePassword: Password for the sync group hub database credential.
+	HubDatabasePassword *string `json:"hubDatabasePassword,omitempty"`
+
+	//HubDatabaseUserName: User name for the sync group hub database credential.
+	HubDatabaseUserName *string `json:"hubDatabaseUserName,omitempty"`
+
+	//Interval: Sync interval of the sync group.
+	Interval *int `json:"interval,omitempty"`
+
+	//LastSyncTime: Last sync time of the sync group.
+	LastSyncTime *string `json:"lastSyncTime,omitempty"`
+
+	//Schema: Sync schema of the sync group.
+	Schema *SyncGroupSchema_Status `json:"schema,omitempty"`
+
+	//SyncDatabaseId: ARM resource id of the sync database in the sync group.
+	SyncDatabaseId *string `json:"syncDatabaseId,omitempty"`
+
+	//SyncState: Sync state of the sync group.
+	SyncState *SyncGroupPropertiesStatusSyncState `json:"syncState,omitempty"`
+}
+
+// +kubebuilder:validation:Enum={"HubWin","MemberWin"}
+type SyncGroupPropertiesConflictResolutionPolicy string
+
+const (
+	SyncGroupPropertiesConflictResolutionPolicyHubWin    = SyncGroupPropertiesConflictResolutionPolicy("HubWin")
+	SyncGroupPropertiesConflictResolutionPolicyMemberWin = SyncGroupPropertiesConflictResolutionPolicy("MemberWin")
+)
+
 // +kubebuilder:validation:Enum={"HubWin","MemberWin"}
 type SyncGroupPropertiesStatusConflictResolutionPolicy string
 
@@ -165,24 +176,6 @@ const (
 	SyncGroupPropertiesStatusSyncStateWarning     = SyncGroupPropertiesStatusSyncState("Warning")
 )
 
-//Generated from:
-type SyncGroupSchema_Status struct {
-
-	//MasterSyncMemberName: Name of master sync member where the schema is from.
-	MasterSyncMemberName *string `json:"masterSyncMemberName,omitempty"`
-
-	//Tables: List of tables in sync group schema.
-	Tables []SyncGroupSchemaTable_Status `json:"tables,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"HubWin","MemberWin"}
-type SyncGroupPropertiesConflictResolutionPolicy string
-
-const (
-	SyncGroupPropertiesConflictResolutionPolicyHubWin    = SyncGroupPropertiesConflictResolutionPolicy("HubWin")
-	SyncGroupPropertiesConflictResolutionPolicyMemberWin = SyncGroupPropertiesConflictResolutionPolicy("MemberWin")
-)
-
 //Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/SyncGroupSchema
 type SyncGroupSchema struct {
 
@@ -194,13 +187,13 @@ type SyncGroupSchema struct {
 }
 
 //Generated from:
-type SyncGroupSchemaTable_Status struct {
+type SyncGroupSchema_Status struct {
 
-	//Columns: List of columns in sync group schema.
-	Columns []SyncGroupSchemaTableColumn_Status `json:"columns,omitempty"`
+	//MasterSyncMemberName: Name of master sync member where the schema is from.
+	MasterSyncMemberName *string `json:"masterSyncMemberName,omitempty"`
 
-	//QuotedName: Quoted name of sync group schema table.
-	QuotedName *string `json:"quotedName,omitempty"`
+	//Tables: List of tables in sync group schema.
+	Tables []SyncGroupSchemaTable_Status `json:"tables,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/SyncGroupSchemaTable
@@ -214,7 +207,17 @@ type SyncGroupSchemaTable struct {
 }
 
 //Generated from:
-type SyncGroupSchemaTableColumn_Status struct {
+type SyncGroupSchemaTable_Status struct {
+
+	//Columns: List of columns in sync group schema.
+	Columns []SyncGroupSchemaTableColumn_Status `json:"columns,omitempty"`
+
+	//QuotedName: Quoted name of sync group schema table.
+	QuotedName *string `json:"quotedName,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/SyncGroupSchemaTableColumn
+type SyncGroupSchemaTableColumn struct {
 
 	//DataSize: Data size of the column.
 	DataSize *string `json:"dataSize,omitempty"`
@@ -226,8 +229,8 @@ type SyncGroupSchemaTableColumn_Status struct {
 	QuotedName *string `json:"quotedName,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/SyncGroupSchemaTableColumn
-type SyncGroupSchemaTableColumn struct {
+//Generated from:
+type SyncGroupSchemaTableColumn_Status struct {
 
 	//DataSize: Data size of the column.
 	DataSize *string `json:"dataSize,omitempty"`

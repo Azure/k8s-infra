@@ -27,8 +27,15 @@ type NetworkInterfacesList struct {
 	Items           []NetworkInterfaces `json:"items"`
 }
 
-//Generated from:
 type NetworkInterface_Status struct {
+	AtProvider NetworkInterfacesObservation `json:"atProvider"`
+}
+
+type NetworkInterfaces_Spec struct {
+	ForProvider NetworkInterfacesParameters `json:"forProvider"`
+}
+
+type NetworkInterfacesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -52,8 +59,65 @@ type NetworkInterface_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
-type NetworkInterfaces_Spec struct {
-	ForProvider NetworkInterfacesParameters `json:"forProvider"`
+type NetworkInterfacesParameters struct {
+
+	// +kubebuilder:validation:Required
+	//ApiVersion: API Version of the resource type, optional when apiProfile is used
+	//on the template
+	ApiVersion NetworkInterfacesSpecApiVersion `json:"apiVersion"`
+	Comments   *string                         `json:"comments,omitempty"`
+
+	//Condition: Condition of the resource
+	Condition *bool                   `json:"condition,omitempty"`
+	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
+
+	//DependsOn: Collection of resources this resource depends on
+	DependsOn []string `json:"dependsOn,omitempty"`
+
+	//Location: Location to deploy resource to
+	Location string `json:"location,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Name: Name of the resource
+	Name string `json:"name"`
+
+	// +kubebuilder:validation:Required
+	//Properties: Properties of the network interface.
+	Properties NetworkInterfacePropertiesFormat `json:"properties"`
+
+	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
+	//setting the scope for extension resources 2) deploying resources to the tenant
+	//scope in non-tenant scope deployments
+	Scope *string `json:"scope,omitempty"`
+
+	//Tags: Name-value pairs to add to the resource
+	Tags map[string]string `json:"tags,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Type: Resource type
+	Type NetworkInterfacesSpecType `json:"type"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/NetworkInterfacePropertiesFormat
+type NetworkInterfacePropertiesFormat struct {
+
+	//DnsSettings: The DNS settings in network interface.
+	DnsSettings *NetworkInterfaceDnsSettings `json:"dnsSettings,omitempty"`
+
+	//EnableAcceleratedNetworking: If the network interface is accelerated networking
+	//enabled.
+	EnableAcceleratedNetworking *bool `json:"enableAcceleratedNetworking,omitempty"`
+
+	//EnableIPForwarding: Indicates whether IP forwarding is enabled on this network
+	//interface.
+	EnableIPForwarding *bool `json:"enableIPForwarding,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//IpConfigurations: A list of IPConfigurations of the network interface.
+	IpConfigurations []NetworkInterfaceIPConfiguration `json:"ipConfigurations"`
+
+	//NetworkSecurityGroup: The reference to the NetworkSecurityGroup resource.
+	NetworkSecurityGroup *SubResource `json:"networkSecurityGroup,omitempty"`
 }
 
 //Generated from:
@@ -102,43 +166,27 @@ type NetworkInterfacePropertiesFormat_Status struct {
 	VirtualMachine *SubResource_Status `json:"virtualMachine,omitempty"`
 }
 
-type NetworkInterfacesParameters struct {
+// +kubebuilder:validation:Enum={"2020-05-01"}
+type NetworkInterfacesSpecApiVersion string
 
-	// +kubebuilder:validation:Required
-	//ApiVersion: API Version of the resource type, optional when apiProfile is used
-	//on the template
-	ApiVersion NetworkInterfacesSpecApiVersion `json:"apiVersion"`
-	Comments   *string                         `json:"comments,omitempty"`
+const NetworkInterfacesSpecApiVersion20200501 = NetworkInterfacesSpecApiVersion("2020-05-01")
 
-	//Condition: Condition of the resource
-	Condition *bool                   `json:"condition,omitempty"`
-	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
+// +kubebuilder:validation:Enum={"Microsoft.Network/networkInterfaces"}
+type NetworkInterfacesSpecType string
 
-	//DependsOn: Collection of resources this resource depends on
-	DependsOn []string `json:"dependsOn,omitempty"`
+const NetworkInterfacesSpecTypeMicrosoftNetworkNetworkInterfaces = NetworkInterfacesSpecType("Microsoft.Network/networkInterfaces")
 
-	//Location: Location to deploy resource to
-	Location string `json:"location,omitempty"`
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/NetworkInterfaceDnsSettings
+type NetworkInterfaceDnsSettings struct {
 
-	// +kubebuilder:validation:Required
-	//Name: Name of the resource
-	Name string `json:"name"`
+	//DnsServers: List of DNS servers IP addresses. Use 'AzureProvidedDNS' to switch
+	//to azure provided DNS resolution. 'AzureProvidedDNS' value cannot be combined
+	//with other IPs, it must be the only value in dnsServers collection.
+	DnsServers []string `json:"dnsServers,omitempty"`
 
-	// +kubebuilder:validation:Required
-	//Properties: Properties of the network interface.
-	Properties NetworkInterfacePropertiesFormat `json:"properties"`
-
-	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
-	//setting the scope for extension resources 2) deploying resources to the tenant
-	//scope in non-tenant scope deployments
-	Scope *string `json:"scope,omitempty"`
-
-	//Tags: Name-value pairs to add to the resource
-	Tags map[string]string `json:"tags,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//Type: Resource type
-	Type NetworkInterfacesSpecType `json:"type"`
+	//InternalDnsNameLabel: Relative DNS name for this NIC used for internal
+	//communications between VMs in the same virtual network.
+	InternalDnsNameLabel *string `json:"internalDnsNameLabel,omitempty"`
 }
 
 //Generated from:
@@ -167,51 +215,6 @@ type NetworkInterfaceDnsSettings_Status struct {
 	//InternalFqdn: Fully qualified DNS name supporting internal communications
 	//between VMs in the same virtual network.
 	InternalFqdn *string `json:"internalFqdn,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/NetworkInterfacePropertiesFormat
-type NetworkInterfacePropertiesFormat struct {
-
-	//DnsSettings: The DNS settings in network interface.
-	DnsSettings *NetworkInterfaceDnsSettings `json:"dnsSettings,omitempty"`
-
-	//EnableAcceleratedNetworking: If the network interface is accelerated networking
-	//enabled.
-	EnableAcceleratedNetworking *bool `json:"enableAcceleratedNetworking,omitempty"`
-
-	//EnableIPForwarding: Indicates whether IP forwarding is enabled on this network
-	//interface.
-	EnableIPForwarding *bool `json:"enableIPForwarding,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//IpConfigurations: A list of IPConfigurations of the network interface.
-	IpConfigurations []NetworkInterfaceIPConfiguration `json:"ipConfigurations"`
-
-	//NetworkSecurityGroup: The reference to the NetworkSecurityGroup resource.
-	NetworkSecurityGroup *SubResource `json:"networkSecurityGroup,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"2020-05-01"}
-type NetworkInterfacesSpecApiVersion string
-
-const NetworkInterfacesSpecApiVersion20200501 = NetworkInterfacesSpecApiVersion("2020-05-01")
-
-// +kubebuilder:validation:Enum={"Microsoft.Network/networkInterfaces"}
-type NetworkInterfacesSpecType string
-
-const NetworkInterfacesSpecTypeMicrosoftNetworkNetworkInterfaces = NetworkInterfacesSpecType("Microsoft.Network/networkInterfaces")
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/NetworkInterfaceDnsSettings
-type NetworkInterfaceDnsSettings struct {
-
-	//DnsServers: List of DNS servers IP addresses. Use 'AzureProvidedDNS' to switch
-	//to azure provided DNS resolution. 'AzureProvidedDNS' value cannot be combined
-	//with other IPs, it must be the only value in dnsServers collection.
-	DnsServers []string `json:"dnsServers,omitempty"`
-
-	//InternalDnsNameLabel: Relative DNS name for this NIC used for internal
-	//communications between VMs in the same virtual network.
-	InternalDnsNameLabel *string `json:"internalDnsNameLabel,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/NetworkInterfaceIPConfiguration

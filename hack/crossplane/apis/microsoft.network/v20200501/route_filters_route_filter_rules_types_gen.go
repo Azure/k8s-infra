@@ -27,8 +27,15 @@ type RouteFiltersRouteFilterRulesList struct {
 	Items           []RouteFiltersRouteFilterRules `json:"items"`
 }
 
-//Generated from:
 type RouteFilterRule_Status struct {
+	AtProvider RouteFiltersRouteFilterRulesObservation `json:"atProvider"`
+}
+
+type RouteFiltersRouteFilterRules_Spec struct {
+	ForProvider RouteFiltersRouteFilterRulesParameters `json:"forProvider"`
+}
+
+type RouteFiltersRouteFilterRulesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -45,30 +52,6 @@ type RouteFilterRule_Status struct {
 
 	//Properties: Properties of the route filter rule.
 	Properties *RouteFilterRulePropertiesFormat_Status `json:"properties,omitempty"`
-}
-
-type RouteFiltersRouteFilterRules_Spec struct {
-	ForProvider RouteFiltersRouteFilterRulesParameters `json:"forProvider"`
-}
-
-//Generated from:
-type RouteFilterRulePropertiesFormat_Status struct {
-
-	// +kubebuilder:validation:Required
-	//Access: The access type of the rule.
-	Access Access_Status `json:"access"`
-
-	// +kubebuilder:validation:Required
-	//Communities: The collection for bgp community values to filter on. e.g.
-	//['12076:5010','12076:5020'].
-	Communities []string `json:"communities"`
-
-	//ProvisioningState: The provisioning state of the route filter rule resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//RouteFilterRuleType: The rule type of the rule.
-	RouteFilterRuleType RouteFilterRulePropertiesFormatStatusRouteFilterRuleType `json:"routeFilterRuleType"`
 }
 
 type RouteFiltersRouteFilterRulesParameters struct {
@@ -110,15 +93,6 @@ type RouteFiltersRouteFilterRulesParameters struct {
 	Type RouteFiltersRouteFilterRulesSpecType `json:"type"`
 }
 
-//Generated from:
-// +kubebuilder:validation:Enum={"Allow","Deny"}
-type Access_Status string
-
-const (
-	Access_StatusAllow = Access_Status("Allow")
-	Access_StatusDeny  = Access_Status("Deny")
-)
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/RouteFilterRulePropertiesFormat
 type RouteFilterRulePropertiesFormat struct {
 
@@ -136,10 +110,25 @@ type RouteFilterRulePropertiesFormat struct {
 	RouteFilterRuleType RouteFilterRulePropertiesFormatRouteFilterRuleType `json:"routeFilterRuleType"`
 }
 
-// +kubebuilder:validation:Enum={"Community"}
-type RouteFilterRulePropertiesFormatStatusRouteFilterRuleType string
+//Generated from:
+type RouteFilterRulePropertiesFormat_Status struct {
 
-const RouteFilterRulePropertiesFormatStatusRouteFilterRuleTypeCommunity = RouteFilterRulePropertiesFormatStatusRouteFilterRuleType("Community")
+	// +kubebuilder:validation:Required
+	//Access: The access type of the rule.
+	Access Access_Status `json:"access"`
+
+	// +kubebuilder:validation:Required
+	//Communities: The collection for bgp community values to filter on. e.g.
+	//['12076:5010','12076:5020'].
+	Communities []string `json:"communities"`
+
+	//ProvisioningState: The provisioning state of the route filter rule resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//RouteFilterRuleType: The rule type of the rule.
+	RouteFilterRuleType RouteFilterRulePropertiesFormatStatusRouteFilterRuleType `json:"routeFilterRuleType"`
+}
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type RouteFiltersRouteFilterRulesSpecApiVersion string
@@ -150,6 +139,15 @@ const RouteFiltersRouteFilterRulesSpecApiVersion20200501 = RouteFiltersRouteFilt
 type RouteFiltersRouteFilterRulesSpecType string
 
 const RouteFiltersRouteFilterRulesSpecTypeMicrosoftNetworkRouteFiltersRouteFilterRules = RouteFiltersRouteFilterRulesSpecType("Microsoft.Network/routeFilters/routeFilterRules")
+
+//Generated from:
+// +kubebuilder:validation:Enum={"Allow","Deny"}
+type Access_Status string
+
+const (
+	Access_StatusAllow = Access_Status("Allow")
+	Access_StatusDeny  = Access_Status("Deny")
+)
 
 // +kubebuilder:validation:Enum={"Allow","Deny"}
 type RouteFilterRulePropertiesFormatAccess string
@@ -163,6 +161,11 @@ const (
 type RouteFilterRulePropertiesFormatRouteFilterRuleType string
 
 const RouteFilterRulePropertiesFormatRouteFilterRuleTypeCommunity = RouteFilterRulePropertiesFormatRouteFilterRuleType("Community")
+
+// +kubebuilder:validation:Enum={"Community"}
+type RouteFilterRulePropertiesFormatStatusRouteFilterRuleType string
+
+const RouteFilterRulePropertiesFormatStatusRouteFilterRuleTypeCommunity = RouteFilterRulePropertiesFormatStatusRouteFilterRuleType("Community")
 
 func init() {
 	SchemeBuilder.Register(&RouteFiltersRouteFilterRules{}, &RouteFiltersRouteFilterRulesList{})

@@ -27,8 +27,15 @@ type VirtualHubsIpConfigurationsList struct {
 	Items           []VirtualHubsIpConfigurations `json:"items"`
 }
 
-//Generated from:
 type HubIpConfiguration_Status struct {
+	AtProvider VirtualHubsIpConfigurationsObservation `json:"atProvider"`
+}
+
+type VirtualHubsIpConfigurations_Spec struct {
+	ForProvider VirtualHubsIpConfigurationsParameters `json:"forProvider"`
+}
+
+type VirtualHubsIpConfigurationsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -44,29 +51,6 @@ type HubIpConfiguration_Status struct {
 
 	//Type: Ipconfiguration type.
 	Type *string `json:"type,omitempty"`
-}
-
-type VirtualHubsIpConfigurations_Spec struct {
-	ForProvider VirtualHubsIpConfigurationsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type HubIPConfigurationPropertiesFormat_Status struct {
-
-	//PrivateIPAddress: The private IP address of the IP configuration.
-	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
-
-	//PrivateIPAllocationMethod: The private IP address allocation method.
-	PrivateIPAllocationMethod *IPAllocationMethod_Status `json:"privateIPAllocationMethod,omitempty"`
-
-	//ProvisioningState: The provisioning state of the IP configuration resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//PublicIPAddress: The reference to the public IP resource.
-	PublicIPAddress *PublicIPAddress_Status `json:"publicIPAddress,omitempty"`
-
-	//Subnet: The reference to the subnet resource.
-	Subnet *Subnet_Status `json:"subnet,omitempty"`
 }
 
 type VirtualHubsIpConfigurationsParameters struct {
@@ -122,6 +106,25 @@ type HubIPConfigurationPropertiesFormat struct {
 
 	//Subnet: The reference to the subnet resource.
 	Subnet *Subnet `json:"subnet,omitempty"`
+}
+
+//Generated from:
+type HubIPConfigurationPropertiesFormat_Status struct {
+
+	//PrivateIPAddress: The private IP address of the IP configuration.
+	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
+
+	//PrivateIPAllocationMethod: The private IP address allocation method.
+	PrivateIPAllocationMethod *IPAllocationMethod_Status `json:"privateIPAllocationMethod,omitempty"`
+
+	//ProvisioningState: The provisioning state of the IP configuration resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//PublicIPAddress: The reference to the public IP resource.
+	PublicIPAddress *PublicIPAddress_Status `json:"publicIPAddress,omitempty"`
+
+	//Subnet: The reference to the subnet resource.
+	Subnet *Subnet_Status `json:"subnet,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}

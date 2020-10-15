@@ -27,8 +27,15 @@ type ExpressRouteCircuitsPeeringsList struct {
 	Items           []ExpressRouteCircuitsPeerings `json:"items"`
 }
 
-//Generated from:
 type ExpressRouteCircuitPeering_Status struct {
+	AtProvider ExpressRouteCircuitsPeeringsObservation `json:"atProvider"`
+}
+
+type ExpressRouteCircuitsPeerings_Spec struct {
+	ForProvider ExpressRouteCircuitsPeeringsParameters `json:"forProvider"`
+}
+
+type ExpressRouteCircuitsPeeringsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -47,8 +54,86 @@ type ExpressRouteCircuitPeering_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
-type ExpressRouteCircuitsPeerings_Spec struct {
-	ForProvider ExpressRouteCircuitsPeeringsParameters `json:"forProvider"`
+type ExpressRouteCircuitsPeeringsParameters struct {
+
+	// +kubebuilder:validation:Required
+	//ApiVersion: API Version of the resource type, optional when apiProfile is used
+	//on the template
+	ApiVersion ExpressRouteCircuitsPeeringsSpecApiVersion `json:"apiVersion"`
+	Comments   *string                                    `json:"comments,omitempty"`
+
+	//Condition: Condition of the resource
+	Condition *bool                   `json:"condition,omitempty"`
+	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
+
+	//DependsOn: Collection of resources this resource depends on
+	DependsOn []string `json:"dependsOn,omitempty"`
+
+	//Location: Location to deploy resource to
+	Location *v20150101.ResourceLocations `json:"location,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Name: Name of the resource
+	Name string `json:"name"`
+
+	// +kubebuilder:validation:Required
+	//Properties: Properties of the express route circuit peering.
+	Properties ExpressRouteCircuitPeeringPropertiesFormat `json:"properties"`
+
+	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
+	//setting the scope for extension resources 2) deploying resources to the tenant
+	//scope in non-tenant scope deployments
+	Scope *string `json:"scope,omitempty"`
+
+	//Tags: Name-value pairs to add to the resource
+	Tags map[string]string `json:"tags,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//Type: Resource type
+	Type ExpressRouteCircuitsPeeringsSpecType `json:"type"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteCircuitPeeringPropertiesFormat
+type ExpressRouteCircuitPeeringPropertiesFormat struct {
+
+	//ExpressRouteConnection: The ExpressRoute connection.
+	ExpressRouteConnection *SubResource `json:"expressRouteConnection,omitempty"`
+
+	//GatewayManagerEtag: The GatewayManager Etag.
+	GatewayManagerEtag *string `json:"gatewayManagerEtag,omitempty"`
+
+	//Ipv6PeeringConfig: The IPv6 peering configuration.
+	Ipv6PeeringConfig *Ipv6ExpressRouteCircuitPeeringConfig `json:"ipv6PeeringConfig,omitempty"`
+
+	//MicrosoftPeeringConfig: The Microsoft peering configuration.
+	MicrosoftPeeringConfig *ExpressRouteCircuitPeeringConfig `json:"microsoftPeeringConfig,omitempty"`
+
+	//PeerASN: The peer ASN.
+	PeerASN *int `json:"peerASN,omitempty"`
+
+	//PeeringType: The peering type.
+	PeeringType *ExpressRouteCircuitPeeringPropertiesFormatPeeringType `json:"peeringType,omitempty"`
+
+	//PrimaryPeerAddressPrefix: The primary address prefix.
+	PrimaryPeerAddressPrefix *string `json:"primaryPeerAddressPrefix,omitempty"`
+
+	//RouteFilter: The reference to the RouteFilter resource.
+	RouteFilter *SubResource `json:"routeFilter,omitempty"`
+
+	//SecondaryPeerAddressPrefix: The secondary address prefix.
+	SecondaryPeerAddressPrefix *string `json:"secondaryPeerAddressPrefix,omitempty"`
+
+	//SharedKey: The shared key.
+	SharedKey *string `json:"sharedKey,omitempty"`
+
+	//State: The peering state.
+	State *ExpressRouteCircuitPeeringPropertiesFormatState `json:"state,omitempty"`
+
+	//Stats: The peering stats of express route circuit.
+	Stats *ExpressRouteCircuitStats `json:"stats,omitempty"`
+
+	//VlanId: The VLAN ID.
+	VlanId *int `json:"vlanId,omitempty"`
 }
 
 //Generated from:
@@ -118,43 +203,34 @@ type ExpressRouteCircuitPeeringPropertiesFormat_Status struct {
 	VlanId *int `json:"vlanId,omitempty"`
 }
 
-type ExpressRouteCircuitsPeeringsParameters struct {
+// +kubebuilder:validation:Enum={"2020-05-01"}
+type ExpressRouteCircuitsPeeringsSpecApiVersion string
 
-	// +kubebuilder:validation:Required
-	//ApiVersion: API Version of the resource type, optional when apiProfile is used
-	//on the template
-	ApiVersion ExpressRouteCircuitsPeeringsSpecApiVersion `json:"apiVersion"`
-	Comments   *string                                    `json:"comments,omitempty"`
+const ExpressRouteCircuitsPeeringsSpecApiVersion20200501 = ExpressRouteCircuitsPeeringsSpecApiVersion("2020-05-01")
 
-	//Condition: Condition of the resource
-	Condition *bool                   `json:"condition,omitempty"`
-	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
+// +kubebuilder:validation:Enum={"Microsoft.Network/expressRouteCircuits/peerings"}
+type ExpressRouteCircuitsPeeringsSpecType string
 
-	//DependsOn: Collection of resources this resource depends on
-	DependsOn []string `json:"dependsOn,omitempty"`
+const ExpressRouteCircuitsPeeringsSpecTypeMicrosoftNetworkExpressRouteCircuitsPeerings = ExpressRouteCircuitsPeeringsSpecType("Microsoft.Network/expressRouteCircuits/peerings")
 
-	//Location: Location to deploy resource to
-	Location *v20150101.ResourceLocations `json:"location,omitempty"`
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteCircuitPeeringConfig
+type ExpressRouteCircuitPeeringConfig struct {
 
-	// +kubebuilder:validation:Required
-	//Name: Name of the resource
-	Name string `json:"name"`
+	//AdvertisedCommunities: The communities of bgp peering. Specified for microsoft
+	//peering.
+	AdvertisedCommunities []string `json:"advertisedCommunities,omitempty"`
 
-	// +kubebuilder:validation:Required
-	//Properties: Properties of the express route circuit peering.
-	Properties ExpressRouteCircuitPeeringPropertiesFormat `json:"properties"`
+	//AdvertisedPublicPrefixes: The reference to AdvertisedPublicPrefixes.
+	AdvertisedPublicPrefixes []string `json:"advertisedPublicPrefixes,omitempty"`
 
-	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
-	//setting the scope for extension resources 2) deploying resources to the tenant
-	//scope in non-tenant scope deployments
-	Scope *string `json:"scope,omitempty"`
+	//CustomerASN: The CustomerASN of the peering.
+	CustomerASN *int `json:"customerASN,omitempty"`
 
-	//Tags: Name-value pairs to add to the resource
-	Tags map[string]string `json:"tags,omitempty"`
+	//LegacyMode: The legacy mode of the peering.
+	LegacyMode *int `json:"legacyMode,omitempty"`
 
-	// +kubebuilder:validation:Required
-	//Type: Resource type
-	Type ExpressRouteCircuitsPeeringsSpecType `json:"type"`
+	//RoutingRegistryName: The RoutingRegistryName of the configuration.
+	RoutingRegistryName *string `json:"routingRegistryName,omitempty"`
 }
 
 //Generated from:
@@ -181,47 +257,37 @@ type ExpressRouteCircuitPeeringConfig_Status struct {
 	RoutingRegistryName *string `json:"routingRegistryName,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteCircuitPeeringPropertiesFormat
-type ExpressRouteCircuitPeeringPropertiesFormat struct {
+// +kubebuilder:validation:Enum={"AzurePrivatePeering","AzurePublicPeering","MicrosoftPeering"}
+type ExpressRouteCircuitPeeringPropertiesFormatPeeringType string
 
-	//ExpressRouteConnection: The ExpressRoute connection.
-	ExpressRouteConnection *SubResource `json:"expressRouteConnection,omitempty"`
+const (
+	ExpressRouteCircuitPeeringPropertiesFormatPeeringTypeAzurePrivatePeering = ExpressRouteCircuitPeeringPropertiesFormatPeeringType("AzurePrivatePeering")
+	ExpressRouteCircuitPeeringPropertiesFormatPeeringTypeAzurePublicPeering  = ExpressRouteCircuitPeeringPropertiesFormatPeeringType("AzurePublicPeering")
+	ExpressRouteCircuitPeeringPropertiesFormatPeeringTypeMicrosoftPeering    = ExpressRouteCircuitPeeringPropertiesFormatPeeringType("MicrosoftPeering")
+)
 
-	//GatewayManagerEtag: The GatewayManager Etag.
-	GatewayManagerEtag *string `json:"gatewayManagerEtag,omitempty"`
+// +kubebuilder:validation:Enum={"Disabled","Enabled"}
+type ExpressRouteCircuitPeeringPropertiesFormatState string
 
-	//Ipv6PeeringConfig: The IPv6 peering configuration.
-	Ipv6PeeringConfig *Ipv6ExpressRouteCircuitPeeringConfig `json:"ipv6PeeringConfig,omitempty"`
+const (
+	ExpressRouteCircuitPeeringPropertiesFormatStateDisabled = ExpressRouteCircuitPeeringPropertiesFormatState("Disabled")
+	ExpressRouteCircuitPeeringPropertiesFormatStateEnabled  = ExpressRouteCircuitPeeringPropertiesFormatState("Enabled")
+)
 
-	//MicrosoftPeeringConfig: The Microsoft peering configuration.
-	MicrosoftPeeringConfig *ExpressRouteCircuitPeeringConfig `json:"microsoftPeeringConfig,omitempty"`
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteCircuitStats
+type ExpressRouteCircuitStats struct {
 
-	//PeerASN: The peer ASN.
-	PeerASN *int `json:"peerASN,omitempty"`
+	//PrimarybytesIn: The Primary BytesIn of the peering.
+	PrimarybytesIn *int `json:"primarybytesIn,omitempty"`
 
-	//PeeringType: The peering type.
-	PeeringType *ExpressRouteCircuitPeeringPropertiesFormatPeeringType `json:"peeringType,omitempty"`
+	//PrimarybytesOut: The primary BytesOut of the peering.
+	PrimarybytesOut *int `json:"primarybytesOut,omitempty"`
 
-	//PrimaryPeerAddressPrefix: The primary address prefix.
-	PrimaryPeerAddressPrefix *string `json:"primaryPeerAddressPrefix,omitempty"`
+	//SecondarybytesIn: The secondary BytesIn of the peering.
+	SecondarybytesIn *int `json:"secondarybytesIn,omitempty"`
 
-	//RouteFilter: The reference to the RouteFilter resource.
-	RouteFilter *SubResource `json:"routeFilter,omitempty"`
-
-	//SecondaryPeerAddressPrefix: The secondary address prefix.
-	SecondaryPeerAddressPrefix *string `json:"secondaryPeerAddressPrefix,omitempty"`
-
-	//SharedKey: The shared key.
-	SharedKey *string `json:"sharedKey,omitempty"`
-
-	//State: The peering state.
-	State *ExpressRouteCircuitPeeringPropertiesFormatState `json:"state,omitempty"`
-
-	//Stats: The peering stats of express route circuit.
-	Stats *ExpressRouteCircuitStats `json:"stats,omitempty"`
-
-	//VlanId: The VLAN ID.
-	VlanId *int `json:"vlanId,omitempty"`
+	//SecondarybytesOut: The secondary BytesOut of the peering.
+	SecondarybytesOut *int `json:"secondarybytesOut,omitempty"`
 }
 
 //Generated from:
@@ -239,16 +305,6 @@ type ExpressRouteCircuitStats_Status struct {
 	//SecondarybytesOut: The secondary BytesOut of the peering.
 	SecondarybytesOut *int `json:"secondarybytesOut,omitempty"`
 }
-
-// +kubebuilder:validation:Enum={"2020-05-01"}
-type ExpressRouteCircuitsPeeringsSpecApiVersion string
-
-const ExpressRouteCircuitsPeeringsSpecApiVersion20200501 = ExpressRouteCircuitsPeeringsSpecApiVersion("2020-05-01")
-
-// +kubebuilder:validation:Enum={"Microsoft.Network/expressRouteCircuits/peerings"}
-type ExpressRouteCircuitsPeeringsSpecType string
-
-const ExpressRouteCircuitsPeeringsSpecTypeMicrosoftNetworkExpressRouteCircuitsPeerings = ExpressRouteCircuitsPeeringsSpecType("Microsoft.Network/expressRouteCircuits/peerings")
 
 //Generated from:
 type ExpressRouteConnectionId_Status struct {
@@ -275,6 +331,25 @@ const (
 	ExpressRoutePeeringType_StatusAzurePublicPeering  = ExpressRoutePeeringType_Status("AzurePublicPeering")
 	ExpressRoutePeeringType_StatusMicrosoftPeering    = ExpressRoutePeeringType_Status("MicrosoftPeering")
 )
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/Ipv6ExpressRouteCircuitPeeringConfig
+type Ipv6ExpressRouteCircuitPeeringConfig struct {
+
+	//MicrosoftPeeringConfig: The Microsoft peering configuration.
+	MicrosoftPeeringConfig *ExpressRouteCircuitPeeringConfig `json:"microsoftPeeringConfig,omitempty"`
+
+	//PrimaryPeerAddressPrefix: The primary address prefix.
+	PrimaryPeerAddressPrefix *string `json:"primaryPeerAddressPrefix,omitempty"`
+
+	//RouteFilter: The reference to the RouteFilter resource.
+	RouteFilter *SubResource `json:"routeFilter,omitempty"`
+
+	//SecondaryPeerAddressPrefix: The secondary address prefix.
+	SecondaryPeerAddressPrefix *string `json:"secondaryPeerAddressPrefix,omitempty"`
+
+	//State: The state of peering.
+	State *Ipv6ExpressRouteCircuitPeeringConfigState `json:"state,omitempty"`
+}
 
 //Generated from:
 type Ipv6ExpressRouteCircuitPeeringConfig_Status struct {
@@ -315,26 +390,6 @@ type PeerExpressRouteCircuitConnection_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteCircuitPeeringConfig
-type ExpressRouteCircuitPeeringConfig struct {
-
-	//AdvertisedCommunities: The communities of bgp peering. Specified for microsoft
-	//peering.
-	AdvertisedCommunities []string `json:"advertisedCommunities,omitempty"`
-
-	//AdvertisedPublicPrefixes: The reference to AdvertisedPublicPrefixes.
-	AdvertisedPublicPrefixes []string `json:"advertisedPublicPrefixes,omitempty"`
-
-	//CustomerASN: The CustomerASN of the peering.
-	CustomerASN *int `json:"customerASN,omitempty"`
-
-	//LegacyMode: The legacy mode of the peering.
-	LegacyMode *int `json:"legacyMode,omitempty"`
-
-	//RoutingRegistryName: The RoutingRegistryName of the configuration.
-	RoutingRegistryName *string `json:"routingRegistryName,omitempty"`
-}
-
 // +kubebuilder:validation:Enum={"Configured","Configuring","NotConfigured","ValidationNeeded"}
 type ExpressRouteCircuitPeeringConfigStatusAdvertisedPublicPrefixesState string
 
@@ -345,57 +400,13 @@ const (
 	ExpressRouteCircuitPeeringConfigStatusAdvertisedPublicPrefixesStateValidationNeeded = ExpressRouteCircuitPeeringConfigStatusAdvertisedPublicPrefixesState("ValidationNeeded")
 )
 
-// +kubebuilder:validation:Enum={"AzurePrivatePeering","AzurePublicPeering","MicrosoftPeering"}
-type ExpressRouteCircuitPeeringPropertiesFormatPeeringType string
-
-const (
-	ExpressRouteCircuitPeeringPropertiesFormatPeeringTypeAzurePrivatePeering = ExpressRouteCircuitPeeringPropertiesFormatPeeringType("AzurePrivatePeering")
-	ExpressRouteCircuitPeeringPropertiesFormatPeeringTypeAzurePublicPeering  = ExpressRouteCircuitPeeringPropertiesFormatPeeringType("AzurePublicPeering")
-	ExpressRouteCircuitPeeringPropertiesFormatPeeringTypeMicrosoftPeering    = ExpressRouteCircuitPeeringPropertiesFormatPeeringType("MicrosoftPeering")
-)
-
 // +kubebuilder:validation:Enum={"Disabled","Enabled"}
-type ExpressRouteCircuitPeeringPropertiesFormatState string
+type Ipv6ExpressRouteCircuitPeeringConfigState string
 
 const (
-	ExpressRouteCircuitPeeringPropertiesFormatStateDisabled = ExpressRouteCircuitPeeringPropertiesFormatState("Disabled")
-	ExpressRouteCircuitPeeringPropertiesFormatStateEnabled  = ExpressRouteCircuitPeeringPropertiesFormatState("Enabled")
+	Ipv6ExpressRouteCircuitPeeringConfigStateDisabled = Ipv6ExpressRouteCircuitPeeringConfigState("Disabled")
+	Ipv6ExpressRouteCircuitPeeringConfigStateEnabled  = Ipv6ExpressRouteCircuitPeeringConfigState("Enabled")
 )
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteCircuitStats
-type ExpressRouteCircuitStats struct {
-
-	//PrimarybytesIn: The Primary BytesIn of the peering.
-	PrimarybytesIn *int `json:"primarybytesIn,omitempty"`
-
-	//PrimarybytesOut: The primary BytesOut of the peering.
-	PrimarybytesOut *int `json:"primarybytesOut,omitempty"`
-
-	//SecondarybytesIn: The secondary BytesIn of the peering.
-	SecondarybytesIn *int `json:"secondarybytesIn,omitempty"`
-
-	//SecondarybytesOut: The secondary BytesOut of the peering.
-	SecondarybytesOut *int `json:"secondarybytesOut,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/Ipv6ExpressRouteCircuitPeeringConfig
-type Ipv6ExpressRouteCircuitPeeringConfig struct {
-
-	//MicrosoftPeeringConfig: The Microsoft peering configuration.
-	MicrosoftPeeringConfig *ExpressRouteCircuitPeeringConfig `json:"microsoftPeeringConfig,omitempty"`
-
-	//PrimaryPeerAddressPrefix: The primary address prefix.
-	PrimaryPeerAddressPrefix *string `json:"primaryPeerAddressPrefix,omitempty"`
-
-	//RouteFilter: The reference to the RouteFilter resource.
-	RouteFilter *SubResource `json:"routeFilter,omitempty"`
-
-	//SecondaryPeerAddressPrefix: The secondary address prefix.
-	SecondaryPeerAddressPrefix *string `json:"secondaryPeerAddressPrefix,omitempty"`
-
-	//State: The state of peering.
-	State *Ipv6ExpressRouteCircuitPeeringConfigState `json:"state,omitempty"`
-}
 
 // +kubebuilder:validation:Enum={"Disabled","Enabled"}
 type Ipv6ExpressRouteCircuitPeeringConfigStatusState string
@@ -433,14 +444,6 @@ type PeerExpressRouteCircuitConnectionPropertiesFormat_Status struct {
 	//connection resource.
 	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
-
-// +kubebuilder:validation:Enum={"Disabled","Enabled"}
-type Ipv6ExpressRouteCircuitPeeringConfigState string
-
-const (
-	Ipv6ExpressRouteCircuitPeeringConfigStateDisabled = Ipv6ExpressRouteCircuitPeeringConfigState("Disabled")
-	Ipv6ExpressRouteCircuitPeeringConfigStateEnabled  = Ipv6ExpressRouteCircuitPeeringConfigState("Enabled")
-)
 
 func init() {
 	SchemeBuilder.Register(&ExpressRouteCircuitsPeerings{}, &ExpressRouteCircuitsPeeringsList{})

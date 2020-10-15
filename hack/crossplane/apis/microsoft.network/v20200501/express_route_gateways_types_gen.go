@@ -27,8 +27,15 @@ type ExpressRouteGatewaysList struct {
 	Items           []ExpressRouteGateways `json:"items"`
 }
 
-//Generated from:
 type ExpressRouteGateway_Status struct {
+	AtProvider ExpressRouteGatewaysObservation `json:"atProvider"`
+}
+
+type ExpressRouteGateways_Spec struct {
+	ForProvider ExpressRouteGatewaysParameters `json:"forProvider"`
+}
+
+type ExpressRouteGatewaysObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,29 +57,6 @@ type ExpressRouteGateway_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type ExpressRouteGateways_Spec struct {
-	ForProvider ExpressRouteGatewaysParameters `json:"forProvider"`
-}
-
-//Generated from:
-type ExpressRouteGatewayProperties_Status struct {
-
-	//AutoScaleConfiguration: Configuration for auto scaling.
-	AutoScaleConfiguration *ExpressRouteGatewayProperties_Status_AutoScaleConfiguration `json:"autoScaleConfiguration,omitempty"`
-
-	//ExpressRouteConnections: List of ExpressRoute connections to the ExpressRoute
-	//gateway.
-	ExpressRouteConnections []ExpressRouteConnection_Status `json:"expressRouteConnections,omitempty"`
-
-	//ProvisioningState: The provisioning state of the express route gateway resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//VirtualHub: The Virtual Hub where the ExpressRoute gateway is or will be
-	//deployed.
-	VirtualHub VirtualHubId_Status `json:"virtualHub"`
 }
 
 type ExpressRouteGatewaysParameters struct {
@@ -126,10 +110,23 @@ type ExpressRouteGatewayProperties struct {
 	VirtualHub SubResource `json:"virtualHub"`
 }
 
-type ExpressRouteGatewayProperties_Status_AutoScaleConfiguration struct {
+//Generated from:
+type ExpressRouteGatewayProperties_Status struct {
 
-	//Bounds: Minimum and maximum number of scale units to deploy.
-	Bounds *ExpressRouteGatewayProperties_Status_AutoScaleConfiguration_Bounds `json:"bounds,omitempty"`
+	//AutoScaleConfiguration: Configuration for auto scaling.
+	AutoScaleConfiguration *ExpressRouteGatewayProperties_Status_AutoScaleConfiguration `json:"autoScaleConfiguration,omitempty"`
+
+	//ExpressRouteConnections: List of ExpressRoute connections to the ExpressRoute
+	//gateway.
+	ExpressRouteConnections []ExpressRouteConnection_Status `json:"expressRouteConnections,omitempty"`
+
+	//ProvisioningState: The provisioning state of the express route gateway resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//VirtualHub: The Virtual Hub where the ExpressRoute gateway is or will be
+	//deployed.
+	VirtualHub VirtualHubId_Status `json:"virtualHub"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
@@ -142,6 +139,19 @@ type ExpressRouteGatewaysSpecType string
 
 const ExpressRouteGatewaysSpecTypeMicrosoftNetworkExpressRouteGateways = ExpressRouteGatewaysSpecType("Microsoft.Network/expressRouteGateways")
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteGatewayPropertiesAutoScaleConfiguration
+type ExpressRouteGatewayPropertiesAutoScaleConfiguration struct {
+
+	//Bounds: Minimum and maximum number of scale units to deploy.
+	Bounds *ExpressRouteGatewayPropertiesAutoScaleConfigurationBounds `json:"bounds,omitempty"`
+}
+
+type ExpressRouteGatewayProperties_Status_AutoScaleConfiguration struct {
+
+	//Bounds: Minimum and maximum number of scale units to deploy.
+	Bounds *ExpressRouteGatewayProperties_Status_AutoScaleConfiguration_Bounds `json:"bounds,omitempty"`
+}
+
 //Generated from:
 type VirtualHubId_Status struct {
 
@@ -151,14 +161,8 @@ type VirtualHubId_Status struct {
 	Id *string `json:"id,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteGatewayPropertiesAutoScaleConfiguration
-type ExpressRouteGatewayPropertiesAutoScaleConfiguration struct {
-
-	//Bounds: Minimum and maximum number of scale units to deploy.
-	Bounds *ExpressRouteGatewayPropertiesAutoScaleConfigurationBounds `json:"bounds,omitempty"`
-}
-
-type ExpressRouteGatewayProperties_Status_AutoScaleConfiguration_Bounds struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteGatewayPropertiesAutoScaleConfigurationBounds
+type ExpressRouteGatewayPropertiesAutoScaleConfigurationBounds struct {
 
 	//Max: Maximum number of scale units deployed for ExpressRoute gateway.
 	Max *int `json:"max,omitempty"`
@@ -167,8 +171,7 @@ type ExpressRouteGatewayProperties_Status_AutoScaleConfiguration_Bounds struct {
 	Min *int `json:"min,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteGatewayPropertiesAutoScaleConfigurationBounds
-type ExpressRouteGatewayPropertiesAutoScaleConfigurationBounds struct {
+type ExpressRouteGatewayProperties_Status_AutoScaleConfiguration_Bounds struct {
 
 	//Max: Maximum number of scale units deployed for ExpressRoute gateway.
 	Max *int `json:"max,omitempty"`

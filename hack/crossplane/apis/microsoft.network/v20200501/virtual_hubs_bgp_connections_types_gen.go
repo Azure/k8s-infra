@@ -27,8 +27,15 @@ type VirtualHubsBgpConnectionsList struct {
 	Items           []VirtualHubsBgpConnections `json:"items"`
 }
 
-//Generated from:
 type BgpConnection_Status struct {
+	AtProvider VirtualHubsBgpConnectionsObservation `json:"atProvider"`
+}
+
+type VirtualHubsBgpConnections_Spec struct {
+	ForProvider VirtualHubsBgpConnectionsParameters `json:"forProvider"`
+}
+
+type VirtualHubsBgpConnectionsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -44,26 +51,6 @@ type BgpConnection_Status struct {
 
 	//Type: Connection type.
 	Type *string `json:"type,omitempty"`
-}
-
-type VirtualHubsBgpConnections_Spec struct {
-	ForProvider VirtualHubsBgpConnectionsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type BgpConnectionProperties_Status struct {
-
-	//ConnectionState: The current state of the VirtualHub to Peer.
-	ConnectionState *BgpConnectionPropertiesStatusConnectionState `json:"connectionState,omitempty"`
-
-	//PeerAsn: Peer ASN.
-	PeerAsn *int `json:"peerAsn,omitempty"`
-
-	//PeerIp: Peer IP.
-	PeerIp *string `json:"peerIp,omitempty"`
-
-	//ProvisioningState: The provisioning state of the resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 type VirtualHubsBgpConnectionsParameters struct {
@@ -115,15 +102,21 @@ type BgpConnectionProperties struct {
 	PeerIp *string `json:"peerIp,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"Connected","Connecting","NotConnected","Unknown"}
-type BgpConnectionPropertiesStatusConnectionState string
+//Generated from:
+type BgpConnectionProperties_Status struct {
 
-const (
-	BgpConnectionPropertiesStatusConnectionStateConnected    = BgpConnectionPropertiesStatusConnectionState("Connected")
-	BgpConnectionPropertiesStatusConnectionStateConnecting   = BgpConnectionPropertiesStatusConnectionState("Connecting")
-	BgpConnectionPropertiesStatusConnectionStateNotConnected = BgpConnectionPropertiesStatusConnectionState("NotConnected")
-	BgpConnectionPropertiesStatusConnectionStateUnknown      = BgpConnectionPropertiesStatusConnectionState("Unknown")
-)
+	//ConnectionState: The current state of the VirtualHub to Peer.
+	ConnectionState *BgpConnectionPropertiesStatusConnectionState `json:"connectionState,omitempty"`
+
+	//PeerAsn: Peer ASN.
+	PeerAsn *int `json:"peerAsn,omitempty"`
+
+	//PeerIp: Peer IP.
+	PeerIp *string `json:"peerIp,omitempty"`
+
+	//ProvisioningState: The provisioning state of the resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+}
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type VirtualHubsBgpConnectionsSpecApiVersion string
@@ -134,6 +127,16 @@ const VirtualHubsBgpConnectionsSpecApiVersion20200501 = VirtualHubsBgpConnection
 type VirtualHubsBgpConnectionsSpecType string
 
 const VirtualHubsBgpConnectionsSpecTypeMicrosoftNetworkVirtualHubsBgpConnections = VirtualHubsBgpConnectionsSpecType("Microsoft.Network/virtualHubs/bgpConnections")
+
+// +kubebuilder:validation:Enum={"Connected","Connecting","NotConnected","Unknown"}
+type BgpConnectionPropertiesStatusConnectionState string
+
+const (
+	BgpConnectionPropertiesStatusConnectionStateConnected    = BgpConnectionPropertiesStatusConnectionState("Connected")
+	BgpConnectionPropertiesStatusConnectionStateConnecting   = BgpConnectionPropertiesStatusConnectionState("Connecting")
+	BgpConnectionPropertiesStatusConnectionStateNotConnected = BgpConnectionPropertiesStatusConnectionState("NotConnected")
+	BgpConnectionPropertiesStatusConnectionStateUnknown      = BgpConnectionPropertiesStatusConnectionState("Unknown")
+)
 
 func init() {
 	SchemeBuilder.Register(&VirtualHubsBgpConnections{}, &VirtualHubsBgpConnectionsList{})

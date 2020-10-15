@@ -27,8 +27,15 @@ type NetworkVirtualAppliancesList struct {
 	Items           []NetworkVirtualAppliances `json:"items"`
 }
 
-//Generated from:
 type NetworkVirtualAppliance_Status struct {
+	AtProvider NetworkVirtualAppliancesObservation `json:"atProvider"`
+}
+
+type NetworkVirtualAppliances_Spec struct {
+	ForProvider NetworkVirtualAppliancesParameters `json:"forProvider"`
+}
+
+type NetworkVirtualAppliancesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -54,41 +61,6 @@ type NetworkVirtualAppliance_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type NetworkVirtualAppliances_Spec struct {
-	ForProvider NetworkVirtualAppliancesParameters `json:"forProvider"`
-}
-
-//Generated from:
-type NetworkVirtualAppliancePropertiesFormat_Status struct {
-
-	//BootStrapConfigurationBlobs: BootStrapConfigurationBlobs storage URLs.
-	BootStrapConfigurationBlobs []string `json:"bootStrapConfigurationBlobs,omitempty"`
-
-	//CloudInitConfiguration: CloudInitConfiguration string in plain text.
-	CloudInitConfiguration *string `json:"cloudInitConfiguration,omitempty"`
-
-	//CloudInitConfigurationBlobs: CloudInitConfigurationBlob storage URLs.
-	CloudInitConfigurationBlobs []string `json:"cloudInitConfigurationBlobs,omitempty"`
-
-	//NvaSku: Network Virtual Appliance SKU.
-	NvaSku *VirtualApplianceSkuProperties_Status `json:"nvaSku,omitempty"`
-
-	//ProvisioningState: The provisioning state of the resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//VirtualApplianceAsn: VirtualAppliance ASN.
-	VirtualApplianceAsn *int `json:"virtualApplianceAsn,omitempty"`
-
-	//VirtualApplianceNics: List of Virtual Appliance Network Interfaces.
-	VirtualApplianceNics []VirtualApplianceNicProperties_Status `json:"virtualApplianceNics,omitempty"`
-
-	//VirtualApplianceSites: List of references to VirtualApplianceSite.
-	VirtualApplianceSites []SubResource_Status `json:"virtualApplianceSites,omitempty"`
-
-	//VirtualHub: The Virtual Hub where Network Virtual Appliance is being deployed.
-	VirtualHub *SubResource_Status `json:"virtualHub,omitempty"`
 }
 
 type NetworkVirtualAppliancesParameters struct {
@@ -156,6 +128,37 @@ type NetworkVirtualAppliancePropertiesFormat struct {
 	VirtualHub *SubResource `json:"virtualHub,omitempty"`
 }
 
+//Generated from:
+type NetworkVirtualAppliancePropertiesFormat_Status struct {
+
+	//BootStrapConfigurationBlobs: BootStrapConfigurationBlobs storage URLs.
+	BootStrapConfigurationBlobs []string `json:"bootStrapConfigurationBlobs,omitempty"`
+
+	//CloudInitConfiguration: CloudInitConfiguration string in plain text.
+	CloudInitConfiguration *string `json:"cloudInitConfiguration,omitempty"`
+
+	//CloudInitConfigurationBlobs: CloudInitConfigurationBlob storage URLs.
+	CloudInitConfigurationBlobs []string `json:"cloudInitConfigurationBlobs,omitempty"`
+
+	//NvaSku: Network Virtual Appliance SKU.
+	NvaSku *VirtualApplianceSkuProperties_Status `json:"nvaSku,omitempty"`
+
+	//ProvisioningState: The provisioning state of the resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//VirtualApplianceAsn: VirtualAppliance ASN.
+	VirtualApplianceAsn *int `json:"virtualApplianceAsn,omitempty"`
+
+	//VirtualApplianceNics: List of Virtual Appliance Network Interfaces.
+	VirtualApplianceNics []VirtualApplianceNicProperties_Status `json:"virtualApplianceNics,omitempty"`
+
+	//VirtualApplianceSites: List of references to VirtualApplianceSite.
+	VirtualApplianceSites []SubResource_Status `json:"virtualApplianceSites,omitempty"`
+
+	//VirtualHub: The Virtual Hub where Network Virtual Appliance is being deployed.
+	VirtualHub *SubResource_Status `json:"virtualHub,omitempty"`
+}
+
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type NetworkVirtualAppliancesSpecApiVersion string
 
@@ -179,8 +182,8 @@ type VirtualApplianceNicProperties_Status struct {
 	PublicIpAddress *string `json:"publicIpAddress,omitempty"`
 }
 
-//Generated from:
-type VirtualApplianceSkuProperties_Status struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualApplianceSkuProperties
+type VirtualApplianceSkuProperties struct {
 
 	//BundledScaleUnit: Virtual Appliance Scale Unit.
 	BundledScaleUnit *string `json:"bundledScaleUnit,omitempty"`
@@ -192,8 +195,8 @@ type VirtualApplianceSkuProperties_Status struct {
 	Vendor *string `json:"vendor,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualApplianceSkuProperties
-type VirtualApplianceSkuProperties struct {
+//Generated from:
+type VirtualApplianceSkuProperties_Status struct {
 
 	//BundledScaleUnit: Virtual Appliance Scale Unit.
 	BundledScaleUnit *string `json:"bundledScaleUnit,omitempty"`

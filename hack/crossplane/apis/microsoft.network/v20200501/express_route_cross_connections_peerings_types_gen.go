@@ -27,8 +27,15 @@ type ExpressRouteCrossConnectionsPeeringsList struct {
 	Items           []ExpressRouteCrossConnectionsPeerings `json:"items"`
 }
 
-//Generated from:
 type ExpressRouteCrossConnectionPeering_Status struct {
+	AtProvider ExpressRouteCrossConnectionsPeeringsObservation `json:"atProvider"`
+}
+
+type ExpressRouteCrossConnectionsPeerings_Spec struct {
+	ForProvider ExpressRouteCrossConnectionsPeeringsParameters `json:"forProvider"`
+}
+
+type ExpressRouteCrossConnectionsPeeringsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -42,60 +49,6 @@ type ExpressRouteCrossConnectionPeering_Status struct {
 
 	//Properties: Properties of the express route cross connection peering.
 	Properties *ExpressRouteCrossConnectionPeeringProperties_Status `json:"properties,omitempty"`
-}
-
-type ExpressRouteCrossConnectionsPeerings_Spec struct {
-	ForProvider ExpressRouteCrossConnectionsPeeringsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type ExpressRouteCrossConnectionPeeringProperties_Status struct {
-
-	//AzureASN: The Azure ASN.
-	AzureASN *int `json:"azureASN,omitempty"`
-
-	//GatewayManagerEtag: The GatewayManager Etag.
-	GatewayManagerEtag *string `json:"gatewayManagerEtag,omitempty"`
-
-	//Ipv6PeeringConfig: The IPv6 peering configuration.
-	Ipv6PeeringConfig *Ipv6ExpressRouteCircuitPeeringConfig_Status `json:"ipv6PeeringConfig,omitempty"`
-
-	//LastModifiedBy: Who was the last to modify the peering.
-	LastModifiedBy *string `json:"lastModifiedBy,omitempty"`
-
-	//MicrosoftPeeringConfig: The Microsoft peering configuration.
-	MicrosoftPeeringConfig *ExpressRouteCircuitPeeringConfig_Status `json:"microsoftPeeringConfig,omitempty"`
-
-	//PeerASN: The peer ASN.
-	PeerASN *int `json:"peerASN,omitempty"`
-
-	//PeeringType: The peering type.
-	PeeringType *ExpressRoutePeeringType_Status `json:"peeringType,omitempty"`
-
-	//PrimaryAzurePort: The primary port.
-	PrimaryAzurePort *string `json:"primaryAzurePort,omitempty"`
-
-	//PrimaryPeerAddressPrefix: The primary address prefix.
-	PrimaryPeerAddressPrefix *string `json:"primaryPeerAddressPrefix,omitempty"`
-
-	//ProvisioningState: The provisioning state of the express route cross connection
-	//peering resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//SecondaryAzurePort: The secondary port.
-	SecondaryAzurePort *string `json:"secondaryAzurePort,omitempty"`
-
-	//SecondaryPeerAddressPrefix: The secondary address prefix.
-	SecondaryPeerAddressPrefix *string `json:"secondaryPeerAddressPrefix,omitempty"`
-
-	//SharedKey: The shared key.
-	SharedKey *string `json:"sharedKey,omitempty"`
-
-	//State: The peering state.
-	State *ExpressRoutePeeringState_Status `json:"state,omitempty"`
-
-	//VlanId: The VLAN ID.
-	VlanId *int `json:"vlanId,omitempty"`
 }
 
 type ExpressRouteCrossConnectionsPeeringsParameters struct {
@@ -166,6 +119,56 @@ type ExpressRouteCrossConnectionPeeringProperties struct {
 
 	//State: The peering state.
 	State *ExpressRouteCrossConnectionPeeringPropertiesState `json:"state,omitempty"`
+
+	//VlanId: The VLAN ID.
+	VlanId *int `json:"vlanId,omitempty"`
+}
+
+//Generated from:
+type ExpressRouteCrossConnectionPeeringProperties_Status struct {
+
+	//AzureASN: The Azure ASN.
+	AzureASN *int `json:"azureASN,omitempty"`
+
+	//GatewayManagerEtag: The GatewayManager Etag.
+	GatewayManagerEtag *string `json:"gatewayManagerEtag,omitempty"`
+
+	//Ipv6PeeringConfig: The IPv6 peering configuration.
+	Ipv6PeeringConfig *Ipv6ExpressRouteCircuitPeeringConfig_Status `json:"ipv6PeeringConfig,omitempty"`
+
+	//LastModifiedBy: Who was the last to modify the peering.
+	LastModifiedBy *string `json:"lastModifiedBy,omitempty"`
+
+	//MicrosoftPeeringConfig: The Microsoft peering configuration.
+	MicrosoftPeeringConfig *ExpressRouteCircuitPeeringConfig_Status `json:"microsoftPeeringConfig,omitempty"`
+
+	//PeerASN: The peer ASN.
+	PeerASN *int `json:"peerASN,omitempty"`
+
+	//PeeringType: The peering type.
+	PeeringType *ExpressRoutePeeringType_Status `json:"peeringType,omitempty"`
+
+	//PrimaryAzurePort: The primary port.
+	PrimaryAzurePort *string `json:"primaryAzurePort,omitempty"`
+
+	//PrimaryPeerAddressPrefix: The primary address prefix.
+	PrimaryPeerAddressPrefix *string `json:"primaryPeerAddressPrefix,omitempty"`
+
+	//ProvisioningState: The provisioning state of the express route cross connection
+	//peering resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//SecondaryAzurePort: The secondary port.
+	SecondaryAzurePort *string `json:"secondaryAzurePort,omitempty"`
+
+	//SecondaryPeerAddressPrefix: The secondary address prefix.
+	SecondaryPeerAddressPrefix *string `json:"secondaryPeerAddressPrefix,omitempty"`
+
+	//SharedKey: The shared key.
+	SharedKey *string `json:"sharedKey,omitempty"`
+
+	//State: The peering state.
+	State *ExpressRoutePeeringState_Status `json:"state,omitempty"`
 
 	//VlanId: The VLAN ID.
 	VlanId *int `json:"vlanId,omitempty"`

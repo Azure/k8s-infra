@@ -27,8 +27,15 @@ type PublicIPAddressesList struct {
 	Items           []PublicIPAddresses `json:"items"`
 }
 
-//Generated from:
 type PublicIPAddress_Status struct {
+	AtProvider PublicIPAddressesObservation `json:"atProvider"`
+}
+
+type PublicIPAddresses_Spec struct {
+	ForProvider PublicIPAddressesParameters `json:"forProvider"`
+}
+
+type PublicIPAddressesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -57,56 +64,6 @@ type PublicIPAddress_Status struct {
 	//Zones: A list of availability zones denoting the IP allocated for the resource
 	//needs to come from.
 	Zones []string `json:"zones,omitempty"`
-}
-
-type PublicIPAddresses_Spec struct {
-	ForProvider PublicIPAddressesParameters `json:"forProvider"`
-}
-
-//Generated from:
-type PublicIPAddressPropertiesFormat_Status struct {
-
-	//DdosSettings: The DDoS protection custom policy associated with the public IP
-	//address.
-	DdosSettings *DdosSettings_Status `json:"ddosSettings,omitempty"`
-
-	//DnsSettings: The FQDN of the DNS record associated with the public IP address.
-	DnsSettings *PublicIPAddressDnsSettings_Status `json:"dnsSettings,omitempty"`
-
-	//IdleTimeoutInMinutes: The idle timeout of the public IP address.
-	IdleTimeoutInMinutes *int `json:"idleTimeoutInMinutes,omitempty"`
-
-	//IpAddress: The IP address associated with the public IP address resource.
-	IpAddress *string `json:"ipAddress,omitempty"`
-
-	//IpConfiguration: The IP configuration associated with the public IP address.
-	IpConfiguration *IPConfiguration_Status `json:"ipConfiguration,omitempty"`
-
-	//IpTags: The list of tags associated with the public IP address.
-	IpTags []IpTag_Status `json:"ipTags,omitempty"`
-
-	//ProvisioningState: The provisioning state of the public IP address resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//PublicIPAddressVersion: The public IP address version.
-	PublicIPAddressVersion *IPVersion_Status `json:"publicIPAddressVersion,omitempty"`
-
-	//PublicIPAllocationMethod: The public IP address allocation method.
-	PublicIPAllocationMethod *IPAllocationMethod_Status `json:"publicIPAllocationMethod,omitempty"`
-
-	//PublicIPPrefix: The Public IP Prefix this Public IP Address should be allocated
-	//from.
-	PublicIPPrefix *SubResource_Status `json:"publicIPPrefix,omitempty"`
-
-	//ResourceGuid: The resource GUID property of the public IP address resource.
-	ResourceGuid *string `json:"resourceGuid,omitempty"`
-}
-
-//Generated from:
-type PublicIPAddressSku_Status struct {
-
-	//Name: Name of a public IP address SKU.
-	Name *PublicIPAddressSkuStatusName `json:"name,omitempty"`
 }
 
 type PublicIPAddressesParameters struct {
@@ -155,6 +112,114 @@ type PublicIPAddressesParameters struct {
 	Zones []string `json:"zones,omitempty"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PublicIPAddressPropertiesFormat
+type PublicIPAddressPropertiesFormat struct {
+
+	//DdosSettings: The DDoS protection custom policy associated with the public IP
+	//address.
+	DdosSettings *DdosSettings `json:"ddosSettings,omitempty"`
+
+	//DnsSettings: The FQDN of the DNS record associated with the public IP address.
+	DnsSettings *PublicIPAddressDnsSettings `json:"dnsSettings,omitempty"`
+
+	//IdleTimeoutInMinutes: The idle timeout of the public IP address.
+	IdleTimeoutInMinutes *int `json:"idleTimeoutInMinutes,omitempty"`
+
+	//IpAddress: The IP address associated with the public IP address resource.
+	IpAddress *string `json:"ipAddress,omitempty"`
+
+	//IpTags: The list of tags associated with the public IP address.
+	IpTags []IpTag `json:"ipTags,omitempty"`
+
+	//PublicIPAddressVersion: The public IP address version.
+	PublicIPAddressVersion *PublicIPAddressPropertiesFormatPublicIPAddressVersion `json:"publicIPAddressVersion,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//PublicIPAllocationMethod: The public IP address allocation method.
+	PublicIPAllocationMethod PublicIPAddressPropertiesFormatPublicIPAllocationMethod `json:"publicIPAllocationMethod"`
+
+	//PublicIPPrefix: The Public IP Prefix this Public IP Address should be allocated
+	//from.
+	PublicIPPrefix *SubResource `json:"publicIPPrefix,omitempty"`
+}
+
+//Generated from:
+type PublicIPAddressPropertiesFormat_Status struct {
+
+	//DdosSettings: The DDoS protection custom policy associated with the public IP
+	//address.
+	DdosSettings *DdosSettings_Status `json:"ddosSettings,omitempty"`
+
+	//DnsSettings: The FQDN of the DNS record associated with the public IP address.
+	DnsSettings *PublicIPAddressDnsSettings_Status `json:"dnsSettings,omitempty"`
+
+	//IdleTimeoutInMinutes: The idle timeout of the public IP address.
+	IdleTimeoutInMinutes *int `json:"idleTimeoutInMinutes,omitempty"`
+
+	//IpAddress: The IP address associated with the public IP address resource.
+	IpAddress *string `json:"ipAddress,omitempty"`
+
+	//IpConfiguration: The IP configuration associated with the public IP address.
+	IpConfiguration *IPConfiguration_Status `json:"ipConfiguration,omitempty"`
+
+	//IpTags: The list of tags associated with the public IP address.
+	IpTags []IpTag_Status `json:"ipTags,omitempty"`
+
+	//ProvisioningState: The provisioning state of the public IP address resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//PublicIPAddressVersion: The public IP address version.
+	PublicIPAddressVersion *IPVersion_Status `json:"publicIPAddressVersion,omitempty"`
+
+	//PublicIPAllocationMethod: The public IP address allocation method.
+	PublicIPAllocationMethod *IPAllocationMethod_Status `json:"publicIPAllocationMethod,omitempty"`
+
+	//PublicIPPrefix: The Public IP Prefix this Public IP Address should be allocated
+	//from.
+	PublicIPPrefix *SubResource_Status `json:"publicIPPrefix,omitempty"`
+
+	//ResourceGuid: The resource GUID property of the public IP address resource.
+	ResourceGuid *string `json:"resourceGuid,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PublicIPAddressSku
+type PublicIPAddressSku struct {
+
+	//Name: Name of a public IP address SKU.
+	Name *PublicIPAddressSkuName `json:"name,omitempty"`
+}
+
+//Generated from:
+type PublicIPAddressSku_Status struct {
+
+	//Name: Name of a public IP address SKU.
+	Name *PublicIPAddressSkuStatusName `json:"name,omitempty"`
+}
+
+// +kubebuilder:validation:Enum={"2020-05-01"}
+type PublicIPAddressesSpecApiVersion string
+
+const PublicIPAddressesSpecApiVersion20200501 = PublicIPAddressesSpecApiVersion("2020-05-01")
+
+// +kubebuilder:validation:Enum={"Microsoft.Network/publicIPAddresses"}
+type PublicIPAddressesSpecType string
+
+const PublicIPAddressesSpecTypeMicrosoftNetworkPublicIPAddresses = PublicIPAddressesSpecType("Microsoft.Network/publicIPAddresses")
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/DdosSettings
+type DdosSettings struct {
+
+	//DdosCustomPolicy: The DDoS custom policy associated with the public IP.
+	DdosCustomPolicy *SubResource `json:"ddosCustomPolicy,omitempty"`
+
+	//ProtectedIP: Enables DDoS protection on the public IP.
+	ProtectedIP *bool `json:"protectedIP,omitempty"`
+
+	//ProtectionCoverage: The DDoS protection policy customizability of the public IP.
+	//Only standard coverage will have the ability to be customized.
+	ProtectionCoverage *DdosSettingsProtectionCoverage `json:"protectionCoverage,omitempty"`
+}
+
 //Generated from:
 type DdosSettings_Status struct {
 
@@ -195,8 +260,8 @@ type IPConfiguration_Status struct {
 	Properties *IPConfigurationPropertiesFormat_Status `json:"properties,omitempty"`
 }
 
-//Generated from:
-type IpTag_Status struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/IpTag
+type IpTag struct {
 
 	//IpTagType: The IP tag type. Example: FirstPartyUsage.
 	IpTagType *string `json:"ipTagType,omitempty"`
@@ -206,125 +271,7 @@ type IpTag_Status struct {
 }
 
 //Generated from:
-type PublicIPAddressDnsSettings_Status struct {
-
-	//DomainNameLabel: The domain name label. The concatenation of the domain name
-	//label and the regionalized DNS zone make up the fully qualified domain name
-	//associated with the public IP address. If a domain name label is specified, an A
-	//DNS record is created for the public IP in the Microsoft Azure DNS system.
-	DomainNameLabel *string `json:"domainNameLabel,omitempty"`
-
-	//Fqdn: The Fully Qualified Domain Name of the A DNS record associated with the
-	//public IP. This is the concatenation of the domainNameLabel and the regionalized
-	//DNS zone.
-	Fqdn *string `json:"fqdn,omitempty"`
-
-	//ReverseFqdn: The reverse FQDN. A user-visible, fully qualified domain name that
-	//resolves to this public IP address. If the reverseFqdn is specified, then a PTR
-	//DNS record is created pointing from the IP address in the in-addr.arpa domain to
-	//the reverse FQDN.
-	ReverseFqdn *string `json:"reverseFqdn,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PublicIPAddressPropertiesFormat
-type PublicIPAddressPropertiesFormat struct {
-
-	//DdosSettings: The DDoS protection custom policy associated with the public IP
-	//address.
-	DdosSettings *DdosSettings `json:"ddosSettings,omitempty"`
-
-	//DnsSettings: The FQDN of the DNS record associated with the public IP address.
-	DnsSettings *PublicIPAddressDnsSettings `json:"dnsSettings,omitempty"`
-
-	//IdleTimeoutInMinutes: The idle timeout of the public IP address.
-	IdleTimeoutInMinutes *int `json:"idleTimeoutInMinutes,omitempty"`
-
-	//IpAddress: The IP address associated with the public IP address resource.
-	IpAddress *string `json:"ipAddress,omitempty"`
-
-	//IpTags: The list of tags associated with the public IP address.
-	IpTags []IpTag `json:"ipTags,omitempty"`
-
-	//PublicIPAddressVersion: The public IP address version.
-	PublicIPAddressVersion *PublicIPAddressPropertiesFormatPublicIPAddressVersion `json:"publicIPAddressVersion,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//PublicIPAllocationMethod: The public IP address allocation method.
-	PublicIPAllocationMethod PublicIPAddressPropertiesFormatPublicIPAllocationMethod `json:"publicIPAllocationMethod"`
-
-	//PublicIPPrefix: The Public IP Prefix this Public IP Address should be allocated
-	//from.
-	PublicIPPrefix *SubResource `json:"publicIPPrefix,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PublicIPAddressSku
-type PublicIPAddressSku struct {
-
-	//Name: Name of a public IP address SKU.
-	Name *PublicIPAddressSkuName `json:"name,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"Basic","Standard"}
-type PublicIPAddressSkuStatusName string
-
-const (
-	PublicIPAddressSkuStatusNameBasic    = PublicIPAddressSkuStatusName("Basic")
-	PublicIPAddressSkuStatusNameStandard = PublicIPAddressSkuStatusName("Standard")
-)
-
-// +kubebuilder:validation:Enum={"2020-05-01"}
-type PublicIPAddressesSpecApiVersion string
-
-const PublicIPAddressesSpecApiVersion20200501 = PublicIPAddressesSpecApiVersion("2020-05-01")
-
-// +kubebuilder:validation:Enum={"Microsoft.Network/publicIPAddresses"}
-type PublicIPAddressesSpecType string
-
-const PublicIPAddressesSpecTypeMicrosoftNetworkPublicIPAddresses = PublicIPAddressesSpecType("Microsoft.Network/publicIPAddresses")
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/DdosSettings
-type DdosSettings struct {
-
-	//DdosCustomPolicy: The DDoS custom policy associated with the public IP.
-	DdosCustomPolicy *SubResource `json:"ddosCustomPolicy,omitempty"`
-
-	//ProtectedIP: Enables DDoS protection on the public IP.
-	ProtectedIP *bool `json:"protectedIP,omitempty"`
-
-	//ProtectionCoverage: The DDoS protection policy customizability of the public IP.
-	//Only standard coverage will have the ability to be customized.
-	ProtectionCoverage *DdosSettingsProtectionCoverage `json:"protectionCoverage,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"Basic","Standard"}
-type DdosSettingsStatusProtectionCoverage string
-
-const (
-	DdosSettingsStatusProtectionCoverageBasic    = DdosSettingsStatusProtectionCoverage("Basic")
-	DdosSettingsStatusProtectionCoverageStandard = DdosSettingsStatusProtectionCoverage("Standard")
-)
-
-//Generated from:
-type IPConfigurationPropertiesFormat_Status struct {
-
-	//PrivateIPAddress: The private IP address of the IP configuration.
-	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
-
-	//PrivateIPAllocationMethod: The private IP address allocation method.
-	PrivateIPAllocationMethod *IPAllocationMethod_Status `json:"privateIPAllocationMethod,omitempty"`
-
-	//ProvisioningState: The provisioning state of the IP configuration resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//PublicIPAddress: The reference to the public IP resource.
-	PublicIPAddress *PublicIPAddress_Status `json:"publicIPAddress,omitempty"`
-
-	//Subnet: The reference to the subnet resource.
-	Subnet *Subnet_Status `json:"subnet,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/IpTag
-type IpTag struct {
+type IpTag_Status struct {
 
 	//IpTagType: The IP tag type. Example: FirstPartyUsage.
 	IpTagType *string `json:"ipTagType,omitempty"`
@@ -342,6 +289,27 @@ type PublicIPAddressDnsSettings struct {
 	//associated with the public IP address. If a domain name label is specified, an A
 	//DNS record is created for the public IP in the Microsoft Azure DNS system.
 	DomainNameLabel string `json:"domainNameLabel"`
+
+	//Fqdn: The Fully Qualified Domain Name of the A DNS record associated with the
+	//public IP. This is the concatenation of the domainNameLabel and the regionalized
+	//DNS zone.
+	Fqdn *string `json:"fqdn,omitempty"`
+
+	//ReverseFqdn: The reverse FQDN. A user-visible, fully qualified domain name that
+	//resolves to this public IP address. If the reverseFqdn is specified, then a PTR
+	//DNS record is created pointing from the IP address in the in-addr.arpa domain to
+	//the reverse FQDN.
+	ReverseFqdn *string `json:"reverseFqdn,omitempty"`
+}
+
+//Generated from:
+type PublicIPAddressDnsSettings_Status struct {
+
+	//DomainNameLabel: The domain name label. The concatenation of the domain name
+	//label and the regionalized DNS zone make up the fully qualified domain name
+	//associated with the public IP address. If a domain name label is specified, an A
+	//DNS record is created for the public IP in the Microsoft Azure DNS system.
+	DomainNameLabel *string `json:"domainNameLabel,omitempty"`
 
 	//Fqdn: The Fully Qualified Domain Name of the A DNS record associated with the
 	//public IP. This is the concatenation of the domainNameLabel and the regionalized
@@ -380,12 +348,47 @@ const (
 )
 
 // +kubebuilder:validation:Enum={"Basic","Standard"}
+type PublicIPAddressSkuStatusName string
+
+const (
+	PublicIPAddressSkuStatusNameBasic    = PublicIPAddressSkuStatusName("Basic")
+	PublicIPAddressSkuStatusNameStandard = PublicIPAddressSkuStatusName("Standard")
+)
+
+// +kubebuilder:validation:Enum={"Basic","Standard"}
 type DdosSettingsProtectionCoverage string
 
 const (
 	DdosSettingsProtectionCoverageBasic    = DdosSettingsProtectionCoverage("Basic")
 	DdosSettingsProtectionCoverageStandard = DdosSettingsProtectionCoverage("Standard")
 )
+
+// +kubebuilder:validation:Enum={"Basic","Standard"}
+type DdosSettingsStatusProtectionCoverage string
+
+const (
+	DdosSettingsStatusProtectionCoverageBasic    = DdosSettingsStatusProtectionCoverage("Basic")
+	DdosSettingsStatusProtectionCoverageStandard = DdosSettingsStatusProtectionCoverage("Standard")
+)
+
+//Generated from:
+type IPConfigurationPropertiesFormat_Status struct {
+
+	//PrivateIPAddress: The private IP address of the IP configuration.
+	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
+
+	//PrivateIPAllocationMethod: The private IP address allocation method.
+	PrivateIPAllocationMethod *IPAllocationMethod_Status `json:"privateIPAllocationMethod,omitempty"`
+
+	//ProvisioningState: The provisioning state of the IP configuration resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//PublicIPAddress: The reference to the public IP resource.
+	PublicIPAddress *PublicIPAddress_Status `json:"publicIPAddress,omitempty"`
+
+	//Subnet: The reference to the subnet resource.
+	Subnet *Subnet_Status `json:"subnet,omitempty"`
+}
 
 func init() {
 	SchemeBuilder.Register(&PublicIPAddresses{}, &PublicIPAddressesList{})

@@ -32,8 +32,11 @@ type FirewallPoliciesRuleCollectionGroups_Spec struct {
 	ForProvider FirewallPoliciesRuleCollectionGroupsParameters `json:"forProvider"`
 }
 
-//Generated from:
 type FirewallPolicyRuleCollectionGroup_Status struct {
+	AtProvider FirewallPoliciesRuleCollectionGroupsObservation `json:"atProvider"`
+}
+
+type FirewallPoliciesRuleCollectionGroupsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -91,20 +94,6 @@ type FirewallPoliciesRuleCollectionGroupsParameters struct {
 	Type FirewallPoliciesRuleCollectionGroupsSpecType `json:"type"`
 }
 
-//Generated from:
-type FirewallPolicyRuleCollectionGroupProperties_Status struct {
-
-	//Priority: Priority of the Firewall Policy Rule Collection Group resource.
-	Priority *int `json:"priority,omitempty"`
-
-	//ProvisioningState: The provisioning state of the firewall policy rule collection
-	//group resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//RuleCollections: Group of Firewall Policy rule collections.
-	RuleCollections []FirewallPolicyRuleCollection_Status `json:"ruleCollections,omitempty"`
-}
-
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type FirewallPoliciesRuleCollectionGroupsSpecApiVersion string
 
@@ -126,17 +115,17 @@ type FirewallPolicyRuleCollectionGroupProperties struct {
 }
 
 //Generated from:
-type FirewallPolicyRuleCollection_Status struct {
+type FirewallPolicyRuleCollectionGroupProperties_Status struct {
 
-	//Name: The name of the rule collection.
-	Name *string `json:"name,omitempty"`
-
-	//Priority: Priority of the Firewall Policy Rule Collection resource.
+	//Priority: Priority of the Firewall Policy Rule Collection Group resource.
 	Priority *int `json:"priority,omitempty"`
 
-	// +kubebuilder:validation:Required
-	//RuleCollectionType: The type of the rule collection.
-	RuleCollectionType FirewallPolicyRuleCollectionStatusRuleCollectionType `json:"ruleCollectionType"`
+	//ProvisioningState: The provisioning state of the firewall policy rule collection
+	//group resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//RuleCollections: Group of Firewall Policy rule collections.
+	RuleCollections []FirewallPolicyRuleCollection_Status `json:"ruleCollections,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/FirewallPolicyRuleCollection
@@ -164,6 +153,20 @@ func (firewallPolicyRuleCollection FirewallPolicyRuleCollection) MarshalJSON() (
 		return json.Marshal(firewallPolicyRuleCollection.Object2)
 	}
 	return nil, nil
+}
+
+//Generated from:
+type FirewallPolicyRuleCollection_Status struct {
+
+	//Name: The name of the rule collection.
+	Name *string `json:"name,omitempty"`
+
+	//Priority: Priority of the Firewall Policy Rule Collection resource.
+	Priority *int `json:"priority,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//RuleCollectionType: The type of the rule collection.
+	RuleCollectionType FirewallPolicyRuleCollectionStatusRuleCollectionType `json:"ruleCollectionType"`
 }
 
 // +kubebuilder:validation:Enum={"FirewallPolicyFilterRuleCollection","FirewallPolicyNatRuleCollection"}

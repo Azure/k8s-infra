@@ -27,8 +27,15 @@ type NetworkWatchersFlowLogsList struct {
 	Items           []NetworkWatchersFlowLogs `json:"items"`
 }
 
-//Generated from:
 type FlowLog_Status struct {
+	AtProvider NetworkWatchersFlowLogsObservation `json:"atProvider"`
+}
+
+type NetworkWatchersFlowLogs_Spec struct {
+	ForProvider NetworkWatchersFlowLogsParameters `json:"forProvider"`
+}
+
+type NetworkWatchersFlowLogsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,42 +57,6 @@ type FlowLog_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type NetworkWatchersFlowLogs_Spec struct {
-	ForProvider NetworkWatchersFlowLogsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type FlowLogPropertiesFormat_Status struct {
-
-	//Enabled: Flag to enable/disable flow logging.
-	Enabled *bool `json:"enabled,omitempty"`
-
-	//FlowAnalyticsConfiguration: Parameters that define the configuration of traffic
-	//analytics.
-	FlowAnalyticsConfiguration *TrafficAnalyticsProperties_Status `json:"flowAnalyticsConfiguration,omitempty"`
-
-	//Format: Parameters that define the flow log format.
-	Format *FlowLogFormatParameters_Status `json:"format,omitempty"`
-
-	//ProvisioningState: The provisioning state of the flow log.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//RetentionPolicy: Parameters that define the retention policy for flow log.
-	RetentionPolicy *RetentionPolicyParameters_Status `json:"retentionPolicy,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//StorageId: ID of the storage account which is used to store the flow log.
-	StorageId string `json:"storageId"`
-
-	//TargetResourceGuid: Guid of network security group to which flow log will be
-	//applied.
-	TargetResourceGuid *string `json:"targetResourceGuid,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//TargetResourceId: ID of network security group to which flow log will be applied.
-	TargetResourceId string `json:"targetResourceId"`
 }
 
 type NetworkWatchersFlowLogsParameters struct {
@@ -127,16 +98,6 @@ type NetworkWatchersFlowLogsParameters struct {
 	Type NetworkWatchersFlowLogsSpecType `json:"type"`
 }
 
-//Generated from:
-type FlowLogFormatParameters_Status struct {
-
-	//Type: The file type of flow log.
-	Type *FlowLogFormatParametersStatusType `json:"type,omitempty"`
-
-	//Version: The version (revision) of the flow log.
-	Version *int `json:"version,omitempty"`
-}
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/FlowLogPropertiesFormat
 type FlowLogPropertiesFormat struct {
 
@@ -162,6 +123,38 @@ type FlowLogPropertiesFormat struct {
 	TargetResourceId string `json:"targetResourceId"`
 }
 
+//Generated from:
+type FlowLogPropertiesFormat_Status struct {
+
+	//Enabled: Flag to enable/disable flow logging.
+	Enabled *bool `json:"enabled,omitempty"`
+
+	//FlowAnalyticsConfiguration: Parameters that define the configuration of traffic
+	//analytics.
+	FlowAnalyticsConfiguration *TrafficAnalyticsProperties_Status `json:"flowAnalyticsConfiguration,omitempty"`
+
+	//Format: Parameters that define the flow log format.
+	Format *FlowLogFormatParameters_Status `json:"format,omitempty"`
+
+	//ProvisioningState: The provisioning state of the flow log.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//RetentionPolicy: Parameters that define the retention policy for flow log.
+	RetentionPolicy *RetentionPolicyParameters_Status `json:"retentionPolicy,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//StorageId: ID of the storage account which is used to store the flow log.
+	StorageId string `json:"storageId"`
+
+	//TargetResourceGuid: Guid of network security group to which flow log will be
+	//applied.
+	TargetResourceGuid *string `json:"targetResourceGuid,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//TargetResourceId: ID of network security group to which flow log will be applied.
+	TargetResourceId string `json:"targetResourceId"`
+}
+
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type NetworkWatchersFlowLogsSpecApiVersion string
 
@@ -171,24 +164,6 @@ const NetworkWatchersFlowLogsSpecApiVersion20200501 = NetworkWatchersFlowLogsSpe
 type NetworkWatchersFlowLogsSpecType string
 
 const NetworkWatchersFlowLogsSpecTypeMicrosoftNetworkNetworkWatchersFlowLogs = NetworkWatchersFlowLogsSpecType("Microsoft.Network/networkWatchers/flowLogs")
-
-//Generated from:
-type RetentionPolicyParameters_Status struct {
-
-	//Days: Number of days to retain flow log records.
-	Days *int `json:"days,omitempty"`
-
-	//Enabled: Flag to enable/disable retention.
-	Enabled *bool `json:"enabled,omitempty"`
-}
-
-//Generated from:
-type TrafficAnalyticsProperties_Status struct {
-
-	//NetworkWatcherFlowAnalyticsConfiguration: Parameters that define the
-	//configuration of traffic analytics.
-	NetworkWatcherFlowAnalyticsConfiguration *TrafficAnalyticsConfigurationProperties_Status `json:"networkWatcherFlowAnalyticsConfiguration,omitempty"`
-}
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/FlowLogFormatParameters
 type FlowLogFormatParameters struct {
@@ -200,10 +175,15 @@ type FlowLogFormatParameters struct {
 	Version *int `json:"version,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"JSON"}
-type FlowLogFormatParametersStatusType string
+//Generated from:
+type FlowLogFormatParameters_Status struct {
 
-const FlowLogFormatParametersStatusTypeJSON = FlowLogFormatParametersStatusType("JSON")
+	//Type: The file type of flow log.
+	Type *FlowLogFormatParametersStatusType `json:"type,omitempty"`
+
+	//Version: The version (revision) of the flow log.
+	Version *int `json:"version,omitempty"`
+}
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/RetentionPolicyParameters
 type RetentionPolicyParameters struct {
@@ -216,7 +196,43 @@ type RetentionPolicyParameters struct {
 }
 
 //Generated from:
-type TrafficAnalyticsConfigurationProperties_Status struct {
+type RetentionPolicyParameters_Status struct {
+
+	//Days: Number of days to retain flow log records.
+	Days *int `json:"days,omitempty"`
+
+	//Enabled: Flag to enable/disable retention.
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/TrafficAnalyticsProperties
+type TrafficAnalyticsProperties struct {
+
+	//NetworkWatcherFlowAnalyticsConfiguration: Parameters that define the
+	//configuration of traffic analytics.
+	NetworkWatcherFlowAnalyticsConfiguration *TrafficAnalyticsConfigurationProperties `json:"networkWatcherFlowAnalyticsConfiguration,omitempty"`
+}
+
+//Generated from:
+type TrafficAnalyticsProperties_Status struct {
+
+	//NetworkWatcherFlowAnalyticsConfiguration: Parameters that define the
+	//configuration of traffic analytics.
+	NetworkWatcherFlowAnalyticsConfiguration *TrafficAnalyticsConfigurationProperties_Status `json:"networkWatcherFlowAnalyticsConfiguration,omitempty"`
+}
+
+// +kubebuilder:validation:Enum={"JSON"}
+type FlowLogFormatParametersStatusType string
+
+const FlowLogFormatParametersStatusTypeJSON = FlowLogFormatParametersStatusType("JSON")
+
+// +kubebuilder:validation:Enum={"JSON"}
+type FlowLogFormatParametersType string
+
+const FlowLogFormatParametersTypeJSON = FlowLogFormatParametersType("JSON")
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/TrafficAnalyticsConfigurationProperties
+type TrafficAnalyticsConfigurationProperties struct {
 
 	//Enabled: Flag to enable/disable traffic analytics.
 	Enabled *bool `json:"enabled,omitempty"`
@@ -235,21 +251,8 @@ type TrafficAnalyticsConfigurationProperties_Status struct {
 	WorkspaceResourceId *string `json:"workspaceResourceId,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/TrafficAnalyticsProperties
-type TrafficAnalyticsProperties struct {
-
-	//NetworkWatcherFlowAnalyticsConfiguration: Parameters that define the
-	//configuration of traffic analytics.
-	NetworkWatcherFlowAnalyticsConfiguration *TrafficAnalyticsConfigurationProperties `json:"networkWatcherFlowAnalyticsConfiguration,omitempty"`
-}
-
-// +kubebuilder:validation:Enum={"JSON"}
-type FlowLogFormatParametersType string
-
-const FlowLogFormatParametersTypeJSON = FlowLogFormatParametersType("JSON")
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/TrafficAnalyticsConfigurationProperties
-type TrafficAnalyticsConfigurationProperties struct {
+//Generated from:
+type TrafficAnalyticsConfigurationProperties_Status struct {
 
 	//Enabled: Flag to enable/disable traffic analytics.
 	Enabled *bool `json:"enabled,omitempty"`

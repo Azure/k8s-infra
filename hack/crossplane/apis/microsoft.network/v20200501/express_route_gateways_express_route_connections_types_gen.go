@@ -27,8 +27,15 @@ type ExpressRouteGatewaysExpressRouteConnectionsList struct {
 	Items           []ExpressRouteGatewaysExpressRouteConnections `json:"items"`
 }
 
-//Generated from:
 type ExpressRouteConnection_Status struct {
+	AtProvider ExpressRouteGatewaysExpressRouteConnectionsObservation `json:"atProvider"`
+}
+
+type ExpressRouteGatewaysExpressRouteConnections_Spec struct {
+	ForProvider ExpressRouteGatewaysExpressRouteConnectionsParameters `json:"forProvider"`
+}
+
+type ExpressRouteGatewaysExpressRouteConnectionsObservation struct {
 
 	//Id: Resource ID.
 	Id *string `json:"id,omitempty"`
@@ -39,35 +46,6 @@ type ExpressRouteConnection_Status struct {
 
 	//Properties: Properties of the express route connection.
 	Properties *ExpressRouteConnectionProperties_Status `json:"properties,omitempty"`
-}
-
-type ExpressRouteGatewaysExpressRouteConnections_Spec struct {
-	ForProvider ExpressRouteGatewaysExpressRouteConnectionsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type ExpressRouteConnectionProperties_Status struct {
-
-	//AuthorizationKey: Authorization key to establish the connection.
-	AuthorizationKey *string `json:"authorizationKey,omitempty"`
-
-	//EnableInternetSecurity: Enable internet security.
-	EnableInternetSecurity *bool `json:"enableInternetSecurity,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//ExpressRouteCircuitPeering: The ExpressRoute circuit peering.
-	ExpressRouteCircuitPeering ExpressRouteCircuitPeeringId_Status `json:"expressRouteCircuitPeering"`
-
-	//ProvisioningState: The provisioning state of the express route connection
-	//resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//RoutingConfiguration: The Routing Configuration indicating the associated and
-	//propagated route tables on this connection.
-	RoutingConfiguration *RoutingConfiguration_Status `json:"routingConfiguration,omitempty"`
-
-	//RoutingWeight: The routing weight associated to the connection.
-	RoutingWeight *int `json:"routingWeight,omitempty"`
 }
 
 type ExpressRouteGatewaysExpressRouteConnectionsParameters struct {
@@ -109,13 +87,6 @@ type ExpressRouteGatewaysExpressRouteConnectionsParameters struct {
 	Type ExpressRouteGatewaysExpressRouteConnectionsSpecType `json:"type"`
 }
 
-//Generated from:
-type ExpressRouteCircuitPeeringId_Status struct {
-
-	//Id: The ID of the ExpressRoute circuit peering.
-	Id *string `json:"id,omitempty"`
-}
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ExpressRouteConnectionProperties
 type ExpressRouteConnectionProperties struct {
 
@@ -137,6 +108,31 @@ type ExpressRouteConnectionProperties struct {
 	RoutingWeight *int `json:"routingWeight,omitempty"`
 }
 
+//Generated from:
+type ExpressRouteConnectionProperties_Status struct {
+
+	//AuthorizationKey: Authorization key to establish the connection.
+	AuthorizationKey *string `json:"authorizationKey,omitempty"`
+
+	//EnableInternetSecurity: Enable internet security.
+	EnableInternetSecurity *bool `json:"enableInternetSecurity,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//ExpressRouteCircuitPeering: The ExpressRoute circuit peering.
+	ExpressRouteCircuitPeering ExpressRouteCircuitPeeringId_Status `json:"expressRouteCircuitPeering"`
+
+	//ProvisioningState: The provisioning state of the express route connection
+	//resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//RoutingConfiguration: The Routing Configuration indicating the associated and
+	//propagated route tables on this connection.
+	RoutingConfiguration *RoutingConfiguration_Status `json:"routingConfiguration,omitempty"`
+
+	//RoutingWeight: The routing weight associated to the connection.
+	RoutingWeight *int `json:"routingWeight,omitempty"`
+}
+
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type ExpressRouteGatewaysExpressRouteConnectionsSpecApiVersion string
 
@@ -148,28 +144,10 @@ type ExpressRouteGatewaysExpressRouteConnectionsSpecType string
 const ExpressRouteGatewaysExpressRouteConnectionsSpecTypeMicrosoftNetworkExpressRouteGatewaysExpressRouteConnections = ExpressRouteGatewaysExpressRouteConnectionsSpecType("Microsoft.Network/expressRouteGateways/expressRouteConnections")
 
 //Generated from:
-type RoutingConfiguration_Status struct {
+type ExpressRouteCircuitPeeringId_Status struct {
 
-	//AssociatedRouteTable: The resource id RouteTable associated with this
-	//RoutingConfiguration.
-	AssociatedRouteTable *SubResource_Status `json:"associatedRouteTable,omitempty"`
-
-	//PropagatedRouteTables: The list of RouteTables to advertise the routes to.
-	PropagatedRouteTables *PropagatedRouteTable_Status `json:"propagatedRouteTables,omitempty"`
-
-	//VnetRoutes: List of routes that control routing from VirtualHub into a virtual
-	//network connection.
-	VnetRoutes *VnetRoute_Status `json:"vnetRoutes,omitempty"`
-}
-
-//Generated from:
-type PropagatedRouteTable_Status struct {
-
-	//Ids: The list of resource ids of all the RouteTables.
-	Ids []SubResource_Status `json:"ids,omitempty"`
-
-	//Labels: The list of labels.
-	Labels []string `json:"labels,omitempty"`
+	//Id: The ID of the ExpressRoute circuit peering.
+	Id *string `json:"id,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/RoutingConfiguration
@@ -188,10 +166,18 @@ type RoutingConfiguration struct {
 }
 
 //Generated from:
-type VnetRoute_Status struct {
+type RoutingConfiguration_Status struct {
 
-	//StaticRoutes: List of all Static Routes.
-	StaticRoutes []StaticRoute_Status `json:"staticRoutes,omitempty"`
+	//AssociatedRouteTable: The resource id RouteTable associated with this
+	//RoutingConfiguration.
+	AssociatedRouteTable *SubResource_Status `json:"associatedRouteTable,omitempty"`
+
+	//PropagatedRouteTables: The list of RouteTables to advertise the routes to.
+	PropagatedRouteTables *PropagatedRouteTable_Status `json:"propagatedRouteTables,omitempty"`
+
+	//VnetRoutes: List of routes that control routing from VirtualHub into a virtual
+	//network connection.
+	VnetRoutes *VnetRoute_Status `json:"vnetRoutes,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PropagatedRouteTable
@@ -205,7 +191,31 @@ type PropagatedRouteTable struct {
 }
 
 //Generated from:
-type StaticRoute_Status struct {
+type PropagatedRouteTable_Status struct {
+
+	//Ids: The list of resource ids of all the RouteTables.
+	Ids []SubResource_Status `json:"ids,omitempty"`
+
+	//Labels: The list of labels.
+	Labels []string `json:"labels,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VnetRoute
+type VnetRoute struct {
+
+	//StaticRoutes: List of all Static Routes.
+	StaticRoutes []StaticRoute `json:"staticRoutes,omitempty"`
+}
+
+//Generated from:
+type VnetRoute_Status struct {
+
+	//StaticRoutes: List of all Static Routes.
+	StaticRoutes []StaticRoute_Status `json:"staticRoutes,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/StaticRoute
+type StaticRoute struct {
 
 	//AddressPrefixes: List of all address prefixes.
 	AddressPrefixes []string `json:"addressPrefixes,omitempty"`
@@ -217,15 +227,8 @@ type StaticRoute_Status struct {
 	NextHopIpAddress *string `json:"nextHopIpAddress,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VnetRoute
-type VnetRoute struct {
-
-	//StaticRoutes: List of all Static Routes.
-	StaticRoutes []StaticRoute `json:"staticRoutes,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/StaticRoute
-type StaticRoute struct {
+//Generated from:
+type StaticRoute_Status struct {
 
 	//AddressPrefixes: List of all address prefixes.
 	AddressPrefixes []string `json:"addressPrefixes,omitempty"`

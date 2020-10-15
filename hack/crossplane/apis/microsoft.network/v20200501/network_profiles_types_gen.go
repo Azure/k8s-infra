@@ -27,8 +27,15 @@ type NetworkProfilesList struct {
 	Items           []NetworkProfiles `json:"items"`
 }
 
-//Generated from:
 type NetworkProfile_Status struct {
+	AtProvider NetworkProfilesObservation `json:"atProvider"`
+}
+
+type NetworkProfiles_Spec struct {
+	ForProvider NetworkProfilesParameters `json:"forProvider"`
+}
+
+type NetworkProfilesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,27 +57,6 @@ type NetworkProfile_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type NetworkProfiles_Spec struct {
-	ForProvider NetworkProfilesParameters `json:"forProvider"`
-}
-
-//Generated from:
-type NetworkProfilePropertiesFormat_Status struct {
-
-	//ContainerNetworkInterfaceConfigurations: List of chid container network
-	//interface configurations.
-	ContainerNetworkInterfaceConfigurations []ContainerNetworkInterfaceConfiguration_Status `json:"containerNetworkInterfaceConfigurations,omitempty"`
-
-	//ContainerNetworkInterfaces: List of child container network interfaces.
-	ContainerNetworkInterfaces []ContainerNetworkInterface_Status `json:"containerNetworkInterfaces,omitempty"`
-
-	//ProvisioningState: The provisioning state of the network profile resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//ResourceGuid: The resource GUID property of the network profile resource.
-	ResourceGuid *string `json:"resourceGuid,omitempty"`
 }
 
 type NetworkProfilesParameters struct {
@@ -112,6 +98,51 @@ type NetworkProfilesParameters struct {
 	Type NetworkProfilesSpecType `json:"type"`
 }
 
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/NetworkProfilePropertiesFormat
+type NetworkProfilePropertiesFormat struct {
+
+	//ContainerNetworkInterfaceConfigurations: List of chid container network
+	//interface configurations.
+	ContainerNetworkInterfaceConfigurations []ContainerNetworkInterfaceConfiguration `json:"containerNetworkInterfaceConfigurations,omitempty"`
+}
+
+//Generated from:
+type NetworkProfilePropertiesFormat_Status struct {
+
+	//ContainerNetworkInterfaceConfigurations: List of chid container network
+	//interface configurations.
+	ContainerNetworkInterfaceConfigurations []ContainerNetworkInterfaceConfiguration_Status `json:"containerNetworkInterfaceConfigurations,omitempty"`
+
+	//ContainerNetworkInterfaces: List of child container network interfaces.
+	ContainerNetworkInterfaces []ContainerNetworkInterface_Status `json:"containerNetworkInterfaces,omitempty"`
+
+	//ProvisioningState: The provisioning state of the network profile resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//ResourceGuid: The resource GUID property of the network profile resource.
+	ResourceGuid *string `json:"resourceGuid,omitempty"`
+}
+
+// +kubebuilder:validation:Enum={"2020-05-01"}
+type NetworkProfilesSpecApiVersion string
+
+const NetworkProfilesSpecApiVersion20200501 = NetworkProfilesSpecApiVersion("2020-05-01")
+
+// +kubebuilder:validation:Enum={"Microsoft.Network/networkProfiles"}
+type NetworkProfilesSpecType string
+
+const NetworkProfilesSpecTypeMicrosoftNetworkNetworkProfiles = NetworkProfilesSpecType("Microsoft.Network/networkProfiles")
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ContainerNetworkInterfaceConfiguration
+type ContainerNetworkInterfaceConfiguration struct {
+
+	//Name: The name of the resource. This name can be used to access the resource.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Container network interface configuration properties.
+	Properties *ContainerNetworkInterfaceConfigurationPropertiesFormat `json:"properties,omitempty"`
+}
+
 //Generated from:
 type ContainerNetworkInterfaceConfiguration_Status struct {
 
@@ -150,32 +181,16 @@ type ContainerNetworkInterface_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/NetworkProfilePropertiesFormat
-type NetworkProfilePropertiesFormat struct {
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ContainerNetworkInterfaceConfigurationPropertiesFormat
+type ContainerNetworkInterfaceConfigurationPropertiesFormat struct {
 
-	//ContainerNetworkInterfaceConfigurations: List of chid container network
-	//interface configurations.
-	ContainerNetworkInterfaceConfigurations []ContainerNetworkInterfaceConfiguration `json:"containerNetworkInterfaceConfigurations,omitempty"`
-}
+	//ContainerNetworkInterfaces: A list of container network interfaces created from
+	//this container network interface configuration.
+	ContainerNetworkInterfaces []SubResource `json:"containerNetworkInterfaces,omitempty"`
 
-// +kubebuilder:validation:Enum={"2020-05-01"}
-type NetworkProfilesSpecApiVersion string
-
-const NetworkProfilesSpecApiVersion20200501 = NetworkProfilesSpecApiVersion("2020-05-01")
-
-// +kubebuilder:validation:Enum={"Microsoft.Network/networkProfiles"}
-type NetworkProfilesSpecType string
-
-const NetworkProfilesSpecTypeMicrosoftNetworkNetworkProfiles = NetworkProfilesSpecType("Microsoft.Network/networkProfiles")
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ContainerNetworkInterfaceConfiguration
-type ContainerNetworkInterfaceConfiguration struct {
-
-	//Name: The name of the resource. This name can be used to access the resource.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Container network interface configuration properties.
-	Properties *ContainerNetworkInterfaceConfigurationPropertiesFormat `json:"properties,omitempty"`
+	//IpConfigurations: A list of ip configurations of the container network interface
+	//configuration.
+	IpConfigurations []IPConfigurationProfile `json:"ipConfigurations,omitempty"`
 }
 
 //Generated from:
@@ -213,18 +228,6 @@ type ContainerNetworkInterfacePropertiesFormat_Status struct {
 	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/ContainerNetworkInterfaceConfigurationPropertiesFormat
-type ContainerNetworkInterfaceConfigurationPropertiesFormat struct {
-
-	//ContainerNetworkInterfaces: A list of container network interfaces created from
-	//this container network interface configuration.
-	ContainerNetworkInterfaces []SubResource `json:"containerNetworkInterfaces,omitempty"`
-
-	//IpConfigurations: A list of ip configurations of the container network interface
-	//configuration.
-	IpConfigurations []IPConfigurationProfile `json:"ipConfigurations,omitempty"`
-}
-
 //Generated from:
 type ContainerNetworkInterfaceIpConfiguration_Status struct {
 
@@ -241,14 +244,6 @@ type ContainerNetworkInterfaceIpConfiguration_Status struct {
 	Type *string `json:"type,omitempty"`
 }
 
-//Generated from:
-type ContainerNetworkInterfaceIpConfigurationPropertiesFormat_Status struct {
-
-	//ProvisioningState: The provisioning state of the container network interface IP
-	//configuration resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-}
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/IPConfigurationProfile
 type IPConfigurationProfile struct {
 
@@ -257,6 +252,14 @@ type IPConfigurationProfile struct {
 
 	//Properties: Properties of the IP configuration profile.
 	Properties *IPConfigurationProfilePropertiesFormat `json:"properties,omitempty"`
+}
+
+//Generated from:
+type ContainerNetworkInterfaceIpConfigurationPropertiesFormat_Status struct {
+
+	//ProvisioningState: The provisioning state of the container network interface IP
+	//configuration resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/IPConfigurationProfilePropertiesFormat

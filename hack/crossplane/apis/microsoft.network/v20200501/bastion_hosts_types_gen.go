@@ -27,8 +27,15 @@ type BastionHostsList struct {
 	Items           []BastionHosts `json:"items"`
 }
 
-//Generated from:
 type BastionHost_Status struct {
+	AtProvider BastionHostsObservation `json:"atProvider"`
+}
+
+type BastionHosts_Spec struct {
+	ForProvider BastionHostsParameters `json:"forProvider"`
+}
+
+type BastionHostsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,23 +57,6 @@ type BastionHost_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type BastionHosts_Spec struct {
-	ForProvider BastionHostsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type BastionHostPropertiesFormat_Status struct {
-
-	//DnsName: FQDN for the endpoint on which bastion host is accessible.
-	DnsName *string `json:"dnsName,omitempty"`
-
-	//IpConfigurations: IP configuration of the Bastion Host resource.
-	IpConfigurations []BastionHostIPConfiguration_Status `json:"ipConfigurations,omitempty"`
-
-	//ProvisioningState: The provisioning state of the bastion host resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 type BastionHostsParameters struct {
@@ -108,26 +98,6 @@ type BastionHostsParameters struct {
 	Type BastionHostsSpecType `json:"type"`
 }
 
-//Generated from:
-type BastionHostIPConfiguration_Status struct {
-
-	//Etag: A unique read-only string that changes whenever the resource is updated.
-	Etag *string `json:"etag,omitempty"`
-
-	//Id: Resource ID.
-	Id *string `json:"id,omitempty"`
-
-	//Name: Name of the resource that is unique within a resource group. This name can
-	//be used to access the resource.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Represents the ip configuration associated with the resource.
-	Properties *BastionHostIPConfigurationPropertiesFormat_Status `json:"properties,omitempty"`
-
-	//Type: Ip configuration type.
-	Type *string `json:"type,omitempty"`
-}
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/BastionHostPropertiesFormat
 type BastionHostPropertiesFormat struct {
 
@@ -136,6 +106,19 @@ type BastionHostPropertiesFormat struct {
 
 	//IpConfigurations: IP configuration of the Bastion Host resource.
 	IpConfigurations []BastionHostIPConfiguration `json:"ipConfigurations,omitempty"`
+}
+
+//Generated from:
+type BastionHostPropertiesFormat_Status struct {
+
+	//DnsName: FQDN for the endpoint on which bastion host is accessible.
+	DnsName *string `json:"dnsName,omitempty"`
+
+	//IpConfigurations: IP configuration of the Bastion Host resource.
+	IpConfigurations []BastionHostIPConfiguration_Status `json:"ipConfigurations,omitempty"`
+
+	//ProvisioningState: The provisioning state of the bastion host resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
@@ -160,6 +143,41 @@ type BastionHostIPConfiguration struct {
 }
 
 //Generated from:
+type BastionHostIPConfiguration_Status struct {
+
+	//Etag: A unique read-only string that changes whenever the resource is updated.
+	Etag *string `json:"etag,omitempty"`
+
+	//Id: Resource ID.
+	Id *string `json:"id,omitempty"`
+
+	//Name: Name of the resource that is unique within a resource group. This name can
+	//be used to access the resource.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Represents the ip configuration associated with the resource.
+	Properties *BastionHostIPConfigurationPropertiesFormat_Status `json:"properties,omitempty"`
+
+	//Type: Ip configuration type.
+	Type *string `json:"type,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/BastionHostIPConfigurationPropertiesFormat
+type BastionHostIPConfigurationPropertiesFormat struct {
+
+	//PrivateIPAllocationMethod: Private IP allocation method.
+	PrivateIPAllocationMethod *BastionHostIPConfigurationPropertiesFormatPrivateIPAllocationMethod `json:"privateIPAllocationMethod,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//PublicIPAddress: Reference of the PublicIP resource.
+	PublicIPAddress SubResource `json:"publicIPAddress"`
+
+	// +kubebuilder:validation:Required
+	//Subnet: Reference of the subnet resource.
+	Subnet SubResource `json:"subnet"`
+}
+
+//Generated from:
 type BastionHostIPConfigurationPropertiesFormat_Status struct {
 
 	//PrivateIPAllocationMethod: Private IP allocation method.
@@ -176,21 +194,6 @@ type BastionHostIPConfigurationPropertiesFormat_Status struct {
 	// +kubebuilder:validation:Required
 	//Subnet: Reference of the subnet resource.
 	Subnet SubResource_Status `json:"subnet"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/BastionHostIPConfigurationPropertiesFormat
-type BastionHostIPConfigurationPropertiesFormat struct {
-
-	//PrivateIPAllocationMethod: Private IP allocation method.
-	PrivateIPAllocationMethod *BastionHostIPConfigurationPropertiesFormatPrivateIPAllocationMethod `json:"privateIPAllocationMethod,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//PublicIPAddress: Reference of the PublicIP resource.
-	PublicIPAddress SubResource `json:"publicIPAddress"`
-
-	// +kubebuilder:validation:Required
-	//Subnet: Reference of the subnet resource.
-	Subnet SubResource `json:"subnet"`
 }
 
 // +kubebuilder:validation:Enum={"Dynamic","Static"}

@@ -27,8 +27,15 @@ type RedisPatchSchedulesList struct {
 	Items           []RedisPatchSchedules `json:"items"`
 }
 
-//Generated from:
 type RedisPatchSchedule_Status struct {
+	AtProvider RedisPatchSchedulesObservation `json:"atProvider"`
+}
+
+type RedisPatchSchedules_Spec struct {
+	ForProvider RedisPatchSchedulesParameters `json:"forProvider"`
+}
+
+type RedisPatchSchedulesObservation struct {
 
 	//Id: Resource ID.
 	Id *string `json:"id,omitempty"`
@@ -42,10 +49,6 @@ type RedisPatchSchedule_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type RedisPatchSchedules_Spec struct {
-	ForProvider RedisPatchSchedulesParameters `json:"forProvider"`
 }
 
 type RedisPatchSchedulesParameters struct {
@@ -87,14 +90,6 @@ type RedisPatchSchedulesParameters struct {
 	Type RedisPatchSchedulesSpecType `json:"type"`
 }
 
-//Generated from:
-type ScheduleEntries_Status struct {
-
-	// +kubebuilder:validation:Required
-	//ScheduleEntries: List of patch schedules for a Redis cache.
-	ScheduleEntries []ScheduleEntry_Status `json:"scheduleEntries"`
-}
-
 // +kubebuilder:validation:Enum={"2017-10-01"}
 type RedisPatchSchedulesSpecApiVersion string
 
@@ -114,19 +109,11 @@ type ScheduleEntries struct {
 }
 
 //Generated from:
-type ScheduleEntry_Status struct {
+type ScheduleEntries_Status struct {
 
 	// +kubebuilder:validation:Required
-	//DayOfWeek: Day of the week when a cache can be patched.
-	DayOfWeek ScheduleEntryStatusDayOfWeek `json:"dayOfWeek"`
-
-	//MaintenanceWindow: ISO8601 timespan specifying how much time cache patching can
-	//take.
-	MaintenanceWindow *string `json:"maintenanceWindow,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//StartHourUtc: Start hour after which cache patching can start.
-	StartHourUtc int `json:"startHourUtc"`
+	//ScheduleEntries: List of patch schedules for a Redis cache.
+	ScheduleEntries []ScheduleEntry_Status `json:"scheduleEntries"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2017-10-01/Microsoft.Cache.json#/definitions/ScheduleEntry
@@ -145,20 +132,21 @@ type ScheduleEntry struct {
 	StartHourUtc int `json:"startHourUtc"`
 }
 
-// +kubebuilder:validation:Enum={"Everyday","Friday","Monday","Saturday","Sunday","Thursday","Tuesday","Wednesday","Weekend"}
-type ScheduleEntryStatusDayOfWeek string
+//Generated from:
+type ScheduleEntry_Status struct {
 
-const (
-	ScheduleEntryStatusDayOfWeekEveryday  = ScheduleEntryStatusDayOfWeek("Everyday")
-	ScheduleEntryStatusDayOfWeekFriday    = ScheduleEntryStatusDayOfWeek("Friday")
-	ScheduleEntryStatusDayOfWeekMonday    = ScheduleEntryStatusDayOfWeek("Monday")
-	ScheduleEntryStatusDayOfWeekSaturday  = ScheduleEntryStatusDayOfWeek("Saturday")
-	ScheduleEntryStatusDayOfWeekSunday    = ScheduleEntryStatusDayOfWeek("Sunday")
-	ScheduleEntryStatusDayOfWeekThursday  = ScheduleEntryStatusDayOfWeek("Thursday")
-	ScheduleEntryStatusDayOfWeekTuesday   = ScheduleEntryStatusDayOfWeek("Tuesday")
-	ScheduleEntryStatusDayOfWeekWednesday = ScheduleEntryStatusDayOfWeek("Wednesday")
-	ScheduleEntryStatusDayOfWeekWeekend   = ScheduleEntryStatusDayOfWeek("Weekend")
-)
+	// +kubebuilder:validation:Required
+	//DayOfWeek: Day of the week when a cache can be patched.
+	DayOfWeek ScheduleEntryStatusDayOfWeek `json:"dayOfWeek"`
+
+	//MaintenanceWindow: ISO8601 timespan specifying how much time cache patching can
+	//take.
+	MaintenanceWindow *string `json:"maintenanceWindow,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//StartHourUtc: Start hour after which cache patching can start.
+	StartHourUtc int `json:"startHourUtc"`
+}
 
 // +kubebuilder:validation:Enum={"Everyday","Friday","Monday","Saturday","Sunday","Thursday","Tuesday","Wednesday","Weekend"}
 type ScheduleEntryDayOfWeek string
@@ -173,6 +161,21 @@ const (
 	ScheduleEntryDayOfWeekTuesday   = ScheduleEntryDayOfWeek("Tuesday")
 	ScheduleEntryDayOfWeekWednesday = ScheduleEntryDayOfWeek("Wednesday")
 	ScheduleEntryDayOfWeekWeekend   = ScheduleEntryDayOfWeek("Weekend")
+)
+
+// +kubebuilder:validation:Enum={"Everyday","Friday","Monday","Saturday","Sunday","Thursday","Tuesday","Wednesday","Weekend"}
+type ScheduleEntryStatusDayOfWeek string
+
+const (
+	ScheduleEntryStatusDayOfWeekEveryday  = ScheduleEntryStatusDayOfWeek("Everyday")
+	ScheduleEntryStatusDayOfWeekFriday    = ScheduleEntryStatusDayOfWeek("Friday")
+	ScheduleEntryStatusDayOfWeekMonday    = ScheduleEntryStatusDayOfWeek("Monday")
+	ScheduleEntryStatusDayOfWeekSaturday  = ScheduleEntryStatusDayOfWeek("Saturday")
+	ScheduleEntryStatusDayOfWeekSunday    = ScheduleEntryStatusDayOfWeek("Sunday")
+	ScheduleEntryStatusDayOfWeekThursday  = ScheduleEntryStatusDayOfWeek("Thursday")
+	ScheduleEntryStatusDayOfWeekTuesday   = ScheduleEntryStatusDayOfWeek("Tuesday")
+	ScheduleEntryStatusDayOfWeekWednesday = ScheduleEntryStatusDayOfWeek("Wednesday")
+	ScheduleEntryStatusDayOfWeekWeekend   = ScheduleEntryStatusDayOfWeek("Weekend")
 )
 
 func init() {

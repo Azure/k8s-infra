@@ -27,8 +27,15 @@ type LoadBalancersInboundNatRulesList struct {
 	Items           []LoadBalancersInboundNatRules `json:"items"`
 }
 
-//Generated from:
 type InboundNatRule_Status struct {
+	AtProvider LoadBalancersInboundNatRulesObservation `json:"atProvider"`
+}
+
+type LoadBalancersInboundNatRules_Spec struct {
+	ForProvider LoadBalancersInboundNatRulesParameters `json:"forProvider"`
+}
+
+type LoadBalancersInboundNatRulesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -45,53 +52,6 @@ type InboundNatRule_Status struct {
 
 	//Type: Type of the resource.
 	Type *string `json:"type,omitempty"`
-}
-
-type LoadBalancersInboundNatRules_Spec struct {
-	ForProvider LoadBalancersInboundNatRulesParameters `json:"forProvider"`
-}
-
-//Generated from:
-type InboundNatRulePropertiesFormat_Status struct {
-
-	//BackendIPConfiguration: A reference to a private IP address defined on a network
-	//interface of a VM. Traffic sent to the frontend port of each of the frontend IP
-	//configurations is forwarded to the backend IP.
-	BackendIPConfiguration *NetworkInterfaceIPConfiguration_Status `json:"backendIPConfiguration,omitempty"`
-
-	//BackendPort: The port used for the internal endpoint. Acceptable values range
-	//from 1 to 65535.
-	BackendPort *int `json:"backendPort,omitempty"`
-
-	//EnableFloatingIP: Configures a virtual machine's endpoint for the floating IP
-	//capability required to configure a SQL AlwaysOn Availability Group. This setting
-	//is required when using the SQL AlwaysOn Availability Groups in SQL server. This
-	//setting can't be changed after you create the endpoint.
-	EnableFloatingIP *bool `json:"enableFloatingIP,omitempty"`
-
-	//EnableTcpReset: Receive bidirectional TCP Reset on TCP flow idle timeout or
-	//unexpected connection termination. This element is only used when the protocol
-	//is set to TCP.
-	EnableTcpReset *bool `json:"enableTcpReset,omitempty"`
-
-	//FrontendIPConfiguration: A reference to frontend IP addresses.
-	FrontendIPConfiguration *SubResource_Status `json:"frontendIPConfiguration,omitempty"`
-
-	//FrontendPort: The port for the external endpoint. Port numbers for each rule
-	//must be unique within the Load Balancer. Acceptable values range from 1 to 65534.
-	FrontendPort *int `json:"frontendPort,omitempty"`
-
-	//IdleTimeoutInMinutes: The timeout for the TCP idle connection. The value can be
-	//set between 4 and 30 minutes. The default value is 4 minutes. This element is
-	//only used when the protocol is set to TCP.
-	IdleTimeoutInMinutes *int `json:"idleTimeoutInMinutes,omitempty"`
-
-	//Protocol: The reference to the transport protocol used by the load balancing
-	//rule.
-	Protocol *TransportProtocol_Status `json:"protocol,omitempty"`
-
-	//ProvisioningState: The provisioning state of the inbound NAT rule resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 type LoadBalancersInboundNatRulesParameters struct {
@@ -172,6 +132,49 @@ type InboundNatRulePropertiesFormat struct {
 	Protocol InboundNatRulePropertiesFormatProtocol `json:"protocol"`
 }
 
+//Generated from:
+type InboundNatRulePropertiesFormat_Status struct {
+
+	//BackendIPConfiguration: A reference to a private IP address defined on a network
+	//interface of a VM. Traffic sent to the frontend port of each of the frontend IP
+	//configurations is forwarded to the backend IP.
+	BackendIPConfiguration *NetworkInterfaceIPConfiguration_Status `json:"backendIPConfiguration,omitempty"`
+
+	//BackendPort: The port used for the internal endpoint. Acceptable values range
+	//from 1 to 65535.
+	BackendPort *int `json:"backendPort,omitempty"`
+
+	//EnableFloatingIP: Configures a virtual machine's endpoint for the floating IP
+	//capability required to configure a SQL AlwaysOn Availability Group. This setting
+	//is required when using the SQL AlwaysOn Availability Groups in SQL server. This
+	//setting can't be changed after you create the endpoint.
+	EnableFloatingIP *bool `json:"enableFloatingIP,omitempty"`
+
+	//EnableTcpReset: Receive bidirectional TCP Reset on TCP flow idle timeout or
+	//unexpected connection termination. This element is only used when the protocol
+	//is set to TCP.
+	EnableTcpReset *bool `json:"enableTcpReset,omitempty"`
+
+	//FrontendIPConfiguration: A reference to frontend IP addresses.
+	FrontendIPConfiguration *SubResource_Status `json:"frontendIPConfiguration,omitempty"`
+
+	//FrontendPort: The port for the external endpoint. Port numbers for each rule
+	//must be unique within the Load Balancer. Acceptable values range from 1 to 65534.
+	FrontendPort *int `json:"frontendPort,omitempty"`
+
+	//IdleTimeoutInMinutes: The timeout for the TCP idle connection. The value can be
+	//set between 4 and 30 minutes. The default value is 4 minutes. This element is
+	//only used when the protocol is set to TCP.
+	IdleTimeoutInMinutes *int `json:"idleTimeoutInMinutes,omitempty"`
+
+	//Protocol: The reference to the transport protocol used by the load balancing
+	//rule.
+	Protocol *TransportProtocol_Status `json:"protocol,omitempty"`
+
+	//ProvisioningState: The provisioning state of the inbound NAT rule resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+}
+
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type LoadBalancersInboundNatRulesSpecApiVersion string
 
@@ -182,6 +185,15 @@ type LoadBalancersInboundNatRulesSpecType string
 
 const LoadBalancersInboundNatRulesSpecTypeMicrosoftNetworkLoadBalancersInboundNatRules = LoadBalancersInboundNatRulesSpecType("Microsoft.Network/loadBalancers/inboundNatRules")
 
+// +kubebuilder:validation:Enum={"All","Tcp","Udp"}
+type InboundNatRulePropertiesFormatProtocol string
+
+const (
+	InboundNatRulePropertiesFormatProtocolAll = InboundNatRulePropertiesFormatProtocol("All")
+	InboundNatRulePropertiesFormatProtocolTcp = InboundNatRulePropertiesFormatProtocol("Tcp")
+	InboundNatRulePropertiesFormatProtocolUdp = InboundNatRulePropertiesFormatProtocol("Udp")
+)
+
 //Generated from:
 // +kubebuilder:validation:Enum={"All","Tcp","Udp"}
 type TransportProtocol_Status string
@@ -190,15 +202,6 @@ const (
 	TransportProtocol_StatusAll = TransportProtocol_Status("All")
 	TransportProtocol_StatusTcp = TransportProtocol_Status("Tcp")
 	TransportProtocol_StatusUdp = TransportProtocol_Status("Udp")
-)
-
-// +kubebuilder:validation:Enum={"All","Tcp","Udp"}
-type InboundNatRulePropertiesFormatProtocol string
-
-const (
-	InboundNatRulePropertiesFormatProtocolAll = InboundNatRulePropertiesFormatProtocol("All")
-	InboundNatRulePropertiesFormatProtocolTcp = InboundNatRulePropertiesFormatProtocol("Tcp")
-	InboundNatRulePropertiesFormatProtocolUdp = InboundNatRulePropertiesFormatProtocol("Udp")
 )
 
 func init() {

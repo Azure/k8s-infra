@@ -27,8 +27,15 @@ type ServersFirewallRulesList struct {
 	Items           []ServersFirewallRules `json:"items"`
 }
 
-//Generated from:
 type FirewallRule_Status struct {
+	AtProvider ServersFirewallRulesObservation `json:"atProvider"`
+}
+
+type ServersFirewallRules_Spec struct {
+	ForProvider ServersFirewallRulesParameters `json:"forProvider"`
+}
+
+type ServersFirewallRulesObservation struct {
 
 	//Id: Resource ID.
 	Id *string `json:"id,omitempty"`
@@ -41,23 +48,6 @@ type FirewallRule_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type ServersFirewallRules_Spec struct {
-	ForProvider ServersFirewallRulesParameters `json:"forProvider"`
-}
-
-//Generated from:
-type ServerFirewallRuleProperties_Status struct {
-
-	//EndIpAddress: The end IP address of the firewall rule. Must be IPv4 format. Must
-	//be greater than or equal to startIpAddress. Use value '0.0.0.0' for all
-	//Azure-internal IP addresses.
-	EndIpAddress *string `json:"endIpAddress,omitempty"`
-
-	//StartIpAddress: The start IP address of the firewall rule. Must be IPv4 format.
-	//Use value '0.0.0.0' for all Azure-internal IP addresses.
-	StartIpAddress *string `json:"startIpAddress,omitempty"`
 }
 
 type ServersFirewallRulesParameters struct {
@@ -101,6 +91,19 @@ type ServersFirewallRulesParameters struct {
 
 //Generated from: https://schema.management.azure.com/schemas/2015-05-01-preview/Microsoft.Sql.json#/definitions/ServerFirewallRuleProperties
 type ServerFirewallRuleProperties struct {
+
+	//EndIpAddress: The end IP address of the firewall rule. Must be IPv4 format. Must
+	//be greater than or equal to startIpAddress. Use value '0.0.0.0' for all
+	//Azure-internal IP addresses.
+	EndIpAddress *string `json:"endIpAddress,omitempty"`
+
+	//StartIpAddress: The start IP address of the firewall rule. Must be IPv4 format.
+	//Use value '0.0.0.0' for all Azure-internal IP addresses.
+	StartIpAddress *string `json:"startIpAddress,omitempty"`
+}
+
+//Generated from:
+type ServerFirewallRuleProperties_Status struct {
 
 	//EndIpAddress: The end IP address of the firewall rule. Must be IPv4 format. Must
 	//be greater than or equal to startIpAddress. Use value '0.0.0.0' for all

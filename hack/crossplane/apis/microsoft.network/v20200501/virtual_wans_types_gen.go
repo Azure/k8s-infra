@@ -27,8 +27,15 @@ type VirtualWansList struct {
 	Items           []VirtualWans `json:"items"`
 }
 
-//Generated from:
 type VirtualWAN_Status struct {
+	AtProvider VirtualWansObservation `json:"atProvider"`
+}
+
+type VirtualWans_Spec struct {
+	ForProvider VirtualWansParameters `json:"forProvider"`
+}
+
+type VirtualWansObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,38 +57,6 @@ type VirtualWAN_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type VirtualWans_Spec struct {
-	ForProvider VirtualWansParameters `json:"forProvider"`
-}
-
-//Generated from:
-type VirtualWanProperties_Status struct {
-
-	//AllowBranchToBranchTraffic: True if branch to branch traffic is allowed.
-	AllowBranchToBranchTraffic *bool `json:"allowBranchToBranchTraffic,omitempty"`
-
-	//AllowVnetToVnetTraffic: True if Vnet to Vnet traffic is allowed.
-	AllowVnetToVnetTraffic *bool `json:"allowVnetToVnetTraffic,omitempty"`
-
-	//DisableVpnEncryption: Vpn encryption to be disabled or not.
-	DisableVpnEncryption *bool `json:"disableVpnEncryption,omitempty"`
-
-	//Office365LocalBreakoutCategory: The office local breakout category.
-	Office365LocalBreakoutCategory *OfficeTrafficCategory_Status `json:"office365LocalBreakoutCategory,omitempty"`
-
-	//ProvisioningState: The provisioning state of the virtual WAN resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//Type: The type of the VirtualWAN.
-	Type *string `json:"type,omitempty"`
-
-	//VirtualHubs: List of VirtualHubs in the VirtualWAN.
-	VirtualHubs []SubResource_Status `json:"virtualHubs,omitempty"`
-
-	//VpnSites: List of VpnSites in the VirtualWAN.
-	VpnSites []SubResource_Status `json:"vpnSites,omitempty"`
 }
 
 type VirtualWansParameters struct {
@@ -123,17 +98,6 @@ type VirtualWansParameters struct {
 	Type VirtualWansSpecType `json:"type"`
 }
 
-//Generated from:
-// +kubebuilder:validation:Enum={"All","None","Optimize","OptimizeAndAllow"}
-type OfficeTrafficCategory_Status string
-
-const (
-	OfficeTrafficCategory_StatusAll              = OfficeTrafficCategory_Status("All")
-	OfficeTrafficCategory_StatusNone             = OfficeTrafficCategory_Status("None")
-	OfficeTrafficCategory_StatusOptimize         = OfficeTrafficCategory_Status("Optimize")
-	OfficeTrafficCategory_StatusOptimizeAndAllow = OfficeTrafficCategory_Status("OptimizeAndAllow")
-)
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualWanProperties
 type VirtualWanProperties struct {
 
@@ -153,6 +117,34 @@ type VirtualWanProperties struct {
 	Type *string `json:"type,omitempty"`
 }
 
+//Generated from:
+type VirtualWanProperties_Status struct {
+
+	//AllowBranchToBranchTraffic: True if branch to branch traffic is allowed.
+	AllowBranchToBranchTraffic *bool `json:"allowBranchToBranchTraffic,omitempty"`
+
+	//AllowVnetToVnetTraffic: True if Vnet to Vnet traffic is allowed.
+	AllowVnetToVnetTraffic *bool `json:"allowVnetToVnetTraffic,omitempty"`
+
+	//DisableVpnEncryption: Vpn encryption to be disabled or not.
+	DisableVpnEncryption *bool `json:"disableVpnEncryption,omitempty"`
+
+	//Office365LocalBreakoutCategory: The office local breakout category.
+	Office365LocalBreakoutCategory *OfficeTrafficCategory_Status `json:"office365LocalBreakoutCategory,omitempty"`
+
+	//ProvisioningState: The provisioning state of the virtual WAN resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//Type: The type of the VirtualWAN.
+	Type *string `json:"type,omitempty"`
+
+	//VirtualHubs: List of VirtualHubs in the VirtualWAN.
+	VirtualHubs []SubResource_Status `json:"virtualHubs,omitempty"`
+
+	//VpnSites: List of VpnSites in the VirtualWAN.
+	VpnSites []SubResource_Status `json:"vpnSites,omitempty"`
+}
+
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type VirtualWansSpecApiVersion string
 
@@ -162,6 +154,17 @@ const VirtualWansSpecApiVersion20200501 = VirtualWansSpecApiVersion("2020-05-01"
 type VirtualWansSpecType string
 
 const VirtualWansSpecTypeMicrosoftNetworkVirtualWans = VirtualWansSpecType("Microsoft.Network/virtualWans")
+
+//Generated from:
+// +kubebuilder:validation:Enum={"All","None","Optimize","OptimizeAndAllow"}
+type OfficeTrafficCategory_Status string
+
+const (
+	OfficeTrafficCategory_StatusAll              = OfficeTrafficCategory_Status("All")
+	OfficeTrafficCategory_StatusNone             = OfficeTrafficCategory_Status("None")
+	OfficeTrafficCategory_StatusOptimize         = OfficeTrafficCategory_Status("Optimize")
+	OfficeTrafficCategory_StatusOptimizeAndAllow = OfficeTrafficCategory_Status("OptimizeAndAllow")
+)
 
 // +kubebuilder:validation:Enum={"All","None","Optimize","OptimizeAndAllow"}
 type VirtualWanPropertiesOffice365LocalBreakoutCategory string

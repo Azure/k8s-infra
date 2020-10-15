@@ -27,8 +27,15 @@ type RedisLinkedServersList struct {
 	Items           []RedisLinkedServers `json:"items"`
 }
 
-//Generated from:
 type RedisLinkedServerWithProperties_Status struct {
+	AtProvider RedisLinkedServersObservation `json:"atProvider"`
+}
+
+type RedisLinkedServers_Spec struct {
+	ForProvider RedisLinkedServersParameters `json:"forProvider"`
+}
+
+type RedisLinkedServersObservation struct {
 
 	//Id: Resource ID.
 	Id *string `json:"id,omitempty"`
@@ -41,30 +48,6 @@ type RedisLinkedServerWithProperties_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type RedisLinkedServers_Spec struct {
-	ForProvider RedisLinkedServersParameters `json:"forProvider"`
-}
-
-//Generated from:
-type RedisLinkedServerProperties_Status struct {
-
-	// +kubebuilder:validation:Required
-	//LinkedRedisCacheId: Fully qualified resourceId of the linked redis cache.
-	LinkedRedisCacheId string `json:"linkedRedisCacheId"`
-
-	// +kubebuilder:validation:Required
-	//LinkedRedisCacheLocation: Location of the linked redis cache.
-	LinkedRedisCacheLocation string `json:"linkedRedisCacheLocation"`
-
-	//ProvisioningState: Terminal state of the link between primary and secondary
-	//redis cache.
-	ProvisioningState *string `json:"provisioningState,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//ServerRole: Role of the linked server.
-	ServerRole RedisLinkedServerPropertiesStatusServerRole `json:"serverRole"`
 }
 
 type RedisLinkedServersParameters struct {
@@ -122,13 +105,25 @@ type RedisLinkedServerCreateProperties struct {
 	ServerRole RedisLinkedServerCreatePropertiesServerRole `json:"serverRole"`
 }
 
-// +kubebuilder:validation:Enum={"Primary","Secondary"}
-type RedisLinkedServerPropertiesStatusServerRole string
+//Generated from:
+type RedisLinkedServerProperties_Status struct {
 
-const (
-	RedisLinkedServerPropertiesStatusServerRolePrimary   = RedisLinkedServerPropertiesStatusServerRole("Primary")
-	RedisLinkedServerPropertiesStatusServerRoleSecondary = RedisLinkedServerPropertiesStatusServerRole("Secondary")
-)
+	// +kubebuilder:validation:Required
+	//LinkedRedisCacheId: Fully qualified resourceId of the linked redis cache.
+	LinkedRedisCacheId string `json:"linkedRedisCacheId"`
+
+	// +kubebuilder:validation:Required
+	//LinkedRedisCacheLocation: Location of the linked redis cache.
+	LinkedRedisCacheLocation string `json:"linkedRedisCacheLocation"`
+
+	//ProvisioningState: Terminal state of the link between primary and secondary
+	//redis cache.
+	ProvisioningState *string `json:"provisioningState,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//ServerRole: Role of the linked server.
+	ServerRole RedisLinkedServerPropertiesStatusServerRole `json:"serverRole"`
+}
 
 // +kubebuilder:validation:Enum={"2017-10-01"}
 type RedisLinkedServersSpecApiVersion string
@@ -146,6 +141,14 @@ type RedisLinkedServerCreatePropertiesServerRole string
 const (
 	RedisLinkedServerCreatePropertiesServerRolePrimary   = RedisLinkedServerCreatePropertiesServerRole("Primary")
 	RedisLinkedServerCreatePropertiesServerRoleSecondary = RedisLinkedServerCreatePropertiesServerRole("Secondary")
+)
+
+// +kubebuilder:validation:Enum={"Primary","Secondary"}
+type RedisLinkedServerPropertiesStatusServerRole string
+
+const (
+	RedisLinkedServerPropertiesStatusServerRolePrimary   = RedisLinkedServerPropertiesStatusServerRole("Primary")
+	RedisLinkedServerPropertiesStatusServerRoleSecondary = RedisLinkedServerPropertiesStatusServerRole("Secondary")
 )
 
 func init() {

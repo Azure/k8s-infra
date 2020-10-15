@@ -27,8 +27,15 @@ type ExpressRouteCircuitsAuthorizationsList struct {
 	Items           []ExpressRouteCircuitsAuthorizations `json:"items"`
 }
 
-//Generated from:
 type ExpressRouteCircuitAuthorization_Status struct {
+	AtProvider ExpressRouteCircuitsAuthorizationsObservation `json:"atProvider"`
+}
+
+type ExpressRouteCircuitsAuthorizations_Spec struct {
+	ForProvider ExpressRouteCircuitsAuthorizationsParameters `json:"forProvider"`
+}
+
+type ExpressRouteCircuitsAuthorizationsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -45,23 +52,6 @@ type ExpressRouteCircuitAuthorization_Status struct {
 
 	//Type: Type of the resource.
 	Type *string `json:"type,omitempty"`
-}
-
-type ExpressRouteCircuitsAuthorizations_Spec struct {
-	ForProvider ExpressRouteCircuitsAuthorizationsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type AuthorizationPropertiesFormat_Status struct {
-
-	//AuthorizationKey: The authorization key.
-	AuthorizationKey *string `json:"authorizationKey,omitempty"`
-
-	//AuthorizationUseStatus: The authorization use status.
-	AuthorizationUseStatus *AuthorizationPropertiesFormatStatusAuthorizationUseStatus `json:"authorizationUseStatus,omitempty"`
-
-	//ProvisioningState: The provisioning state of the authorization resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 type ExpressRouteCircuitsAuthorizationsParameters struct {
@@ -103,13 +93,18 @@ type ExpressRouteCircuitsAuthorizationsParameters struct {
 	Type ExpressRouteCircuitsAuthorizationsSpecType `json:"type"`
 }
 
-// +kubebuilder:validation:Enum={"Available","InUse"}
-type AuthorizationPropertiesFormatStatusAuthorizationUseStatus string
+//Generated from:
+type AuthorizationPropertiesFormat_Status struct {
 
-const (
-	AuthorizationPropertiesFormatStatusAuthorizationUseStatusAvailable = AuthorizationPropertiesFormatStatusAuthorizationUseStatus("Available")
-	AuthorizationPropertiesFormatStatusAuthorizationUseStatusInUse     = AuthorizationPropertiesFormatStatusAuthorizationUseStatus("InUse")
-)
+	//AuthorizationKey: The authorization key.
+	AuthorizationKey *string `json:"authorizationKey,omitempty"`
+
+	//AuthorizationUseStatus: The authorization use status.
+	AuthorizationUseStatus *AuthorizationPropertiesFormatStatusAuthorizationUseStatus `json:"authorizationUseStatus,omitempty"`
+
+	//ProvisioningState: The provisioning state of the authorization resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+}
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type ExpressRouteCircuitsAuthorizationsSpecApiVersion string
@@ -120,6 +115,14 @@ const ExpressRouteCircuitsAuthorizationsSpecApiVersion20200501 = ExpressRouteCir
 type ExpressRouteCircuitsAuthorizationsSpecType string
 
 const ExpressRouteCircuitsAuthorizationsSpecTypeMicrosoftNetworkExpressRouteCircuitsAuthorizations = ExpressRouteCircuitsAuthorizationsSpecType("Microsoft.Network/expressRouteCircuits/authorizations")
+
+// +kubebuilder:validation:Enum={"Available","InUse"}
+type AuthorizationPropertiesFormatStatusAuthorizationUseStatus string
+
+const (
+	AuthorizationPropertiesFormatStatusAuthorizationUseStatusAvailable = AuthorizationPropertiesFormatStatusAuthorizationUseStatus("Available")
+	AuthorizationPropertiesFormatStatusAuthorizationUseStatusInUse     = AuthorizationPropertiesFormatStatusAuthorizationUseStatus("InUse")
+)
 
 func init() {
 	SchemeBuilder.Register(&ExpressRouteCircuitsAuthorizations{}, &ExpressRouteCircuitsAuthorizationsList{})

@@ -27,8 +27,15 @@ type VirtualHubsRouteTablesList struct {
 	Items           []VirtualHubsRouteTables `json:"items"`
 }
 
-//Generated from:
 type VirtualHubRouteTableV2_Status struct {
+	AtProvider VirtualHubsRouteTablesObservation `json:"atProvider"`
+}
+
+type VirtualHubsRouteTables_Spec struct {
+	ForProvider VirtualHubsRouteTablesParameters `json:"forProvider"`
+}
+
+type VirtualHubsRouteTablesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -42,24 +49,6 @@ type VirtualHubRouteTableV2_Status struct {
 
 	//Properties: Properties of the virtual hub route table v2.
 	Properties *VirtualHubRouteTableV2Properties_Status `json:"properties,omitempty"`
-}
-
-type VirtualHubsRouteTables_Spec struct {
-	ForProvider VirtualHubsRouteTablesParameters `json:"forProvider"`
-}
-
-//Generated from:
-type VirtualHubRouteTableV2Properties_Status struct {
-
-	//AttachedConnections: List of all connections attached to this route table v2.
-	AttachedConnections []string `json:"attachedConnections,omitempty"`
-
-	//ProvisioningState: The provisioning state of the virtual hub route table v2
-	//resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//Routes: List of all routes.
-	Routes []VirtualHubRouteV2_Status `json:"routes,omitempty"`
 }
 
 type VirtualHubsRouteTablesParameters struct {
@@ -112,19 +101,17 @@ type VirtualHubRouteTableV2Properties struct {
 }
 
 //Generated from:
-type VirtualHubRouteV2_Status struct {
+type VirtualHubRouteTableV2Properties_Status struct {
 
-	//DestinationType: The type of destinations.
-	DestinationType *string `json:"destinationType,omitempty"`
+	//AttachedConnections: List of all connections attached to this route table v2.
+	AttachedConnections []string `json:"attachedConnections,omitempty"`
 
-	//Destinations: List of all destinations.
-	Destinations []string `json:"destinations,omitempty"`
+	//ProvisioningState: The provisioning state of the virtual hub route table v2
+	//resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 
-	//NextHopType: The type of next hops.
-	NextHopType *string `json:"nextHopType,omitempty"`
-
-	//NextHops: NextHops ip address.
-	NextHops []string `json:"nextHops,omitempty"`
+	//Routes: List of all routes.
+	Routes []VirtualHubRouteV2_Status `json:"routes,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
@@ -139,6 +126,22 @@ const VirtualHubsRouteTablesSpecTypeMicrosoftNetworkVirtualHubsRouteTables = Vir
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/VirtualHubRouteV2
 type VirtualHubRouteV2 struct {
+
+	//DestinationType: The type of destinations.
+	DestinationType *string `json:"destinationType,omitempty"`
+
+	//Destinations: List of all destinations.
+	Destinations []string `json:"destinations,omitempty"`
+
+	//NextHopType: The type of next hops.
+	NextHopType *string `json:"nextHopType,omitempty"`
+
+	//NextHops: NextHops ip address.
+	NextHops []string `json:"nextHops,omitempty"`
+}
+
+//Generated from:
+type VirtualHubRouteV2_Status struct {
 
 	//DestinationType: The type of destinations.
 	DestinationType *string `json:"destinationType,omitempty"`

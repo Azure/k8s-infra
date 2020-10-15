@@ -27,8 +27,15 @@ type VpnGatewaysList struct {
 	Items           []VpnGateways `json:"items"`
 }
 
-//Generated from:
 type VpnGateway_Status struct {
+	AtProvider VpnGatewaysObservation `json:"atProvider"`
+}
+
+type VpnGateways_Spec struct {
+	ForProvider VpnGatewaysParameters `json:"forProvider"`
+}
+
+type VpnGatewaysObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,29 +57,6 @@ type VpnGateway_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type VpnGateways_Spec struct {
-	ForProvider VpnGatewaysParameters `json:"forProvider"`
-}
-
-//Generated from:
-type VpnGatewayProperties_Status struct {
-
-	//BgpSettings: Local network gateway's BGP speaker settings.
-	BgpSettings *BgpSettings_Status `json:"bgpSettings,omitempty"`
-
-	//Connections: List of all vpn connections to the gateway.
-	Connections []VpnConnection_Status `json:"connections,omitempty"`
-
-	//ProvisioningState: The provisioning state of the VPN gateway resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//VirtualHub: The VirtualHub to which the gateway belongs.
-	VirtualHub *SubResource_Status `json:"virtualHub,omitempty"`
-
-	//VpnGatewayScaleUnit: The scale unit for this vpn gateway.
-	VpnGatewayScaleUnit *int `json:"vpnGatewayScaleUnit,omitempty"`
 }
 
 type VpnGatewaysParameters struct {
@@ -125,6 +109,25 @@ type VpnGatewayProperties struct {
 
 	//VirtualHub: The VirtualHub to which the gateway belongs.
 	VirtualHub *SubResource `json:"virtualHub,omitempty"`
+
+	//VpnGatewayScaleUnit: The scale unit for this vpn gateway.
+	VpnGatewayScaleUnit *int `json:"vpnGatewayScaleUnit,omitempty"`
+}
+
+//Generated from:
+type VpnGatewayProperties_Status struct {
+
+	//BgpSettings: Local network gateway's BGP speaker settings.
+	BgpSettings *BgpSettings_Status `json:"bgpSettings,omitempty"`
+
+	//Connections: List of all vpn connections to the gateway.
+	Connections []VpnConnection_Status `json:"connections,omitempty"`
+
+	//ProvisioningState: The provisioning state of the VPN gateway resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//VirtualHub: The VirtualHub to which the gateway belongs.
+	VirtualHub *SubResource_Status `json:"virtualHub,omitempty"`
 
 	//VpnGatewayScaleUnit: The scale unit for this vpn gateway.
 	VpnGatewayScaleUnit *int `json:"vpnGatewayScaleUnit,omitempty"`

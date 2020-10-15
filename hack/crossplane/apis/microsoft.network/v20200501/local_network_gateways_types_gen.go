@@ -27,8 +27,15 @@ type LocalNetworkGatewaysList struct {
 	Items           []LocalNetworkGateways `json:"items"`
 }
 
-//Generated from:
 type LocalNetworkGateway_Status struct {
+	AtProvider LocalNetworkGatewaysObservation `json:"atProvider"`
+}
+
+type LocalNetworkGateways_Spec struct {
+	ForProvider LocalNetworkGatewaysParameters `json:"forProvider"`
+}
+
+type LocalNetworkGatewaysObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -51,32 +58,6 @@ type LocalNetworkGateway_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type LocalNetworkGateways_Spec struct {
-	ForProvider LocalNetworkGatewaysParameters `json:"forProvider"`
-}
-
-//Generated from:
-type LocalNetworkGatewayPropertiesFormat_Status struct {
-
-	//BgpSettings: Local network gateway's BGP speaker settings.
-	BgpSettings *BgpSettings_Status `json:"bgpSettings,omitempty"`
-
-	//Fqdn: FQDN of local network gateway.
-	Fqdn *string `json:"fqdn,omitempty"`
-
-	//GatewayIpAddress: IP address of local network gateway.
-	GatewayIpAddress *string `json:"gatewayIpAddress,omitempty"`
-
-	//LocalNetworkAddressSpace: Local network site address space.
-	LocalNetworkAddressSpace *AddressSpace_Status `json:"localNetworkAddressSpace,omitempty"`
-
-	//ProvisioningState: The provisioning state of the local network gateway resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//ResourceGuid: The resource GUID property of the local network gateway resource.
-	ResourceGuid *string `json:"resourceGuid,omitempty"`
 }
 
 type LocalNetworkGatewaysParameters struct {
@@ -118,32 +99,6 @@ type LocalNetworkGatewaysParameters struct {
 	Type LocalNetworkGatewaysSpecType `json:"type"`
 }
 
-//Generated from:
-type AddressSpace_Status struct {
-
-	//AddressPrefixes: A list of address blocks reserved for this virtual network in
-	//CIDR notation.
-	AddressPrefixes []string `json:"addressPrefixes,omitempty"`
-}
-
-//Generated from:
-type BgpSettings_Status struct {
-
-	//Asn: The BGP speaker's ASN.
-	Asn *int `json:"asn,omitempty"`
-
-	//BgpPeeringAddress: The BGP peering address and BGP identifier of this BGP
-	//speaker.
-	BgpPeeringAddress *string `json:"bgpPeeringAddress,omitempty"`
-
-	//BgpPeeringAddresses: BGP peering address with IP configuration ID for virtual
-	//network gateway.
-	BgpPeeringAddresses []IPConfigurationBgpPeeringAddress_Status `json:"bgpPeeringAddresses,omitempty"`
-
-	//PeerWeight: The weight added to routes learned from this BGP speaker.
-	PeerWeight *int `json:"peerWeight,omitempty"`
-}
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/LocalNetworkGatewayPropertiesFormat
 type LocalNetworkGatewayPropertiesFormat struct {
 
@@ -158,6 +113,28 @@ type LocalNetworkGatewayPropertiesFormat struct {
 
 	//LocalNetworkAddressSpace: Local network site address space.
 	LocalNetworkAddressSpace *AddressSpace `json:"localNetworkAddressSpace,omitempty"`
+}
+
+//Generated from:
+type LocalNetworkGatewayPropertiesFormat_Status struct {
+
+	//BgpSettings: Local network gateway's BGP speaker settings.
+	BgpSettings *BgpSettings_Status `json:"bgpSettings,omitempty"`
+
+	//Fqdn: FQDN of local network gateway.
+	Fqdn *string `json:"fqdn,omitempty"`
+
+	//GatewayIpAddress: IP address of local network gateway.
+	GatewayIpAddress *string `json:"gatewayIpAddress,omitempty"`
+
+	//LocalNetworkAddressSpace: Local network site address space.
+	LocalNetworkAddressSpace *AddressSpace_Status `json:"localNetworkAddressSpace,omitempty"`
+
+	//ProvisioningState: The provisioning state of the local network gateway resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//ResourceGuid: The resource GUID property of the local network gateway resource.
+	ResourceGuid *string `json:"resourceGuid,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
@@ -179,6 +156,14 @@ type AddressSpace struct {
 	AddressPrefixes []string `json:"addressPrefixes"`
 }
 
+//Generated from:
+type AddressSpace_Status struct {
+
+	//AddressPrefixes: A list of address blocks reserved for this virtual network in
+	//CIDR notation.
+	AddressPrefixes []string `json:"addressPrefixes,omitempty"`
+}
+
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/BgpSettings
 type BgpSettings struct {
 
@@ -198,6 +183,35 @@ type BgpSettings struct {
 }
 
 //Generated from:
+type BgpSettings_Status struct {
+
+	//Asn: The BGP speaker's ASN.
+	Asn *int `json:"asn,omitempty"`
+
+	//BgpPeeringAddress: The BGP peering address and BGP identifier of this BGP
+	//speaker.
+	BgpPeeringAddress *string `json:"bgpPeeringAddress,omitempty"`
+
+	//BgpPeeringAddresses: BGP peering address with IP configuration ID for virtual
+	//network gateway.
+	BgpPeeringAddresses []IPConfigurationBgpPeeringAddress_Status `json:"bgpPeeringAddresses,omitempty"`
+
+	//PeerWeight: The weight added to routes learned from this BGP speaker.
+	PeerWeight *int `json:"peerWeight,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/IPConfigurationBgpPeeringAddress
+type IPConfigurationBgpPeeringAddress struct {
+
+	//CustomBgpIpAddresses: The list of custom BGP peering addresses which belong to
+	//IP configuration.
+	CustomBgpIpAddresses []string `json:"customBgpIpAddresses,omitempty"`
+
+	//IpconfigurationId: The ID of IP configuration which belongs to gateway.
+	IpconfigurationId *string `json:"ipconfigurationId,omitempty"`
+}
+
+//Generated from:
 type IPConfigurationBgpPeeringAddress_Status struct {
 
 	//CustomBgpIpAddresses: The list of custom BGP peering addresses which belong to
@@ -214,17 +228,6 @@ type IPConfigurationBgpPeeringAddress_Status struct {
 	//TunnelIpAddresses: The list of tunnel public IP addresses which belong to IP
 	//configuration.
 	TunnelIpAddresses []string `json:"tunnelIpAddresses,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/IPConfigurationBgpPeeringAddress
-type IPConfigurationBgpPeeringAddress struct {
-
-	//CustomBgpIpAddresses: The list of custom BGP peering addresses which belong to
-	//IP configuration.
-	CustomBgpIpAddresses []string `json:"customBgpIpAddresses,omitempty"`
-
-	//IpconfigurationId: The ID of IP configuration which belongs to gateway.
-	IpconfigurationId *string `json:"ipconfigurationId,omitempty"`
 }
 
 func init() {

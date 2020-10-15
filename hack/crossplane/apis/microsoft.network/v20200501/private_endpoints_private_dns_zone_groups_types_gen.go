@@ -27,8 +27,15 @@ type PrivateEndpointsPrivateDnsZoneGroupsList struct {
 	Items           []PrivateEndpointsPrivateDnsZoneGroups `json:"items"`
 }
 
-//Generated from:
 type PrivateDnsZoneGroup_Status struct {
+	AtProvider PrivateEndpointsPrivateDnsZoneGroupsObservation `json:"atProvider"`
+}
+
+type PrivateEndpointsPrivateDnsZoneGroups_Spec struct {
+	ForProvider PrivateEndpointsPrivateDnsZoneGroupsParameters `json:"forProvider"`
+}
+
+type PrivateEndpointsPrivateDnsZoneGroupsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -42,21 +49,6 @@ type PrivateDnsZoneGroup_Status struct {
 
 	//Properties: Properties of the private dns zone group.
 	Properties *PrivateDnsZoneGroupPropertiesFormat_Status `json:"properties,omitempty"`
-}
-
-type PrivateEndpointsPrivateDnsZoneGroups_Spec struct {
-	ForProvider PrivateEndpointsPrivateDnsZoneGroupsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type PrivateDnsZoneGroupPropertiesFormat_Status struct {
-
-	//PrivateDnsZoneConfigs: A collection of private dns zone configurations of the
-	//private dns zone group.
-	PrivateDnsZoneConfigs []PrivateDnsZoneConfig_Status `json:"privateDnsZoneConfigs,omitempty"`
-
-	//ProvisioningState: The provisioning state of the private dns zone group resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 type PrivateEndpointsPrivateDnsZoneGroupsParameters struct {
@@ -98,23 +90,23 @@ type PrivateEndpointsPrivateDnsZoneGroupsParameters struct {
 	Type PrivateEndpointsPrivateDnsZoneGroupsSpecType `json:"type"`
 }
 
-//Generated from:
-type PrivateDnsZoneConfig_Status struct {
-
-	//Name: Name of the resource that is unique within a resource group. This name can
-	//be used to access the resource.
-	Name *string `json:"name,omitempty"`
-
-	//Properties: Properties of the private dns zone configuration.
-	Properties *PrivateDnsZonePropertiesFormat_Status `json:"properties,omitempty"`
-}
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateDnsZoneGroupPropertiesFormat
 type PrivateDnsZoneGroupPropertiesFormat struct {
 
 	//PrivateDnsZoneConfigs: A collection of private dns zone configurations of the
 	//private dns zone group.
 	PrivateDnsZoneConfigs []PrivateDnsZoneConfig `json:"privateDnsZoneConfigs,omitempty"`
+}
+
+//Generated from:
+type PrivateDnsZoneGroupPropertiesFormat_Status struct {
+
+	//PrivateDnsZoneConfigs: A collection of private dns zone configurations of the
+	//private dns zone group.
+	PrivateDnsZoneConfigs []PrivateDnsZoneConfig_Status `json:"privateDnsZoneConfigs,omitempty"`
+
+	//ProvisioningState: The provisioning state of the private dns zone group resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
@@ -139,6 +131,24 @@ type PrivateDnsZoneConfig struct {
 }
 
 //Generated from:
+type PrivateDnsZoneConfig_Status struct {
+
+	//Name: Name of the resource that is unique within a resource group. This name can
+	//be used to access the resource.
+	Name *string `json:"name,omitempty"`
+
+	//Properties: Properties of the private dns zone configuration.
+	Properties *PrivateDnsZonePropertiesFormat_Status `json:"properties,omitempty"`
+}
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateDnsZonePropertiesFormat
+type PrivateDnsZonePropertiesFormat struct {
+
+	//PrivateDnsZoneId: The resource id of the private dns zone.
+	PrivateDnsZoneId *string `json:"privateDnsZoneId,omitempty"`
+}
+
+//Generated from:
 type PrivateDnsZonePropertiesFormat_Status struct {
 
 	//PrivateDnsZoneId: The resource id of the private dns zone.
@@ -147,13 +157,6 @@ type PrivateDnsZonePropertiesFormat_Status struct {
 	//RecordSets: A collection of information regarding a recordSet, holding
 	//information to identify private resources.
 	RecordSets []RecordSet_Status `json:"recordSets,omitempty"`
-}
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/PrivateDnsZonePropertiesFormat
-type PrivateDnsZonePropertiesFormat struct {
-
-	//PrivateDnsZoneId: The resource id of the private dns zone.
-	PrivateDnsZoneId *string `json:"privateDnsZoneId,omitempty"`
 }
 
 //Generated from:

@@ -31,8 +31,11 @@ type ServersVirtualNetworkRules_Spec struct {
 	ForProvider ServersVirtualNetworkRulesParameters `json:"forProvider"`
 }
 
-//Generated from:
 type VirtualNetworkRule_Status struct {
+	AtProvider ServersVirtualNetworkRulesObservation `json:"atProvider"`
+}
+
+type ServersVirtualNetworkRulesObservation struct {
 
 	//Id: Resource ID.
 	Id *string `json:"id,omitempty"`
@@ -86,21 +89,6 @@ type ServersVirtualNetworkRulesParameters struct {
 	Type ServersVirtualNetworkRulesSpecType `json:"type"`
 }
 
-//Generated from:
-type VirtualNetworkRuleProperties_Status struct {
-
-	//IgnoreMissingVnetServiceEndpoint: Create firewall rule before the virtual
-	//network has vnet service endpoint enabled.
-	IgnoreMissingVnetServiceEndpoint *bool `json:"ignoreMissingVnetServiceEndpoint,omitempty"`
-
-	//State: Virtual Network Rule State
-	State *VirtualNetworkRulePropertiesStatusState `json:"state,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//VirtualNetworkSubnetId: The ARM resource id of the virtual network subnet.
-	VirtualNetworkSubnetId string `json:"virtualNetworkSubnetId"`
-}
-
 // +kubebuilder:validation:Enum={"2015-05-01-preview"}
 type ServersVirtualNetworkRulesSpecApiVersion string
 
@@ -117,6 +105,21 @@ type VirtualNetworkRuleProperties struct {
 	//IgnoreMissingVnetServiceEndpoint: Create firewall rule before the virtual
 	//network has vnet service endpoint enabled.
 	IgnoreMissingVnetServiceEndpoint *bool `json:"ignoreMissingVnetServiceEndpoint,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//VirtualNetworkSubnetId: The ARM resource id of the virtual network subnet.
+	VirtualNetworkSubnetId string `json:"virtualNetworkSubnetId"`
+}
+
+//Generated from:
+type VirtualNetworkRuleProperties_Status struct {
+
+	//IgnoreMissingVnetServiceEndpoint: Create firewall rule before the virtual
+	//network has vnet service endpoint enabled.
+	IgnoreMissingVnetServiceEndpoint *bool `json:"ignoreMissingVnetServiceEndpoint,omitempty"`
+
+	//State: Virtual Network Rule State
+	State *VirtualNetworkRulePropertiesStatusState `json:"state,omitempty"`
 
 	// +kubebuilder:validation:Required
 	//VirtualNetworkSubnetId: The ARM resource id of the virtual network subnet.

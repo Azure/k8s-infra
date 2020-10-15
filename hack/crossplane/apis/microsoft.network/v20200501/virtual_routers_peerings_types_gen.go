@@ -27,8 +27,15 @@ type VirtualRoutersPeeringsList struct {
 	Items           []VirtualRoutersPeerings `json:"items"`
 }
 
-//Generated from:
 type VirtualRouterPeering_Status struct {
+	AtProvider VirtualRoutersPeeringsObservation `json:"atProvider"`
+}
+
+type VirtualRoutersPeerings_Spec struct {
+	ForProvider VirtualRoutersPeeringsParameters `json:"forProvider"`
+}
+
+type VirtualRoutersPeeringsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -44,23 +51,6 @@ type VirtualRouterPeering_Status struct {
 
 	//Type: Peering type.
 	Type *string `json:"type,omitempty"`
-}
-
-type VirtualRoutersPeerings_Spec struct {
-	ForProvider VirtualRoutersPeeringsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type VirtualRouterPeeringProperties_Status struct {
-
-	//PeerAsn: Peer ASN.
-	PeerAsn *int `json:"peerAsn,omitempty"`
-
-	//PeerIp: Peer IP.
-	PeerIp *string `json:"peerIp,omitempty"`
-
-	//ProvisioningState: The provisioning state of the resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 type VirtualRoutersPeeringsParameters struct {
@@ -110,6 +100,19 @@ type VirtualRouterPeeringProperties struct {
 
 	//PeerIp: Peer IP.
 	PeerIp *string `json:"peerIp,omitempty"`
+}
+
+//Generated from:
+type VirtualRouterPeeringProperties_Status struct {
+
+	//PeerAsn: Peer ASN.
+	PeerAsn *int `json:"peerAsn,omitempty"`
+
+	//PeerIp: Peer IP.
+	PeerIp *string `json:"peerIp,omitempty"`
+
+	//ProvisioningState: The provisioning state of the resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}

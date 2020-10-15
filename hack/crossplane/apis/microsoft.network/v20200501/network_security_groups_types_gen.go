@@ -27,8 +27,15 @@ type NetworkSecurityGroupsList struct {
 	Items           []NetworkSecurityGroups `json:"items"`
 }
 
-//Generated from:
 type NetworkSecurityGroup_Status struct {
+	AtProvider NetworkSecurityGroupsObservation `json:"atProvider"`
+}
+
+type NetworkSecurityGroups_Spec struct {
+	ForProvider NetworkSecurityGroupsParameters `json:"forProvider"`
+}
+
+type NetworkSecurityGroupsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,35 +57,6 @@ type NetworkSecurityGroup_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type NetworkSecurityGroups_Spec struct {
-	ForProvider NetworkSecurityGroupsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type NetworkSecurityGroupPropertiesFormat_Status struct {
-
-	//DefaultSecurityRules: The default security rules of network security group.
-	DefaultSecurityRules []SecurityRule_Status `json:"defaultSecurityRules,omitempty"`
-
-	//FlowLogs: A collection of references to flow log resources.
-	FlowLogs []FlowLog_Status `json:"flowLogs,omitempty"`
-
-	//NetworkInterfaces: A collection of references to network interfaces.
-	NetworkInterfaces []NetworkInterface_Status `json:"networkInterfaces,omitempty"`
-
-	//ProvisioningState: The provisioning state of the network security group resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//ResourceGuid: The resource GUID property of the network security group resource.
-	ResourceGuid *string `json:"resourceGuid,omitempty"`
-
-	//SecurityRules: A collection of security rules of the network security group.
-	SecurityRules []SecurityRule_Status `json:"securityRules,omitempty"`
-
-	//Subnets: A collection of references to subnets.
-	Subnets []Subnet_Status `json:"subnets,omitempty"`
 }
 
 type NetworkSecurityGroupsParameters struct {
@@ -125,6 +103,31 @@ type NetworkSecurityGroupPropertiesFormat struct {
 
 	//SecurityRules: A collection of security rules of the network security group.
 	SecurityRules []SecurityRule `json:"securityRules,omitempty"`
+}
+
+//Generated from:
+type NetworkSecurityGroupPropertiesFormat_Status struct {
+
+	//DefaultSecurityRules: The default security rules of network security group.
+	DefaultSecurityRules []SecurityRule_Status `json:"defaultSecurityRules,omitempty"`
+
+	//FlowLogs: A collection of references to flow log resources.
+	FlowLogs []FlowLog_Status `json:"flowLogs,omitempty"`
+
+	//NetworkInterfaces: A collection of references to network interfaces.
+	NetworkInterfaces []NetworkInterface_Status `json:"networkInterfaces,omitempty"`
+
+	//ProvisioningState: The provisioning state of the network security group resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//ResourceGuid: The resource GUID property of the network security group resource.
+	ResourceGuid *string `json:"resourceGuid,omitempty"`
+
+	//SecurityRules: A collection of security rules of the network security group.
+	SecurityRules []SecurityRule_Status `json:"securityRules,omitempty"`
+
+	//Subnets: A collection of references to subnets.
+	Subnets []Subnet_Status `json:"subnets,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}

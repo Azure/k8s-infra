@@ -27,8 +27,15 @@ type VirtualHubsHubRouteTablesList struct {
 	Items           []VirtualHubsHubRouteTables `json:"items"`
 }
 
-//Generated from:
 type HubRouteTable_Status struct {
+	AtProvider VirtualHubsHubRouteTablesObservation `json:"atProvider"`
+}
+
+type VirtualHubsHubRouteTables_Spec struct {
+	ForProvider VirtualHubsHubRouteTablesParameters `json:"forProvider"`
+}
+
+type VirtualHubsHubRouteTablesObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -45,30 +52,6 @@ type HubRouteTable_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type VirtualHubsHubRouteTables_Spec struct {
-	ForProvider VirtualHubsHubRouteTablesParameters `json:"forProvider"`
-}
-
-//Generated from:
-type HubRouteTableProperties_Status struct {
-
-	//AssociatedConnections: List of all connections associated with this route table.
-	AssociatedConnections []SubResource_Status `json:"associatedConnections,omitempty"`
-
-	//Labels: List of labels associated with this route table.
-	Labels []string `json:"labels,omitempty"`
-
-	//PropagatingConnections: List of all connections that advertise to this route
-	//table.
-	PropagatingConnections []SubResource_Status `json:"propagatingConnections,omitempty"`
-
-	//ProvisioningState: The provisioning state of the RouteTable resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//Routes: List of all routes.
-	Routes []HubRoute_Status `json:"routes,omitempty"`
 }
 
 type VirtualHubsHubRouteTablesParameters struct {
@@ -121,7 +104,37 @@ type HubRouteTableProperties struct {
 }
 
 //Generated from:
-type HubRoute_Status struct {
+type HubRouteTableProperties_Status struct {
+
+	//AssociatedConnections: List of all connections associated with this route table.
+	AssociatedConnections []SubResource_Status `json:"associatedConnections,omitempty"`
+
+	//Labels: List of labels associated with this route table.
+	Labels []string `json:"labels,omitempty"`
+
+	//PropagatingConnections: List of all connections that advertise to this route
+	//table.
+	PropagatingConnections []SubResource_Status `json:"propagatingConnections,omitempty"`
+
+	//ProvisioningState: The provisioning state of the RouteTable resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//Routes: List of all routes.
+	Routes []HubRoute_Status `json:"routes,omitempty"`
+}
+
+// +kubebuilder:validation:Enum={"2020-05-01"}
+type VirtualHubsHubRouteTablesSpecApiVersion string
+
+const VirtualHubsHubRouteTablesSpecApiVersion20200501 = VirtualHubsHubRouteTablesSpecApiVersion("2020-05-01")
+
+// +kubebuilder:validation:Enum={"Microsoft.Network/virtualHubs/hubRouteTables"}
+type VirtualHubsHubRouteTablesSpecType string
+
+const VirtualHubsHubRouteTablesSpecTypeMicrosoftNetworkVirtualHubsHubRouteTables = VirtualHubsHubRouteTablesSpecType("Microsoft.Network/virtualHubs/hubRouteTables")
+
+//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/HubRoute
+type HubRoute struct {
 
 	// +kubebuilder:validation:Required
 	//DestinationType: The type of destinations (eg: CIDR, ResourceId, Service).
@@ -145,18 +158,8 @@ type HubRoute_Status struct {
 	NextHopType string `json:"nextHopType"`
 }
 
-// +kubebuilder:validation:Enum={"2020-05-01"}
-type VirtualHubsHubRouteTablesSpecApiVersion string
-
-const VirtualHubsHubRouteTablesSpecApiVersion20200501 = VirtualHubsHubRouteTablesSpecApiVersion("2020-05-01")
-
-// +kubebuilder:validation:Enum={"Microsoft.Network/virtualHubs/hubRouteTables"}
-type VirtualHubsHubRouteTablesSpecType string
-
-const VirtualHubsHubRouteTablesSpecTypeMicrosoftNetworkVirtualHubsHubRouteTables = VirtualHubsHubRouteTablesSpecType("Microsoft.Network/virtualHubs/hubRouteTables")
-
-//Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/HubRoute
-type HubRoute struct {
+//Generated from:
+type HubRoute_Status struct {
 
 	// +kubebuilder:validation:Required
 	//DestinationType: The type of destinations (eg: CIDR, ResourceId, Service).

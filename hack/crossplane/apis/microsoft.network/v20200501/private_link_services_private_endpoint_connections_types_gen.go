@@ -27,8 +27,15 @@ type PrivateLinkServicesPrivateEndpointConnectionsList struct {
 	Items           []PrivateLinkServicesPrivateEndpointConnections `json:"items"`
 }
 
-//Generated from:
 type PrivateEndpointConnection_Status struct {
+	AtProvider PrivateLinkServicesPrivateEndpointConnectionsObservation `json:"atProvider"`
+}
+
+type PrivateLinkServicesPrivateEndpointConnections_Spec struct {
+	ForProvider PrivateLinkServicesPrivateEndpointConnectionsParameters `json:"forProvider"`
+}
+
+type PrivateLinkServicesPrivateEndpointConnectionsObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -45,28 +52,6 @@ type PrivateEndpointConnection_Status struct {
 
 	//Type: The resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type PrivateLinkServicesPrivateEndpointConnections_Spec struct {
-	ForProvider PrivateLinkServicesPrivateEndpointConnectionsParameters `json:"forProvider"`
-}
-
-//Generated from:
-type PrivateEndpointConnectionProperties_Status struct {
-
-	//LinkIdentifier: The consumer link id.
-	LinkIdentifier *string `json:"linkIdentifier,omitempty"`
-
-	//PrivateEndpoint: The resource of private end point.
-	PrivateEndpoint *PrivateEndpoint_Status `json:"privateEndpoint,omitempty"`
-
-	//PrivateLinkServiceConnectionState: A collection of information about the state
-	//of the connection between service consumer and provider.
-	PrivateLinkServiceConnectionState *PrivateLinkServiceConnectionState_Status `json:"privateLinkServiceConnectionState,omitempty"`
-
-	//ProvisioningState: The provisioning state of the private endpoint connection
-	//resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 type PrivateLinkServicesPrivateEndpointConnectionsParameters struct {
@@ -114,6 +99,24 @@ type PrivateEndpointConnectionProperties struct {
 	//PrivateLinkServiceConnectionState: A collection of information about the state
 	//of the connection between service consumer and provider.
 	PrivateLinkServiceConnectionState *PrivateLinkServiceConnectionState `json:"privateLinkServiceConnectionState,omitempty"`
+}
+
+//Generated from:
+type PrivateEndpointConnectionProperties_Status struct {
+
+	//LinkIdentifier: The consumer link id.
+	LinkIdentifier *string `json:"linkIdentifier,omitempty"`
+
+	//PrivateEndpoint: The resource of private end point.
+	PrivateEndpoint *PrivateEndpoint_Status `json:"privateEndpoint,omitempty"`
+
+	//PrivateLinkServiceConnectionState: A collection of information about the state
+	//of the connection between service consumer and provider.
+	PrivateLinkServiceConnectionState *PrivateLinkServiceConnectionState_Status `json:"privateLinkServiceConnectionState,omitempty"`
+
+	//ProvisioningState: The provisioning state of the private endpoint connection
+	//resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}

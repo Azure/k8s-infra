@@ -131,7 +131,8 @@ func crossplaneCorePipelineStages(idFactory astmodel.IdentifierFactory, configur
 
 		// createArmTypesAndCleanKubernetesTypes(idFactory),
 
-		addForProviderProperty(idFactory),
+		addCrossplaneForProvider(idFactory),
+		addCrossplaneAtProvider(idFactory),
 
 		// applyKubernetesResourceInterface(idFactory),
 		simplifyDefinitions(),

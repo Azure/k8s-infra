@@ -27,8 +27,15 @@ type SecurityPartnerProvidersList struct {
 	Items           []SecurityPartnerProviders `json:"items"`
 }
 
-//Generated from:
 type SecurityPartnerProvider_Status struct {
+	AtProvider SecurityPartnerProvidersObservation `json:"atProvider"`
+}
+
+type SecurityPartnerProviders_Spec struct {
+	ForProvider SecurityPartnerProvidersParameters `json:"forProvider"`
+}
+
+type SecurityPartnerProvidersObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,27 +57,6 @@ type SecurityPartnerProvider_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type SecurityPartnerProviders_Spec struct {
-	ForProvider SecurityPartnerProvidersParameters `json:"forProvider"`
-}
-
-//Generated from:
-type SecurityPartnerProviderPropertiesFormat_Status struct {
-
-	//ConnectionStatus: The connection status with the Security Partner Provider.
-	ConnectionStatus *SecurityPartnerProviderConnectionStatus_Status `json:"connectionStatus,omitempty"`
-
-	//ProvisioningState: The provisioning state of the Security Partner Provider
-	//resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//SecurityProviderName: The security provider name.
-	SecurityProviderName *SecurityPartnerProvidersecurityProviderName_Status `json:"securityProviderName,omitempty"`
-
-	//VirtualHub: The virtualHub to which the Security Partner Provider belongs.
-	VirtualHub *SubResource_Status `json:"virtualHub,omitempty"`
 }
 
 type SecurityPartnerProvidersParameters struct {
@@ -112,17 +98,6 @@ type SecurityPartnerProvidersParameters struct {
 	Type SecurityPartnerProvidersSpecType `json:"type"`
 }
 
-//Generated from:
-// +kubebuilder:validation:Enum={"Connected","NotConnected","PartiallyConnected","Unknown"}
-type SecurityPartnerProviderConnectionStatus_Status string
-
-const (
-	SecurityPartnerProviderConnectionStatus_StatusConnected          = SecurityPartnerProviderConnectionStatus_Status("Connected")
-	SecurityPartnerProviderConnectionStatus_StatusNotConnected       = SecurityPartnerProviderConnectionStatus_Status("NotConnected")
-	SecurityPartnerProviderConnectionStatus_StatusPartiallyConnected = SecurityPartnerProviderConnectionStatus_Status("PartiallyConnected")
-	SecurityPartnerProviderConnectionStatus_StatusUnknown            = SecurityPartnerProviderConnectionStatus_Status("Unknown")
-)
-
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/SecurityPartnerProviderPropertiesFormat
 type SecurityPartnerProviderPropertiesFormat struct {
 
@@ -131,6 +106,23 @@ type SecurityPartnerProviderPropertiesFormat struct {
 
 	//VirtualHub: The virtualHub to which the Security Partner Provider belongs.
 	VirtualHub *SubResource `json:"virtualHub,omitempty"`
+}
+
+//Generated from:
+type SecurityPartnerProviderPropertiesFormat_Status struct {
+
+	//ConnectionStatus: The connection status with the Security Partner Provider.
+	ConnectionStatus *SecurityPartnerProviderConnectionStatus_Status `json:"connectionStatus,omitempty"`
+
+	//ProvisioningState: The provisioning state of the Security Partner Provider
+	//resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//SecurityProviderName: The security provider name.
+	SecurityProviderName *SecurityPartnerProvidersecurityProviderName_Status `json:"securityProviderName,omitempty"`
+
+	//VirtualHub: The virtualHub to which the Security Partner Provider belongs.
+	VirtualHub *SubResource_Status `json:"virtualHub,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
@@ -144,13 +136,14 @@ type SecurityPartnerProvidersSpecType string
 const SecurityPartnerProvidersSpecTypeMicrosoftNetworkSecurityPartnerProviders = SecurityPartnerProvidersSpecType("Microsoft.Network/securityPartnerProviders")
 
 //Generated from:
-// +kubebuilder:validation:Enum={"Checkpoint","IBoss","ZScaler"}
-type SecurityPartnerProvidersecurityProviderName_Status string
+// +kubebuilder:validation:Enum={"Connected","NotConnected","PartiallyConnected","Unknown"}
+type SecurityPartnerProviderConnectionStatus_Status string
 
 const (
-	SecurityPartnerProvidersecurityProviderName_StatusCheckpoint = SecurityPartnerProvidersecurityProviderName_Status("Checkpoint")
-	SecurityPartnerProvidersecurityProviderName_StatusIBoss      = SecurityPartnerProvidersecurityProviderName_Status("IBoss")
-	SecurityPartnerProvidersecurityProviderName_StatusZScaler    = SecurityPartnerProvidersecurityProviderName_Status("ZScaler")
+	SecurityPartnerProviderConnectionStatus_StatusConnected          = SecurityPartnerProviderConnectionStatus_Status("Connected")
+	SecurityPartnerProviderConnectionStatus_StatusNotConnected       = SecurityPartnerProviderConnectionStatus_Status("NotConnected")
+	SecurityPartnerProviderConnectionStatus_StatusPartiallyConnected = SecurityPartnerProviderConnectionStatus_Status("PartiallyConnected")
+	SecurityPartnerProviderConnectionStatus_StatusUnknown            = SecurityPartnerProviderConnectionStatus_Status("Unknown")
 )
 
 // +kubebuilder:validation:Enum={"Checkpoint","IBoss","ZScaler"}
@@ -160,6 +153,16 @@ const (
 	SecurityPartnerProviderPropertiesFormatSecurityProviderNameCheckpoint = SecurityPartnerProviderPropertiesFormatSecurityProviderName("Checkpoint")
 	SecurityPartnerProviderPropertiesFormatSecurityProviderNameIBoss      = SecurityPartnerProviderPropertiesFormatSecurityProviderName("IBoss")
 	SecurityPartnerProviderPropertiesFormatSecurityProviderNameZScaler    = SecurityPartnerProviderPropertiesFormatSecurityProviderName("ZScaler")
+)
+
+//Generated from:
+// +kubebuilder:validation:Enum={"Checkpoint","IBoss","ZScaler"}
+type SecurityPartnerProvidersecurityProviderName_Status string
+
+const (
+	SecurityPartnerProvidersecurityProviderName_StatusCheckpoint = SecurityPartnerProvidersecurityProviderName_Status("Checkpoint")
+	SecurityPartnerProvidersecurityProviderName_StatusIBoss      = SecurityPartnerProvidersecurityProviderName_Status("IBoss")
+	SecurityPartnerProvidersecurityProviderName_StatusZScaler    = SecurityPartnerProvidersecurityProviderName_Status("ZScaler")
 )
 
 func init() {

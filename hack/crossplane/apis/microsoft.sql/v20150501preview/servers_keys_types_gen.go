@@ -27,8 +27,15 @@ type ServersKeysList struct {
 	Items           []ServersKeys `json:"items"`
 }
 
-//Generated from:
 type ServerKey_Status struct {
+	AtProvider ServersKeysObservation `json:"atProvider"`
+}
+
+type ServersKeys_Spec struct {
+	ForProvider ServersKeysParameters `json:"forProvider"`
+}
+
+type ServersKeysObservation struct {
 
 	//Id: Resource ID.
 	Id *string `json:"id,omitempty"`
@@ -48,30 +55,6 @@ type ServerKey_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type ServersKeys_Spec struct {
-	ForProvider ServersKeysParameters `json:"forProvider"`
-}
-
-//Generated from:
-type ServerKeyProperties_Status struct {
-
-	//CreationDate: The server key creation date.
-	CreationDate *string `json:"creationDate,omitempty"`
-
-	// +kubebuilder:validation:Required
-	//ServerKeyType: The server key type like 'ServiceManaged', 'AzureKeyVault'.
-	ServerKeyType ServerKeyPropertiesStatusServerKeyType `json:"serverKeyType"`
-
-	//Subregion: Subregion of the server key.
-	Subregion *string `json:"subregion,omitempty"`
-
-	//Thumbprint: Thumbprint of the server key.
-	Thumbprint *string `json:"thumbprint,omitempty"`
-
-	//Uri: The URI of the server key.
-	Uri *string `json:"uri,omitempty"`
 }
 
 type ServersKeysParameters struct {
@@ -134,13 +117,25 @@ type ServerKeyProperties struct {
 	Uri *string `json:"uri,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"AzureKeyVault","ServiceManaged"}
-type ServerKeyPropertiesStatusServerKeyType string
+//Generated from:
+type ServerKeyProperties_Status struct {
 
-const (
-	ServerKeyPropertiesStatusServerKeyTypeAzureKeyVault  = ServerKeyPropertiesStatusServerKeyType("AzureKeyVault")
-	ServerKeyPropertiesStatusServerKeyTypeServiceManaged = ServerKeyPropertiesStatusServerKeyType("ServiceManaged")
-)
+	//CreationDate: The server key creation date.
+	CreationDate *string `json:"creationDate,omitempty"`
+
+	// +kubebuilder:validation:Required
+	//ServerKeyType: The server key type like 'ServiceManaged', 'AzureKeyVault'.
+	ServerKeyType ServerKeyPropertiesStatusServerKeyType `json:"serverKeyType"`
+
+	//Subregion: Subregion of the server key.
+	Subregion *string `json:"subregion,omitempty"`
+
+	//Thumbprint: Thumbprint of the server key.
+	Thumbprint *string `json:"thumbprint,omitempty"`
+
+	//Uri: The URI of the server key.
+	Uri *string `json:"uri,omitempty"`
+}
 
 // +kubebuilder:validation:Enum={"2015-05-01-preview"}
 type ServersKeysSpecApiVersion string
@@ -158,6 +153,14 @@ type ServerKeyPropertiesServerKeyType string
 const (
 	ServerKeyPropertiesServerKeyTypeAzureKeyVault  = ServerKeyPropertiesServerKeyType("AzureKeyVault")
 	ServerKeyPropertiesServerKeyTypeServiceManaged = ServerKeyPropertiesServerKeyType("ServiceManaged")
+)
+
+// +kubebuilder:validation:Enum={"AzureKeyVault","ServiceManaged"}
+type ServerKeyPropertiesStatusServerKeyType string
+
+const (
+	ServerKeyPropertiesStatusServerKeyTypeAzureKeyVault  = ServerKeyPropertiesStatusServerKeyType("AzureKeyVault")
+	ServerKeyPropertiesStatusServerKeyTypeServiceManaged = ServerKeyPropertiesStatusServerKeyType("ServiceManaged")
 )
 
 func init() {

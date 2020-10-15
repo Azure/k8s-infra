@@ -27,8 +27,15 @@ type RouteFiltersList struct {
 	Items           []RouteFilters `json:"items"`
 }
 
-//Generated from:
 type RouteFilter_Status struct {
+	AtProvider RouteFiltersObservation `json:"atProvider"`
+}
+
+type RouteFilters_Spec struct {
+	ForProvider RouteFiltersParameters `json:"forProvider"`
+}
+
+type RouteFiltersObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -50,26 +57,6 @@ type RouteFilter_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type RouteFilters_Spec struct {
-	ForProvider RouteFiltersParameters `json:"forProvider"`
-}
-
-//Generated from:
-type RouteFilterPropertiesFormat_Status struct {
-
-	//Ipv6Peerings: A collection of references to express route circuit ipv6 peerings.
-	Ipv6Peerings []ExpressRouteCircuitPeering_Status `json:"ipv6Peerings,omitempty"`
-
-	//Peerings: A collection of references to express route circuit peerings.
-	Peerings []ExpressRouteCircuitPeering_Status `json:"peerings,omitempty"`
-
-	//ProvisioningState: The provisioning state of the route filter resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//Rules: Collection of RouteFilterRules contained within a route filter.
-	Rules []RouteFilterRule_Status `json:"rules,omitempty"`
 }
 
 type RouteFiltersParameters struct {
@@ -116,6 +103,22 @@ type RouteFilterPropertiesFormat struct {
 
 	//Rules: Collection of RouteFilterRules contained within a route filter.
 	Rules []RouteFilterRule `json:"rules,omitempty"`
+}
+
+//Generated from:
+type RouteFilterPropertiesFormat_Status struct {
+
+	//Ipv6Peerings: A collection of references to express route circuit ipv6 peerings.
+	Ipv6Peerings []ExpressRouteCircuitPeering_Status `json:"ipv6Peerings,omitempty"`
+
+	//Peerings: A collection of references to express route circuit peerings.
+	Peerings []ExpressRouteCircuitPeering_Status `json:"peerings,omitempty"`
+
+	//ProvisioningState: The provisioning state of the route filter resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//Rules: Collection of RouteFilterRules contained within a route filter.
+	Rules []RouteFilterRule_Status `json:"rules,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-05-01"}

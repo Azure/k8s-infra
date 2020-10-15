@@ -27,8 +27,15 @@ type RedisFirewallRulesList struct {
 	Items           []RedisFirewallRules `json:"items"`
 }
 
-//Generated from:
 type RedisFirewallRule_Status struct {
+	AtProvider RedisFirewallRulesObservation `json:"atProvider"`
+}
+
+type RedisFirewallRules_Spec struct {
+	ForProvider RedisFirewallRulesParameters `json:"forProvider"`
+}
+
+type RedisFirewallRulesObservation struct {
 
 	//Id: Resource ID.
 	Id *string `json:"id,omitempty"`
@@ -42,22 +49,6 @@ type RedisFirewallRule_Status struct {
 
 	//Type: Resource type.
 	Type *string `json:"type,omitempty"`
-}
-
-type RedisFirewallRules_Spec struct {
-	ForProvider RedisFirewallRulesParameters `json:"forProvider"`
-}
-
-//Generated from:
-type RedisFirewallRuleProperties_Status struct {
-
-	// +kubebuilder:validation:Required
-	//EndIP: highest IP address included in the range
-	EndIP string `json:"endIP"`
-
-	// +kubebuilder:validation:Required
-	//StartIP: lowest IP address included in the range
-	StartIP string `json:"startIP"`
 }
 
 type RedisFirewallRulesParameters struct {
@@ -101,6 +92,18 @@ type RedisFirewallRulesParameters struct {
 
 //Generated from: https://schema.management.azure.com/schemas/2017-10-01/Microsoft.Cache.json#/definitions/RedisFirewallRuleProperties
 type RedisFirewallRuleProperties struct {
+
+	// +kubebuilder:validation:Required
+	//EndIP: highest IP address included in the range
+	EndIP string `json:"endIP"`
+
+	// +kubebuilder:validation:Required
+	//StartIP: lowest IP address included in the range
+	StartIP string `json:"startIP"`
+}
+
+//Generated from:
+type RedisFirewallRuleProperties_Status struct {
 
 	// +kubebuilder:validation:Required
 	//EndIP: highest IP address included in the range

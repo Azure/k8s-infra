@@ -27,8 +27,15 @@ type NatGatewaysList struct {
 	Items           []NatGateways `json:"items"`
 }
 
-//Generated from:
 type NatGateway_Status struct {
+	AtProvider NatGatewaysObservation `json:"atProvider"`
+}
+
+type NatGateways_Spec struct {
+	ForProvider NatGatewaysParameters `json:"forProvider"`
+}
+
+type NatGatewaysObservation struct {
 
 	//Etag: A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
@@ -57,41 +64,6 @@ type NatGateway_Status struct {
 	//Zones: A list of availability zones denoting the zone in which Nat Gateway
 	//should be deployed.
 	Zones []string `json:"zones,omitempty"`
-}
-
-type NatGateways_Spec struct {
-	ForProvider NatGatewaysParameters `json:"forProvider"`
-}
-
-//Generated from:
-type NatGatewayPropertiesFormat_Status struct {
-
-	//IdleTimeoutInMinutes: The idle timeout of the nat gateway.
-	IdleTimeoutInMinutes *int `json:"idleTimeoutInMinutes,omitempty"`
-
-	//ProvisioningState: The provisioning state of the NAT gateway resource.
-	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
-
-	//PublicIpAddresses: An array of public ip addresses associated with the nat
-	//gateway resource.
-	PublicIpAddresses []SubResource_Status `json:"publicIpAddresses,omitempty"`
-
-	//PublicIpPrefixes: An array of public ip prefixes associated with the nat gateway
-	//resource.
-	PublicIpPrefixes []SubResource_Status `json:"publicIpPrefixes,omitempty"`
-
-	//ResourceGuid: The resource GUID property of the NAT gateway resource.
-	ResourceGuid *string `json:"resourceGuid,omitempty"`
-
-	//Subnets: An array of references to the subnets using this nat gateway resource.
-	Subnets []SubResource_Status `json:"subnets,omitempty"`
-}
-
-//Generated from:
-type NatGatewaySku_Status struct {
-
-	//Name: Name of Nat Gateway SKU.
-	Name *NatGatewaySkuStatusName `json:"name,omitempty"`
 }
 
 type NatGatewaysParameters struct {
@@ -155,6 +127,30 @@ type NatGatewayPropertiesFormat struct {
 	PublicIpPrefixes []SubResource `json:"publicIpPrefixes,omitempty"`
 }
 
+//Generated from:
+type NatGatewayPropertiesFormat_Status struct {
+
+	//IdleTimeoutInMinutes: The idle timeout of the nat gateway.
+	IdleTimeoutInMinutes *int `json:"idleTimeoutInMinutes,omitempty"`
+
+	//ProvisioningState: The provisioning state of the NAT gateway resource.
+	ProvisioningState *ProvisioningState_Status `json:"provisioningState,omitempty"`
+
+	//PublicIpAddresses: An array of public ip addresses associated with the nat
+	//gateway resource.
+	PublicIpAddresses []SubResource_Status `json:"publicIpAddresses,omitempty"`
+
+	//PublicIpPrefixes: An array of public ip prefixes associated with the nat gateway
+	//resource.
+	PublicIpPrefixes []SubResource_Status `json:"publicIpPrefixes,omitempty"`
+
+	//ResourceGuid: The resource GUID property of the NAT gateway resource.
+	ResourceGuid *string `json:"resourceGuid,omitempty"`
+
+	//Subnets: An array of references to the subnets using this nat gateway resource.
+	Subnets []SubResource_Status `json:"subnets,omitempty"`
+}
+
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/NatGatewaySku
 type NatGatewaySku struct {
 
@@ -162,10 +158,12 @@ type NatGatewaySku struct {
 	Name *NatGatewaySkuName `json:"name,omitempty"`
 }
 
-// +kubebuilder:validation:Enum={"Standard"}
-type NatGatewaySkuStatusName string
+//Generated from:
+type NatGatewaySku_Status struct {
 
-const NatGatewaySkuStatusNameStandard = NatGatewaySkuStatusName("Standard")
+	//Name: Name of Nat Gateway SKU.
+	Name *NatGatewaySkuStatusName `json:"name,omitempty"`
+}
 
 // +kubebuilder:validation:Enum={"2020-05-01"}
 type NatGatewaysSpecApiVersion string
@@ -181,6 +179,11 @@ const NatGatewaysSpecTypeMicrosoftNetworkNatGateways = NatGatewaysSpecType("Micr
 type NatGatewaySkuName string
 
 const NatGatewaySkuNameStandard = NatGatewaySkuName("Standard")
+
+// +kubebuilder:validation:Enum={"Standard"}
+type NatGatewaySkuStatusName string
+
+const NatGatewaySkuStatusNameStandard = NatGatewaySkuStatusName("Standard")
 
 func init() {
 	SchemeBuilder.Register(&NatGateways{}, &NatGatewaysList{})
