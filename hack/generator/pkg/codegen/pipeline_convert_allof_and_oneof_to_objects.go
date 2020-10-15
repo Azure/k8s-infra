@@ -196,7 +196,6 @@ func (s synthesizer) getOneOfName(t astmodel.Type, propIndex int) (propertyNames
 			primitiveTypeName = concreteType.Name()
 		}
 
-		// TODO: This name sucks but what alternative do we have?
 		name := fmt.Sprintf("%v%v", primitiveTypeName, propIndex)
 		return propertyNames{
 			golang:     s.idFactory.CreatePropertyName(name, astmodel.Exported),
