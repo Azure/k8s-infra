@@ -59,7 +59,7 @@ func newConvertFromArmFunctionBuilder(
 func (builder *convertFromArmBuilder) functionDeclaration() *ast.FuncDecl {
 
 	return astbuilder.DefineFunc(
-		astbuilder.FuncDetails{
+		&astbuilder.FuncDetails{
 			Name:          ast.NewIdent(builder.methodName),
 			ReceiverIdent: builder.receiverIdent,
 			ReceiverType: &ast.StarExpr{

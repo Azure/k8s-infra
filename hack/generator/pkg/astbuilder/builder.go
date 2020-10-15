@@ -6,7 +6,6 @@
 package astbuilder
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
 )
@@ -59,61 +58,6 @@ func NewStruct(varName *ast.Ident, structName *ast.Ident) ast.Stmt {
 		&ast.CompositeLit{
 			Type: structName,
 		})
-}
-
-type FuncDetails struct {
-	ReceiverIdent *ast.Ident
-	ReceiverType  ast.Expr
-	Name          *ast.Ident
-	Comment       string
-	Params        []*ast.Field
-	Returns       []*ast.Field
-	Body          []ast.Stmt
-}
-
-// DefineFunc defines a function (header, body, etc), like:
-// 	<comment>
-//	func (<receiverIdent> <receiverType>) <name>(<params...>) (<returns...>) {
-// 		<body...>
-//	}
-func DefineFunc(funcDetails FuncDetails) *ast.FuncDecl {
-
-	var comment []*ast.Comment
-	if funcDetails.Comment != "" {
-		comment = []*ast.Comment{
-			{
-				Text: fmt.Sprintf("// %s %s", funcDetails.Name, funcDetails.Comment),
-			},
-		}
-	}
-
-	return &ast.FuncDecl{
-		Recv: &ast.FieldList{
-			List: []*ast.Field{
-				{
-					Names: []*ast.Ident{
-						funcDetails.ReceiverIdent,
-					},
-					Type: funcDetails.ReceiverType,
-				},
-			},
-		},
-		Name: funcDetails.Name,
-		Doc: &ast.CommentGroup{
-			List: comment,
-		},
-		Type: &ast.FuncType{
-			Params: &ast.FieldList{
-				List: funcDetails.Params,
-			},
-			Results: &ast.FieldList{
-				List: funcDetails.Returns,
-			},
-		},
-		Body: &ast.BlockStmt{
-			List: funcDetails.Body,
-		},
-	}
 }
 
 // SimpleAssignment performs a simple assignment like:

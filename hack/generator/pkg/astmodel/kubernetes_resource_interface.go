@@ -116,7 +116,7 @@ func ownerFunction(k *objectFunction, codeGenerationContext *CodeGenerationConte
 	kindIdent := ast.NewIdent("kind")
 
 	return astbuilder.DefineFunc(
-		astbuilder.FuncDetails{
+		&astbuilder.FuncDetails{
 			Name:          ast.NewIdent(methodName),
 			ReceiverIdent: receiverIdent,
 			ReceiverType: &ast.StarExpr{
@@ -214,7 +214,7 @@ func azureNameFunction(k *objectFunction, codeGenerationContext *CodeGenerationC
 	}
 
 	return astbuilder.DefineFunc(
-		astbuilder.FuncDetails{
+		&astbuilder.FuncDetails{
 			Name:          ast.NewIdent(methodName),
 			ReceiverIdent: receiverIdent,
 			ReceiverType: &ast.StarExpr{

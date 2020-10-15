@@ -138,7 +138,7 @@ func armSpecInterfaceSimpleGetFunction(
 	}
 
 	return astbuilder.DefineFunc(
-		astbuilder.FuncDetails{
+		&astbuilder.FuncDetails{
 			Name:          ast.NewIdent(methodName),
 			ReceiverIdent: receiverIdent,
 			// TODO: We're too loosey-goosey here with ptr vs value receiver.

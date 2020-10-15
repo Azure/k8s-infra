@@ -100,7 +100,7 @@ func (f *OneOfJSONMarshalFunction) AsFunc(
 	statements = append(statements, finalReturnStatement)
 
 	result := astbuilder.DefineFunc(
-		astbuilder.FuncDetails{
+		&astbuilder.FuncDetails{
 			Name: ast.NewIdent(f.Name()),
 			Comment: fmt.Sprintf(
 				"defers JSON marshaling to the first non-nil property, because %s represents a discriminated union (JSON OneOf)",
