@@ -8,10 +8,11 @@ package codegen
 import (
 	"context"
 
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
-	"github.com/Azure/k8s-infra/hack/generator/pkg/config"
 	"github.com/pkg/errors"
 	"k8s.io/klog/v2"
+
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
+	"github.com/Azure/k8s-infra/hack/generator/pkg/config"
 )
 
 // CodeGenerator is a generator of code
@@ -128,8 +129,11 @@ func crossplaneCorePipelineStages(idFactory astmodel.IdentifierFactory, configur
 
 		// filterOutDefinitionsUsingAnyType(configuration.AnyTypePackages),
 
-		createArmTypesAndCleanKubernetesTypes(idFactory),
-		applyKubernetesResourceInterface(idFactory),
+		// createArmTypesAndCleanKubernetesTypes(idFactory),
+
+		addForProviderProperty(idFactory),
+
+		// applyKubernetesResourceInterface(idFactory),
 		simplifyDefinitions(),
 
 		// Safety checks at the end:

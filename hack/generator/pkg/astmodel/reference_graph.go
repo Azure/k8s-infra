@@ -53,14 +53,16 @@ func CollectArmSpecAndStatusDefinitions(definitions Types) TypeNameSet {
 
 			armSpecName, err := findType(resourceType.spec)
 			if err != nil {
-				panic(errors.Wrapf(err, "Error getting ARM spec for resource %q", def.Name()))
+				continue
+				// panic(errors.Wrapf(err, "Error getting ARM spec for resource %q", def.Name()))
 			}
 			armSpecAndStatus.Add(armSpecName)
 
 			if resourceType.status != nil {
 				armStatusName, err := findType(resourceType.status)
 				if err != nil {
-					panic(errors.Wrapf(err, "Error getting ARM status for resource %q", def.Name()))
+					continue
+					// panic(errors.Wrapf(err, "Error getting ARM status for resource %q", def.Name()))
 				}
 				armSpecAndStatus.Add(armStatusName)
 			}
