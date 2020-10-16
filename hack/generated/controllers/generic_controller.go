@@ -591,7 +591,6 @@ func (gr *GenericReconciler) createDeployment(
 			deploymentName,
 			res.Spec())
 	default:
-		// TODO: This is a code bug -- do we want to panic or error here
 		panic(fmt.Sprintf("unknown deployable resource kind: %T", deploySpec))
 	}
 
