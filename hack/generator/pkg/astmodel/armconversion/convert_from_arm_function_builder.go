@@ -260,7 +260,7 @@ func (builder *convertFromArmBuilder) propertiesWithSameNameButDifferentTypeHand
 		if !definedErrVar {
 			result = append(
 				result,
-				astbuilder.SimpleVariableDeclaration(ast.NewIdent("err"), ast.NewIdent("error")))
+				astbuilder.LocalVariableDeclaration(ast.NewIdent("err"), ast.NewIdent("error"), ""))
 			definedErrVar = true
 		}
 
@@ -400,9 +400,10 @@ func (builder *convertFromArmBuilder) convertComplexArrayProperty(
 		actualDestination = elemIdent
 		results = append(
 			results,
-			astbuilder.SimpleVariableDeclaration(
+			astbuilder.LocalVariableDeclaration(
 				elemIdent,
-				destinationType.AsType(builder.codeGenerationContext)))
+				destinationType.AsType(builder.codeGenerationContext),
+				""))
 		elemIdent = ast.NewIdent(fmt.Sprintf("elem%d", depth))
 	}
 

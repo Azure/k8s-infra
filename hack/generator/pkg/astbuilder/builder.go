@@ -74,22 +74,34 @@ func SimpleAssignment(lhs ast.Expr, tok token.Token, rhs ast.Expr) *ast.AssignSt
 	}
 }
 
-// SimpleVariableDeclaration performs a simple variable declaration like:
+// LocalVariableDeclaration performs a local variable declaration for use in a method like:
 // 	var <ident> <typ>
-func SimpleVariableDeclaration(ident *ast.Ident, typ ast.Expr) *ast.DeclStmt {
+func LocalVariableDeclaration(ident *ast.Ident, typ ast.Expr, comment string) ast.Stmt {
 	return &ast.DeclStmt{
-		Decl: &ast.GenDecl{
-			Tok: token.VAR,
-			Specs: []ast.Spec{
-				&ast.ValueSpec{
-					Names: []*ast.Ident{
-						ident,
-					},
-					Type: typ,
+		Decl: VariableDeclaration(ident, typ, comment),
+	}
+}
+
+// VariableDeclaration performs a global variable declaration like:
+// 	var <ident> <typ>
+// For a LocalVariable in a method, use LocalVariableDeclaration() to create an ast.Stmt
+func VariableDeclaration(ident *ast.Ident, typ ast.Expr, comment string) *ast.GenDecl {
+	decl := &ast.GenDecl{
+		Tok: token.VAR,
+		Specs: []ast.Spec{
+			&ast.ValueSpec{
+				Names: []*ast.Ident{
+					ident,
 				},
+				Type: typ,
 			},
 		},
+		Doc: &ast.CommentGroup{},
 	}
+
+	AddWrappedComment(&decl.Doc.List, comment, 80)
+
+	return decl
 }
 
 // AppendList returns a statement for a list append, like:
@@ -187,6 +199,20 @@ func ReturnIfNil(toCheck ast.Expr, returns ...ast.Expr) ast.Stmt {
 		returns...)
 }
 
+// ReturnIfNotNil checks if a variable is not nil and if it is returns, like:
+// 	if <toCheck> != nil {
+// 		return <returns...>
+//	}
+func ReturnIfNotNil(toCheck ast.Expr, returns ...ast.Expr) ast.Stmt {
+	return ReturnIfExpr(
+		&ast.BinaryExpr{
+			X:  toCheck,
+			Op: token.EQL,
+			Y:  ast.NewIdent("nil"),
+		},
+		returns...)
+}
+
 // ReturnIfExpr returns if the expression evaluates as true.
 //	if <cond> {
 // 		return <returns...>
@@ -234,5 +260,11 @@ func AddrOf(exp ast.Expr) *ast.UnaryExpr {
 	return &ast.UnaryExpr{
 		Op: token.AND,
 		X:  exp,
+	}
+}
+
+func Returns(returns ...ast.Expr) ast.Stmt {
+	return &ast.ReturnStmt{
+		Results: returns,
 	}
 }

@@ -372,9 +372,10 @@ func (builder *convertToArmBuilder) convertComplexArrayProperty(
 	elemIdent := ast.NewIdent("elem")
 
 	if depth > 0 {
-		results = append(results, astbuilder.SimpleVariableDeclaration(
+		results = append(results, astbuilder.LocalVariableDeclaration(
 			typedVarIdent,
-			destinationType.AsType(builder.codeGenerationContext)))
+			destinationType.AsType(builder.codeGenerationContext),
+			""))
 		typedVarIdent = ast.NewIdent(fmt.Sprintf("elemTyped%d", depth))
 	}
 
