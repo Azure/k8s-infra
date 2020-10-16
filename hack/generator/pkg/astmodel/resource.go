@@ -7,6 +7,7 @@ package astmodel
 
 import (
 	"fmt"
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 	"go/ast"
 	"go/token"
 
@@ -283,16 +284,16 @@ func (definition *ResourceType) AsDeclarations(codeGenerationContext *CodeGenera
 
 	var comments []*ast.Comment
 
-	addComment(&comments, "// +kubebuilder:object:root=true")
-	if definition.status != nil {
-		addComment(&comments, "// +kubebuilder:subresource:status")
+	astbuilder.AddComment(&comments, "// +kubebuilder:object:root=true")
+	if resource.status != nil {
+		astbuilder.AddComment(&comments, "// +kubebuilder:subresource:status")
 	}
 
-	if definition.isStorageVersion {
-		addComment(&comments, "// +kubebuilder:storageversion")
+	if resource.isStorageVersion {
+		astbuilder.AddComment(&comments, "// +kubebuilder:storageversion")
 	}
 
-	addWrappedComments(&comments, description, 200)
+	astbuilder.AddWrappedComments(&comments, description, 200)
 
 	var declarations []ast.Decl
 	resourceDeclaration := &ast.GenDecl{
@@ -354,7 +355,7 @@ func (definition *ResourceType) resourceListTypeDecls(
 			},
 		}
 
-	addWrappedComments(&comments, description, 200)
+	astbuilder.AddWrappedComments(&comments, description, 200)
 
 	return []ast.Decl{
 		&ast.GenDecl{

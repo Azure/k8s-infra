@@ -6,6 +6,7 @@
 package astmodel
 
 import (
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 	"go/ast"
 	"go/token"
 	"sort"
@@ -50,7 +51,7 @@ func (objectType *ObjectType) AsDeclarations(codeGenerationContext *CodeGenerati
 		},
 	}
 
-	addWrappedComments(&declaration.Doc.List, description, 200)
+	astbuilder.AddWrappedComments(&declaration.Doc.List, description, 200)
 
 	result := []ast.Decl{declaration}
 	result = append(result, objectType.InterfaceImplementer.AsDeclarations(codeGenerationContext, name, nil)...)

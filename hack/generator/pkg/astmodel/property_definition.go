@@ -7,6 +7,7 @@ package astmodel
 
 import (
 	"fmt"
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 	"go/ast"
 	"go/token"
 	"sort"
@@ -283,12 +284,12 @@ func (property *PropertyDefinition) AsField(codeGenerationContext *CodeGeneratio
 	// generate validation comments:
 	for _, validation := range property.validations {
 		// these are not doc comments but they must go here to be emitted before the property
-		addComment(&result.Doc.List, GenerateKubebuilderComment(validation))
+		astbuilder.AddComment(&result.Doc.List, GenerateKubebuilderComment(validation))
 	}
 
 	// generate comment:
 	if property.description != "" {
-		addWrappedComment(&result.Doc.List, fmt.Sprintf("%s: %s", property.propertyName, property.description), 80)
+		astbuilder.AddWrappedComment(&result.Doc.List, fmt.Sprintf("%s: %s", property.propertyName, property.description), 80)
 	}
 
 	return result
