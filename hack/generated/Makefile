@@ -20,13 +20,17 @@ V = 0
 Q = $(if $(filter 1,$V),,@)
 
 .PHONY: all
-all: generate header-check fmt build test test-int
+all: generate header-check fmt build test
 
 # There is a ci specific target because we want the CI pass to fail if
 # the code has not been go fmt-ed, whereas locally we want "make all"
 # to just format the code for you
 .PHONY: ci
 ci: generate build test-cover test-int
+
+## --------------------------------------
+## Build
+## --------------------------------------
 
 .PHONY: lint
 lint: $(GOLANGCI_LINT) ; $(info $(M) running golangci configured linters…) ## Lint codebase
@@ -43,29 +47,6 @@ fmt: ; $(info $(M) running gofmt…) @ ## Run gofmt on all source files
 .PHONY: tidy
 tidy: ; $(info $(M) running tidy…) @ ## Run tidy
 	$Q $(GO) mod tidy
-
-.PHONY: test
-test: ; $(info $(M) running go test…)
-	$(Q) $(GO) test $(GO_DIRS_TO_TEST) -tags=noexit
-
-# Initially this target uses kind as there is no need to end to end test on Azure.
-# Eventually when we start supporting features like MSI that only work in Azure,
-# it's likely we'll need to make the integration tests (or at least some of them)
-# run in an AKS cluster.
-.PHONY: test-int-no-cleanup
-test-int-no-cleanup: $(ROOT_DIR)/.env kind-create deploy ; $(info $(M) running controller integration test…)
-	# MUST be executed as single command, or env vars will not propagate to test execution
-	$(Q) . $(ROOT_DIR)/.env && $(GO) test $(GO_DIRS_TO_TEST) -tags integration # TODO: better way to just run integration tests?
-
-.PHONY: test-int
-test-int: test-int-no-cleanup kind-delete
-
-.PHONY: test-cover
-test-cover: $(GCOV2LCOV) ; $(info $(M) running go test…)
-	# NOTE: if you update the 'test-cover' target, also update ./github/workflows/test.yml
-	#       for the Windows part of the "test-generator" job.
-	$(Q) $(GO) test -tags=noexit -race -covermode atomic -coverprofile=cover.out -coverpkg=./... $(GO_DIRS_TO_TEST)
-	$(Q) $(GCOV2LCOV) -infile cover.out -outfile coverage.lcov
 
 .PHONY: generate
 generate: $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code
@@ -93,6 +74,42 @@ generate: $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code
 .PHONY: build
 build: tidy lint ; $(info $(M) building ./bin/$(APP))
 	$(Q) $(GO) build -o ./bin/$(APP)
+
+## --------------------------------------
+## Test
+## --------------------------------------
+.PHONY: test
+test: ; $(info $(M) running go test…)
+	$(Q) $(GO) test $(GO_DIRS_TO_TEST) -short -tags=noexit
+
+# Initially this target uses kind as there is no need to end to end test on Azure.
+# Eventually when we start supporting features like MSI that only work in Azure,
+# it's likely we'll need to make the integration tests (or at least some of them)
+# run in an AKS cluster.
+.PHONY: test-int-no-cleanup
+test-int-no-cleanup: $(ROOT_DIR)/.env ; $(info $(M) running controller integration test…)
+	# MUST be executed as single command, or env vars will not propagate to test execution
+	$(Q) . $(ROOT_DIR)/.env && $(GO) test $(GO_DIRS_TO_TEST) # TODO: better way to just run integration tests?
+
+.PHONY: test-int
+test-int: kind-create deploy test-int-no-cleanup kind-delete cleanup-test-azure-resources
+
+.PHONY: test-cover
+test-cover: $(GCOV2LCOV) ; $(info $(M) running go test…)
+	# NOTE: if you update the 'test-cover' target, also update ./github/workflows/test.yml
+	#       for the Windows part of the "test-generator" job.
+	$(Q) $(GO) test -tags=noexit -race -covermode atomic -coverprofile=cover.out -coverpkg=./... $(GO_DIRS_TO_TEST)
+	$(Q) $(GCOV2LCOV) -infile cover.out -outfile coverage.lcov
+
+# Cleanup resource groups created by tests -- this isn't strictly required as the tests
+# clean up after themselves, but doing it here anyway just to be doubly sure we don't leak
+# resources in cases where the test pass is terminated, panics, etc
+.PHONY: cleanup-test-azure-resources
+cleanup-test-azure-resources:
+	$(Q) for rgname in `az group list --query "[*].[name]" -o table | grep '^k8sinfra-test' `; do \
+		echo "$$rgname will be deleted"; \
+		az group delete --name $$rgname --no-wait --yes; \
+	done
 
 ## --------------------------------------
 ## Development
