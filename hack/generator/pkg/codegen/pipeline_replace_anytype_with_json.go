@@ -15,6 +15,8 @@ import (
 
 const apiExtensions = "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
+// jsonType is the type of fields storing arbitrary JSON content in
+// custom resources - apiextensions/v1.JSON.
 var jsonType = astmodel.MakeTypeName(
 	astmodel.MakeExternalPackageReference(apiExtensions), "JSON",
 )
