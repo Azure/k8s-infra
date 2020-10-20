@@ -72,7 +72,7 @@
         "Foo": {
             "type": "object",
             "properties": {
-                "name": {
+                "fooName": {
                     "type": "string"
                 }
             }
