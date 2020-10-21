@@ -193,7 +193,7 @@ func ReturnIfNotNil(toCheck ast.Expr, returns ...ast.Expr) ast.Stmt {
 	return ReturnIfExpr(
 		&ast.BinaryExpr{
 			X:  toCheck,
-			Op: token.EQL,
+			Op: token.NEQ,
 			Y:  ast.NewIdent("nil"),
 		},
 		returns...)
