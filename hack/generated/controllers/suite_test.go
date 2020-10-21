@@ -38,9 +38,6 @@ func setup() (ControllerTestContext, error) {
 	SetDefaultEventuallyTimeout(2 * time.Minute)
 	SetDefaultEventuallyPollingInterval(5 * time.Second)
 
-	var result ControllerTestContext
-	var err error
-
 	testContext, err := testcommon.NewTestContext(
 		TestRegion,
 		TestNamespace,
@@ -48,19 +45,19 @@ func setup() (ControllerTestContext, error) {
 		controllers.ResourceErrorAnnotation)
 
 	if err != nil {
-		return result, err
+		return ControllerTestContext{}, err
 	}
 
 	err = testContext.CreateTestNamespace()
 	if err != nil {
-		return result, err
+		return ControllerTestContext{}, err
 	}
 
 	// Create a shared resource group, for tests to use
 	sharedResourceGroup := testContext.NewTestResourceGroup()
 	err = testContext.KubeClient.Create(ctx, sharedResourceGroup)
 	if err != nil {
-		return result, errors.Wrapf(err, "creating shared resource group")
+		return ControllerTestContext{}, errors.Wrapf(err, "creating shared resource group")
 	}
 
 	// TODO: Should use AzureName here once it's always set
@@ -72,10 +69,7 @@ func setup() (ControllerTestContext, error) {
 
 	log.Println("Done with test setup")
 
-	result.TestContext = testContext
-	result.SharedResourceGroup = sharedResourceGroup
-
-	return result, nil
+	return ControllerTestContext{testContext, sharedResourceGroup}, nil
 }
 
 func teardown(testContext ControllerTestContext) error {
