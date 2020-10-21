@@ -2,9 +2,7 @@ SHELL             = /bin/bash
 PACKAGE           = github.com/Azure/k8s-infra/hack/generated
 APP               = k8sinfra-controller
 
-# timestamp         := $(shell /bin/date "+%Y%m%d-%H%M%S")
 CONFIG_REGISTRY = kind-registry:5000/fake/k8s-infra-controller:latest
-# IMG               ?= k8s-infra-generated-contoller:$(timestamp)
 IMG               ?= k8s-infra-generated-contoller:latest
 KIND_CLUSTER_NAME = k8sinfra-generated
 
@@ -73,7 +71,7 @@ generate: $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code
 
 .PHONY: build
 build: tidy lint ; $(info $(M) building ./bin/$(APP))
-	$(Q) $(GO) build -o ./bin/$(APP)
+	$(Q) CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on $(GO) build -o ./bin/$(APP)
 
 ## --------------------------------------
 ## Test
@@ -158,7 +156,6 @@ uninstall: generate $(KUBECTL) $(KUSTOMIZE) ## Uninstall CRDs from a cluster
 deploy: generate $(KUBECTL) $(KUSTOMIZE) docker-build docker-push ## Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 	# TODO: Consider patching in CONTROLLER_DEBUG_LOGLEVEL?
 	$(KUSTOMIZE) build config/default | sed "s_${CONFIG_REGISTRY}_${REGISTRY}/${IMG}_" | $(KUBECTL) apply -f -
-	# TODO: Is there a better way to do the below?
 	$(SCRIPTS_DIR)/deploy_testing_secret.sh
 
 .PHONY: docker-build
