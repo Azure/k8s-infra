@@ -60,20 +60,6 @@ func NewStruct(varName *ast.Ident, structName *ast.Ident) ast.Stmt {
 		})
 }
 
-// SimpleAssignment performs a simple assignment like:
-// 	<lhs> <tok> <rhs>
-func SimpleAssignment(lhs ast.Expr, tok token.Token, rhs ast.Expr) *ast.AssignStmt {
-	return &ast.AssignStmt{
-		Lhs: []ast.Expr{
-			lhs,
-		},
-		Tok: tok,
-		Rhs: []ast.Expr{
-			rhs,
-		},
-	}
-}
-
 // LocalVariableDeclaration performs a local variable declaration for use in a method like:
 // 	var <ident> <typ>
 func LocalVariableDeclaration(ident *ast.Ident, typ ast.Expr, comment string) ast.Stmt {
