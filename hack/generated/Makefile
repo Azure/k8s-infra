@@ -20,13 +20,13 @@ V = 0
 Q = $(if $(filter 1,$V),,@)
 
 .PHONY: all
-all: generate header-check fmt build test
+all: generate header-check fmt build test test-int
 
 # There is a ci specific target because we want the CI pass to fail if
 # the code has not been go fmt-ed, whereas locally we want "make all"
 # to just format the code for you
 .PHONY: ci
-ci: generate build test-cover test-int
+ci: generate build test-cover test-int-cover
 
 ## --------------------------------------
 ## Build
@@ -82,6 +82,13 @@ build: tidy lint ; $(info $(M) building ./bin/$(APP))
 test: ; $(info $(M) running go test…)
 	$(Q) $(GO) test $(GO_DIRS_TO_TEST) -short -tags=noexit
 
+.PHONY: test-cover
+test-cover: $(GCOV2LCOV) ; $(info $(M) running go test…)
+	# NOTE: if you update the 'test-cover' target, also update ./github/workflows/test.yml
+	#       for the Windows part of the "test-generator" job.
+	$(Q) $(GO) test -tags=noexit -short -race -covermode atomic -coverprofile=cover.out -coverpkg=./... $(GO_DIRS_TO_TEST)
+	$(Q) $(GCOV2LCOV) -infile cover.out -outfile coverage.lcov
+
 # Initially this target uses kind as there is no need to end to end test on Azure.
 # Eventually when we start supporting features like MSI that only work in Azure,
 # it's likely we'll need to make the integration tests (or at least some of them)
@@ -91,15 +98,17 @@ test-int-no-cleanup: $(ROOT_DIR)/.env ; $(info $(M) running controller integrati
 	# MUST be executed as single command, or env vars will not propagate to test execution
 	$(Q) . $(ROOT_DIR)/.env && $(GO) test $(GO_DIRS_TO_TEST) # TODO: better way to just run integration tests?
 
+.PHONY: test-int-no-cleanup-cover
+test-int-no-cleanup-cover: $(ROOT_DIR)/.env $(GCOV2LCOV) ; $(info $(M) running controller integration test…)
+	# MUST be executed as single command, or env vars will not propagate to test execution
+	$(Q) . $(ROOT_DIR)/.env && $(GO) test -race -covermode atomic -coverprofile=cover.out -coverpkg=./... $(GO_DIRS_TO_TEST)
+	$(Q) $(GCOV2LCOV) -infile cover.out -outfile coverage.lcov
+
 .PHONY: test-int
 test-int: kind-create deploy test-int-no-cleanup kind-delete cleanup-test-azure-resources
 
-.PHONY: test-cover
-test-cover: $(GCOV2LCOV) ; $(info $(M) running go test…)
-	# NOTE: if you update the 'test-cover' target, also update ./github/workflows/test.yml
-	#       for the Windows part of the "test-generator" job.
-	$(Q) $(GO) test -tags=noexit -race -covermode atomic -coverprofile=cover.out -coverpkg=./... $(GO_DIRS_TO_TEST)
-	$(Q) $(GCOV2LCOV) -infile cover.out -outfile coverage.lcov
+.PHONY: test-int-cover
+test-int-cover: kind-create deploy test-int-no-cleanup-cover kind-delete cleanup-test-azure-resources
 
 # Cleanup resource groups created by tests -- this isn't strictly required as the tests
 # clean up after themselves, but doing it here anyway just to be doubly sure we don't leak
