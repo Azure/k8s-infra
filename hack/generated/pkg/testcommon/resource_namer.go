@@ -29,7 +29,6 @@ func NewResourceNamer(prefix string, separator string, randomChars int) *Resourc
 	}
 }
 
-// TODO: Not sure if we love this pattern here
 func (n *ResourceNamer) WithSeparator(separator string) *ResourceNamer {
 	return NewResourceNamer(n.prefix, separator, n.randomChars)
 }

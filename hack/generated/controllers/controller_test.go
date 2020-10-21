@@ -82,7 +82,7 @@ func Integration_StorageAccount_CRUD(testContext ControllerTestContext, t *testi
 	g.Expect(testContext.Ensure.ProvisioningSuccessful(ctx, acct)).Should(BeTrue())
 
 	g.Expect(acct.Status.Location).To(Equal(testContext.AzureRegion))
-	expectedKind := storage.StorageAccountStatusKindBlobStorage // TODO: Should use same enum as spec
+	expectedKind := storage.StorageAccountStatusKindBlobStorage
 	g.Expect(acct.Status.Kind).To(Equal(&expectedKind))
 	g.Expect(acct.Status.Id).ToNot(BeNil())
 	armId := *acct.Status.Id

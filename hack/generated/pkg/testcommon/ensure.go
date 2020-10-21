@@ -32,7 +32,7 @@ func NewEnsure(c client.Client, stateAnnotation string, errorAnnotation string) 
 }
 
 // ProvisioningComplete ensures that the object specified has reached a terminal provisioning state.
-// THIS STATE CAN BE FAILED. Use the ProvisioningStateSuccessful function to ensure it was successful.
+// THIS STATE CAN BE FAILED. Use the ProvisioningSuccessful function to ensure it was successful.
 func (e *Ensure) ProvisioningComplete(ctx context.Context, obj runtime.Object) func() (bool, error) {
 	return func() (bool, error) {
 
@@ -59,7 +59,7 @@ func (e *Ensure) ProvisioningComplete(ctx context.Context, obj runtime.Object) f
 	}
 }
 
-// ProvisioningStateSuccessful checks to ensure the provisioning state of the resource is successful.
+// ProvisioningSuccessful checks to ensure the provisioning state of the resource is successful.
 func (e *Ensure) ProvisioningSuccessful(ctx context.Context, obj runtime.Object) (bool, error) {
 	key, err := client.ObjectKeyFromObject(obj)
 	if err != nil {

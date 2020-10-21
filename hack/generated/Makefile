@@ -84,7 +84,7 @@ test: ; $(info $(M) running go test…)
 test-cover: $(GCOV2LCOV) ; $(info $(M) running go test…)
 	# NOTE: if you update the 'test-cover' target, also update ./github/workflows/test.yml
 	#       for the Windows part of the "test-generator" job.
-	$(Q) $(GO) test -tags=noexit -short -race -covermode atomic -coverprofile=cover.out -coverpkg=./... $(GO_DIRS_TO_TEST)
+	$(Q) $(GO) test -short -tags=noexit -race -covermode atomic -coverprofile=cover.out -coverpkg=./... $(GO_DIRS_TO_TEST)
 	$(Q) $(GCOV2LCOV) -infile cover.out -outfile coverage.lcov
 
 # Initially this target uses kind as there is no need to end to end test on Azure.
