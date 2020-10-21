@@ -16,12 +16,7 @@ import (
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 )
 
-func Test_ResourceGroup_CRUD(t *testing.T) {
-	// TODO: Can we put this someplace common?
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
-
+func Integration_ResourceGroup_CRUD(testContext ControllerTestContext, t *testing.T) {
 	g := NewGomegaWithT(t)
 	ctx := context.Background()
 
@@ -54,12 +49,7 @@ func Test_ResourceGroup_CRUD(t *testing.T) {
 	g.Expect(exists).To(BeFalse())
 }
 
-func Test_StorageAccount_CRUD(t *testing.T) {
-	// TODO: Can we put this someplace common?
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
-
+func Integration_StorageAccount_CRUD(testContext ControllerTestContext, t *testing.T) {
 	g := NewGomegaWithT(t)
 	ctx := context.Background()
 
@@ -73,7 +63,7 @@ func Test_StorageAccount_CRUD(t *testing.T) {
 		Spec: storage.StorageAccounts_Spec{
 			Location:   testContext.AzureRegion,
 			ApiVersion: "2019-04-01", // TODO: This should be removed from the storage type eventually
-			Owner:      genruntime.KnownResourceReference{Name: sharedResourceGroup.Name},
+			Owner:      genruntime.KnownResourceReference{Name: testContext.SharedResourceGroup.Name},
 			Kind:       storage.StorageAccountsSpecKindBlobStorage,
 			Sku: storage.Sku{
 				Name: storage.SkuNameStandardLRS,

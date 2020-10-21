@@ -7,6 +7,7 @@ package testcommon
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -54,6 +55,8 @@ func (e *Ensure) ProvisioningComplete(ctx context.Context, obj runtime.Object) f
 
 		// Ensure that we have the right annotation
 		state := metaObj.GetAnnotations()[e.stateAnnotation]
+
+		fmt.Printf("waiting for provisioning: state of %v is %v\n", obj, state)
 
 		return state == string(armclient.SucceededProvisioningState) || state == string(armclient.FailedProvisioningState), nil
 	}
