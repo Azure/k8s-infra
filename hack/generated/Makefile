@@ -153,10 +153,10 @@ uninstall: generate $(KUBECTL) $(KUSTOMIZE) ## Uninstall CRDs from a cluster
 	$(KUSTOMIZE) build config/crd | $(KUBECTL) delete -f -
 
 .PHONY: deploy
-deploy: generate $(KUBECTL) $(KUSTOMIZE) docker-build docker-push ## Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+deploy: generate $(ROOT_DIR)/.env $(KUBECTL) $(KUSTOMIZE) docker-build docker-push ## Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 	# TODO: Consider patching in CONTROLLER_DEBUG_LOGLEVEL?
 	$(KUSTOMIZE) build config/default | sed "s_${CONFIG_REGISTRY}_${REGISTRY}/${IMG}_" | $(KUBECTL) apply -f -
-	$(SCRIPTS_DIR)/deploy_testing_secret.sh
+	. $(ROOT_DIR)/.env && $(SCRIPTS_DIR)/deploy_testing_secret.sh
 
 .PHONY: docker-build
 docker-build: ## Build the docker image
