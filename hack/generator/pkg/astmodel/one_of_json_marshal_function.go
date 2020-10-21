@@ -99,24 +99,26 @@ func (f *OneOfJSONMarshalFunction) AsFunc(
 	}
 	statements = append(statements, finalReturnStatement)
 
-	result := astbuilder.DefineFunc(
-		&astbuilder.FuncDetails{
-			Name: ast.NewIdent(f.Name()),
-			Comment: fmt.Sprintf(
-				"defers JSON marshaling to the first non-nil property, because %s represents a discriminated union (JSON OneOf)",
-				receiver.name),
-			ReceiverIdent: ast.NewIdent(receiverName),
-			ReceiverType:  receiver.AsType(codeGenerationContext),
-			Returns: []*ast.Field{
-				{
-					Type: ast.NewIdent("[]byte"),
-				},
-				{
-					Type: ast.NewIdent("error"),
-				},
+	fn := &astbuilder.FuncDetails{
+		Name:          ast.NewIdent(f.Name()),
+		ReceiverIdent: ast.NewIdent(receiverName),
+		ReceiverType:  receiver.AsType(codeGenerationContext),
+		Returns: []*ast.Field{
+			{
+				Type: ast.NewIdent("[]byte"),
 			},
-			Body: statements,
-		})
+			{
+				Type: ast.NewIdent("error"),
+			},
+		},
+		Body: statements,
+	}
+
+	fn.AddComments(fmt.Sprintf(
+		"defers JSON marshaling to the first non-nil property, because %s represents a discriminated union (JSON OneOf)",
+		receiver.name))
+
+	result := astbuilder.DefineFunc(fn)
 
 	return result
 }

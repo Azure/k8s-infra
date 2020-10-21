@@ -53,32 +53,34 @@ func newConvertToArmFunctionBuilder(
 }
 
 func (builder *convertToArmBuilder) functionDeclaration() *ast.FuncDecl {
-	return astbuilder.DefineFunc(
-		&astbuilder.FuncDetails{
-			Name:          ast.NewIdent(builder.methodName),
-			ReceiverIdent: builder.receiverIdent,
-			ReceiverType: &ast.StarExpr{
-				X: builder.receiverTypeExpr,
-			},
-			Comment: "converts from a Kubernetes CRD object to an ARM object",
-			Params: []*ast.Field{
-				{
-					Type: ast.NewIdent("string"),
-					Names: []*ast.Ident{
-						ast.NewIdent(nameParameterString),
-					},
+	fn := &astbuilder.FuncDetails{
+		Name:          ast.NewIdent(builder.methodName),
+		ReceiverIdent: builder.receiverIdent,
+		ReceiverType: &ast.StarExpr{
+			X: builder.receiverTypeExpr,
+		},
+		Params: []*ast.Field{
+			{
+				Type: ast.NewIdent("string"),
+				Names: []*ast.Ident{
+					ast.NewIdent(nameParameterString),
 				},
 			},
-			Returns: []*ast.Field{
-				{
-					Type: ast.NewIdent("interface{}"),
-				},
-				{
-					Type: ast.NewIdent("error"),
-				},
+		},
+		Returns: []*ast.Field{
+			{
+				Type: ast.NewIdent("interface{}"),
 			},
-			Body: builder.functionBodyStatements(),
-		})
+			{
+				Type: ast.NewIdent("error"),
+			},
+		},
+		Body: builder.functionBodyStatements(),
+	}
+
+	fn.AddComments("converts from a Kubernetes CRD object to an ARM object")
+
+	return astbuilder.DefineFunc(fn)
 }
 
 func (builder *convertToArmBuilder) functionBodyStatements() []ast.Stmt {

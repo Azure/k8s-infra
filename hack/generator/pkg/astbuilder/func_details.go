@@ -10,7 +10,7 @@ type FuncDetails struct {
 	ReceiverIdent *ast.Ident
 	ReceiverType  ast.Expr
 	Name          *ast.Ident
-	Comment       string
+	Comments      []string
 	Params        []*ast.Field
 	Returns       []*ast.Field
 	Body          []ast.Stmt
@@ -61,12 +61,9 @@ func DefineFunc(funcDetails *FuncDetails) *ast.FuncDecl {
 	}
 
 	var comment []*ast.Comment
-	if funcDetails.Comment != "" {
-		comment = []*ast.Comment{
-			{
-				Text: fmt.Sprintf("// %s %s", funcDetails.Name, funcDetails.Comment),
-			},
-		}
+	if len(funcDetails.Comments) > 0 {
+		funcDetails.Comments[0] = fmt.Sprintf("//%s %s", funcDetails.Name, funcDetails.Comments[0])
+		AddWrappedComments(&comment, funcDetails.Comments, 120)
 	}
 
 	result := &ast.FuncDecl{
@@ -119,4 +116,8 @@ func (fn *FuncDetails) AddParameter(id string, parameterType ast.Expr) {
 		Type:  parameterType,
 	}
 	fn.Params = append(fn.Params, field)
+}
+
+func (fn *FuncDetails) AddComments(comment ...string) {
+	fn.Comments = append(fn.Comments, comment...)
 }

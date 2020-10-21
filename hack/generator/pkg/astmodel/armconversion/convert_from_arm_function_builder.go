@@ -58,38 +58,40 @@ func newConvertFromArmFunctionBuilder(
 
 func (builder *convertFromArmBuilder) functionDeclaration() *ast.FuncDecl {
 
-	return astbuilder.DefineFunc(
-		&astbuilder.FuncDetails{
-			Name:          ast.NewIdent(builder.methodName),
-			ReceiverIdent: builder.receiverIdent,
-			ReceiverType: &ast.StarExpr{
-				X: builder.receiverTypeExpr,
-			},
-			Comment: "populates a Kubernetes CRD object from an Azure ARM object",
-			Params: []*ast.Field{
-				{
-					Type: &ast.SelectorExpr{
-						X:   ast.NewIdent(astmodel.GenRuntimePackageName),
-						Sel: ast.NewIdent("KnownResourceReference"),
-					},
-					Names: []*ast.Ident{
-						ast.NewIdent(builder.idFactory.CreateIdentifier(astmodel.OwnerProperty, astmodel.NotExported)),
-					},
+	fn := &astbuilder.FuncDetails{
+		Name:          ast.NewIdent(builder.methodName),
+		ReceiverIdent: builder.receiverIdent,
+		ReceiverType: &ast.StarExpr{
+			X: builder.receiverTypeExpr,
+		},
+		Params: []*ast.Field{
+			{
+				Type: &ast.SelectorExpr{
+					X:   ast.NewIdent(astmodel.GenRuntimePackageName),
+					Sel: ast.NewIdent("KnownResourceReference"),
 				},
-				{
-					Type: ast.NewIdent("interface{}"),
-					Names: []*ast.Ident{
-						builder.inputIdent,
-					},
+				Names: []*ast.Ident{
+					ast.NewIdent(builder.idFactory.CreateIdentifier(astmodel.OwnerProperty, astmodel.NotExported)),
 				},
 			},
-			Returns: []*ast.Field{
-				{
-					Type: ast.NewIdent("error"),
+			{
+				Type: ast.NewIdent("interface{}"),
+				Names: []*ast.Ident{
+					builder.inputIdent,
 				},
 			},
-			Body: builder.functionBodyStatements(),
-		})
+		},
+		Returns: []*ast.Field{
+			{
+				Type: ast.NewIdent("error"),
+			},
+		},
+		Body: builder.functionBodyStatements(),
+	}
+
+	fn.AddComments("populates a Kubernetes CRD object from an Azure ARM object")
+
+	return astbuilder.DefineFunc(fn)
 }
 
 func (builder *convertFromArmBuilder) functionBodyStatements() []ast.Stmt {
