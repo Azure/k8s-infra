@@ -83,3 +83,19 @@ func (codeGenContext *CodeGenerationContext) GetImportedDefinition(typeName Type
 
 	return pkg.GetDefinition(typeName)
 }
+
+// GetDefinitionsInPackage() returns the actual definitions from a specific package
+func (codeGenContext *CodeGenerationContext) GetTypesInPackage(ref PackageReference) (Types, bool) {
+	def, ok := codeGenContext.generatedPackages[ref]
+	return def.definitions, ok
+}
+
+// GetDefinitionsInCurrentPackage() returns the actual definitions from a specific package
+func (codeGenContext *CodeGenerationContext) GetTypesInCurrentPackage() Types {
+	def, ok := codeGenContext.GetTypesInPackage(codeGenContext.currentPackage)
+	if !ok {
+		panic("Should always have definitions for the current package")
+	}
+
+	return def
+}
