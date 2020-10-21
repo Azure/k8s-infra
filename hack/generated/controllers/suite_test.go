@@ -8,7 +8,6 @@ package controllers_test
 import (
 	"context"
 	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -27,37 +26,38 @@ const (
 	TestNamespace = "k8s-infra-test-ns"
 )
 
-// TODO: I don't love these package global variables but it seems to be the only way to actually use TestMain to set things up?
-var testContext *testcommon.TestContext
-var sharedResourceGroup *resources.ResourceGroup
+type ControllerTestContext struct {
+	*testcommon.TestContext
+	SharedResourceGroup *resources.ResourceGroup
+}
 
-func setup() error {
+func setup() (ControllerTestContext, error) {
 	ctx := context.Background()
 	log.Println("Running test setup")
 
 	SetDefaultEventuallyTimeout(2 * time.Minute)
 	SetDefaultEventuallyPollingInterval(5 * time.Second)
 
-	var err error
-	testContext, err = testcommon.NewTestContext(
+	testContext, err := testcommon.NewTestContext(
 		TestRegion,
 		TestNamespace,
 		controllers.ResourceStateAnnotation,
 		controllers.ResourceErrorAnnotation)
+
 	if err != nil {
-		return err
+		return ControllerTestContext{}, err
 	}
 
 	err = testContext.CreateTestNamespace()
 	if err != nil {
-		return nil
+		return ControllerTestContext{}, err
 	}
 
 	// Create a shared resource group, for tests to use
-	sharedResourceGroup = testContext.NewTestResourceGroup()
+	sharedResourceGroup := testContext.NewTestResourceGroup()
 	err = testContext.KubeClient.Create(ctx, sharedResourceGroup)
 	if err != nil {
-		return errors.Wrapf(err, "creating shared resource group")
+		return ControllerTestContext{}, errors.Wrapf(err, "creating shared resource group")
 	}
 
 	// TODO: Should use AzureName here once it's always set
@@ -69,10 +69,10 @@ func setup() error {
 
 	log.Println("Done with test setup")
 
-	return nil
+	return ControllerTestContext{testContext, sharedResourceGroup}, nil
 }
 
-func teardown() error {
+func teardown(testContext ControllerTestContext) error {
 	log.Println("Started common controller test teardown")
 
 	ctx := context.Background()
@@ -124,22 +124,45 @@ func teardown() error {
 	return nil
 }
 
-func TestMain(m *testing.M) {
+type controllerTest struct {
+	name string
+	test func(ctx ControllerTestContext, t *testing.T)
+}
 
-	err := setup()
-	if err != nil {
-		panic(err)
+func runTests(t *testing.T, tests []controllerTest) {
+	ctx, setupErr := setup()
+	if setupErr != nil {
+		panic(setupErr)
 	}
 
-	// call flag.Parse() here if TestMain uses flags
-	code := m.Run()
+	defer func() {
+		if teardownErr := teardown(ctx); teardownErr != nil {
+			panic(teardownErr)
+		}
+	}()
 
-	err = teardown()
-	if err != nil {
-		panic(err)
+	for _, test := range tests {
+		if !t.Run(test.name, func(t *testing.T) { test.test(ctx, t) }) {
+			return
+		}
+	}
+}
+
+func Test_Controller_Integrations_Slow(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping slow tests in short mode")
 	}
 
-	os.Exit(code)
+	tests := []controllerTest{
+		{"ResourceGroup CRUD", Integration_ResourceGroup_CRUD},
+		{"StorageAccount CRUD", Integration_StorageAccount_CRUD},
+	}
+
+	runTests(t, tests)
+}
+
+func Test_Controller_Integrations_Fast(t *testing.T) {
+	// none, yet
 }
 
 // TODO: Do we need this?
