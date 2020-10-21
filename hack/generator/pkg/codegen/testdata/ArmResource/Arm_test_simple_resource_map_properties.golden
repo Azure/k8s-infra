@@ -116,61 +116,49 @@ func (fakeResourceSpec *FakeResource_Spec) ConvertToArm(name string) (interface{
 	result := FakeResource_SpecArm{}
 	result.ApiVersion = fakeResourceSpec.ApiVersion
 	result.MapFoo = make(map[string]FooArm)
-	if fakeResourceSpec.MapFoo != nil {
-		for key, value := range fakeResourceSpec.MapFoo {
+	for key, value := range fakeResourceSpec.MapFoo {
+		elem, err := value.ConvertToArm(name)
+		if err != nil {
+			return nil, err
+		}
+		elemTyped := elem.(FooArm)
+		result.MapFoo[key] = elemTyped
+	}
+	result.MapOfArrays = make(map[string][]FooArm)
+	for key, value := range fakeResourceSpec.MapOfArrays {
+		var elemTyped []FooArm
+		for _, item := range value {
+			elem, err := item.ConvertToArm(name)
+			if err != nil {
+				return nil, err
+			}
+			elemTyped1 := elem.(FooArm)
+			elemTyped = append(elemTyped, elemTyped1)
+		}
+		result.MapOfArrays[key] = elemTyped
+	}
+	result.MapOfEnums = make(map[string]Color)
+	for key, value := range fakeResourceSpec.MapOfEnums {
+		elemTyped := value
+		result.MapOfEnums[key] = elemTyped
+	}
+	result.MapOfMaps = make(map[string]map[string]FooArm)
+	for key, value := range fakeResourceSpec.MapOfMaps {
+		elemTyped := make(map[string]FooArm)
+		for key, value := range value {
 			elem, err := value.ConvertToArm(name)
 			if err != nil {
 				return nil, err
 			}
-			elemTyped := elem.(FooArm)
-			result.MapFoo[key] = elemTyped
+			elemTyped1 := elem.(FooArm)
+			elemTyped[key] = elemTyped1
 		}
-	}
-	result.MapOfArrays = make(map[string][]FooArm)
-	if fakeResourceSpec.MapOfArrays != nil {
-		for key, value := range fakeResourceSpec.MapOfArrays {
-			var elemTyped []FooArm
-			for _, item := range value {
-				elem, err := item.ConvertToArm(name)
-				if err != nil {
-					return nil, err
-				}
-				elemTyped1 := elem.(FooArm)
-				elemTyped = append(elemTyped, elemTyped1)
-			}
-			result.MapOfArrays[key] = elemTyped
-		}
-	}
-	result.MapOfEnums = make(map[string]Color)
-	if fakeResourceSpec.MapOfEnums != nil {
-		for key, value := range fakeResourceSpec.MapOfEnums {
-			elemTyped := value
-			result.MapOfEnums[key] = elemTyped
-		}
-	}
-	result.MapOfMaps = make(map[string]map[string]FooArm)
-	if fakeResourceSpec.MapOfMaps != nil {
-		for key, value := range fakeResourceSpec.MapOfMaps {
-			elemTyped := make(map[string]FooArm)
-			if value != nil {
-				for key, value := range value {
-					elem, err := value.ConvertToArm(name)
-					if err != nil {
-						return nil, err
-					}
-					elemTyped1 := elem.(FooArm)
-					elemTyped[key] = elemTyped1
-				}
-			}
-			result.MapOfMaps[key] = elemTyped
-		}
+		result.MapOfMaps[key] = elemTyped
 	}
 	result.MapOfStrings = make(map[string]string)
-	if fakeResourceSpec.MapOfStrings != nil {
-		for key, value := range fakeResourceSpec.MapOfStrings {
-			elemTyped := value
-			result.MapOfStrings[key] = elemTyped
-		}
+	for key, value := range fakeResourceSpec.MapOfStrings {
+		elemTyped := value
+		result.MapOfStrings[key] = elemTyped
 	}
 	result.Name = name
 	result.Type = FakeResourceSpecTypeMicrosoftAzureFakeResource

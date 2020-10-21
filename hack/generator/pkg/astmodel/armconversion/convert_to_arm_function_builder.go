@@ -465,19 +465,7 @@ func (builder *convertToArmBuilder) convertComplexMapProperty(
 		},
 	}
 
-	result := &ast.IfStmt{
-		Cond: &ast.BinaryExpr{
-			X:  params.source,
-			Op: token.NEQ,
-			Y:  ast.NewIdent("nil"),
-		},
-		Body: &ast.BlockStmt{
-			List: []ast.Stmt{
-				rangeStatement,
-			},
-		},
-	}
-	return []ast.Stmt{makeMapStatement, result}
+	return []ast.Stmt{makeMapStatement, rangeStatement}
 }
 
 // convertComplexTypeNameProperty handles conversion of complex TypeName properties.
