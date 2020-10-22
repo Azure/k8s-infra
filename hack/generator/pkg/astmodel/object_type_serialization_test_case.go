@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"go/ast"
 	"go/token"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // ObjectSerializationTestCase represents a test that the object can be losslessly serialized to
@@ -456,7 +456,16 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 
 	switch t := propertyType.(type) {
 	case TypeName:
-		return astbuilder.CallFunc(o.idOfGeneratorMethod(t))
+		_, ok := types[t]
+		if ok {
+			// Only create a generator for a property referencing a type in this package
+			return astbuilder.CallFunc(o.idOfGeneratorMethod(t))
+		}
+
+		//TODO: Should we invoke a generator for stuff from our runtime package?
+
+		return nil
+
 	case *OptionalType:
 		g := o.createRelatedGenerator(t.Element(), genPackageName, types)
 		if g != nil {
