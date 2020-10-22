@@ -30,6 +30,7 @@ type TestContext struct {
 	Namer       *ResourceNamer
 	KubeClient  client.Client
 	Ensure      *Ensure
+	MatcherMaker *MatcherMaker
 	AzureClient armclient.Applier
 
 	AzureRegion       string
@@ -41,7 +42,12 @@ type TestContext struct {
 // TODO: to genruntime. Same for errorAnnotation
 func NewTestContext(region string, namespace string, stateAnnotation string, errorAnnotation string) (*TestContext, error) {
 	scheme := CreateScheme()
-	kubeClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
+	config, err := ctrl.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get kubeconfig")
+	}
+
+	kubeClient, err := client.New(config, client.Options{Scheme: scheme})
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating kubeclient")
 	}
@@ -56,11 +62,14 @@ func NewTestContext(region string, namespace string, stateAnnotation string, err
 		return nil, errors.New("couldn't find AZURE_SUBSCRIPTION_ID")
 	}
 
+	ensure := NewEnsure(kubeClient, stateAnnotation, errorAnnotation)
+
 	return &TestContext{
 		AzureClient:       armClient,
 		AzureRegion:       region,
 		AzureSubscription: subscription, // TODO: Do we really need this?
-		Ensure:            NewEnsure(kubeClient, stateAnnotation, errorAnnotation),
+		Ensure:            ensure,
+		MatcherMaker:      NewMatcherMaker(ensure),
 		KubeClient:        kubeClient,
 		Namer:             NewResourceNamer(ResourcePrefix, "-", 6),
 		Namespace:         namespace,

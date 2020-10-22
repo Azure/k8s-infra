@@ -27,6 +27,7 @@ import (
 const (
 	TestRegion    = "westus"
 	TestNamespace = "k8s-infra-test-ns"
+	DefaultResourceTimeout = 2 * time.Minute
 )
 
 var testContext ControllerTestContext
@@ -40,7 +41,7 @@ func setup() (ControllerTestContext, error) {
 	ctx := context.Background()
 	log.Println("Running test setup")
 
-	SetDefaultEventuallyTimeout(2 * time.Minute)
+	SetDefaultEventuallyTimeout(DefaultResourceTimeout)
 	SetDefaultEventuallyPollingInterval(5 * time.Second)
 
 	testContext, err := testcommon.NewTestContext(
@@ -69,8 +70,12 @@ func setup() (ControllerTestContext, error) {
 	log.Printf("Created shared resource group %s\n", sharedResourceGroup.Name)
 
 	// It should be created in Kubernetes
-	// TODO: Generic polling helper needed here
-	// g.Eventually(testContext.Ensure.Created(ctx, rg)).Should(BeTrue())
+	err = waitFor(ctx, DefaultResourceTimeout, func(waitCtx context.Context) (bool, error) {
+		return testContext.Ensure.Provisioned(waitCtx, sharedResourceGroup)
+	})
+	if err != nil {
+		return ControllerTestContext{}, errors.Wrapf(err, "waiting for shared resource group")
+	}
 
 	log.Println("Done with test setup")
 
@@ -108,24 +113,39 @@ func teardown(testContext ControllerTestContext) error {
 	}
 
 	// Don't block forever waiting for delete to complete
-	waitCtx, cancel := context.WithTimeout(ctx, 3*time.Minute)
+	err = waitFor(ctx, DefaultResourceTimeout, func(waitCtx context.Context) (bool, error) {
+		return testContext.Ensure.AllDeleted(waitCtx, resourceGroups)
+	})
+	if err != nil {
+		return errors.Wrapf(err, "waiting for all resource groups to delete")
+	}
+
+	log.Println("Finished common controller test teardown")
+	return nil
+}
+
+// TODO: it's unfortunate we can't just use g.Eventually all the time
+func waitFor(ctx context.Context, timeout time.Duration, check func (context.Context) (bool, error)) error {
+	waitCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	allDeleted := false
+	done := false
 
-	for !allDeleted {
+	for !done {
 		select {
 		case <-waitCtx.Done():
 			return waitCtx.Err()
 		default:
-			allDeleted, err = testContext.Ensure.AllDeleted(waitCtx, resourceGroups)()
+			var err error
+			done, err = check(waitCtx)
 			if err != nil {
 				return err
 			}
 		}
+
+		time.Sleep(5 * time.Second)
 	}
 
-	log.Println("Finished common controller test teardown")
 	return nil
 }
 
