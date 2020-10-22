@@ -113,7 +113,7 @@ test-int-cover: kind-create deploy test-int-no-cleanup-cover kind-delete cleanup
 # resources in cases where the test pass is terminated, panics, etc
 .PHONY: cleanup-test-azure-resources
 cleanup-test-azure-resources:
-	$(Q) for rgname in `az group list --query "[*].[name]" -o table | grep '^k8sinfra-test' `; do \
+	$(Q) for rgname in `az group list --query "[*].[name]" -o table | grep '^k8sinfratest' `; do \
 		echo "$$rgname will be deleted"; \
 		az group delete --name $$rgname --no-wait --yes; \
 	done

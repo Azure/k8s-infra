@@ -65,7 +65,7 @@ func setup() (ControllerTestContext, error) {
 		return ControllerTestContext{}, errors.Wrapf(err, "creating shared resource group")
 	}
 
-	// TODO: Should use AzureName here once it's always set
+	// TODO: Should use AzureName rather than Name once it's always set
 	log.Printf("Created shared resource group %s\n", sharedResourceGroup.Name)
 
 	// It should be created in Kubernetes

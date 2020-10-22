@@ -23,6 +23,7 @@ import (
 	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
 )
 
+// If you modify this make sure to modify the cleanup-test-azure-resources target in the Makefile too
 const ResourcePrefix = "k8sinfratest"
 
 type TestContext struct {
