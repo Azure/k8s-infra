@@ -30,8 +30,19 @@ func AddWrappedComment(commentList *[]*ast.Comment, comment string, width int) {
 	}
 }
 
+func AddComments(commentList *[]*ast.Comment, comments []string) {
+	for _, comment := range comments {
+		// Skip empty comments
+		if comment == "" {
+			continue
+		}
+
+		AddComment(commentList, comment)
+	}
+}
+
 func AddComment(commentList *[]*ast.Comment, comment string) {
-	line := strings.TrimSpace(comment)
+	line := comment
 
 	if !strings.HasPrefix(line, "//") {
 		line = "//" + line

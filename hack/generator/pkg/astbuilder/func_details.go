@@ -67,8 +67,8 @@ func DefineFunc(funcDetails *FuncDetails) *ast.FuncDecl {
 
 	var comment []*ast.Comment
 	if len(funcDetails.Comments) > 0 {
-		funcDetails.Comments[0] = fmt.Sprintf("//%s %s", funcDetails.Name, funcDetails.Comments[0])
-		AddWrappedComments(&comment, funcDetails.Comments, 120)
+		funcDetails.Comments[0] = fmt.Sprintf("// %s %s", funcDetails.Name, funcDetails.Comments[0])
+		AddComments(&comment, funcDetails.Comments)
 	}
 
 	result := &ast.FuncDecl{
