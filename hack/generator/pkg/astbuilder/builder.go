@@ -96,13 +96,7 @@ func AppendList(lhs ast.Expr, rhs ast.Expr) ast.Stmt {
 	return SimpleAssignment(
 		lhs,
 		token.ASSIGN,
-		&ast.CallExpr{
-			Fun: ast.NewIdent("append"),
-			Args: []ast.Expr{
-				lhs,
-				rhs,
-			},
-		})
+		CallFuncByName("append", lhs, rhs))
 }
 
 // InsertMap returns an assignment statement for inserting an item into a map, like:
