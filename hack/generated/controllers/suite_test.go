@@ -7,7 +7,9 @@ package controllers_test
 
 import (
 	"context"
+	"flag"
 	"log"
+	"os"
 	"testing"
 	"time"
 
@@ -15,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	resources "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.resources/v20200601"
 	"github.com/Azure/k8s-infra/hack/generated/controllers"
@@ -25,6 +28,8 @@ const (
 	TestRegion    = "westus"
 	TestNamespace = "k8s-infra-test-ns"
 )
+
+var testContext ControllerTestContext
 
 type ControllerTestContext struct {
 	*testcommon.TestContext
@@ -79,7 +84,7 @@ func teardown(testContext ControllerTestContext) error {
 
 	// List all of the resource groups
 	rgList := &resources.ResourceGroupList{}
-	err := testContext.KubeClient.List(ctx, rgList)
+	err := testContext.KubeClient.List(ctx, rgList, &client.ListOptions{Namespace: testContext.Namespace})
 	if err != nil {
 		return errors.Wrap(err, "listing resource groups")
 	}
@@ -124,13 +129,18 @@ func teardown(testContext ControllerTestContext) error {
 	return nil
 }
 
-type controllerTest struct {
-	name string
-	test func(ctx ControllerTestContext, t *testing.T)
-}
+// testMainWrapper is a wrapper that can be called by TestMain so that we can use defer
+func testMainWrapper(m *testing.M) int {
 
-func runTests(t *testing.T, tests []controllerTest) {
+	flag.Parse()
+	if testing.Short() {
+		log.Println("Skipping slow tests in short mode")
+		return 0
+	}
+
 	ctx, setupErr := setup()
+	// Save context globally as well for use by tests
+	testContext = ctx
 	if setupErr != nil {
 		panic(setupErr)
 	}
@@ -141,28 +151,12 @@ func runTests(t *testing.T, tests []controllerTest) {
 		}
 	}()
 
-	for _, test := range tests {
-		if !t.Run(test.name, func(t *testing.T) { test.test(ctx, t) }) {
-			return
-		}
-	}
+	return m.Run()
 }
 
-func Test_Controller_Integrations_Slow(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping slow tests in short mode")
-	}
+func TestMain(m *testing.M) {
+	os.Exit(testMainWrapper(m))
 
-	tests := []controllerTest{
-		{"ResourceGroup CRUD", Integration_ResourceGroup_CRUD},
-		{"StorageAccount CRUD", Integration_StorageAccount_CRUD},
-	}
-
-	runTests(t, tests)
-}
-
-func Test_Controller_Integrations_Fast(t *testing.T) {
-	// none, yet
 }
 
 // TODO: Do we need this?

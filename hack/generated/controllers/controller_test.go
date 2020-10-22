@@ -16,7 +16,7 @@ import (
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 )
 
-func Integration_ResourceGroup_CRUD(testContext ControllerTestContext, t *testing.T) {
+func Test_ResourceGroup_CRUD(t *testing.T) {
 	g := NewGomegaWithT(t)
 	ctx := context.Background()
 
@@ -49,7 +49,7 @@ func Integration_ResourceGroup_CRUD(testContext ControllerTestContext, t *testin
 	g.Expect(exists).To(BeFalse())
 }
 
-func Integration_StorageAccount_CRUD(testContext ControllerTestContext, t *testing.T) {
+func Test_StorageAccount_CRUD(t *testing.T) {
 	g := NewGomegaWithT(t)
 	ctx := context.Background()
 
