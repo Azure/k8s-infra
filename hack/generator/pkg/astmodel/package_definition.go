@@ -144,7 +144,7 @@ func (pkgDef *PackageDefinition) writeTestFile(
 	klog.V(5).Infof("Writing test case file %q\n", outputFile)
 	err := genFile.SaveToFile(outputFile)
 	if err != nil {
-		return errors.Wrapf(err, "error writing test cases to file %q", outputFile)
+		return errors.Wrapf(err, "writing test cases to file %q", outputFile)
 	}
 
 	return nil

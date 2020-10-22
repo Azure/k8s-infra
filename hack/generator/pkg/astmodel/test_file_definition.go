@@ -84,7 +84,7 @@ func (file *TestFileDefinition) generateDeclarations() []ast.Decl {
 	return decls
 }
 
-// generateImports products the definitive set of imports for use in this file and
+// generateImports produces the definitive set of imports for use in this file and
 // disambiguates any conflicts
 func (file *TestFileDefinition) generateImports() *PackageImportSet {
 	var requiredImports = NewPackageImportSet()

@@ -47,11 +47,10 @@ func (r *ResourceType) WithKubernetesResourceInterfaceImpl(
 		return nil, errors.Errorf("resource spec doesn't have %q property", AzureNameProperty)
 	}
 
-	namePropType := nameProp.PropertyType()
 	// resolve property type if it is a typename
-	namePropType, err = types.FullyResolve(namePropType)
+	namePropType, err := types.FullyResolve(nameProp.PropertyType())
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to resolve type of resource Name property: %s", namePropType.String())
+		return nil, errors.Wrapf(err, "unable to resolve type of resource Name property: %s", nameProp.PropertyType().String())
 	}
 
 	var nameFunc asFuncType
