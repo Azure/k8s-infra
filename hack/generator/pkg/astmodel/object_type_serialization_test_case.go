@@ -301,7 +301,7 @@ func (o ObjectSerializationTestCase) createGeneratorMethod(
 		"The call to gen.Struct() captures the map, so we have to create a new one for the second generator.")
 
 	// If we have already cached our builder, return it immediately
-	earlyReturn := astbuilder.ReturnIfNil(
+	earlyReturn := astbuilder.ReturnIfNotNil(
 		o.idOfSubjectGeneratorGlobal(),
 		o.idOfSubjectGeneratorGlobal())
 	fn.AddStatements(earlyReturn)
