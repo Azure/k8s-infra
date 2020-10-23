@@ -154,7 +154,7 @@ func (builder *convertToArmBuilder) typePropertyHandler(
 		panic(fmt.Sprintf("Enum %v definition was not of type EnumDefinition", enumTypeName))
 	}
 
-	optionId := astmodel.GetEnumValueId(def.Name(), enumType.Options()[0])
+	optionId := astmodel.GetEnumValueId(def.Name().Name(), enumType.Options()[0])
 
 	result := astbuilder.SimpleAssignment(
 		&ast.SelectorExpr{
