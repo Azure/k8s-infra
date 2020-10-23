@@ -470,15 +470,36 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 
 	case *EnumType:
 		return o.createEnumGenerator(genPackageName, t)
-	}
 
-	// Handle optional properties
-	if ot, ok := propertyType.(*OptionalType); ok {
-		g, err := o.createIndependentGenerator(ot.Element(), genPackageName, types)
+	case *OptionalType:
+		g, err := o.createIndependentGenerator(t.Element(), genPackageName, types)
 		if err != nil {
 			return nil, err
 		} else if g != nil {
-			return astbuilder.CallMethodByName(genPackageName, "PtrOf", g), nil
+			return astbuilder.CallQualifiedFuncByName(genPackageName, "PtrOf", g), nil
+		}
+
+	case *ArrayType:
+		g, err := o.createIndependentGenerator(t.Element(), genPackageName, types)
+		if err != nil {
+			return nil, err
+		} else if g != nil {
+			return astbuilder.CallQualifiedFuncByName(genPackageName, "SliceOf", g), nil
+		}
+
+	case *MapType:
+		keyGen, err := o.createIndependentGenerator(t.KeyType(), genPackageName, types)
+		if err != nil {
+			return nil, err
+		}
+
+		valueGen, err := o.createIndependentGenerator(t.ValueType(), genPackageName, types)
+		if err != nil {
+			return nil, err
+		}
+
+		if keyGen != nil && valueGen != nil {
+			return astbuilder.CallQualifiedFuncByName(genPackageName, "MapOf", keyGen, valueGen), nil
 		}
 	}
 
