@@ -83,9 +83,11 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 
 	haveRelatedGenerators := len(relatedGenerators) > 0
 
-	for _, p := range properties {
-		errs = append(errs, errors.Errorf("No generator created for %v (%v)", p.PropertyName(), p.PropertyType()))
-	}
+	// TODO - enable this once we reduce the noise
+	// TODO - work out how to create a generator for a type in a different package
+	//for _, p := range properties {
+	//	errs = append(errs, errors.Errorf("No generator created for %v (%v)", p.PropertyName(), p.PropertyType()))
+	//}
 
 	result := []ast.Decl{
 		o.createTestRunner(),
