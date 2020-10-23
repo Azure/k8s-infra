@@ -27,11 +27,11 @@ import (
 const ResourcePrefix = "k8sinfratest"
 
 type TestContext struct {
-	Namer       *ResourceNamer
-	KubeClient  client.Client
-	Ensure      *Ensure
+	Namer        *ResourceNamer
+	KubeClient   client.Client
+	Ensure       *Ensure
 	MatcherMaker *MatcherMaker
-	AzureClient armclient.Applier
+	AzureClient  armclient.Applier
 
 	AzureRegion       string
 	Namespace         string

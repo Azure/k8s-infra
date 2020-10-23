@@ -92,7 +92,7 @@ generate: manifests $(CONTROLLER_GEN) $(CONVERSION_GEN) ## Generate code
 ## --------------------------------------
 
 .PHONY: tilt-up
-tilt-up: kind-create .env ## start tilt and build kind cluster if needed
+tilt-up: kind-create $(ROOT_DIR)/.env ## start tilt and build kind cluster if needed
 	tilt up
 
 .PHONY: kind-reset

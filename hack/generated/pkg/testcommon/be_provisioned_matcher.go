@@ -17,7 +17,7 @@ import (
 
 type BeProvisionedMatcher struct {
 	ensure *Ensure
-	ctx context.Context
+	ctx    context.Context
 }
 
 var _ types.GomegaMatcher = &BeProvisionedMatcher{}

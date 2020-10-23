@@ -25,8 +25,8 @@ import (
 )
 
 const (
-	TestRegion    = "westus"
-	TestNamespace = "k8s-infra-test-ns"
+	TestRegion             = "westus"
+	TestNamespace          = "k8s-infra-test-ns"
 	DefaultResourceTimeout = 2 * time.Minute
 )
 
@@ -125,7 +125,7 @@ func teardown(testContext ControllerTestContext) error {
 }
 
 // TODO: it's unfortunate we can't just use g.Eventually all the time
-func waitFor(ctx context.Context, timeout time.Duration, check func (context.Context) (bool, error)) error {
+func waitFor(ctx context.Context, timeout time.Duration, check func(context.Context) (bool, error)) error {
 	waitCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 

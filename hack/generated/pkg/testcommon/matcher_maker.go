@@ -25,13 +25,13 @@ func NewMatcherMaker(ensure *Ensure) *MatcherMaker {
 func (m *MatcherMaker) BeProvisioned(ctx context.Context) types.GomegaMatcher {
 	return &BeProvisionedMatcher{
 		ensure: m.ensure,
-		ctx: ctx,
+		ctx:    ctx,
 	}
 }
 
 func (m *MatcherMaker) BeDeleted(ctx context.Context) types.GomegaMatcher {
 	return &BeDeletedMatcher{
 		ensure: m.ensure,
-		ctx: ctx,
+		ctx:    ctx,
 	}
 }

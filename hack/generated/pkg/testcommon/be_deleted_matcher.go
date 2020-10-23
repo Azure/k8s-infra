@@ -24,10 +24,9 @@ func actualAsObj(actual interface{}) (controllerutil.Object, error) {
 	return obj, nil
 }
 
-
 type BeDeletedMatcher struct {
 	ensure *Ensure
-	ctx context.Context
+	ctx    context.Context
 
 	subsequentMissingDeleteTimestamps int
 }
