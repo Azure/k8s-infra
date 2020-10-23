@@ -7,7 +7,6 @@ package testcommon
 
 import (
 	"context"
-	"fmt"
 
 	gomegaformat "github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/types"
@@ -56,7 +55,7 @@ func (m *BeDeletedMatcher) FailureMessage(actual interface{}) string {
 		panic(err)
 	}
 
-	return gomegaformat.Message(obj, fmt.Sprintf("to be deleted"))
+	return gomegaformat.Message(obj, "to be deleted")
 }
 
 func (m *BeDeletedMatcher) NegatedFailureMessage(actual interface{}) string {
@@ -68,7 +67,7 @@ func (m *BeDeletedMatcher) NegatedFailureMessage(actual interface{}) string {
 		panic(err)
 	}
 
-	return gomegaformat.Message(obj, fmt.Sprintf("not to be deleted"))
+	return gomegaformat.Message(obj, "not to be deleted")
 }
 
 // MatchMayChangeInTheFuture implements OracleMatcher which of course isn't exported so we can't type-assert we implement it
