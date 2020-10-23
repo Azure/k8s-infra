@@ -89,6 +89,12 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 	//	errs = append(errs, errors.Errorf("No generator created for %v (%v)", p.PropertyName(), p.PropertyType()))
 	//}
 
+	if !haveSimpleGenerators && !haveRelatedGenerators {
+		// No properties that we can generate to test - skip the testing completely
+		klog.Warningf("No tests generated for %v", name)
+		return nil
+	}
+
 	result := []ast.Decl{
 		o.createTestRunner(),
 		o.createTestMethod(),
