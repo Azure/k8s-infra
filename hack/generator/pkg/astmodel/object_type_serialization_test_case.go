@@ -11,7 +11,8 @@ import (
 	"github.com/pkg/errors"
 	"go/ast"
 	"go/token"
-	"k8s.io/klog/v2"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/klog"
 )
 
 // ObjectSerializationTestCase represents a test that the object can be losslessly serialized to
@@ -47,7 +48,7 @@ func (o ObjectSerializationTestCase) References() TypeNameSet {
 	return result
 }
 
-func (o ObjectSerializationTestCase) AsFuncs(_ TypeName, genContext *CodeGenerationContext) []ast.Decl {
+func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGenerationContext) []ast.Decl {
 
 	gopterPackage, err := genContext.GetImportedPackageName(GopterReference)
 	if err != nil {
@@ -64,13 +65,27 @@ func (o ObjectSerializationTestCase) AsFuncs(_ TypeName, genContext *CodeGenerat
 		Sel: ast.NewIdent("Gen"),
 	}
 
+	var errs []error
 	types := genContext.GetTypesInCurrentPackage()
 
 	properties := o.makePropertyMap()
-	simpleGenerators := o.createGenerators(properties, genPackageName, types, o.createIndependentGenerator)
+	simpleGenerators, err := o.createGenerators(properties, genPackageName, types, o.createIndependentGenerator)
+	if err != nil {
+		errs = append(errs, err)
+	}
+
 	haveSimpleGenerators := len(simpleGenerators) > 0
-	relatedGenerators := o.createGenerators(properties, genPackageName, types, o.createRelatedGenerator)
+
+	relatedGenerators, err := o.createGenerators(properties, genPackageName, types, o.createRelatedGenerator)
+	if err != nil {
+		errs = append(errs, err)
+	}
+
 	haveRelatedGenerators := len(relatedGenerators) > 0
+
+	for _, p := range properties {
+		errs = append(errs, errors.Errorf("No generator created for %v (%v)", p.PropertyName(), p.PropertyType()))
+	}
 
 	result := []ast.Decl{
 		o.createTestRunner(),
@@ -85,6 +100,13 @@ func (o ObjectSerializationTestCase) AsFuncs(_ TypeName, genContext *CodeGenerat
 
 	if haveRelatedGenerators {
 		result = append(result, o.createGeneratorsFactoryMethod(o.idOfRelatedGeneratorsFactoryMethod(), relatedGenerators, genType))
+	}
+
+	if len(errs) > 0 {
+		klog.Warningf("Encountered %v issues creating JSON Serialisation test for %v", len(errs), name)
+		for _, err := range errs {
+			klog.Warning(err)
+		}
 	}
 
 	return result
@@ -324,9 +346,14 @@ func (o ObjectSerializationTestCase) createGeneratorMethod(
 				ast.NewIdent("string"),
 				genType))
 
-		addIndependentGenerators := astbuilder.InvokeFunc(
-			o.idOfIndependentGeneratorsFactoryMethod(),
-			allIdent)
+		fn.AddStatements(makeAllMap)
+
+		if haveSimpleGenerators {
+			addIndependentGenerators := astbuilder.InvokeFunc(
+				o.idOfIndependentGeneratorsFactoryMethod(),
+				allIdent)
+			fn.AddStatements(addIndependentGenerators)
+		}
 
 		addRelatedGenerators := astbuilder.InvokeFunc(
 			o.idOfRelatedGeneratorsFactoryMethod(),
@@ -341,7 +368,7 @@ func (o ObjectSerializationTestCase) createGeneratorMethod(
 				astbuilder.CallQualifiedFuncByName("reflect", "TypeOf", &ast.CompositeLit{Type: o.Subject()}),
 				allIdent))
 
-		fn.AddStatements(makeAllMap, addIndependentGenerators, addRelatedGenerators, createFullGenerator)
+		fn.AddStatements(addRelatedGenerators, createFullGenerator)
 	}
 
 	// Return the freshly created (and now cached) generator
@@ -382,7 +409,7 @@ func (o ObjectSerializationTestCase) createGenerators(
 	properties map[PropertyName]*PropertyDefinition,
 	genPackageName string,
 	types Types,
-	factory func(propertyType Type, genPackageName string, types Types) ast.Expr) []ast.Stmt {
+	factory func(propertyType Type, genPackageName string, types Types) (ast.Expr, error)) ([]ast.Stmt, error) {
 
 	gensIdent := ast.NewIdent("gens")
 
@@ -390,9 +417,12 @@ func (o ObjectSerializationTestCase) createGenerators(
 	var result []ast.Stmt
 
 	// Iterate over all properties, creating generators where possible
+	var errs []error
 	for name, prop := range properties {
-		g := factory(prop.PropertyType(), genPackageName, types)
-		if g != nil {
+		g, err := factory(prop.PropertyType(), genPackageName, types)
+		if err != nil {
+			errs = append(errs, err)
+		} else if g != nil {
 			insert := astbuilder.InsertMap(
 				gensIdent,
 				&ast.BasicLit{
@@ -410,13 +440,13 @@ func (o ObjectSerializationTestCase) createGenerators(
 		delete(properties, name)
 	}
 
-	return result
+	return result, kerrors.NewAggregate(errs)
 }
 
 func (o ObjectSerializationTestCase) createIndependentGenerator(
 	propertyType Type,
 	genPackageName string,
-	types Types) ast.Expr {
+	types Types) (ast.Expr, error) {
 
 	// Handle simple primitive properties
 	switch propertyType {
@@ -436,50 +466,62 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 		if ok {
 			return o.createIndependentGenerator(def.theType, genPackageName, types)
 		}
+		return nil, nil
 
-		return nil
 	case *EnumType:
 		return o.createEnumGenerator(genPackageName, t)
 	}
 
 	// Handle optional properties
 	if ot, ok := propertyType.(*OptionalType); ok {
-		g := o.createIndependentGenerator(ot.Element(), genPackageName, types)
-		if g != nil {
-			return astbuilder.CallMethodByName(genPackageName, "PtrOf", g)
+		g, err := o.createIndependentGenerator(ot.Element(), genPackageName, types)
+		if err != nil {
+			return nil, err
+		} else if g != nil {
+			return astbuilder.CallMethodByName(genPackageName, "PtrOf", g), nil
 		}
 	}
 
 	// Not a simple property we can handle here
-	return nil
+	return nil, nil
 }
 
 func (o ObjectSerializationTestCase) createRelatedGenerator(
 	propertyType Type,
 	genPackageName string,
-	types Types) ast.Expr {
+	types Types) (ast.Expr, error) {
 
 	switch t := propertyType.(type) {
 	case TypeName:
 		_, ok := types[t]
 		if ok {
 			// Only create a generator for a property referencing a type in this package
-			return astbuilder.CallFunc(o.idOfGeneratorMethod(t))
+			return astbuilder.CallFunc(o.idOfGeneratorMethod(t)), nil
 		}
 
 		//TODO: Should we invoke a generator for stuff from our runtime package?
 
-		return nil
+		return nil, nil
 
 	case *OptionalType:
-		g := o.createRelatedGenerator(t.Element(), genPackageName, types)
-		if g != nil {
-			return astbuilder.CallMethodByName(genPackageName, "PtrOf", g)
+		g, err := o.createRelatedGenerator(t.Element(), genPackageName, types)
+		if err != nil {
+			return nil, err
+		} else if g != nil {
+			return astbuilder.CallQualifiedFuncByName(genPackageName, "PtrOf", g), nil
+		}
+
+	case *ArrayType:
+		g, err := o.createRelatedGenerator(name, t.Element(), genPackageName, types)
+		if err != nil {
+			return nil, err
+		} else if g != nil {
+			return astbuilder.CallQualifiedFuncByName(genPackageName, "SliceOf", g), nil
 		}
 	}
 
 	// Not a property we can handle here
-	return nil
+	return nil, nil
 }
 
 // makePropertyMap() makes a map of all the properties on our subject type
@@ -536,7 +578,7 @@ func (o ObjectSerializationTestCase) Subject() *ast.Ident {
 	return ast.NewIdent(o.subject.name)
 }
 
-func (o ObjectSerializationTestCase) createEnumGenerator(genPackageName string, enum *EnumType) ast.Expr {
+func (o ObjectSerializationTestCase) createEnumGenerator(genPackageName string, enum *EnumType) (ast.Expr, error) {
 	var kind token.Token
 
 	switch enum.baseType {
@@ -545,7 +587,7 @@ func (o ObjectSerializationTestCase) createEnumGenerator(genPackageName string, 
 	case IntType:
 		kind = token.INT
 	default:
-		klog.Warningf("Enum type %v not expected", enum.baseType)
+		return nil, errors.Errorf("Enum type %v not expected", enum.baseType)
 	}
 
 	var values []ast.Expr
