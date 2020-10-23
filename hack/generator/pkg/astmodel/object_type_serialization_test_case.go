@@ -609,6 +609,8 @@ func (o ObjectSerializationTestCase) createEnumGenerator(genPackageName string, 
 		kind = token.STRING
 	case IntType:
 		kind = token.INT
+	case BoolType:
+		return astbuilder.CallMethodByName(genPackageName, "Bool"), nil
 	default:
 		return nil, errors.Errorf("Enum type %v not expected", enum.baseType)
 	}
