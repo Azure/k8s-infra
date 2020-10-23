@@ -166,8 +166,8 @@ func (enum *EnumType) BaseType() *PrimitiveType {
 	return enum.baseType
 }
 
-func GetEnumValueId(name TypeName, value EnumValue) string {
-	return name.name + value.Identifier
+func GetEnumValueId(name string, value EnumValue) string {
+	return name + value.Identifier
 }
 
 // String implements fmt.Stringer

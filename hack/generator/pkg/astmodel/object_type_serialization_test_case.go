@@ -411,7 +411,7 @@ func (o ObjectSerializationTestCase) createGenerators(
 	properties map[PropertyName]*PropertyDefinition,
 	genPackageName string,
 	types Types,
-	factory func(propertyType Type, genPackageName string, types Types) (ast.Expr, error)) ([]ast.Stmt, error) {
+	factory func(name string, propertyType Type, genPackageName string, types Types) (ast.Expr, error)) ([]ast.Stmt, error) {
 
 	gensIdent := ast.NewIdent("gens")
 
@@ -421,7 +421,7 @@ func (o ObjectSerializationTestCase) createGenerators(
 	// Iterate over all properties, creating generators where possible
 	var errs []error
 	for name, prop := range properties {
-		g, err := factory(prop.PropertyType(), genPackageName, types)
+		g, err := factory(string(name), prop.PropertyType(), genPackageName, types)
 		if err != nil {
 			errs = append(errs, err)
 		} else if g != nil {
@@ -446,6 +446,7 @@ func (o ObjectSerializationTestCase) createGenerators(
 }
 
 func (o ObjectSerializationTestCase) createIndependentGenerator(
+	name string,
 	propertyType Type,
 	genPackageName string,
 	types Types) (ast.Expr, error) {
@@ -466,15 +467,15 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 	case TypeName:
 		def, ok := types[t]
 		if ok {
-			return o.createIndependentGenerator(def.theType, genPackageName, types)
+			return o.createIndependentGenerator(def.Name().name, def.theType, genPackageName, types)
 		}
 		return nil, nil
 
 	case *EnumType:
-		return o.createEnumGenerator(genPackageName, t)
+		return o.createEnumGenerator(name, genPackageName, t)
 
 	case *OptionalType:
-		g, err := o.createIndependentGenerator(t.Element(), genPackageName, types)
+		g, err := o.createIndependentGenerator(name, t.Element(), genPackageName, types)
 		if err != nil {
 			return nil, err
 		} else if g != nil {
@@ -482,7 +483,7 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 		}
 
 	case *ArrayType:
-		g, err := o.createIndependentGenerator(t.Element(), genPackageName, types)
+		g, err := o.createIndependentGenerator(name, t.Element(), genPackageName, types)
 		if err != nil {
 			return nil, err
 		} else if g != nil {
@@ -490,12 +491,12 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 		}
 
 	case *MapType:
-		keyGen, err := o.createIndependentGenerator(t.KeyType(), genPackageName, types)
+		keyGen, err := o.createIndependentGenerator(name, t.KeyType(), genPackageName, types)
 		if err != nil {
 			return nil, err
 		}
 
-		valueGen, err := o.createIndependentGenerator(t.ValueType(), genPackageName, types)
+		valueGen, err := o.createIndependentGenerator(name, t.ValueType(), genPackageName, types)
 		if err != nil {
 			return nil, err
 		}
@@ -510,6 +511,7 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 }
 
 func (o ObjectSerializationTestCase) createRelatedGenerator(
+	name string,
 	propertyType Type,
 	genPackageName string,
 	types Types) (ast.Expr, error) {
@@ -527,7 +529,7 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 		return nil, nil
 
 	case *OptionalType:
-		g, err := o.createRelatedGenerator(t.Element(), genPackageName, types)
+		g, err := o.createRelatedGenerator(name, t.Element(), genPackageName, types)
 		if err != nil {
 			return nil, err
 		} else if g != nil {
@@ -601,23 +603,11 @@ func (o ObjectSerializationTestCase) Subject() *ast.Ident {
 	return ast.NewIdent(o.subject.name)
 }
 
-func (o ObjectSerializationTestCase) createEnumGenerator(genPackageName string, enum *EnumType) (ast.Expr, error) {
-	var kind token.Token
-
-	switch enum.baseType {
-	case StringType:
-		kind = token.STRING
-	case IntType:
-		kind = token.INT
-	case BoolType:
-		return astbuilder.CallMethodByName(genPackageName, "Bool"), nil
-	default:
-		return nil, errors.Errorf("Enum type %v not expected", enum.baseType)
-	}
-
+func (o ObjectSerializationTestCase) createEnumGenerator(enumName string, genPackageName string, enum *EnumType) (ast.Expr, error) {
 	var values []ast.Expr
 	for _, o := range enum.Options() {
-		values = append(values, &ast.BasicLit{Value: o.Value, Kind: kind})
+		id := GetEnumValueId(enumName, o)
+		values = append(values, ast.NewIdent(id))
 	}
 
 	return astbuilder.CallQualifiedFuncByName(genPackageName, "OneConstOf", values...), nil
