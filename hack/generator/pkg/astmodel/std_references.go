@@ -6,6 +6,7 @@
 package astmodel
 
 var (
+	FmtReference        PackageReference = MakeExternalPackageReference("fmt")
 	GopterReference     PackageReference = MakeExternalPackageReference("github.com/leanovate/gopter")
 	GopterGenReference  PackageReference = MakeExternalPackageReference("github.com/leanovate/gopter/gen")
 	GopterPropReference PackageReference = MakeExternalPackageReference("github.com/leanovate/gopter/prop")
