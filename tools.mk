@@ -60,8 +60,5 @@ $(GCOV2LCOV): ## Build gcov2lcov
 .PHONY: install-tools
 install-tools: $(KIND) $(KUSTOMIZE) $(CONTROLLER_GEN) $(CONVERSION_GEN) $(GOLANGCI_LINT) $(GOLINT) $(GOX) $(GCOV2LCOV)
 
-$(ROOT_DIR)/.env: ## create a service principal and save the identity to .env for use in integration tests (requries jq and az)
-	$(SCRIPTS_DIR)/create_testing_creds.sh
-
 $(KUBECTL) $(KUBE_APISERVER) $(ETCD) $(KUBEBUILDER): ## Install test asset kubectl, kube-apiserver, etcd
 	. $(SCRIPTS_DIR)/fetch_ext_bins.sh && fetch_tools

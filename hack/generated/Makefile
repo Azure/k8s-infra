@@ -18,13 +18,13 @@ V = 0
 Q = $(if $(filter 1,$V),,@)
 
 .PHONY: all
-all: generate header-check fmt build test test-int
+all: generate header-check fmt build test test-int  # TODO: Do we want to remove test-int from the all target so it's not run every time locally?
 
 # There is a ci specific target because we want the CI pass to fail if
 # the code has not been go fmt-ed, whereas locally we want "make all"
 # to just format the code for you
 .PHONY: ci
-ci: generate build test-cover test-int-cover
+ci: generate build  # test-cover or test-cover-int will be called by the CI job directly
 
 ## --------------------------------------
 ## Build
@@ -92,14 +92,14 @@ test-cover: $(GCOV2LCOV) ; $(info $(M) running go test…)
 # it's likely we'll need to make the integration tests (or at least some of them)
 # run in an AKS cluster.
 .PHONY: test-int-no-cleanup
-test-int-no-cleanup: $(ROOT_DIR)/.env ; $(info $(M) running controller integration test…)
+test-int-no-cleanup: ; $(info $(M) running controller integration test…)
 	# MUST be executed as single command, or env vars will not propagate to test execution
-	$(Q) . $(ROOT_DIR)/.env && $(GO) test $(GO_DIRS_TO_TEST) # TODO: better way to just run integration tests?
+	$(Q) $(GO) test $(GO_DIRS_TO_TEST) # TODO: better way to just run integration tests?
 
 .PHONY: test-int-no-cleanup-cover
-test-int-no-cleanup-cover: $(ROOT_DIR)/.env $(GCOV2LCOV) ; $(info $(M) running controller integration test…)
+test-int-no-cleanup-cover: $(GCOV2LCOV) ; $(info $(M) running controller integration test…)
 	# MUST be executed as single command, or env vars will not propagate to test execution
-	$(Q) . $(ROOT_DIR)/.env && $(GO) test -race -covermode atomic -coverprofile=cover.out -coverpkg=./... $(GO_DIRS_TO_TEST)
+	$(Q) $(GO) test -race -covermode atomic -coverprofile=cover.out -coverpkg=./... $(GO_DIRS_TO_TEST)
 	$(Q) $(GCOV2LCOV) -infile cover.out -outfile coverage.lcov
 
 .PHONY: test-int
@@ -153,10 +153,10 @@ uninstall: generate $(KUBECTL) $(KUSTOMIZE) ## Uninstall CRDs from a cluster
 	$(KUSTOMIZE) build config/crd | $(KUBECTL) delete -f -
 
 .PHONY: deploy
-deploy: generate $(ROOT_DIR)/.env $(KUBECTL) $(KUSTOMIZE) docker-build docker-push ## Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+deploy: generate $(KUBECTL) $(KUSTOMIZE) docker-build docker-push ## Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 	# TODO: Consider patching in CONTROLLER_DEBUG_LOGLEVEL?
 	$(KUSTOMIZE) build config/default | sed "s_${CONFIG_REGISTRY}_${REGISTRY}/${IMG}_" | $(KUBECTL) apply -f -
-	. $(ROOT_DIR)/.env && $(SCRIPTS_DIR)/deploy_testing_secret.sh
+	$(SCRIPTS_DIR)/deploy_testing_secret.sh
 
 .PHONY: docker-build
 docker-build: ## Build the docker image

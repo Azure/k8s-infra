@@ -31,6 +31,9 @@ test-int: $(ROOT_DIR)/.env $(KUBECTL) $(KUBE_APISERVER) $(ETCD) header-check lin
 	# MUST be executed as single command, or env vars will not propagate to test execution
 	. .env && $(GO) test -v ./... -tags integration
 
+.env: ## create a service principal and save the identity to .env for use in integration tests (requries jq and az)
+	$(SCRIPTS_DIR)/create_testing_creds.sh
+
 test-cover: $(KUBECTL) $(KUBE_APISERVER) $(ETCD) header-check lint ## Run tests w/ code coverage (./cover.out)
 	$(GO) test ./... -coverprofile=cover.out -coverpkg=./...
 
