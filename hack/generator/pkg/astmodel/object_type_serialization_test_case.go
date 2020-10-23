@@ -85,14 +85,13 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 
 	// TODO - enable this once we reduce the noise
 	// TODO - work out how to create a generator for a type in a different package
-	//for _, p := range properties {
-	//	errs = append(errs, errors.Errorf("No generator created for %v (%v)", p.PropertyName(), p.PropertyType()))
-	//}
+	for _, p := range properties {
+		errs = append(errs, errors.Errorf("No generator created for %v (%v)", p.PropertyName(), p.PropertyType()))
+	}
 
 	if !haveSimpleGenerators && !haveRelatedGenerators {
 		// No properties that we can generate to test - skip the testing completely
-		klog.Warningf("No tests generated for %v", name)
-		return nil
+		errs = append(errs, errors.Errorf("No property generators for %v", name))
 	}
 
 	result := []ast.Decl{
@@ -122,6 +121,7 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 
 func (o ObjectSerializationTestCase) RequiredImports() *PackageImportSet {
 	result := NewPackageImportSet()
+	result.AddImportOfReference(FmtReference)
 	result.AddImportOfReference(GopterReference)
 	result.AddImportOfReference(GopterGenReference)
 	result.AddImportOfReference(GopterPropReference)
@@ -227,7 +227,7 @@ func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 		token.DEFINE,
 		astbuilder.CallMethodByName("reflect", "DeepEqual", subjectId, actualId))
 
-	// if !match { pretty.Println(subject) }
+	// if !match { pretty.Println(subject); pretty.Println(actual) }
 	prettyPrint := &ast.IfStmt{
 		Cond: &ast.UnaryExpr{
 			Op: token.NOT,
@@ -235,7 +235,10 @@ func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 		},
 		Body: &ast.BlockStmt{
 			List: []ast.Stmt{
+				astbuilder.InvokeMethodByName("fmt", "Println", astbuilder.LiteralString("===== Subject =====")),
 				astbuilder.InvokeMethodByName("pretty", "Println", subjectId),
+				astbuilder.InvokeMethodByName("fmt", "Println", astbuilder.LiteralString("===== Actual =====")),
+				astbuilder.InvokeMethodByName("pretty", "Println", actualId),
 			},
 		},
 	}
