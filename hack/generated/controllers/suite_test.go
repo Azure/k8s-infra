@@ -47,7 +47,7 @@ type EnvtestContext struct {
 }
 
 type ControllerTestContext struct {
-	*testcommon.TestContext
+	*testcommon.KubeTestContext
 	SharedResourceGroup *resources.ResourceGroup
 }
 
@@ -144,7 +144,7 @@ func setup(options Options) error {
 		}
 	}
 
-	newCtx, err := testcommon.NewTestContext(
+	newCtx, err := testcommon.NewKubeTestContext(
 		config,
 		TestRegion,
 		TestNamespace,

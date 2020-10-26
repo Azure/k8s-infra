@@ -8,13 +8,15 @@ package armclient
 import (
 	"context"
 	"fmt"
-	"github.com/Azure/go-autorest/autorest/azure"
+	"os"
+	"strings"
+
 	"github.com/Azure/go-autorest/autorest/azure/auth"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"strings"
+
+	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 )
 
 type (
@@ -97,7 +99,6 @@ type (
 	}
 
 	ClientConfig struct {
-		Env    Enver
 		Logger logr.Logger
 	}
 
@@ -105,13 +106,6 @@ type (
 )
 
 var _ Applier = &AzureTemplateClient{}
-
-func WithEnv(env Enver) func(*ClientConfig) *ClientConfig {
-	return func(cfg *ClientConfig) *ClientConfig {
-		cfg.Env = env
-		return cfg
-	}
-}
 
 func WithLogger(logger logr.Logger) func(*ClientConfig) *ClientConfig {
 	return func(cfg *ClientConfig) *ClientConfig {
@@ -122,7 +116,6 @@ func WithLogger(logger logr.Logger) func(*ClientConfig) *ClientConfig {
 
 func NewAzureTemplateClient(opts ...AzureTemplateClientOption) (*AzureTemplateClient, error) {
 	cfg := &ClientConfig{
-		Env:    new(stdEnv),
 		Logger: ctrl.Log.WithName("azure_template_client"),
 	}
 
@@ -130,12 +123,12 @@ func NewAzureTemplateClient(opts ...AzureTemplateClientOption) (*AzureTemplateCl
 		opt(cfg)
 	}
 
-	subID := cfg.Env.GetEnv(auth.SubscriptionID)
+	subID := os.Getenv(auth.SubscriptionID)
 	if subID == "" {
 		return nil, errors.Errorf("env var %q was not set", auth.SubscriptionID)
 	}
 
-	envSettings, err := GetSettingsFromEnvironment(cfg.Env)
+	envSettings, err := auth.GetSettingsFromEnvironment()
 	if err != nil {
 		return nil, err
 	}
@@ -145,10 +138,7 @@ func NewAzureTemplateClient(opts ...AzureTemplateClientOption) (*AzureTemplateCl
 		return nil, err
 	}
 
-	rawClient, err := NewClient(authorizer)
-	if err != nil {
-		return nil, err
-	}
+	rawClient := NewClient(authorizer)
 
 	return &AzureTemplateClient{
 		RawClient:      rawClient,
@@ -252,7 +242,7 @@ func (atc *AzureTemplateClient) HeadResource(ctx context.Context, id string, api
 	}
 
 	idAndAPIVersion := id + fmt.Sprintf("?api-version=%s", apiVersion)
-	err := atc.RawClient.GetResource(ctx, idAndAPIVersion, nil, nil)
+	err := atc.RawClient.GetResource(ctx, idAndAPIVersion, nil)
 	switch {
 	case IsNotFound(err):
 		return false, nil
@@ -263,38 +253,14 @@ func (atc *AzureTemplateClient) HeadResource(ctx context.Context, id string, api
 	}
 }
 
-// GetSettingsFromEnvironment returns the available authentication settings from the environment.
-func GetSettingsFromEnvironment(env Enver) (auth.EnvironmentSettings, error) {
-	var err error
-	result := auth.EnvironmentSettings{
-		Values: map[string]string{},
+func MakeArmResourceId(subscriptionId string, segments ...string) (string, error) {
+	// There should be an even number of segments
+	if len(segments)%2 != 0 {
+		return "", errors.Errorf("expected even number of ARM resource ID segments, got: %d", len(segments))
 	}
 
-	setValue(result, env, auth.SubscriptionID)
-	setValue(result, env, auth.TenantID)
-	setValue(result, env, auth.AuxiliaryTenantIDs)
-	setValue(result, env, auth.ClientID)
-	setValue(result, env, auth.ClientSecret)
-	setValue(result, env, auth.CertificatePath)
-	setValue(result, env, auth.CertificatePassword)
-	setValue(result, env, auth.Username)
-	setValue(result, env, auth.Password)
-	setValue(result, env, auth.EnvironmentName)
-	setValue(result, env, auth.Resource)
-	if v := result.Values[auth.EnvironmentName]; v == "" {
-		result.Environment = azure.PublicCloud
-	} else {
-		result.Environment, err = azure.EnvironmentFromName(v)
-	}
-	if result.Values[auth.Resource] == "" {
-		result.Values[auth.Resource] = result.Environment.ResourceManagerEndpoint
-	}
-	return result, err
-}
+	start := "/subscriptions/" + subscriptionId
+	remaining := strings.Join(segments, "/")
 
-// adds the specified environment variable value to the Values map if it exists
-func setValue(settings auth.EnvironmentSettings, env Enver, key string) {
-	if v := env.GetEnv(key); v != "" {
-		settings.Values[key] = v
-	}
+	return start + "/" + remaining, nil
 }
