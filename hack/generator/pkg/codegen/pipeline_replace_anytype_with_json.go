@@ -17,8 +17,23 @@ const apiExtensions = "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 // jsonType is the type of fields storing arbitrary JSON content in
 // custom resources - apiextensions/v1.JSON.
-var jsonType = astmodel.MakeTypeName(
-	astmodel.MakeExternalPackageReference(apiExtensions), "JSON",
+var (
+	jsonType = astmodel.MakeTypeName(
+		astmodel.MakeExternalPackageReference(apiExtensions), "JSON",
+	)
+
+	// replace map[string]map[string]interface{} with maps of JSON to
+	// work around the controller-gen limitation that it barfs in maps
+	// of maps of things.
+	// TODO: remove this when it can handle them correctly.
+	mapOfMapOfAnyType = astmodel.NewMapType(
+		astmodel.StringType,
+		astmodel.NewMapType(
+			astmodel.StringType,
+			astmodel.AnyType,
+		),
+	)
+	mapOfJSON = astmodel.NewMapType(astmodel.StringType, jsonType)
 )
 
 func replaceAnyTypeWithJSON() PipelineStage {
@@ -33,6 +48,14 @@ func replaceAnyTypeWithJSON() PipelineStage {
 					return jsonType, nil
 				}
 				return it, nil
+			}
+
+			originalVisitMapType := visitor.VisitMapType
+			visitor.VisitMapType = func(v *astmodel.TypeVisitor, it *astmodel.MapType, ctx interface{}) (astmodel.Type, error) {
+				if it.Equals(mapOfMapOfAnyType) {
+					return mapOfJSON, nil
+				}
+				return originalVisitMapType(v, it, ctx)
 			}
 
 			results := make(astmodel.Types)
