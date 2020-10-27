@@ -79,5 +79,5 @@ func (m *BeProvisionedMatcher) MatchMayChangeInTheFuture(actual interface{}) boo
 	}
 	state := obj.GetAnnotations()[m.ensure.stateAnnotation]
 
-	return armclient.IsTerminalProvisioningState(armclient.ProvisioningState(state))
+	return !armclient.IsTerminalProvisioningState(armclient.ProvisioningState(state))
 }
