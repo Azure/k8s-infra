@@ -7,7 +7,6 @@ package controllers_test
 
 import (
 	"context"
-	"flag"
 	"log"
 	"os"
 	"testing"
@@ -42,52 +41,54 @@ func (tc *ControllerTestContext) SharedResourceGroupOwner() genruntime.KnownReso
 	return genruntime.KnownResourceReference{Name: tc.SharedResourceGroup.Name}
 }
 
-func setup() (ControllerTestContext, error) {
+func setup() error {
 	ctx := context.Background()
 	log.Println("Running test setup")
 
 	gomega.SetDefaultEventuallyTimeout(DefaultResourceTimeout)
 	gomega.SetDefaultEventuallyPollingInterval(5 * time.Second)
 
-	testContext, err := testcommon.NewTestContext(
+	newCtx, err := testcommon.NewTestContext(
 		TestRegion,
 		TestNamespace,
 		controllers.ResourceStateAnnotation,
 		controllers.ResourceErrorAnnotation)
 
 	if err != nil {
-		return ControllerTestContext{}, err
+		return err
 	}
 
-	err = testContext.CreateTestNamespace()
+	err = newCtx.CreateTestNamespace()
 	if err != nil {
-		return ControllerTestContext{}, err
+		return err
 	}
 
 	// Create a shared resource group, for tests to use
-	sharedResourceGroup := testContext.NewTestResourceGroup()
-	err = testContext.KubeClient.Create(ctx, sharedResourceGroup)
+	sharedResourceGroup := newCtx.NewTestResourceGroup()
+	err = newCtx.KubeClient.Create(ctx, sharedResourceGroup)
 	if err != nil {
-		return ControllerTestContext{}, errors.Wrapf(err, "creating shared resource group")
+		return errors.Wrapf(err, "creating shared resource group")
 	}
 
 	// TODO: Should use AzureName rather than Name once it's always set
 	log.Printf("Created shared resource group %s\n", sharedResourceGroup.Name)
 
 	// It should be created in Kubernetes
-	err = waitFor(ctx, DefaultResourceTimeout, func(waitCtx context.Context) (bool, error) {
-		return testContext.Ensure.Provisioned(waitCtx, sharedResourceGroup)
+	err = testcommon.WaitFor(ctx, DefaultResourceTimeout, func(waitCtx context.Context) (bool, error) {
+		return newCtx.Ensure.Provisioned(waitCtx, sharedResourceGroup)
 	})
 	if err != nil {
-		return ControllerTestContext{}, errors.Wrapf(err, "waiting for shared resource group")
+		return errors.Wrapf(err, "waiting for shared resource group")
 	}
 
 	log.Println("Done with test setup")
 
-	return ControllerTestContext{testContext, sharedResourceGroup}, nil
+	testContext = ControllerTestContext{newCtx, sharedResourceGroup}
+
+	return nil
 }
 
-func teardown(testContext ControllerTestContext) error {
+func teardown() error {
 	log.Println("Started common controller test teardown")
 
 	ctx := context.Background()
@@ -118,7 +119,7 @@ func teardown(testContext ControllerTestContext) error {
 	}
 
 	// Don't block forever waiting for delete to complete
-	err = waitFor(ctx, DefaultResourceTimeout, func(waitCtx context.Context) (bool, error) {
+	err = testcommon.WaitFor(ctx, DefaultResourceTimeout, func(waitCtx context.Context) (bool, error) {
 		return testContext.Ensure.AllDeleted(waitCtx, resourceGroups)
 	})
 	if err != nil {
@@ -129,59 +130,8 @@ func teardown(testContext ControllerTestContext) error {
 	return nil
 }
 
-// TODO: it's unfortunate we can't just use g.Eventually all the time
-func waitFor(ctx context.Context, timeout time.Duration, check func(context.Context) (bool, error)) error {
-	waitCtx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	done := false
-
-	for !done {
-		select {
-		case <-waitCtx.Done():
-			return waitCtx.Err()
-		default:
-			var err error
-			done, err = check(waitCtx)
-			if err != nil {
-				return err
-			}
-		}
-
-		time.Sleep(5 * time.Second)
-	}
-
-	return nil
-}
-
-// testMainWrapper is a wrapper that can be called by TestMain so that we can use defer
-func testMainWrapper(m *testing.M) int {
-
-	flag.Parse()
-	if testing.Short() {
-		log.Println("Skipping slow tests in short mode")
-		return 0
-	}
-
-	ctx, setupErr := setup()
-	// Save context globally as well for use by tests
-	testContext = ctx
-	if setupErr != nil {
-		panic(setupErr)
-	}
-
-	defer func() {
-		if teardownErr := teardown(ctx); teardownErr != nil {
-			panic(teardownErr)
-		}
-	}()
-
-	return m.Run()
-}
-
 func TestMain(m *testing.M) {
-	os.Exit(testMainWrapper(m))
-
+	os.Exit(testcommon.SetupTeardownTestMain(m, true, setup, teardown))
 }
 
 // TODO: Do we need this?
