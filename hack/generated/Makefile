@@ -111,9 +111,13 @@ test-int-cover: kind-create deploy test-int-no-cleanup-cover kind-delete cleanup
 # Cleanup resource groups created by tests -- this isn't strictly required as the tests
 # clean up after themselves, but doing it here anyway just to be doubly sure we don't leak
 # resources in cases where the test pass is terminated, panics, etc
+# This finds all resource groups which match the specified pattern (k8sinfratest) and are older than a day
+# (86400 seconds). This is a bit horrible but it works...
 .PHONY: cleanup-test-azure-resources
 cleanup-test-azure-resources:
-	$(Q) for rgname in `az group list --query "[*].[name]" -o table | grep '^k8sinfratest' `; do \
+	$(Q) rgs=`az group list --query "[*].{Name: name, CreatedAt: tags.CreatedAt}" \
+		| jq -r '.[] | select(.Name | test("^k8sinfratest")) | select(.CreatedAt == null or now-(.CreatedAt | fromdate) > 86400) | .Name'`; \
+	for rgname in $${rgs[@]} ; do \
 		echo "$$rgname will be deleted"; \
 		az group delete --name $$rgname --no-wait --yes; \
 	done

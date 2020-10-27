@@ -8,6 +8,7 @@ package testcommon
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -113,6 +114,8 @@ func (tc *TestContext) NewTestResourceGroup() *resources.ResourceGroup {
 		ObjectMeta: tc.MakeObjectMeta("rg"),
 		Spec: resources.ResourceGroupSpec{
 			Location: tc.AzureRegion,
+			// This tag is used for cleanup optimization
+			Tags: map[string]string{"CreatedAt": time.Now().UTC().Format(time.RFC3339)},
 		},
 	}
 }
