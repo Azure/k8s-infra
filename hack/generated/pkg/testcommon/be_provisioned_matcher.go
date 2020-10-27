@@ -78,5 +78,6 @@ func (m *BeProvisionedMatcher) MatchMayChangeInTheFuture(actual interface{}) boo
 		panic(err)
 	}
 	state := obj.GetAnnotations()[m.ensure.stateAnnotation]
-	return state != string(armclient.SucceededProvisioningState) && state != string(armclient.FailedProvisioningState)
+
+	return armclient.IsTerminalProvisioningState(armclient.ProvisioningState(state))
 }

@@ -13,7 +13,6 @@ import (
 
 	storage "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.storage/v20190401"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 )
 
 func Test_ResourceGroup_CRUD(t *testing.T) {
@@ -62,7 +61,7 @@ func Test_StorageAccount_CRUD(t *testing.T) {
 		Spec: storage.StorageAccounts_Spec{
 			Location:   testContext.AzureRegion,
 			ApiVersion: "2019-04-01", // TODO: This should be removed from the storage type eventually
-			Owner:      genruntime.KnownResourceReference{Name: testContext.SharedResourceGroup.Name},
+			Owner:      testContext.SharedResourceGroupOwner(),
 			Kind:       storage.StorageAccountsSpecKindBlobStorage,
 			Sku: storage.Sku{
 				Name: storage.SkuNameStandardLRS,

@@ -50,10 +50,7 @@ jobs:
       - name: Run generator CI (Linux)
         if: ${{ runner.os == 'Linux' }} 
         run: make -C ./hack/generator ci
-      - name: Run generated CI (Linux)
-        if: ${{ runner.os == 'Linux' }}
-        run: make -C ./hack/generated ci
-      - name: Make generated controller integration test
+      - name: Make generated controller integration tests (and unit tests)
         if: ${{ runner.os == 'Linux' && env.AZURE_TENANT_ID != '' }}
         run: make -C ./hack/generated test-int-cover
       - name: Make generated controller test

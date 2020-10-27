@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -21,6 +21,7 @@ import (
 
 	resources "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.resources/v20200601"
 	"github.com/Azure/k8s-infra/hack/generated/controllers"
+	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/testcommon"
 )
 
@@ -37,12 +38,16 @@ type ControllerTestContext struct {
 	SharedResourceGroup *resources.ResourceGroup
 }
 
+func (tc *ControllerTestContext) SharedResourceGroupOwner() genruntime.KnownResourceReference {
+	return genruntime.KnownResourceReference{Name: tc.SharedResourceGroup.Name}
+}
+
 func setup() (ControllerTestContext, error) {
 	ctx := context.Background()
 	log.Println("Running test setup")
 
-	SetDefaultEventuallyTimeout(DefaultResourceTimeout)
-	SetDefaultEventuallyPollingInterval(5 * time.Second)
+	gomega.SetDefaultEventuallyTimeout(DefaultResourceTimeout)
+	gomega.SetDefaultEventuallyPollingInterval(5 * time.Second)
 
 	testContext, err := testcommon.NewTestContext(
 		TestRegion,
