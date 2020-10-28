@@ -104,10 +104,17 @@ func (fakeResourceSpec *FakeResource_Spec) ConvertToArm(name string) (interface{
 	}
 	result := FakeResource_SpecArm{}
 	result.ApiVersion = fakeResourceSpec.ApiVersion
-	result.JsonObject = fakeResourceSpec.JsonObject
-	result.MandatoryJson = fakeResourceSpec.MandatoryJson
+	result.JsonObject = make(map[string]v1.JSON)
+	for key, value := range fakeResourceSpec.JsonObject {
+		elemTyped := *value.DeepCopy()
+		result.JsonObject[key] = elemTyped
+	}
+	result.MandatoryJson = *fakeResourceSpec.MandatoryJson.DeepCopy()
 	result.Name = name
-	result.OptionalJson = fakeResourceSpec.OptionalJson
+	if fakeResourceSpec.OptionalJson != nil {
+		optionalJsonTyped := *(*fakeResourceSpec.OptionalJson).DeepCopy()
+		result.OptionalJson = &optionalJsonTyped
+	}
 	result.Type = FakeResourceSpecTypeMicrosoftAzureFakeResource
 	return result, nil
 }
@@ -120,9 +127,17 @@ func (fakeResourceSpec *FakeResource_Spec) PopulateFromArm(owner genruntime.Know
 	}
 	fakeResourceSpec.ApiVersion = typedInput.ApiVersion
 	fakeResourceSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
-	fakeResourceSpec.JsonObject = typedInput.JsonObject
-	fakeResourceSpec.MandatoryJson = typedInput.MandatoryJson
-	fakeResourceSpec.OptionalJson = typedInput.OptionalJson
+	if typedInput.JsonObject != nil {
+		fakeResourceSpec.JsonObject = make(map[string]v1.JSON)
+		for key, value := range typedInput.JsonObject {
+			fakeResourceSpec.JsonObject[key] = *value.DeepCopy()
+		}
+	}
+	fakeResourceSpec.MandatoryJson = *typedInput.MandatoryJson.DeepCopy()
+	if typedInput.OptionalJson != nil {
+		optionalJsonTyped := *(*typedInput.OptionalJson).DeepCopy()
+		fakeResourceSpec.OptionalJson = &optionalJsonTyped
+	}
 	fakeResourceSpec.Owner = owner
 	return nil
 }

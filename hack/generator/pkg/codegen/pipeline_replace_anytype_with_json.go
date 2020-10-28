@@ -13,15 +13,9 @@ import (
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
 
-const apiExtensions = "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-
 // jsonType is the type of fields storing arbitrary JSON content in
 // custom resources - apiextensions/v1.JSON.
 var (
-	jsonType = astmodel.MakeTypeName(
-		astmodel.MakeExternalPackageReference(apiExtensions), "JSON",
-	)
-
 	// replace map[string]map[string]interface{} with maps of JSON to
 	// work around the controller-gen limitation that it barfs in maps
 	// of maps of things.
@@ -33,7 +27,7 @@ var (
 			astmodel.AnyType,
 		),
 	)
-	mapOfJSON = astmodel.NewMapType(astmodel.StringType, jsonType)
+	mapOfJSON = astmodel.NewMapType(astmodel.StringType, astmodel.JSONType)
 )
 
 func replaceAnyTypeWithJSON() PipelineStage {
@@ -45,7 +39,7 @@ func replaceAnyTypeWithJSON() PipelineStage {
 
 			visitor.VisitPrimitive = func(_ *astmodel.TypeVisitor, it *astmodel.PrimitiveType, _ interface{}) (astmodel.Type, error) {
 				if it == astmodel.AnyType {
-					return jsonType, nil
+					return astmodel.JSONType, nil
 				}
 				return it, nil
 			}
