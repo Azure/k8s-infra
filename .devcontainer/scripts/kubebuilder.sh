@@ -12,7 +12,7 @@ curl -sL https://go.kubebuilder.io/dl/${kb_version}/${os}/${arch} | tar -xz -C /
 # move to a long-term location and put it on your path
 # (you'll need to set the KUBEBUILDER_ASSETS env var if you put it somewhere else)
 mv /tmp/kubebuilder_${kb_version}_${os}_${arch} /usr/local/kubebuilder
-export PATH=/usr/local/kubebuilder/bin:$PATH
+export PATH=$PATH:/usr/local/kubebuilder/bin
 
 # Clear down pkg file
 rm -rf /go/pkg && rm -rf /go/src
