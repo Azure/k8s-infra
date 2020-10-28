@@ -70,6 +70,18 @@ exportFilters:
     group: deploymenttemplate
     name: '*ResourceBase*'
     because: Not actually a resource, used for inheritance only.
+  - action: exclude
+    group: microsoft.machinelearning
+    version: v20170101
+    because: ExampleRequest.Inputs is a map[string][][]map[string]v1.JSON, which controller-gen doesn't know how to handle.
+  - action: exclude
+    group: microsoft.web
+    version: v20150801
+    because: ARM conversion is generating bad code for handling SitesSpecResourcesAppsettingsSpec.Name - should be casting to the right type
+  - action: exclude
+    group: microsoft.datafactory
+    version: v20180601
+    because: ExecuteSSISPackageActivityTypeProperties.PackageConnectionManagers is a map[string]map[string]SSISExecutionParameter, which controller-gen doesn't know how to handle
 
 # Exclusions for packages that currently produce types including AnyType.
 # TODO: get rid of these, either by chasing the teams generating
