@@ -138,10 +138,10 @@ func (def TypeDefinition) ApplyObjectTransformation(transform func(*ObjectType) 
 func (def TypeDefinition) ApplyObjectTransformations(transforms ...func(*ObjectType) (*ObjectType, error)) (*TypeDefinition, error) {
 	return def.ApplyObjectTransformation(func(objectType *ObjectType) (Type, error) {
 		result := objectType
-		for _, transform := range transforms {
+		for i, transform := range transforms {
 			rt, err := transform(result)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, "failed to apply object transformation %d", i)
 			}
 
 			result = rt
