@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/go-logr/logr"
@@ -19,91 +20,97 @@ import (
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 )
 
-type (
-	// TODO: Naming?
-	Applier interface {
-		CreateDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error)
-		DeleteDeployment(ctx context.Context, deploymentId string) error
-		GetDeployment(ctx context.Context, deploymentId string) (*Deployment, error)
-		NewResourceGroupDeployment(resourceGroup string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment
-		NewSubscriptionDeployment(location string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment
 
-		// TODO: These functions take an empty status and fill it out with the response from Azure (rather than as
-		// TODO: the return type. I don't love that pattern but don't have a better one either.
-		BeginDeleteResource(ctx context.Context, id string, apiVersion string, status genruntime.ArmResourceStatus) error
-		GetResource(ctx context.Context, id string, apiVersion string, status genruntime.ArmResourceStatus) error
-		HeadResource(ctx context.Context, id string, apiVersion string) (bool, error)
-	}
+// TODO: Naming?
+type Applier interface {
+	CreateDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error)
+	DeleteDeployment(ctx context.Context, deploymentId string) error
+	GetDeployment(ctx context.Context, deploymentId string) (*Deployment, error)
+	NewResourceGroupDeployment(resourceGroup string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment
+	NewSubscriptionDeployment(location string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment
 
-	AzureTemplateClient struct {
-		RawClient      *Client
-		Logger         logr.Logger
-		SubscriptionID string
-	}
+	// TODO: These functions take an empty status and fill it out with the response from Azure (rather than as
+	// TODO: the return type. I don't love that pattern but don't have a better one either.
+	BeginDeleteResource(ctx context.Context, id string, apiVersion string, status genruntime.ArmResourceStatus) error
+	GetResource(ctx context.Context, id string, apiVersion string, status genruntime.ArmResourceStatus) error
+	HeadResource(ctx context.Context, id string, apiVersion string) (bool, error)
+}
 
-	Template struct {
-		Schema         string            `json:"$schema,omitempty"`
-		ContentVersion string            `json:"contentVersion,omitempty"`
-		Parameters     interface{}       `json:"parameters,omitempty"`
-		Variables      interface{}       `json:"variables,omitempty"`
-		Resources      []interface{}     `json:"resources,omitempty"`
-		Outputs        map[string]Output `json:"outputs,omitempty"`
-	}
+type AzureTemplateClient struct {
+	RawClient      *Client
+	Logger         logr.Logger
+	SubscriptionID string
+}
 
-	// TODO: Do we want/need this?
-	Output struct {
-		Condition string `json:"condition,omitempty"`
-		Type      string `json:"type,omitempty"`
-		Value     string `json:"value,omitempty"`
-	}
+type Template struct {
+	Schema         string            `json:"$schema,omitempty"`
+	ContentVersion string            `json:"contentVersion,omitempty"`
+	Parameters     interface{}       `json:"parameters,omitempty"`
+	Variables      interface{}       `json:"variables,omitempty"`
+	Resources      []interface{}     `json:"resources,omitempty"`
+	Outputs        map[string]Output `json:"outputs,omitempty"`
+}
 
-	/*
-		TemplateResourceObjectOutput represents the structure output from a deployment template for a given resource when
-		requesting a 'Full' representation. The structure for a resource group is as follows:
-		    {
-			  "apiVersion": "2018-05-01",
-			  "location": "westus2",
-			  "properties": {
-			    "provisioningState": "Succeeded"
-			  },
-			  "subscriptionId": "guid",
-			  "scope": "",
-			  "resourceId": "Microsoft.Resources/resourceGroups/foo",
-			  "referenceApiVersion": "2018-05-01",
-			  "condition": true,
-			  "isConditionTrue": true,
-			  "isTemplateResource": false,
-			  "isAction": false,
-			  "provisioningOperation": "Read"
-		    }
-	*/
-	TemplateResourceObjectOutput struct {
-		APIVersion            string      `json:"apiVersion,omitempty"`
-		Location              string      `json:"location,omitempty"`
-		Properties            interface{} `json:"properties,omitempty"`
-		SubscriptionID        string      `json:"subscriptionId,omitempty"`
-		Scope                 string      `json:"scope,omitempty"`
-		ID                    string      `json:"id,omitempty"`
-		ResourceID            string      `json:"resourceId,omitempty"`
-		ReferenceAPIVersion   string      `json:"referenceApiVersion,omitempty"`
-		Condition             *bool       `json:"condition,omitempty"`
-		IsCondition           *bool       `json:"isConditionTrue,omitempty"`
-		IsTemplateResource    *bool       `json:"isTemplateResource,omitempty"`
-		IsAction              *bool       `json:"isAction,omitempty"`
-		ProvisioningOperation string      `json:"provisioningOperation,omitempty"`
-	}
+// TODO: Do we want/need this?
+type Output struct {
+	Condition string `json:"condition,omitempty"`
+	Type      string `json:"type,omitempty"`
+	Value     string `json:"value,omitempty"`
+}
 
-	TemplateOutput struct {
-		Type  string                       `json:"type,omitempty"`
-		Value TemplateResourceObjectOutput `json:"value,omitempty"`
-	}
+/*
+	TemplateResourceObjectOutput represents the structure output from a deployment template for a given resource when
+	requesting a 'Full' representation. The structure for a resource group is as follows:
+		{
+		  "apiVersion": "2018-05-01",
+		  "location": "westus2",
+		  "properties": {
+			"provisioningState": "Succeeded"
+		  },
+		  "subscriptionId": "guid",
+		  "scope": "",
+		  "resourceId": "Microsoft.Resources/resourceGroups/foo",
+		  "referenceApiVersion": "2018-05-01",
+		  "condition": true,
+		  "isConditionTrue": true,
+		  "isTemplateResource": false,
+		  "isAction": false,
+		  "provisioningOperation": "Read"
+		}
+*/
+type TemplateResourceObjectOutput struct {
+	APIVersion            string      `json:"apiVersion,omitempty"`
+	Location              string      `json:"location,omitempty"`
+	Properties            interface{} `json:"properties,omitempty"`
+	SubscriptionID        string      `json:"subscriptionId,omitempty"`
+	Scope                 string      `json:"scope,omitempty"`
+	ID                    string      `json:"id,omitempty"`
+	ResourceID            string      `json:"resourceId,omitempty"`
+	ReferenceAPIVersion   string      `json:"referenceApiVersion,omitempty"`
+	Condition             *bool       `json:"condition,omitempty"`
+	IsCondition           *bool       `json:"isConditionTrue,omitempty"`
+	IsTemplateResource    *bool       `json:"isTemplateResource,omitempty"`
+	IsAction              *bool       `json:"isAction,omitempty"`
+	ProvisioningOperation string      `json:"provisioningOperation,omitempty"`
+}
 
-	ClientConfig struct {
-		Logger logr.Logger
-	}
+type TemplateOutput struct {
+	Type  string                       `json:"type,omitempty"`
+	Value TemplateResourceObjectOutput `json:"value,omitempty"`
+}
 
-	AzureTemplateClientOption func(config *ClientConfig) *ClientConfig
-)
+type RetryConfig struct {
+	Attempts int
+	Backoff time.Duration
+	MaxBackoff time.Duration
+}
+
+type ClientConfig struct {
+	Logger logr.Logger
+	Retries *RetryConfig
+}
+
+type AzureTemplateClientOption func(config *ClientConfig) *ClientConfig
 
 var _ Applier = &AzureTemplateClient{}
 
@@ -112,6 +119,21 @@ func WithLogger(logger logr.Logger) func(*ClientConfig) *ClientConfig {
 		cfg.Logger = logger
 		return cfg
 	}
+}
+
+func WithRetries(retries *RetryConfig) func(*ClientConfig) *ClientConfig {
+	return func(cfg *ClientConfig) *ClientConfig {
+		cfg.Retries = retries
+		return cfg
+	}
+}
+
+func WithDefaultRetries() func(*ClientConfig) *ClientConfig {
+	return WithRetries(&RetryConfig{
+		Attempts: 5,
+		Backoff: 2 * time.Second,
+		MaxBackoff: 30 * time.Second,
+	})
 }
 
 func NewAzureTemplateClient(opts ...AzureTemplateClientOption) (*AzureTemplateClient, error) {
@@ -139,6 +161,13 @@ func NewAzureTemplateClient(opts ...AzureTemplateClientOption) (*AzureTemplateCl
 	}
 
 	rawClient := NewClient(authorizer)
+
+	if cfg.Retries != nil {
+		rawClient = rawClient.WithExponentialRetries(
+			cfg.Retries.Attempts,
+			cfg.Retries.Backoff,
+			cfg.Retries.MaxBackoff)
+	}
 
 	return &AzureTemplateClient{
 		RawClient:      rawClient,

@@ -27,7 +27,7 @@ type TestContext struct {
 }
 
 func NewTestContext(region string) (*TestContext, error) {
-	armClient, err := armclient.NewAzureTemplateClient()
+	armClient, err := armclient.NewAzureTemplateClient(armclient.WithDefaultRetries())
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating armclient")
 	}

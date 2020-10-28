@@ -10,6 +10,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -30,20 +31,36 @@ func NewClient(authorizer autorest.Authorizer) *Client {
 	autorestClient.RetryAttempts = 0
 	autorestClient.Authorizer = authorizer
 
-	// TODO: If we want retries (at least of some sort)
-	//autorestClient.SendDecorators = append(
-	//	autorestClient.SendDecorators,
-	//	autorest.DoRetryForStatusCodes(
-	//		autorestClient.RetryAttempts,
-	//		autorestClient.RetryDuration,
-	//		autorest.StatusCodesForRetry...))
-
 	c := &Client{
 		Client: autorestClient,
 		Host:   azure.PublicCloud.ResourceManagerEndpoint, // TODO: We need to support other endpoints
 	}
 
 	return c
+}
+
+func (c *Client) WithExponentialRetries(attempts int, backoff time.Duration, maxBackoff time.Duration) *Client {
+	// Copy the client
+	result := *c
+	result.SendDecorators = nil
+	// Deep copy the send decorators
+	for _, item := range c.SendDecorators {
+		result.SendDecorators = append(result.SendDecorators, item)
+	}
+
+	// There's no place to set a backoff cap on the actual client?
+	result.RetryAttempts = attempts
+	result.RetryDuration = backoff
+
+	result.SendDecorators = append(
+		result.SendDecorators,
+		autorest.DoRetryForStatusCodesWithCap(
+			result.RetryAttempts,
+			result.RetryDuration,
+			maxBackoff,
+			autorest.StatusCodesForRetry...))
+
+	return &result
 }
 
 func (c *Client) PutDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error) {
@@ -67,11 +84,6 @@ func (c *Client) PutDeployment(ctx context.Context, deployment *Deployment) (*De
 		tab.For(ctx).Error(err)
 		return nil, err
 	}
-	// TODO: or this
-	//if err != nil {
-	//	err = autorest.NewErrorWithError(err, "sql.DatabasesClient", "CreateOrUpdate", nil, "Failure preparing request")
-	//	return
-	//}
 
 	resp, err := c.Send(req)
 	if err != nil {
@@ -81,8 +93,6 @@ func (c *Client) PutDeployment(ctx context.Context, deployment *Deployment) (*De
 
 	err = autorest.Respond(
 		resp,
-		// TODO: Might be cleaner to just dump the body as a string in the case of an error rather than having a structured error like this returns
-		// TODO: looking at this function a bit more... the ServiceError bit of the returned error is nice though (status code is elsewhere)
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusCreated),
 		autorest.ByUnmarshallingJSON(deployment),
 		autorest.ByClosing())
@@ -118,8 +128,6 @@ func (c *Client) GetResource(ctx context.Context, resourceID string, resource in
 
 	err = autorest.Respond(
 		resp,
-		// TODO: Might be cleaner to just dump the body as a string in the case of an error rather than having a structured error like this returns
-		// TODO: looking at this function a bit more... the ServiceError bit of the returned error is nice though (status code is elsewhere)
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(resource),
 		autorest.ByClosing())
@@ -160,8 +168,6 @@ func (c *Client) DeleteResource(ctx context.Context, resourceID string, resource
 
 	err = autorest.Respond(
 		resp,
-		// TODO: Might be cleaner to just dump the body as a string in the case of an error rather than having a structured error like this returns
-		// TODO: looking at this function a bit more... the ServiceError bit of the returned error is nice though (status code is elsewhere)
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted),
 		autorest.ByUnmarshallingJSON(resource),
 		autorest.ByClosing())
