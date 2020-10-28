@@ -18,8 +18,8 @@ type ArmType struct {
 // ArmType is a Type
 var _ Type = &ArmType{}
 
-// MakeArmType wraps an object type to indicate it's an ARM targeted variation
-func MakeArmType(object ObjectType) *ArmType {
+// NewArmType wraps an object type to indicate it's an ARM targeted variation
+func NewArmType(object ObjectType) *ArmType {
 	return &ArmType{
 		objectType: object,
 	}

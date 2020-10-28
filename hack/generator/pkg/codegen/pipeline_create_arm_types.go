@@ -250,7 +250,7 @@ func createArmResourceSpecDefinition(
 	}
 
 	updatedSpec := specObj.WithInterface(iface)
-	armTypeDef = armTypeDef.WithType(astmodel.MakeArmType(*updatedSpec))
+	armTypeDef = armTypeDef.WithType(astmodel.NewArmType(*updatedSpec))
 
 	return armTypeDef, resourceSpecDef.Name(), nil
 }
@@ -269,7 +269,7 @@ func createArmTypeDefinition(definitions astmodel.Types, def astmodel.TypeDefini
 	}
 
 	result, err := armDef.ApplyObjectTransformation(func(objectType *astmodel.ObjectType) (astmodel.Type, error) {
-		return astmodel.MakeArmType(*objectType), nil
+		return astmodel.NewArmType(*objectType), nil
 	})
 	if err != nil {
 		return astmodel.TypeDefinition{},

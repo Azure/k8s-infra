@@ -218,7 +218,7 @@ func IdentityVisitOfArmType(this *TypeVisitor, at *ArmType, ctx interface{}) (Ty
 
 	switch newType := nt.(type) {
 	case *ObjectType:
-		return MakeArmType(*newType), nil
+		return NewArmType(*newType), nil
 
 	case *ArmType:
 		return newType, nil
