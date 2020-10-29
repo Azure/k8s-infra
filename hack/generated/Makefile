@@ -95,12 +95,10 @@ test-cover: $(GCOV2LCOV) ; $(info $(M) running go test…)
 # run in an AKS cluster.
 .PHONY: test-int-no-cleanup
 test-int-no-cleanup: ; $(info $(M) running controller integration test…)
-	# MUST be executed as single command, or env vars will not propagate to test execution
-	$(Q) $(GO) test $(GO_DIRS_TO_TEST) # TODO: better way to just run integration tests?
+	$(Q) $(GO) test $(GO_DIRS_TO_TEST)
 
 .PHONY: test-int-no-cleanup-cover
 test-int-no-cleanup-cover: $(GCOV2LCOV) ; $(info $(M) running controller integration test…)
-	# MUST be executed as single command, or env vars will not propagate to test execution
 	$(Q) $(GO) test -race -covermode atomic -coverprofile=cover.out -coverpkg=./... $(GO_DIRS_TO_TEST)
 	$(Q) $(GCOV2LCOV) -infile cover.out -outfile coverage.lcov
 

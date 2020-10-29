@@ -72,11 +72,18 @@ jobs:
           set PATH=%PATH%;%USERPROFILE%\go\bin
           gcov2lcov  -infile cover.out -outfile coverage.lcov
           EXIT /B %exitcode%
-      - name: Coverall
+      - name: Coveralls generator
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.github_token }}
           path-to-lcov: ./hack/generator/coverage.lcov
+          flag-name: generator-${{ runner.os }}
+          parallel: true
+      - name: Coveralls generated
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.github_token }}
+          path-to-lcov: ./hack/generated/coverage.lcov
           flag-name: generator-${{ runner.os }}
           parallel: true
   test-controller:
