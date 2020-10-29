@@ -81,7 +81,7 @@ jobs:
           parallel: true
       - name: Coveralls generated
         uses: coverallsapp/github-action@master
-        if: ${{ runner.os == 'Linux'  && env.AZURE_TENANT_ID != '' }}
+        if: ${{ runner.os == 'Linux' }}
         with:
           github-token: ${{ secrets.github_token }}
           path-to-lcov: ./hack/generated/coverage.lcov
