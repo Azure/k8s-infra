@@ -5,8 +5,12 @@
 
 package astmodel
 
-// APIExtensions is the package containing the type we use to
-// represent arbitrary JSON fields.
-const APIExtensions = "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+var (
+	// APIExtensionsPackage contains the type we use to represent
+	// arbitrary JSON fields.
+	APIExtensionsPackage = MakeExternalPackageReference("k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1")
 
-var JSONType = MakeTypeName(MakeExternalPackageReference(APIExtensions), "JSON")
+	// JSONType is used for fields that need to store arbitrary JSON
+	// structures.
+	JSONType = MakeTypeName(APIExtensionsPackage, "JSON")
+)
