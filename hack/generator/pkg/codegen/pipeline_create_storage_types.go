@@ -179,8 +179,8 @@ func (factory *StorageTypeFactory) preserveKubernetesResourceStorageProperties(
 
 func (factory *StorageTypeFactory) convertPropertiesForStorage(
 	prop *astmodel.PropertyDefinition,
-	_ StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error) {
-	propertyType, err := factory.visitor.Visit(prop.PropertyType(), prop)
+	objectContext StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error) {
+	propertyType, err := factory.visitor.Visit(prop.PropertyType(), objectContext)
 	if err != nil {
 		return nil, err
 	}
