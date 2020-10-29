@@ -15,7 +15,7 @@ type StoragePackageReference struct {
 
 var _ PackageReference = StoragePackageReference{}
 
-// MakeStoragePackageReference Creates a new storage package reference from a local package reference
+// MakeStoragePackageReference creates a new storage package reference from a local package reference
 func MakeStoragePackageReference(local LocalPackageReference) StoragePackageReference {
 	return StoragePackageReference{
 		LocalPackageReference{

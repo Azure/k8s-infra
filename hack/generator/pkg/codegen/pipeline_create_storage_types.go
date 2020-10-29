@@ -92,7 +92,7 @@ type StorageTypeFactory struct {
 type propertyConversion = func(property *astmodel.PropertyDefinition, ctx StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error)
 
 func (factory *StorageTypeFactory) visitTypeName(_ *astmodel.TypeVisitor, name astmodel.TypeName, ctx interface{}) (astmodel.Type, error) {
-	vc := ctx.(StorageTypesVisitorContext)
+	visitorContext := ctx.(StorageTypesVisitorContext)
 
 	// Resolve the type name to the actual referenced type
 	actualDefinition, actualDefinitionFound := factory.types[name]
@@ -120,13 +120,13 @@ func (factory *StorageTypeFactory) visitObjectType(
 	_ *astmodel.TypeVisitor,
 	object *astmodel.ObjectType,
 	ctx interface{}) (astmodel.Type, error) {
-	vc := ctx.(StorageTypesVisitorContext)
-	oc := vc.forObject(object)
+	visitorContext := ctx.(StorageTypesVisitorContext)
+	objectContext := visitorContext.forObject(object)
 
 	var errs []error
 	properties := object.Properties()
 	for i, prop := range properties {
-		p, err := factory.makeStorageProperty(prop, oc)
+		p, err := factory.makeStorageProperty(prop, objectContext)
 		if err != nil {
 			errs = append(errs, err)
 		} else {
@@ -139,17 +139,17 @@ func (factory *StorageTypeFactory) visitObjectType(
 		return nil, err
 	}
 
-	ot := astmodel.NewObjectType().WithProperties(properties...)
-	return astmodel.NewStorageType(*ot), nil
+	objectType := astmodel.NewObjectType().WithProperties(properties...)
+	return astmodel.NewStorageType(*objectType), nil
 }
 
 // makeStorageProperty applies a conversion to make a variant of the property for use when
 // serializing to storage
 func (factory *StorageTypeFactory) makeStorageProperty(
 	prop *astmodel.PropertyDefinition,
-	pc StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error) {
+	objectContext StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error) {
 	for _, conv := range factory.propertyConversions {
-		p, err := conv(prop, pc.forProperty(prop))
+		p, err := conv(prop, objectContext.forProperty(prop))
 		if err != nil {
 			// Something went wrong, return the error
 			return nil, err
@@ -163,7 +163,7 @@ func (factory *StorageTypeFactory) makeStorageProperty(
 	return nil, fmt.Errorf("failed to find a conversion for property %v", prop.PropertyName())
 }
 
-// Preserve properties required by the KubernetesResource interface unchanged as they're always required
+// preserveKubernetesResourceStorageProperties preserves properties required by the KubernetesResource interface as they're always required
 func (factory *StorageTypeFactory) preserveKubernetesResourceStorageProperties(
 	prop *astmodel.PropertyDefinition,
 	_ StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error) {
@@ -179,7 +179,7 @@ func (factory *StorageTypeFactory) preserveKubernetesResourceStorageProperties(
 
 func (factory *StorageTypeFactory) convertPropertiesForStorage(
 	prop *astmodel.PropertyDefinition,
-	ctx StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error) {
+	_ StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error) {
 	propertyType, err := factory.visitor.Visit(prop.PropertyType(), prop)
 	if err != nil {
 		return nil, err
@@ -195,10 +195,10 @@ func (factory *StorageTypeFactory) convertPropertiesForStorage(
 
 func (factory *StorageTypeFactory) visitArmType(
 	_ *astmodel.TypeVisitor,
-	it *astmodel.ArmType,
+	armType *astmodel.ArmType,
 	_ interface{}) (astmodel.Type, error) {
 	// We don't want to do anything with ARM types
-	return it, nil
+	return armType, nil
 }
 
 func descriptionForStorageVariant(definition astmodel.TypeDefinition) []string {
