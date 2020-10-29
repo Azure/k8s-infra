@@ -17,8 +17,10 @@ CONTROLLER_DEBUG_LOGLEVEL := 4
 V = 0
 Q = $(if $(filter 1,$V),,@)
 
+# Note: test-int can be run manually but is not included here so as to avoid slow
+# tests bogging down the dev cycle
 .PHONY: all
-all: generate header-check fmt build test test-int  # TODO: Do we want to remove test-int from the all target so it's not run every time locally?
+all: generate header-check fmt build test
 
 # There is a ci specific target because we want the CI pass to fail if
 # the code has not been go fmt-ed, whereas locally we want "make all"
