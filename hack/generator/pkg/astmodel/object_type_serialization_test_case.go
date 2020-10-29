@@ -121,7 +121,7 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 
 func (o ObjectSerializationTestCase) RequiredImports() *PackageImportSet {
 	result := NewPackageImportSet()
-	result.AddImportOfReference(FmtReference)
+	result.AddImportOfReference(DiffReference)
 	result.AddImportOfReference(GopterReference)
 	result.AddImportOfReference(GopterGenReference)
 	result.AddImportOfReference(GopterPropReference)
@@ -191,19 +191,21 @@ func (o ObjectSerializationTestCase) createTestRunner() ast.Decl {
 func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 	binId := ast.NewIdent("bin")
 	actualId := ast.NewIdent("actual")
-	falseId := ast.NewIdent("false")
+	actualFmtId := ast.NewIdent("actualFmt")
 	matchId := ast.NewIdent("match")
 	subjectId := ast.NewIdent("subject")
+	subjectFmtId := ast.NewIdent("subjectFmt")
+	resultId := ast.NewIdent("result")
 	errId := ast.NewIdent("err")
 
 	// bin, err := json.Marshal(subject)
 	serialize := astbuilder.SimpleAssignmentWithErr(
 		binId,
 		token.DEFINE,
-		astbuilder.CallMethodByName("json", "Marshal", subjectId))
+		astbuilder.CallQualifiedFuncByName("json", "Marshal", subjectId))
 
-	// if err == nil { return false }
-	serializeFailed := astbuilder.ReturnIfNotNil(errId, falseId)
+	// if err != nil { return err.Error() }
+	serializeFailed := astbuilder.ReturnIfNotNil(errId, astbuilder.CallQualifiedFuncByName("err", "Error"))
 
 	// var actual X
 	declare := astbuilder.NewVariable(actualId, o.Subject())
@@ -212,22 +214,23 @@ func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 	deserialize := astbuilder.SimpleAssignment(
 		ast.NewIdent("err"),
 		token.ASSIGN,
-		astbuilder.CallMethodByName("json", "Unmarshal", binId,
+		astbuilder.CallQualifiedFuncByName("json", "Unmarshal", binId,
 			&ast.UnaryExpr{
 				Op: token.AND,
 				X:  actualId,
 			}))
 
-	// if err != nil { return false }
-	deserializeFailed := astbuilder.ReturnIfNotNil(errId, falseId)
+	// if err != nil { return err.Error() }
+	deserializeFailed := astbuilder.ReturnIfNotNil(errId, astbuilder.CallQualifiedFuncByName("err", "Error"))
 
-	// match := reflect.DeepEqual(subject, actual)
+	// match := cmp.Equal(subject, actual, cmpopts.EquateEmpty())
+	equateEmpty := astbuilder.CallQualifiedFuncByName("cmpopts", "EquateEmpty")
 	compare := astbuilder.SimpleAssignment(
 		matchId,
 		token.DEFINE,
-		astbuilder.CallMethodByName("reflect", "DeepEqual", subjectId, actualId))
+		astbuilder.CallQualifiedFuncByName("cmp", "Equal", subjectId, actualId, equateEmpty))
 
-	// if !match { pretty.Println(subject); pretty.Println(actual) }
+	// if !match { result := diff.Diff(subject, actual); return result }
 	prettyPrint := &ast.IfStmt{
 		Cond: &ast.UnaryExpr{
 			Op: token.NOT,
@@ -235,23 +238,32 @@ func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 		},
 		Body: &ast.BlockStmt{
 			List: []ast.Stmt{
-				astbuilder.InvokeMethodByName("fmt", "Println", astbuilder.LiteralString("===== Subject =====")),
-				astbuilder.InvokeMethodByName("pretty", "Println", subjectId),
-				astbuilder.InvokeMethodByName("fmt", "Println", astbuilder.LiteralString("===== Actual =====")),
-				astbuilder.InvokeMethodByName("pretty", "Println", actualId),
+				astbuilder.SimpleAssignment(
+					actualFmtId,
+					token.DEFINE,
+					astbuilder.CallQualifiedFuncByName("pretty", "Sprint", actualId)),
+				astbuilder.SimpleAssignment(
+					subjectFmtId,
+					token.DEFINE,
+					astbuilder.CallQualifiedFuncByName("pretty", "Sprint", subjectId)),
+				astbuilder.SimpleAssignment(
+					resultId,
+					token.DEFINE,
+					astbuilder.CallQualifiedFuncByName("diff", "Diff", subjectFmtId, actualFmtId)),
+				astbuilder.Returns(resultId),
 			},
 		},
 	}
 
-	// return match
-	ret := astbuilder.Returns(matchId)
+	// return ""
+	ret := astbuilder.Returns(astbuilder.StringLiteral(""))
 
 	// Create the function
 	fn := &astbuilder.FuncDetails{
 		Name: o.idOfTestMethod(),
 		Returns: []*ast.Field{
 			{
-				Type: ast.NewIdent("bool"),
+				Type: ast.NewIdent("string"),
 			},
 		},
 		Body: []ast.Stmt{
@@ -270,7 +282,7 @@ func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 		"runs a test to see if a specific instance of %v round trips to JSON and back losslessly",
 		o.Subject()))
 
-	return astbuilder.DefineFunc(fn)
+	return fn.DefineFunc()
 }
 
 func (o ObjectSerializationTestCase) createGeneratorDeclaration(genType *ast.SelectorExpr) ast.Decl {
