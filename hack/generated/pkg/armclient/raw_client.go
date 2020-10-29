@@ -44,9 +44,7 @@ func (c *Client) WithExponentialRetries(attempts int, backoff time.Duration, max
 	result := *c
 	result.SendDecorators = nil
 	// Deep copy the send decorators
-	for _, item := range c.SendDecorators {
-		result.SendDecorators = append(result.SendDecorators, item)
-	}
+	result.SendDecorators = append(result.SendDecorators, c.SendDecorators...)
 
 	// There's no place to set a backoff cap on the actual client?
 	result.RetryAttempts = attempts
@@ -136,16 +134,12 @@ func (c *Client) GetResource(ctx context.Context, resourceID string, resource in
 		return err
 	}
 
-	// TODO: Dropped NotFound stuff here
-
 	return nil
 }
 
 // DeleteResource will make an HTTP DELETE call to the resourceId and attempt to fill the resource with the response.
 // If the body of the response is empty, the resource will be nil.
 func (c *Client) DeleteResource(ctx context.Context, resourceID string, resource interface{}) error {
-
-	// TODO: This content is basically the same as GET above
 	preparer := autorest.CreatePreparer(
 		autorest.AsContentType("application/json"))
 

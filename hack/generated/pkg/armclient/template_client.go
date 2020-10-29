@@ -20,7 +20,6 @@ import (
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 )
 
-
 // TODO: Naming?
 type Applier interface {
 	CreateDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error)
@@ -51,7 +50,6 @@ type Template struct {
 	Outputs        map[string]Output `json:"outputs,omitempty"`
 }
 
-// TODO: Do we want/need this?
 type Output struct {
 	Condition string `json:"condition,omitempty"`
 	Type      string `json:"type,omitempty"`
@@ -100,13 +98,13 @@ type TemplateOutput struct {
 }
 
 type RetryConfig struct {
-	Attempts int
-	Backoff time.Duration
+	Attempts   int
+	Backoff    time.Duration
 	MaxBackoff time.Duration
 }
 
 type ClientConfig struct {
-	Logger logr.Logger
+	Logger  logr.Logger
 	Retries *RetryConfig
 }
 
@@ -130,8 +128,8 @@ func WithRetries(retries *RetryConfig) func(*ClientConfig) *ClientConfig {
 
 func WithDefaultRetries() func(*ClientConfig) *ClientConfig {
 	return WithRetries(&RetryConfig{
-		Attempts: 5,
-		Backoff: 2 * time.Second,
+		Attempts:   5,
+		Backoff:    2 * time.Second,
 		MaxBackoff: 30 * time.Second,
 	})
 }

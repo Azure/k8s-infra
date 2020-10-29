@@ -32,7 +32,6 @@ import (
 )
 
 const (
-	TestRegion             = "westus"
 	TestNamespace          = "k8s-infra-test-ns"
 	DefaultResourceTimeout = 2 * time.Minute
 )
@@ -146,7 +145,7 @@ func setup(options Options) error {
 
 	newCtx, err := testcommon.NewKubeTestContext(
 		config,
-		TestRegion,
+		testcommon.DefaultTestRegion,
 		TestNamespace,
 		controllers.ResourceStateAnnotation,
 		controllers.ResourceErrorAnnotation)

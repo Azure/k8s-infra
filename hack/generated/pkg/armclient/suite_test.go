@@ -20,7 +20,6 @@ import (
 )
 
 const DefaultEventuallyTimeout = 3 * time.Minute
-const Location = "westus" // TODO: Should be common somewhere?
 
 type ArmClientTestContext struct {
 	*testcommon.TestContext
@@ -37,7 +36,7 @@ func setup() error {
 	gomega.SetDefaultEventuallyTimeout(DefaultEventuallyTimeout)
 	gomega.SetDefaultEventuallyPollingInterval(5 * time.Second)
 
-	tc, err := testcommon.NewTestContext(Location)
+	tc, err := testcommon.NewTestContext(testcommon.DefaultTestRegion)
 	if err != nil {
 		return err
 	}

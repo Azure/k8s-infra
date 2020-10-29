@@ -17,6 +17,7 @@ import (
 
 // If you modify this make sure to modify the cleanup-test-azure-resources target in the Makefile too
 const ResourcePrefix = "k8sinfratest"
+const DefaultTestRegion = "westus" // Could make this an env variable if we wanted
 
 type TestContext struct {
 	Namer       *ResourceNamer
