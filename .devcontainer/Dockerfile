@@ -33,6 +33,13 @@ RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.19.0/b
 RUN curl -sL "https://github.com/go-task/task/releases/download/v3.0.0/task_linux_amd64.tar.gz" | tar xz -C /usr/local/bin task
 RUN curl -sL "https://raw.githubusercontent.com/go-task/task/v3.0.0/completion/bash/task.bash" > "/home/vscode/.oh-my-bash/completions/task.completion.sh"
 
+# install kubebuilder
+RUN os=$(go env GOOS) \
+    && arch=$(go env GOARCH) \
+    && curl -L https://go.kubebuilder.io/dl/2.3.1/${os}/${arch} | tar -xz -C /tmp/ \
+    && mv /tmp/kubebuilder_2.3.1_${os}_${arch} /usr/local/kubebuilder
+ENV PATH=$PATH:/usr/local/kubebuilder/bin
+
 # add bash customizations
 # note that the base image includes oh-my-bash, we are enabling plugins here
 RUN sed -i '/^plugins=/a kubectl\ngolang' "/home/vscode/.bashrc"
