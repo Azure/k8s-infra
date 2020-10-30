@@ -64,7 +64,6 @@ func (m *BeDeletedMatcher) message(actual interface{}, expectedMatch bool) strin
 	return gomegaformat.Message(obj, fmt.Sprintf("%sto be deleted", notStr))
 }
 
-
 func (m *BeDeletedMatcher) FailureMessage(actual interface{}) string {
 	return m.message(actual, false)
 }
