@@ -22,7 +22,7 @@ jobs:
         run: docker build --tag devcontainer:1.0 .devcontainer
 
       - name: Run devcontainer image
-        run: docker run devcontainer:1.0 --detach --name dc -v $GITHUB_WORKSPACE:/workspace
+        run: docker run --detach --name dc -w /workspace -v $GITHUB_WORKSPACE:/workspace devcontainer:1.0
 
       - name: Generator CI
         run: docker exec dc task generator:ci
