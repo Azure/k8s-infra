@@ -1,0 +1,94 @@
+version: '3'
+
+vars:
+  APP: k8sinfra-controller
+
+  ROOT_DIR:
+    sh: git rev-parse --show-toplevel
+
+  GO_DIRS:
+    sh: cd {{.ROOT_DIR}}/hack/generated && go list -f '{{"{{.Dir}}"}}' ./... 
+
+  GO_DIRS_TO_TEST:
+    # We exclude the apis folder because it's really large
+    # and test discovery takes a good amount of time (>10s)
+    sh: cd {{.ROOT_DIR}}/hack/generated && go list -f '{{"{{.Dir}}"}}' ./...  | grep -vE '/apis(/|$)'
+
+env:
+  KIND_CLUSTER_NAME: k8sinfra-generated
+
+tasks:
+  # Note: test-int can be run manually but is not included here so as to avoid slow
+  # tests bogging down the dev cycle
+  default:
+    desc: Perform all local pre-commit tasks.
+    deps: [generate-crds, header-check, format-code, test]
+  
+  # There is a ci specific target because we want the CI pass to fail if
+  # the code has not been go fmt-ed, whereas locally we want "make all"
+  # to just format the code for you
+  ci:
+    # no description as it is not for local use
+    # order must be explicit as CRDs must be generated before header check
+    cmds:
+    - task: generate-crds
+    - task: ci-rest
+
+  ci-rest:
+    # these can all be run in parallel
+    deps: [header-check, test-cover, test-integration-envtest]
+
+  lint:
+    desc: Run lint checks.
+    cmds: [golangci-lint run -v]
+
+  lint-full:
+    desc: Run all lint checks.
+    cmds: [golangci-lint run -v --fast=false]
+
+  format-code:
+    desc: Ensure all code is correctly formatted.
+    cmds:
+    - gofmt -l -s -w {{.GO_DIRS_TO_TEST|catLines}}
+
+  tidy:
+    desc: Run 'go mod tidy'.
+    cmds: [go mod tidy]
+
+  generate-crds:
+    desc: Run controller-gen to generate CRD files.
+    cmds:
+    - find ./apis -type f -name "zz_generated.*" -delete
+    - controller-gen object:headerFile=../boilerplate.go.txt paths="./..."
+    - if [ -d "./config/crd/bases" ]; then find "./config/crd/bases" -type f -delete; fi
+    - controller-gen {{.CRD_OPTIONS}} rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+    vars:
+      CRD_OPTIONS: "crd:crdVersions=v1,allowDangerousTypes=true"
+  
+  build:
+    desc: Generate the {{.APP}} binary.
+    deps: [tidy, lint]
+    cmds:
+    - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -o ./bin/{{.APP}}
+
+  test:
+    desc: Run unit tests.
+    cmds:
+    - go test {{.GO_DIRS_TO_TEST|catLines}} -short -tags=noexit
+
+  test-cover:
+    desc: Run unit tests and output coverage.
+    cmds: 
+    - go test -short -tags=noexit -race -covermode atomic -coverprofile=cover.out -coverpkg="./..." {{.GO_DIRS_TO_TEST|catLines}}
+    - gcov2lcov -infile cover.out -outfile coverage.lcov
+
+  test-integration-envtest:
+    desc: Run integration tests with envtest and output coverage.
+    cmds:
+    - go test -race -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." ./controllers/... -envtest 
+    - gcov2lcov -infile cover-integration-envtest.out -outfile coverage-integration.lcov
+
+  header-check:
+    desc: Ensure all files have an appropriate license header.
+    cmds:
+    - "{{.ROOT_DIR}}/scripts/verify_boilerplate.sh"

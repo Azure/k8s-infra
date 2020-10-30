@@ -1,0 +1,5 @@
+name: 'Dev Container'
+description: 'Uses the devcontainer image for a consistent build experience'
+runs:
+  using: 'docker'
+  image: '../../../.devcontainer/Dockerfile'
