@@ -19,7 +19,7 @@ jobs:
           submodules: 'true'
 
       - name: Build devcontainer image
-        run: docker build .devcontainer/Dockerfile
+        run: docker build .devcontainer
 
       - name: Generator CI
         run: task generator:ci
