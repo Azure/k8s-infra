@@ -7,6 +7,7 @@ package testcommon
 
 import (
 	"context"
+	"fmt"
 
 	gomegaformat "github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/types"
@@ -54,7 +55,7 @@ func (m *AzureBeDeletedMatcher) Match(actual interface{}) (bool, error) {
 	return !exists, nil
 }
 
-func (m *AzureBeDeletedMatcher) FailureMessage(actual interface{}) string {
+func (m *AzureBeDeletedMatcher) message(actual interface{}, expectedMatch bool) string {
 	args, err := m.typedActual(actual)
 	if err != nil {
 		// Gomegas contract is that it won't call one of the message functions
@@ -63,19 +64,20 @@ func (m *AzureBeDeletedMatcher) FailureMessage(actual interface{}) string {
 		panic(err)
 	}
 
-	return gomegaformat.Message(args[0], "to be deleted")
+	notStr := ""
+	if !expectedMatch {
+		notStr = "not "
+	}
+
+	return gomegaformat.Message(args[0], fmt.Sprintf("%sto be deleted", notStr))
+}
+
+func (m *AzureBeDeletedMatcher) FailureMessage(actual interface{}) string {
+	return m.message(actual, true)
 }
 
 func (m *AzureBeDeletedMatcher) NegatedFailureMessage(actual interface{}) string {
-	args, err := m.typedActual(actual)
-	if err != nil {
-		// Gomegas contract is that it won't call one of the message functions
-		// if Match returned an error. If we make it here somehow that contract
-		// has been violated
-		panic(err)
-	}
-
-	return gomegaformat.Message(args[0], "not to be deleted")
+	return m.message(actual, false)
 }
 
 // MatchMayChangeInTheFuture implements OracleMatcher which of course isn't exported so we can't type-assert we implement it
