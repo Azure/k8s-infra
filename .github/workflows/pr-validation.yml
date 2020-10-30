@@ -19,13 +19,16 @@ jobs:
           submodules: 'true'
 
       - name: Build devcontainer image
-        run: docker build .devcontainer
+        run: docker build --tag devcontainer:1.0 .devcontainer
+
+      - name: Run devcontainer image
+        run: docker run devcontainer:1.0 --detach --name dc -v $GITHUB_WORKSPACE:/workspace
 
       - name: Generator CI
-        run: task generator:ci
+        run: docker exec dc task generator:ci
 
       - name: Generated CI
-        run: task generated:ci
+        run: docker exec dc task generated:ci
 
       - name: Upload generator coverage to coveralls
         uses: coverallsapp/github-action@master
@@ -51,11 +54,7 @@ jobs:
           flag-name: pr-generated-integration-${{ runner.os }}
           parallel: true
 
-  coveralls-complete:
-    needs: [test-generator]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Coveralls
+      - name: Coveralls done
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.github_token }}
