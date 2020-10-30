@@ -18,12 +18,13 @@ jobs:
         with:
           submodules: 'true'
 
+      - name: Build devcontainer image
+        run: docker build .devcontainer/Dockerfile
+
       - name: Generator CI
-        uses: ./.github/actions/devcontainer
         run: task generator:ci
 
       - name: Generated CI
-        uses: ./.github/actions/devcontainer
         run: task generated:ci
 
       - name: Upload generator coverage to coveralls
