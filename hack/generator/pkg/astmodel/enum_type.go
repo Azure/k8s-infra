@@ -149,7 +149,7 @@ func (enum *EnumType) Equals(t Type) bool {
 }
 
 // RequiredPackageReferences indicates that Enums never need additional imports
-func (enum *EnumType) RequiredPackageReferences() []PackageReference {
+func (enum *EnumType) RequiredPackageReferences() *PackageReferenceSet {
 	return nil
 }
 
