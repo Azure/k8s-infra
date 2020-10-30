@@ -21,14 +21,8 @@ jobs:
       - name: Build devcontainer image
         run: docker build --tag devcontainer:1.0 .devcontainer
 
-      - name: Run devcontainer image
-        run: docker run --detach --name dc -w /workspace -v $GITHUB_WORKSPACE:/workspace devcontainer:1.0
-
-      - name: Generator CI
-        run: docker exec dc task generator:ci
-
-      - name: Generated CI
-        run: docker exec dc task generated:ci
+      - name: Run CI tasks
+        run: docker run -w /workspace -v $GITHUB_WORKSPACE:/workspace devcontainer:1.0 task ci
 
       - name: Upload generator coverage to coveralls
         uses: coverallsapp/github-action@master

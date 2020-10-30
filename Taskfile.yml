@@ -7,3 +7,10 @@ includes:
   generated:
     taskfile: ./hack/generated
     dir: ./hack/generated/
+
+tasks:
+  ci:
+    desc: Run all CI checks.
+    cmds:
+    - task: generator:ci
+    - task: generated:ci
