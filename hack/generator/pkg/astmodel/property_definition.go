@@ -29,8 +29,14 @@ type PropertyDefinition struct {
 // name is the name for the new property (mandatory)
 // propertyType is the type for the new property (mandatory)
 func NewPropertyDefinition(propertyName PropertyName, jsonName string, propertyType Type) *PropertyDefinition {
+
+	jsonTag := []string{jsonName}
+	if jsonOmitIfEmpty(propertyType) {
+		jsonTag = append(jsonTag, "omitempty")
+	}
+
 	tags := make(map[string][]string)
-	tags["json"] = []string{jsonName}
+	tags["json"] = jsonTag
 
 	return &PropertyDefinition{
 		propertyName: propertyName,
@@ -70,6 +76,7 @@ func (property *PropertyDefinition) WithType(newType Type) *PropertyDefinition {
 
 	result := property.copy()
 	result.propertyType = newType
+	result = result.inferJsonOmitEmpty()
 	return result
 }
 
@@ -89,6 +96,17 @@ func (property *PropertyDefinition) WithValidation(validation Validation) *Prope
 func (property *PropertyDefinition) WithoutValidation() *PropertyDefinition {
 	result := property.copy()
 	result.validations = nil
+	return result
+}
+
+// ClearTags removes all the tags with a specified key name
+func (property *PropertyDefinition) ClearTag(key string) *PropertyDefinition {
+	if !property.HasTag(key) {
+		return property
+	}
+
+	result := property.copy()
+	delete(result.tags, key)
 	return result
 }
 
@@ -158,17 +176,41 @@ func (property *PropertyDefinition) hasJsonOmitEmpty() bool {
 	return property.HasTagValue("json", "omitempty")
 }
 
-func (property *PropertyDefinition) withJsonOmitEmpty() *PropertyDefinition {
-	return property.WithTag("json", "omitempty")
+// Infer the required value for omitempty based on the type of the property
+func (property *PropertyDefinition) inferJsonOmitEmpty() *PropertyDefinition {
+	needOmitEmpty := jsonOmitIfEmpty(property.propertyType)
+	if property.hasJsonOmitEmpty() != needOmitEmpty {
+		// Need to change
+		if needOmitEmpty {
+			return property.WithTag("json", "omitempty")
+		} else {
+			return property.WithoutTag("json", "omitempty")
+		}
+	}
+
+	// No change needed
+	return property
 }
 
-func (property *PropertyDefinition) withoutJsonOmitEmpty() *PropertyDefinition {
-	return property.WithoutTag("json", "omitempty")
+// Predicate used to identify whether a property should omit the JSON annotation omitempty
+func jsonOmitIfEmpty(t Type) bool {
+	switch t.(type) {
+	case *ArrayType:
+		return false
+	case *MapType:
+		return false
+	case *PrimitiveType:
+		return true
+	case *OptionalType:
+		return true
+	default:
+		return false
+	}
 }
 
 // MakeRequired returns a new PropertyDefinition that is marked as required
 func (property *PropertyDefinition) MakeRequired() *PropertyDefinition {
-	if !property.hasOptionalType() && property.HasRequiredValidation() && !property.hasJsonOmitEmpty() {
+	if !property.hasOptionalType() && property.HasRequiredValidation() {
 		return property
 	}
 	result := property.copy()
@@ -183,14 +225,14 @@ func (property *PropertyDefinition) MakeRequired() *PropertyDefinition {
 		result = result.WithValidation(ValidateRequired())
 	}
 
-	result = result.withoutJsonOmitEmpty()
+	result = result.inferJsonOmitEmpty()
 
 	return result
 }
 
 // MakeOptional returns a new PropertyDefinition that has an optional value
 func (property *PropertyDefinition) MakeOptional() *PropertyDefinition {
-	if isTypeOptional(property.propertyType) && !property.HasRequiredValidation() && property.hasJsonOmitEmpty() {
+	if isTypeOptional(property.propertyType) && !property.HasRequiredValidation() {
 		// No change required
 		return property
 	}
@@ -217,7 +259,7 @@ func (property *PropertyDefinition) MakeOptional() *PropertyDefinition {
 		result.validations = validations
 	}
 
-	result = result.withJsonOmitEmpty()
+	result = result.inferJsonOmitEmpty()
 
 	return result
 }
