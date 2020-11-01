@@ -59,7 +59,7 @@ func setupEnvTest() (*rest.Config, error) {
 	envtestContext = &EnvtestContext{
 		testenv: envtest.Environment{
 			CRDDirectoryPaths: []string{
-				"../config/crd/bases",
+				"../config/crd/bases/valid",
 			},
 		},
 		stopManager: make(chan struct{}),
