@@ -43,7 +43,7 @@ type FakeResource_SpecArm struct {
 	ApiVersion       FakeResourceSpecApiVersion `json:"apiVersion"`
 	Color            *FakeResourceSpecColor     `json:"color,omitempty"`
 	Foo              FooArm                     `json:"foo"`
-	Name             string                     `json:"name"`
+	Name             string                     `json:"name,omitempty"`
 	OptionalFoo      *FooArm                    `json:"optionalFoo,omitempty"`
 	Type             FakeResourceSpecType       `json:"type"`
 }
@@ -92,7 +92,7 @@ type FakeResource_Spec struct {
 
 	//AzureName: The name of the resource in Azure. This is often the same as the name
 	//of the resource in Kubernetes but it doesn't have to be.
-	AzureName string                 `json:"azureName"`
+	AzureName string                 `json:"azureName,omitempty"`
 	Color     *FakeResourceSpecColor `json:"color,omitempty"`
 
 	// +kubebuilder:validation:Required

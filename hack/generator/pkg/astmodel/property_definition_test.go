@@ -31,7 +31,7 @@ func Test_NewPropertyDefinition_GivenValues_ReturnsInstanceWithExpectedFields(t 
 
 	g.Expect(property.propertyName).To(Equal(propertyName))
 	g.Expect(property.propertyType).To(Equal(propertyType))
-	g.Expect(property.tags["json"]).To(Equal([]string{propertyJsonName}))
+	g.Expect(property.tags["json"]).To(Equal([]string{propertyJsonName, "omitempty"}))
 	g.Expect(property.description).To(BeEmpty())
 }
 
@@ -50,20 +50,20 @@ func Test_NewPropertyDefinition_GivenValues_ReturnsInstanceWithExpectedGetters(t
 func Test_PropertyDefinition_TagsAdded_TagsAreRenderedAsExpected(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType)
+	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType).ClearTag("json")
 	updated := original.WithTag("key", "value")
 
 	g.Expect(updated).NotTo(Equal(original))
-	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\" key:\"value\"", propertyJsonName)))
+	g.Expect(updated.renderedTags()).To(Equal("key:\"value\""))
 }
 
 func Test_PropertyDefinition_MultipleTagsAdded_TagsAreRenderedCommaSeparated(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType)
+	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType).ClearTag("json")
 	updated := original.WithTag("key", "value").WithTag("key", "value2").WithTag("key", "value3")
 
-	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\" key:\"value,value2,value3\"", propertyJsonName)))
+	g.Expect(updated.renderedTags()).To(Equal("key:\"value,value2,value3\""))
 }
 
 func Test_PropertyDefinition_ExistingTagAdded_TagsAreNotDuplicated(t *testing.T) {
@@ -73,14 +73,14 @@ func Test_PropertyDefinition_ExistingTagAdded_TagsAreNotDuplicated(t *testing.T)
 	updated := original.WithTag("json", propertyJsonName)
 
 	g.Expect(updated).To(Equal(original))
-	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\"", propertyJsonName)))
+	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s,omitempty\"", propertyJsonName)))
 }
 
 func Test_PropertyDefinition_TagKeyRemoved_TagIsNotRendered(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType)
-	updated := original.WithoutTag("json", "")
+	updated := original.ClearTag("json")
 
 	g.Expect(updated).NotTo(Equal(original))
 	g.Expect(updated.renderedTags()).To(Equal(""))
@@ -90,7 +90,7 @@ func Test_PropertyDefinition_LastTagValueRemoved_TagIsNotRendered(t *testing.T) 
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType)
-	updated := original.WithoutTag("json", propertyJsonName)
+	updated := original.WithoutTag("json", propertyJsonName).WithoutTag("json", "omitempty")
 
 	g.Expect(updated).NotTo(Equal(original))
 	g.Expect(updated.renderedTags()).To(Equal(""))
@@ -100,23 +100,24 @@ func Test_PropertyDefinition_TagValueRemoved_RemainingTagsAreRenderedAsExpected(
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType).
+		ClearTag("json").
 		WithTag("key", "value1").
 		WithTag("key", "value2").
 		WithTag("key", "value3")
 	updated := original.WithoutTag("key", "value2")
 
 	g.Expect(updated).ToNot(Equal(original))
-	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\" key:\"value1,value3\"", propertyJsonName)))
+	g.Expect(updated.renderedTags()).To(Equal("key:\"value1,value3\""))
 }
 
 func Test_PropertyDefinition_NonExistentTagKeyRemoved_TagsAreRenderedAsExpected(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType)
+	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType).ClearTag("json")
 	updated := original.WithoutTag("doesntexist", "")
 
 	g.Expect(updated).To(Equal(original))
-	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\"", propertyJsonName)))
+	g.Expect(updated.renderedTags()).To(Equal(""))
 }
 
 func Test_PropertyDefinition_NonExistentTagValueRemoved_TagsAreRenderedAsExpected(t *testing.T) {
@@ -126,7 +127,7 @@ func Test_PropertyDefinition_NonExistentTagValueRemoved_TagsAreRenderedAsExpecte
 	updated := original.WithoutTag("doesntexist", "val")
 
 	g.Expect(updated).To(Equal(original))
-	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\"", propertyJsonName)))
+	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s,omitempty\"", propertyJsonName)))
 }
 
 /*
@@ -285,7 +286,7 @@ func Test_PropertyDefinitionMakeRequired_WhenOptional_ReturnsDifferentReference(
 	updated := original.MakeRequired()
 
 	g.Expect(updated).NotTo(BeIdenticalTo(original))
-	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\"", propertyJsonName)))
+	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s,omitempty\"", propertyJsonName)))
 }
 
 func TestPropertyDefinitionMakeRequired_WhenOptional_ReturnsTypeWithMandatoryValidation(t *testing.T) {
@@ -414,13 +415,13 @@ func Test_PropertyDefinitionMakeOptional_PropertyTypeArrayAndMap(t *testing.T) {
 				g.Expect(updated).NotTo(BeIdenticalTo(original))
 				g.Expect(updated.validations).NotTo(ContainElement(ValidateRequired()))
 				g.Expect(updated.propertyType).To(BeIdenticalTo(required.propertyType))
-				g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s,omitempty\"", propertyJsonName)))
+				g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\"", propertyJsonName)))
 			} else {
 				original := NewPropertyDefinition(propertyName, propertyJsonName, c.propertyType)
 				updated := original.MakeOptional()
 
-				g.Expect(updated).NotTo(Equal(original))
-				g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s,omitempty\"", propertyJsonName)))
+				g.Expect(updated).To(Equal(original))
+				g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\"", propertyJsonName)))
 			}
 		})
 	}
