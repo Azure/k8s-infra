@@ -5,7 +5,14 @@ FROM mcr.microsoft.com/vscode/devcontainers/go:0-${VARIANT}
 # APT dependencies
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
-    && apt-get -y install --no-install-recommends bash-completion
+    && apt-get -y install --no-install-recommends bash-completion software-properties-common lsb-release \
+    # install az-cli
+    && curl -sL https://aka.ms/InstallAzureCLIDeb | bash -
+
+# install docker
+# - not yet needed?
+# RUN curl -fsSL https://get.docker.com | sh -
+# RUN usermod -aG docker vscode
 
 # Go dependencies
 ENV GO111MODULE=on

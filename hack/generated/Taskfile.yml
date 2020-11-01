@@ -93,6 +93,17 @@ tasks:
     # -race fails at the moment in controller-runtime
     - go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." ./controllers/... -envtest 
     - gcov2lcov -infile cover-integration-envtest.out -outfile coverage-integration-envtest.lcov
+  
+  cleanup-azure-resources:
+    desc: Removes any old resources created by tests.
+    cmds:
+      - |
+        rgs=`az group list --query '[*].{Name: name, CreatedAt: tags.CreatedAt}' \
+          | jq -r '.[] | select(.Name | test("^k8sinfratest")) | select(.CreatedAt == null or now-(.CreatedAt | fromdate) > 86400) | .Name'`; \
+        for rgname in ${rgs[@]} ; do \
+          echo "$rgname will be deleted"; \
+          az group delete --name $rgname --no-wait --yes; \
+        done
 
   header-check:
     desc: Ensure all files have an appropriate license header.
