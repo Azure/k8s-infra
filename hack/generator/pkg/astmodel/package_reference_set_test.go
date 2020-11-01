@@ -80,13 +80,6 @@ func TestPackageReferenceSet_Merge_GivenDisjointSets_MergesSets(t *testing.T) {
 	g.Expect(setA.references).To(HaveLen(2))
 }
 
-func TestPackageReferenceSet_Merge_GivenNil_ReturnsUnchangedSet(t *testing.T) {
-	g := NewGomegaWithT(t)
-	set := NewPackageReferenceSet(simpleTestRef)
-	set.Merge(nil)
-	g.Expect(set.Contains(simpleTestRef)).To(BeTrue())
-}
-
 /*
  * Contains() tests
  */
@@ -132,16 +125,31 @@ func TestPackageReferenceSet_AsSlice_WhenEmpty_ReturnsEmptySlice(t *testing.T) {
 	g.Expect(slice).To(HaveLen(0))
 }
 
-func TestPackageReferenceSet_AsSlice_WhenNil_ReturnsEmptySlice(t *testing.T) {
-	g := NewGomegaWithT(t)
-	var set *PackageReferenceSet = nil
-	slice := set.AsSlice()
-	g.Expect(slice).To(HaveLen(0))
-}
-
 func TestPackageReferenceSet_AsSlice_WhenSetPopulated_ReturnsExpectedSlice(t *testing.T) {
 	g := NewGomegaWithT(t)
 	set := NewPackageReferenceSet(simpleTestRef, pathTestRef)
 	slice := set.AsSlice()
+	g.Expect(slice).To(HaveLen(2))
+}
+
+/*
+ * AsSortedSlice() tests
+ */
+
+func TestPackageReferenceSet_AsSortedSlice_WhenEmpty_ReturnsEmptySlice(t *testing.T) {
+	g := NewGomegaWithT(t)
+	set := NewPackageReferenceSet()
+	slice := set.AsSortedSlice(func(left PackageReference, right PackageReference) bool {
+		return left.PackageName() < right.PackageName()
+	})
+	g.Expect(slice).To(HaveLen(0))
+}
+
+func TestPackageReferenceSet_AsSortedSlice_WhenSetPopulated_ReturnsExpectedSlice(t *testing.T) {
+	g := NewGomegaWithT(t)
+	set := NewPackageReferenceSet(simpleTestRef, pathTestRef)
+	slice := set.AsSortedSlice(func(left PackageReference, right PackageReference) bool {
+		return left.PackageName() < right.PackageName()
+	})
 	g.Expect(slice).To(HaveLen(2))
 }

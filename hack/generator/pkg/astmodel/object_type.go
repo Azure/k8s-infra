@@ -174,11 +174,13 @@ func (objectType *ObjectType) RequiredPackageReferences() *PackageReferenceSet {
 	result := NewPackageReferenceSet()
 
 	for _, property := range objectType.embedded {
-		result.Merge(property.PropertyType().RequiredPackageReferences())
+		propertyType := property.PropertyType()
+		result.Merge(propertyType.RequiredPackageReferences())
 	}
 
 	for _, property := range objectType.properties {
-		result.Merge(property.PropertyType().RequiredPackageReferences())
+		propertyType := property.PropertyType()
+		result.Merge(propertyType.RequiredPackageReferences())
 	}
 
 	for _, function := range objectType.functions {

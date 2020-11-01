@@ -32,10 +32,6 @@ func (set *PackageReferenceSet) AddReference(ref PackageReference) {
 
 // Merge ensures that all references specified in other are included
 func (set *PackageReferenceSet) Merge(other *PackageReferenceSet) {
-	if other == nil {
-		return
-	}
-
 	for ref := range other.references {
 		set.AddReference(ref)
 	}
@@ -56,11 +52,8 @@ func (set *PackageReferenceSet) Contains(ref PackageReference) bool {
 // AsSlice() returns a slice containing all the imports
 func (set *PackageReferenceSet) AsSlice() []PackageReference {
 	var result []PackageReference
-
-	if set != nil {
-		for ref := range set.references {
-			result = append(result, ref)
-		}
+	for ref := range set.references {
+		result = append(result, ref)
 	}
 
 	return result

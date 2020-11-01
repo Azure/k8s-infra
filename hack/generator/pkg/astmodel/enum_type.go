@@ -150,7 +150,7 @@ func (enum *EnumType) Equals(t Type) bool {
 
 // RequiredPackageReferences indicates that Enums never need additional imports
 func (enum *EnumType) RequiredPackageReferences() *PackageReferenceSet {
-	return nil
+	return NewPackageReferenceSet()
 }
 
 // Options returns all the enum options
