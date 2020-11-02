@@ -12,11 +12,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 )
 
@@ -134,7 +135,21 @@ func WithDefaultRetries() func(*ClientConfig) *ClientConfig {
 	})
 }
 
-func NewAzureTemplateClient(opts ...AzureTemplateClientOption) (*AzureTemplateClient, error) {
+func AuthorizerFromEnvironment() (autorest.Authorizer, error) {
+	envSettings, err := auth.GetSettingsFromEnvironment()
+	if err != nil {
+		return nil, err
+	}
+
+	authorizer, err := envSettings.GetAuthorizer()
+	if err != nil {
+		return nil, err
+	}
+
+	return authorizer, nil
+}
+
+func NewAzureTemplateClient(authorizer autorest.Authorizer, opts ...AzureTemplateClientOption) (*AzureTemplateClient, error) {
 	cfg := &ClientConfig{
 		Logger: ctrl.Log.WithName("azure_template_client"),
 	}
@@ -146,16 +161,6 @@ func NewAzureTemplateClient(opts ...AzureTemplateClientOption) (*AzureTemplateCl
 	subID := os.Getenv(auth.SubscriptionID)
 	if subID == "" {
 		return nil, errors.Errorf("env var %q was not set", auth.SubscriptionID)
-	}
-
-	envSettings, err := auth.GetSettingsFromEnvironment()
-	if err != nil {
-		return nil, err
-	}
-
-	authorizer, err := envSettings.GetAuthorizer()
-	if err != nil {
-		return nil, err
 	}
 
 	rawClient := NewClient(authorizer)

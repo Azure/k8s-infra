@@ -94,7 +94,7 @@ tasks:
     - cp config/crd/bases/microsoft.storage.infra.azure.com_storageaccounts.yaml config/crd/bases/valid
     - cp config/crd/bases/microsoft.resources.infra.azure.com_resourcegroups.yaml config/crd/bases/valid
     # -race fails at the moment in controller-runtime
-    - go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." ./controllers/... -envtest 
+    - go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." ./controllers/... -envtest  -v
     - gcov2lcov -infile cover-integration-envtest.out -outfile coverage-integration-envtest.lcov
   
   cleanup-azure-resources:

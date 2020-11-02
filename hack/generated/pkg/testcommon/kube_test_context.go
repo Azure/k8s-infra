@@ -22,6 +22,7 @@ import (
 	batch "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.batch/v20170901"
 	resources "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.resources/v20200601"
 	storage "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.storage/v20190401"
+	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
 )
 
 type KubeTestContext struct {
@@ -39,6 +40,8 @@ func NewKubeTestContext(
 	config *rest.Config,
 	region string,
 	namespace string,
+	armClient armclient.Applier,
+	randomSeed int64,
 	stateAnnotation string,
 	errorAnnotation string) (*KubeTestContext, error) {
 
@@ -53,7 +56,7 @@ func NewKubeTestContext(
 
 	ensure := NewEnsure(kubeClient, stateAnnotation, errorAnnotation)
 
-	testContext, err := NewTestContext(region)
+	testContext, err := NewTestContext(region, armClient, randomSeed)
 	if err != nil {
 		return nil, err
 	}

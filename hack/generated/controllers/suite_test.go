@@ -7,12 +7,19 @@ package controllers_test
 
 import (
 	"context"
+	"encoding/binary"
 	"flag"
+	"fmt"
 	"log"
+	"net/http"
 	"os"
+	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/dnaeon/go-vcr/cassette"
+	"github.com/dnaeon/go-vcr/recorder"
+	"github.com/google/uuid"
 	"github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,9 +28,9 @@ import (
 	"k8s.io/klog/v2/klogr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
+	"github.com/Azure/go-autorest/autorest"
 	resources "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.resources/v20200601"
 	"github.com/Azure/k8s-infra/hack/generated/controllers"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
@@ -43,6 +50,7 @@ type EnvtestContext struct {
 	testenv     envtest.Environment
 	manager     ctrl.Manager
 	stopManager chan struct{}
+	recorder    *recorder.Recorder
 }
 
 type ControllerTestContext struct {
@@ -54,7 +62,33 @@ func (tc *ControllerTestContext) SharedResourceGroupOwner() genruntime.KnownReso
 	return genruntime.KnownResourceReference{Name: tc.SharedResourceGroup.Name}
 }
 
-func setupEnvTest() (*rest.Config, error) {
+// Wraps an inner HTTP roundtripper to add a
+// counter for duplicated request URIs.
+type RoundTripper struct {
+	inner  http.RoundTripper
+	counts map[string]uint32
+}
+
+func MakeRoundTripper(inner http.RoundTripper) *RoundTripper {
+	return &RoundTripper{
+		inner:  inner,
+		counts: make(map[string]uint32),
+	}
+}
+
+var COUNT_HEADER string = "TEST-REQUEST-ATTEMPT"
+
+func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	key := req.Method + ":" + req.URL.String()
+	count := rt.counts[key]
+	req.Header.Add(COUNT_HEADER, fmt.Sprintf("%v", count))
+	rt.counts[key] = count + 1
+	return rt.inner.RoundTrip(req)
+}
+
+var _ http.RoundTripper = &RoundTripper{}
+
+func setupEnvTest() (*rest.Config, armclient.Applier, error) {
 	envtestContext = &EnvtestContext{
 		testenv: envtest.Environment{
 			CRDDirectoryPaths: []string{
@@ -67,13 +101,13 @@ func setupEnvTest() (*rest.Config, error) {
 	log.Print("Starting envtest")
 	config, err := envtestContext.testenv.Start()
 	if err != nil {
-		return nil, errors.Wrapf(err, "starting envtest environment")
+		return nil, nil, errors.Wrapf(err, "starting envtest environment")
 	}
 
 	log.Print("Creating & starting controller-runtime manager")
 	mgr, err := ctrl.NewManager(config, ctrl.Options{Scheme: testcommon.CreateScheme()})
 	if err != nil {
-		return nil, errors.Wrapf(err, "creating controller-runtime manager")
+		return nil, nil, errors.Wrapf(err, "creating controller-runtime manager")
 	}
 
 	envtestContext.manager = mgr
@@ -86,10 +120,61 @@ func setupEnvTest() (*rest.Config, error) {
 		}
 	}()
 
-	log.Print("Creating ARM client")
-	armClient, err := armclient.NewAzureTemplateClient()
+	r, err := recorder.New("fixtures/arm")
 	if err != nil {
-		return nil, errors.Wrapf(err, "creating ARM client")
+		return nil, nil, errors.Wrapf(err, "creating recorder")
+	}
+
+	r.AddSaveFilter(func(i *cassette.Interaction) error {
+		// remove all Authorization headers from stored requests
+		delete(i.Request.Headers, "Authorization")
+
+		// remove all request IDs
+		delete(i.Response.Headers, "X-Ms-Correlation-Request-Id")
+		delete(i.Response.Headers, "X-Ms-Ratelimit-Remaining-Subscription-Reads")
+		delete(i.Response.Headers, "X-Ms-Ratelimit-Remaining-Subscription-Writes")
+		delete(i.Response.Headers, "X-Ms-Request-Id")
+		delete(i.Response.Headers, "X-Ms-Routing-Request-Id")
+
+		return nil
+	})
+
+	// request must match URI & METHOD & our custom header
+	r.SetMatcher(func(request *http.Request, i cassette.Request) bool {
+		return cassette.DefaultMatcher(request, i) &&
+			request.Header.Get(COUNT_HEADER) == i.Headers.Get(COUNT_HEADER)
+	})
+
+	envtestContext.recorder = r
+
+	var authorizer autorest.Authorizer
+	// if we are replaying, we won't use auth
+	if r.Mode() == recorder.ModeRecording {
+		authorizer, err = armclient.AuthorizerFromEnvironment()
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "creating authorizer")
+		}
+	}
+
+	log.Print("Creating ARM client")
+	armClient, err := armclient.NewAzureTemplateClient(authorizer)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "creating ARM client")
+	}
+
+	// overwrite default HTTP transport on ARM client
+	client, ok := armClient.RawClient.Sender.(*http.Client)
+	if !ok {
+		return nil, nil, errors.Errorf("unexpected type for ARM client Sender: %T", armClient.RawClient.Sender)
+	}
+	client.Transport = MakeRoundTripper(r)
+
+	var deployments uint32 = 0
+
+	var requeueDelay time.Duration // defaults to 5s when zero is passed
+	if r.Mode() == recorder.ModeReplaying {
+		// skip requeue delays when replaying
+		requeueDelay = 100 * time.Millisecond
 	}
 
 	log.Print("Registering custom controllers")
@@ -98,13 +183,22 @@ func setupEnvTest() (*rest.Config, error) {
 		armClient,
 		controllers.KnownTypes,
 		klogr.New(),
-		controller.Options{})
+		controllers.Options{
+			DeploymentNameGenerator: func() (string, error) {
+				ix := atomic.AddUint32(&deployments, 1)
+				bs := make([]byte, 4)
+				binary.LittleEndian.PutUint32(bs, ix)
+				result := uuid.NewSHA1(uuid.Nil, bs)
+				return fmt.Sprintf("k8s_%s", result.String()), nil
+			},
+			RequeueDelay: requeueDelay,
+		})
 
 	if errs != nil {
-		return nil, errors.Wrapf(kerrors.NewAggregate(errs), "registering reconcilers")
+		return nil, nil, errors.Wrapf(kerrors.NewAggregate(errs), "registering reconcilers")
 	}
 
-	return config, nil
+	return config, armClient, nil
 }
 
 func teardownEnvTest() error {
@@ -116,6 +210,12 @@ func teardownEnvTest() error {
 		err := envtestContext.testenv.Stop()
 		if err != nil {
 			return errors.Wrapf(err, "stopping envtest environment")
+		}
+
+		log.Print("Stopping recorder")
+		err = envtestContext.recorder.Stop()
+		if err != nil {
+			return errors.Wrapf(err, "stopping recorder")
 		}
 	}
 
@@ -130,13 +230,28 @@ func setup(options Options) error {
 	gomega.SetDefaultEventuallyPollingInterval(5 * time.Second)
 
 	var err error
+	var randomSeed int64
 	var config *rest.Config
+	var armClient armclient.Applier
 	if options.useEnvTest {
-		config, err = setupEnvTest()
+		randomSeed = 4 // guaranteed to be random
+		config, armClient, err = setupEnvTest()
 		if err != nil {
 			return errors.Wrapf(err, "setting up envtest")
 		}
 	} else {
+		randomSeed = time.Now().UnixNano()
+
+		authorizer, err := armclient.AuthorizerFromEnvironment()
+		if err != nil {
+			return errors.Wrapf(err, "unable to get authorization settings")
+		}
+
+		armClient, err = armclient.NewAzureTemplateClient(authorizer)
+		if err != nil {
+			return errors.Wrapf(err, "unable to create ARM client")
+		}
+
 		config, err = ctrl.GetConfig()
 		if err != nil {
 			return errors.Wrapf(err, "unable to retrieve kubeconfig")
@@ -147,8 +262,11 @@ func setup(options Options) error {
 		config,
 		testcommon.DefaultTestRegion,
 		TestNamespace,
+		armClient,
+		randomSeed,
 		controllers.ResourceStateAnnotation,
 		controllers.ResourceErrorAnnotation)
+
 	if err != nil {
 		return err
 	}

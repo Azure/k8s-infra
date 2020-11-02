@@ -8,7 +8,6 @@ package testcommon
 import (
 	"math/rand"
 	"strings"
-	"time"
 )
 
 type ResourceNamer struct {
@@ -19,10 +18,10 @@ type ResourceNamer struct {
 	separator   string
 }
 
-func NewResourceNamer(prefix string, separator string, randomChars int) *ResourceNamer {
+func NewResourceNamer(prefix string, separator string, randomChars int, seed int64) *ResourceNamer {
 	return &ResourceNamer{
 		// nolint: do not want cryptographic randomness here
-		rand:        rand.New(rand.NewSource(time.Now().UnixNano())),
+		rand:        rand.New(rand.NewSource(seed)),
 		runes:       []rune("abcdefghijklmnopqrstuvwxyz"),
 		prefix:      prefix,
 		randomChars: randomChars,
@@ -30,8 +29,9 @@ func NewResourceNamer(prefix string, separator string, randomChars int) *Resourc
 	}
 }
 
-func (n *ResourceNamer) WithSeparator(separator string) *ResourceNamer {
-	return NewResourceNamer(n.prefix, separator, n.randomChars)
+func (n ResourceNamer) WithSeparator(separator string) *ResourceNamer {
+	n.separator = separator
+	return &n
 }
 
 func (n *ResourceNamer) generateName(prefix string, num int) string {

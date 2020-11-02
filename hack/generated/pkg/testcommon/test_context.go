@@ -27,12 +27,7 @@ type TestContext struct {
 	AzureSubscription string
 }
 
-func NewTestContext(region string) (*TestContext, error) {
-	armClient, err := armclient.NewAzureTemplateClient(armclient.WithDefaultRetries())
-	if err != nil {
-		return nil, errors.Wrapf(err, "creating armclient")
-	}
-
+func NewTestContext(region string, armClient armclient.Applier, randomSeed int64) (*TestContext, error) {
 	subscription, ok := os.LookupEnv("AZURE_SUBSCRIPTION_ID")
 	if !ok {
 		return nil, errors.New("couldn't find AZURE_SUBSCRIPTION_ID")
@@ -42,7 +37,7 @@ func NewTestContext(region string) (*TestContext, error) {
 		AzureClient:       armClient,
 		AzureRegion:       region,
 		AzureSubscription: subscription,
-		Namer:             NewResourceNamer(ResourcePrefix, "-", 6),
+		Namer:             NewResourceNamer(ResourcePrefix, "-", 6, randomSeed),
 	}, nil
 }
 
