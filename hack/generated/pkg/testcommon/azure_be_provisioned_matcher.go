@@ -48,8 +48,8 @@ func (m *AzureBeProvisionedMatcher) Match(actual interface{}) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	*deployment = *updatedDeployment // TODO: Does this do what I want?
-	// TODO: Do we want to log here?
+	*deployment = *updatedDeployment
+
 	log.Printf(
 		"Ongoing deployment %s is in state: %s\n",
 		deployment.Id,
@@ -82,7 +82,6 @@ func (m *AzureBeProvisionedMatcher) message(actual interface{}, expectedMatch bo
 		fmt.Sprintf("deployment %s state to %sbe %s.", deployment.Id, notStr, string(armclient.SucceededProvisioningState)))
 }
 
-// TODO: Follow this pattern elsewehre?
 func (m *AzureBeProvisionedMatcher) FailureMessage(actual interface{}) string {
 	return m.message(actual, true)
 }

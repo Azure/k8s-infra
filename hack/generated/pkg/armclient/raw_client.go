@@ -24,6 +24,7 @@ type Client struct {
 
 const UserAgent = "k8sinfra-generated"
 
+// NewClient creates a new raw client
 func NewClient(authorizer autorest.Authorizer) *Client {
 
 	autorestClient := autorest.NewClientWithUserAgent(UserAgent)
@@ -39,6 +40,7 @@ func NewClient(authorizer autorest.Authorizer) *Client {
 	return c
 }
 
+// WithExponentialRetries creates a new client with exponential retries configured and returns it
 func (c *Client) WithExponentialRetries(attempts int, backoff time.Duration, maxBackoff time.Duration) *Client {
 	// Copy the client
 	result := *c
@@ -61,6 +63,7 @@ func (c *Client) WithExponentialRetries(attempts int, backoff time.Duration, max
 	return &result
 }
 
+// TODO: Wondering if we should avoid returning deployment here since we're just updating it in place anyway
 func (c *Client) PutDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error) {
 	entityPath, err := deployment.GetEntityPath()
 	if err != nil {
@@ -83,7 +86,11 @@ func (c *Client) PutDeployment(ctx context.Context, deployment *Deployment) (*De
 		return nil, err
 	}
 
+	// The linter below doesn't realize that the response is closed in the course of
+	// the autorest.Respond call below, suppressing the false positive.
+	// nolint:bodyclose
 	resp, err := c.Send(req)
+
 	if err != nil {
 		tab.For(ctx).Error(err)
 		return nil, err
@@ -118,7 +125,11 @@ func (c *Client) GetResource(ctx context.Context, resourceID string, resource in
 		return err
 	}
 
+	// The linter below doesn't realize that the response is closed in the course of
+	// the autorest.Respond call below, suppressing the false positive.
+	// nolint:bodyclose
 	resp, err := c.Send(req)
+
 	if err != nil {
 		tab.For(ctx).Error(err)
 		return err
@@ -154,7 +165,11 @@ func (c *Client) DeleteResource(ctx context.Context, resourceID string, resource
 		return err
 	}
 
+	// The linter below doesn't realize that the response is closed in the course of
+	// the autorest.Respond call below, suppressing the false positive.
+	// nolint:bodyclose
 	resp, err := c.Send(req)
+
 	if err != nil {
 		tab.For(ctx).Error(err)
 		return err

@@ -21,8 +21,6 @@ import (
 	"github.com/Azure/k8s-infra/hack/generated/pkg/testcommon"
 )
 
-// TODO: Just use recordings to do this rather than real requests
-
 func Test_NewResourceGroupDeployment(t *testing.T) {
 	g := NewGomegaWithT(t)
 	ctx := context.Background()
