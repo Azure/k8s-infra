@@ -135,7 +135,7 @@ func (file *FileDefinition) generateImports() *PackageImportSet {
 	var requiredImports = NewPackageImportSet()
 
 	for _, s := range file.definitions {
-		for _, r := range s.RequiredPackageReferences() {
+		for _, r := range s.RequiredPackageReferences().AsSlice() {
 			requiredImports.AddImportOfReference(r)
 		}
 	}
@@ -155,10 +155,10 @@ func (file *FileDefinition) generateImports() *PackageImportSet {
 			if !imp.Equals(otherImp) && imp.PackageName() == otherImp.PackageName() {
 				klog.Warningf(
 					"File %v: import %v (named %v) and import %v (named %v) conflict",
-					file.packageReference.PackagePath(),
-					imp.PackageReference.PackagePath(),
+					file.packageReference,
+					imp.packageReference,
 					imp.PackageName(),
-					otherImp.PackageReference.PackagePath(),
+					otherImp.packageReference,
 					otherImp.PackageName())
 			}
 		}
