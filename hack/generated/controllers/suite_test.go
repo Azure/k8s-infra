@@ -148,13 +148,14 @@ func setupEnvTest() (*rest.Config, armclient.Applier, error) {
 	envtestContext.recorder = r
 
 	var authorizer autorest.Authorizer
-	// if we are replaying, we won't use auth
+	// if we are recording, we need auth
 	if r.Mode() == recorder.ModeRecording {
 		authorizer, err = armclient.AuthorizerFromEnvironment()
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "creating authorizer")
 		}
 	}
+	// if we are replaying, we won't
 
 	log.Print("Creating ARM client")
 	armClient, err := armclient.NewAzureTemplateClient(authorizer)
