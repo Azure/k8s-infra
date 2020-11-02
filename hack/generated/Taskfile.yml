@@ -1,15 +1,17 @@
 version: '3'
 
 vars:
-  APP: k8sinfra-controller
+  # careful here as these can conflict with the variables
+  # defined in generator/Taskfile.yml when included in ./Taskfile.yml
+  GENERATED_APP: k8sinfra-controller
 
   ROOT_DIR:
     sh: git rev-parse --show-toplevel
 
-  GO_DIRS:
+  GENERATED_GO_DIRS:
     sh: cd {{.ROOT_DIR}}/hack/generated && go list -f '{{"{{.Dir}}"}}' ./... 
 
-  GO_DIRS_TO_TEST:
+  GENERATED_GO_DIRS_TO_TEST:
     # We exclude the apis folder because it's really large
     # and test discovery takes a good amount of time (>10s)
     sh: cd {{.ROOT_DIR}}/hack/generated && go list -f '{{"{{.Dir}}"}}' ./...  | grep -vE '/apis(/|$)'
@@ -49,7 +51,7 @@ tasks:
   format-code:
     desc: Ensure all code is correctly formatted.
     cmds:
-    - gofmt -l -s -w {{.GO_DIRS_TO_TEST|catLines}}
+    - gofmt -l -s -w {{.GENERATED_GO_DIRS_TO_TEST|catLines}}
 
   tidy:
     desc: Run 'go mod tidy'.
@@ -66,20 +68,20 @@ tasks:
       CRD_OPTIONS: "crd:crdVersions=v1,allowDangerousTypes=true"
   
   build:
-    desc: Generate the {{.APP}} binary.
+    desc: Generate the {{.GENERATED_APP}} binary.
     deps: [tidy, lint]
     cmds:
-    - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -o ./bin/{{.APP}}
+    - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -o ./bin/{{.GENERATED_APP}}
 
   test:
     desc: Run unit tests.
     cmds:
-    - go test {{.GO_DIRS_TO_TEST|catLines}} -short -tags=noexit
+    - go test {{.GENERATED_GO_DIRS_TO_TEST|catLines}} -short -tags=noexit
 
   test-cover:
     desc: Run unit tests and output coverage.
     cmds: 
-    - go test -short -tags=noexit -race -covermode atomic -coverprofile=cover.out -coverpkg="./..." {{.GO_DIRS_TO_TEST|catLines}}
+    - go test -short -tags=noexit -race -covermode atomic -coverprofile=cover.out -coverpkg="./..." {{.GENERATED_GO_DIRS_TO_TEST|catLines}}
     - gcov2lcov -infile cover.out -outfile coverage.lcov
 
   test-integration-envtest:

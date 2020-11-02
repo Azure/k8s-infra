@@ -1,7 +1,9 @@
 version: '3'
 
 vars:
-  APP: k8sinfra-gen
+  # careful here as these can conflict with the variables
+  # defined in generated/Taskfile.yml when included in ./Taskfile.yml
+  GENERATOR_APP: k8sinfra-gen
   PACKAGE: github.com/Azure/k8s-infra/hack/generator
   DATE:
     sh: date +%FT%T%z
@@ -23,15 +25,15 @@ tasks:
     deps: [header-check, test-cover, generate-arm]
 
   build:
-    desc: Generate the {{.APP}} binary.
+    desc: Generate the {{.GENERATOR_APP}} binary.
     cmds:
-    - go build -ldflags "-X {{.PACKAGE}}/pkg/codegen.GitCommit={{.SHORT_VERSION}} -X {{.PACKAGE}}/pkg/codegen.GitTreeState={{.TREE_STATE}}" -o ./bin/{{.APP}}
+    - go build -ldflags "-X {{.PACKAGE}}/pkg/codegen.GitCommit={{.SHORT_VERSION}} -X {{.PACKAGE}}/pkg/codegen.GitTreeState={{.TREE_STATE}}" -o ./bin/{{.GENERATOR_APP}}
 
   generate-arm: 
-    desc: Run {{.APP}} to generate input files for controller-gen.
+    desc: Run {{.GENERATOR_APP}} to generate input files for controller-gen.
     deps: [build]
     cmds:
-    - ./bin/{{.APP}} gen-types azure-arm.yaml
+    - ./bin/{{.GENERATOR_APP}} gen-types azure-arm.yaml
 
   test:
     desc: Run unit tests.
@@ -57,9 +59,9 @@ tasks:
   format-code:
     desc: Ensure all code is correctly formatted.
     cmds:
-    - gofmt -l -s -w {{.GO_DIRS|catLines}}
+    - gofmt -l -s -w {{.GENERATOR_GO_DIRS|catLines}}
     vars:
-      GO_DIRS:
+      GENERATOR_GO_DIRS:
         sh: cd {{.ROOT_DIR}}/hack/generator && go list -f '{{"{{.Dir}}"}}' ./... 
 
   header-check:
