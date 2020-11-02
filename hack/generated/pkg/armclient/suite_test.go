@@ -15,6 +15,7 @@ import (
 	"github.com/onsi/gomega"
 	"github.com/pkg/errors"
 
+	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/testcommon"
 )
@@ -36,25 +37,46 @@ func setup() error {
 	gomega.SetDefaultEventuallyTimeout(DefaultEventuallyTimeout)
 	gomega.SetDefaultEventuallyPollingInterval(5 * time.Second)
 
-	tc, err := testcommon.NewTestContext(testcommon.DefaultTestRegion)
+	authorizer, err := armclient.AuthorizerFromEnvironment()
 	if err != nil {
 		return err
 	}
 
-	resourceGroup := tc.NewTestResourceGroup()
+	subID := os.Getenv(auth.SubscriptionID)
+	if subID == "" {
+		return errors.Errorf("env var %q was not set", auth.SubscriptionID)
+	}
+
+	applier, err := armclient.NewAzureTemplateClient(authorizer, subID)
+	if err != nil {
+		return err
+	}
+
+	tc, err := testcommon.NewTestContext(testcommon.DefaultTestRegion, applier)
+	if err != nil {
+		return err
+	}
+
+	setupCtx := tc.ForTestName("setup")
+
+	resourceGroup := setupCtx.NewTestResourceGroup()
 	resourceGroupSpec, err := resourceGroup.Spec.ConvertToArm(resourceGroup.Name)
 	if err != nil {
 		return nil
 	}
 
-	deploymentName := tc.NameConfig.GenerateName("deployment")
-	deployment := armclient.NewSubscriptionDeployment(tc.AzureSubscription, tc.AzureRegion, deploymentName, resourceGroupSpec)
+	deploymentName := setupCtx.Namer.GenerateName("deployment")
+	deployment := armclient.NewSubscriptionDeployment(
+		tc.AzureClient.SubscriptionID(),
+		tc.AzureRegion,
+		deploymentName,
+		resourceGroupSpec)
 
 	log.Printf(
-		"Creating shared resource group %s (via deployment %s) in subscription %s\n",
+		"Creating shared resource group %q (via deployment %q) in subscription %q\n",
 		resourceGroup.Name,
 		deploymentName,
-		tc.AzureSubscription)
+		tc.AzureClient.SubscriptionID())
 
 	deployment, err = tc.AzureClient.CreateDeployment(ctx, deployment)
 	if err != nil {
@@ -88,9 +110,10 @@ func teardown() error {
 	ctx := context.Background()
 
 	sharedResourceGroupId, err := armclient.MakeArmResourceId(
-		testContext.AzureSubscription,
+		testContext.AzureClient.SubscriptionID(),
 		"resourceGroups",
 		testContext.SharedResourceGroupName)
+
 	if err != nil {
 		return err
 	}

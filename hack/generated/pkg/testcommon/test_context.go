@@ -19,20 +19,23 @@ const ResourcePrefix = "k8sinfratest"
 const DefaultTestRegion = "westus" // Could make this an env variable if we wanted
 
 type TestContext struct {
-	NameConfig  *ResourceNameConfig
 	AzureClient armclient.Applier
-
 	AzureRegion string
+	NameConfig  *ResourceNameConfig
 }
 
-func (tc TestContext) ForTest(t *testing.T) ArmPerTestContext {
-	return ArmPerTestContext{
+func (tc TestContext) ForTestName(name string) PerTestContext {
+	return PerTestContext{
 		TestContext: tc,
-		Namer:       tc.NameConfig.NewResourceNamer(t.Name()),
+		Namer:       tc.NameConfig.NewResourceNamer(name),
 	}
 }
 
-type ArmPerTestContext struct {
+func (tc TestContext) ForTest(t *testing.T) PerTestContext {
+	return tc.ForTestName(t.Name())
+}
+
+type PerTestContext struct {
 	TestContext
 	Namer ResourceNamer
 }
@@ -45,7 +48,7 @@ func NewTestContext(region string, armClient armclient.Applier) (*TestContext, e
 	}, nil
 }
 
-func (tc ArmPerTestContext) NewTestResourceGroup() *resources.ResourceGroup {
+func (tc PerTestContext) NewTestResourceGroup() *resources.ResourceGroup {
 	return &resources.ResourceGroup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: tc.Namer.GenerateName("rg"),

@@ -7,9 +7,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
+	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -72,11 +74,18 @@ func main() {
 	authorizer, err := armclient.AuthorizerFromEnvironment()
 	if err != nil {
 		setupLog.Error(err, "unable to get authorization settings")
+		os.Exit(1)
 	}
 
-	armApplier, err := armclient.NewAzureTemplateClient(authorizer)
+	subID := os.Getenv(auth.SubscriptionID)
+	if subID == "" {
+		setupLog.Error(err, fmt.Sprintf("unable to get env var %q", auth.SubscriptionID))
+		os.Exit(1)
+	}
+
+	armApplier, err := armclient.NewAzureTemplateClient(authorizer, subID)
 	if err != nil {
-		setupLog.Error(err, "failed to create arm Applier.")
+		setupLog.Error(err, "failed to create ARM applier")
 		os.Exit(1)
 	}
 
