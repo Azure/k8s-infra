@@ -31,7 +31,7 @@ tasks:
     desc: Run {{.APP}} to generate input files for controller-gen.
     deps: [build]
     cmds:
-    - ./bin/{{.APP}} gen azure-arm.yaml
+    - ./bin/{{.APP}} gen-types azure-arm.yaml
 
   test:
     desc: Run unit tests.
