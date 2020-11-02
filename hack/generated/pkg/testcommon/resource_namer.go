@@ -25,7 +25,11 @@ type ResourceNamer struct {
 
 func (rnc ResourceNameConfig) NewResourceNamer(name string) ResourceNamer {
 	hasher := fnv.New64()
-	hasher.Write([]byte(name))
+	n, err := hasher.Write([]byte(name))
+	if n != len(name) || err != nil {
+		panic("failed to write hash")
+	}
+
 	seed := hasher.Sum64()
 	return ResourceNamer{
 		ResourceNameConfig: rnc,

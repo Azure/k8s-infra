@@ -18,11 +18,13 @@ import (
 func Test_ResourceGroup_CRUD(t *testing.T) {
 	g := NewGomegaWithT(t)
 	ctx := context.Background()
-	testContext := testContext.ForTest(t)
+	testContext, err := testContext.ForTest(t)
+	g.Expect(err).ToNot(HaveOccurred())
+	defer testContext.Cleanup()
 
 	// Create a resource group
 	rg := testContext.NewTestResourceGroup()
-	err := testContext.KubeClient.Create(ctx, rg)
+	err = testContext.KubeClient.Create(ctx, rg)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	// It should be created in Kubernetes
@@ -51,7 +53,9 @@ func Test_ResourceGroup_CRUD(t *testing.T) {
 func Test_StorageAccount_CRUD(t *testing.T) {
 	g := NewGomegaWithT(t)
 	ctx := context.Background()
-	testContext := testContext.ForTest(t)
+	testContext, err := testContext.ForTest(t)
+	g.Expect(err).ToNot(HaveOccurred())
+	defer testContext.Cleanup()
 
 	// Custom namer because storage accounts have strict names
 	namer := testContext.Namer.WithSeparator("")
@@ -74,7 +78,7 @@ func Test_StorageAccount_CRUD(t *testing.T) {
 			},
 		},
 	}
-	err := testContext.KubeClient.Create(ctx, acct)
+	err = testContext.KubeClient.Create(ctx, acct)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	// It should be created in Kubernetes
