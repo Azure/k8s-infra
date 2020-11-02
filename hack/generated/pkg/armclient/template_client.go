@@ -8,7 +8,6 @@ package armclient
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -29,6 +28,8 @@ type Applier interface {
 	NewResourceGroupDeployment(resourceGroup string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment
 	NewSubscriptionDeployment(location string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment
 
+	SubscriptionID() string
+
 	// TODO: These functions take an empty status and fill it out with the response from Azure (rather than as
 	// TODO: the return type. I don't love that pattern but don't have a better one either.
 	BeginDeleteResource(ctx context.Context, id string, apiVersion string, status genruntime.ArmResourceStatus) error
@@ -39,7 +40,7 @@ type Applier interface {
 type AzureTemplateClient struct {
 	RawClient      *Client
 	Logger         logr.Logger
-	SubscriptionID string
+	subscriptionID string
 }
 
 type Template struct {
@@ -149,18 +150,13 @@ func AuthorizerFromEnvironment() (autorest.Authorizer, error) {
 	return authorizer, nil
 }
 
-func NewAzureTemplateClient(authorizer autorest.Authorizer, opts ...AzureTemplateClientOption) (*AzureTemplateClient, error) {
+func NewAzureTemplateClient(authorizer autorest.Authorizer, subID string, opts ...AzureTemplateClientOption) (*AzureTemplateClient, error) {
 	cfg := &ClientConfig{
 		Logger: ctrl.Log.WithName("azure_template_client"),
 	}
 
 	for _, opt := range opts {
 		opt(cfg)
-	}
-
-	subID := os.Getenv(auth.SubscriptionID)
-	if subID == "" {
-		return nil, errors.Errorf("env var %q was not set", auth.SubscriptionID)
 	}
 
 	rawClient := NewClient(authorizer)
@@ -175,8 +171,12 @@ func NewAzureTemplateClient(authorizer autorest.Authorizer, opts ...AzureTemplat
 	return &AzureTemplateClient{
 		RawClient:      rawClient,
 		Logger:         cfg.Logger,
-		SubscriptionID: subID,
+		subscriptionID: subID,
 	}, nil
+}
+
+func (atc *AzureTemplateClient) SubscriptionID() string {
+	return atc.subscriptionID
 }
 
 func (atc *AzureTemplateClient) GetResource(ctx context.Context, id string, apiVersion string, status genruntime.ArmResourceStatus) error {
@@ -234,13 +234,13 @@ func createResourceIdTemplate(resourceSpec genruntime.ArmResourceSpec) map[strin
 }
 
 func (atc *AzureTemplateClient) NewResourceGroupDeployment(resourceGroup string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment {
-	deployment := NewResourceGroupDeployment(atc.SubscriptionID, resourceGroup, deploymentName, resourceSpec)
+	deployment := NewResourceGroupDeployment(atc.subscriptionID, resourceGroup, deploymentName, resourceSpec)
 	deployment.Properties.Template.Outputs = createResourceIdTemplate(resourceSpec)
 	return deployment
 }
 
 func (atc *AzureTemplateClient) NewSubscriptionDeployment(location string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment {
-	deployment := NewSubscriptionDeployment(atc.SubscriptionID, location, deploymentName, resourceSpec)
+	deployment := NewSubscriptionDeployment(atc.subscriptionID, location, deploymentName, resourceSpec)
 	deployment.Properties.Template.Outputs = createResourceIdTemplate(resourceSpec)
 	return deployment
 }

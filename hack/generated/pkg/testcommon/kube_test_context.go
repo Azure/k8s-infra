@@ -7,6 +7,7 @@ package testcommon
 
 import (
 	"context"
+	"testing"
 	"time"
 
 	"github.com/pkg/errors"
@@ -34,6 +35,22 @@ type KubeTestContext struct {
 	Namespace string
 }
 
+func (ktc KubeTestContext) ForTestName(name string) KubePerTestContext {
+	return KubePerTestContext{
+		KubeTestContext: ktc,
+		Namer:           ktc.NameConfig.NewResourceNamer(name),
+	}
+}
+
+func (ktc KubeTestContext) ForTest(t *testing.T) KubePerTestContext {
+	return ktc.ForTestName(t.Name())
+}
+
+type KubePerTestContext struct {
+	KubeTestContext
+	Namer ResourceNamer
+}
+
 // TODO: State Annotation parameter should be removed once the interface for Status determined and promoted
 // TODO: to genruntime. Same for errorAnnotation
 func NewKubeTestContext(
@@ -41,7 +58,6 @@ func NewKubeTestContext(
 	region string,
 	namespace string,
 	armClient armclient.Applier,
-	randomSeed int64,
 	stateAnnotation string,
 	errorAnnotation string) (*KubeTestContext, error) {
 
@@ -56,7 +72,7 @@ func NewKubeTestContext(
 
 	ensure := NewEnsure(kubeClient, stateAnnotation, errorAnnotation)
 
-	testContext, err := NewTestContext(region, armClient, randomSeed)
+	testContext, err := NewTestContext(region, armClient)
 	if err != nil {
 		return nil, err
 	}
@@ -88,21 +104,21 @@ func (tc *KubeTestContext) CreateTestNamespace() error {
 	return nil
 }
 
-func (tc *KubeTestContext) MakeObjectMeta(prefix string) ctrl.ObjectMeta {
+func (tc KubePerTestContext) MakeObjectMeta(prefix string) ctrl.ObjectMeta {
 	return ctrl.ObjectMeta{
 		Name:      tc.Namer.GenerateName(prefix),
 		Namespace: tc.Namespace,
 	}
 }
 
-func (tc *KubeTestContext) MakeObjectMetaWithName(name string) ctrl.ObjectMeta {
+func (tc KubePerTestContext) MakeObjectMetaWithName(name string) ctrl.ObjectMeta {
 	return ctrl.ObjectMeta{
 		Name:      name,
 		Namespace: tc.Namespace,
 	}
 }
 
-func (tc *KubeTestContext) NewTestResourceGroup() *resources.ResourceGroup {
+func (tc KubePerTestContext) NewTestResourceGroup() *resources.ResourceGroup {
 	return &resources.ResourceGroup{
 		ObjectMeta: tc.MakeObjectMeta("rg"),
 		Spec: resources.ResourceGroupSpec{

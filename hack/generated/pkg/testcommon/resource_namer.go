@@ -6,22 +6,36 @@ Licensed under the MIT license.
 package testcommon
 
 import (
+	"hash/fnv"
 	"math/rand"
 	"strings"
 )
 
-type ResourceNamer struct {
-	rand        *rand.Rand
+type ResourceNameConfig struct {
 	runes       []rune
 	prefix      string
 	randomChars int
 	separator   string
 }
 
-func NewResourceNamer(prefix string, separator string, randomChars int, seed int64) *ResourceNamer {
-	return &ResourceNamer{
+type ResourceNamer struct {
+	ResourceNameConfig
+	rand *rand.Rand
+}
+
+func (rnc ResourceNameConfig) NewResourceNamer(name string) ResourceNamer {
+	hasher := fnv.New64()
+	hasher.Write([]byte(name))
+	seed := hasher.Sum64()
+	return ResourceNamer{
+		ResourceNameConfig: rnc,
 		// nolint: do not want cryptographic randomness here
-		rand:        rand.New(rand.NewSource(seed)),
+		rand: rand.New(rand.NewSource(int64(seed))),
+	}
+}
+
+func NewResourceNameConfig(prefix string, separator string, randomChars int) *ResourceNameConfig {
+	return &ResourceNameConfig{
 		runes:       []rune("abcdefghijklmnopqrstuvwxyz"),
 		prefix:      prefix,
 		randomChars: randomChars,
@@ -29,12 +43,17 @@ func NewResourceNamer(prefix string, separator string, randomChars int, seed int
 	}
 }
 
-func (n ResourceNamer) WithSeparator(separator string) *ResourceNamer {
+func (n ResourceNameConfig) WithSeparator(separator string) *ResourceNameConfig {
 	n.separator = separator
 	return &n
 }
 
-func (n *ResourceNamer) generateName(prefix string, num int) string {
+func (n ResourceNamer) WithSeparator(separator string) ResourceNamer {
+	n.separator = separator
+	return n
+}
+
+func (n ResourceNamer) generateName(prefix string, num int) string {
 	result := make([]rune, num)
 	for i := 0; i < num; i++ {
 		result[i] = n.runes[n.rand.Intn(len(n.runes))]
@@ -50,6 +69,6 @@ func (n *ResourceNamer) generateName(prefix string, num int) string {
 	return strings.Join(s, n.separator)
 }
 
-func (n *ResourceNamer) GenerateName(prefix string) string {
+func (n ResourceNamer) GenerateName(prefix string) string {
 	return n.generateName(prefix, n.randomChars)
 }

@@ -13,6 +13,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -31,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/go-autorest/autorest/azure/auth"
 	resources "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.resources/v20200601"
 	"github.com/Azure/k8s-infra/hack/generated/controllers"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
@@ -58,7 +60,23 @@ type ControllerTestContext struct {
 	SharedResourceGroup *resources.ResourceGroup
 }
 
-func (tc *ControllerTestContext) SharedResourceGroupOwner() genruntime.KnownResourceReference {
+func (ctc ControllerTestContext) ForTest(t *testing.T) ControllerPerTestContext {
+	return ControllerPerTestContext{
+		KubePerTestContext:  ctc.KubeTestContext.ForTest(t),
+		SharedResourceGroup: ctc.SharedResourceGroup,
+	}
+}
+
+type ControllerPerTestContext struct {
+	testcommon.KubePerTestContext
+	SharedResourceGroup *resources.ResourceGroup
+}
+
+func (tc ControllerTestContext) SharedResourceGroupOwner() genruntime.KnownResourceReference {
+	return genruntime.KnownResourceReference{Name: tc.SharedResourceGroup.Name}
+}
+
+func (tc ControllerPerTestContext) SharedResourceGroupOwner() genruntime.KnownResourceReference {
 	return genruntime.KnownResourceReference{Name: tc.SharedResourceGroup.Name}
 }
 
@@ -88,7 +106,7 @@ func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 
 var _ http.RoundTripper = &RoundTripper{}
 
-func setupEnvTest() (*rest.Config, armclient.Applier, error) {
+func setupEnvTest() (*rest.Config, *armclient.AzureTemplateClient, error) {
 	envtestContext = &EnvtestContext{
 		testenv: envtest.Environment{
 			CRDDirectoryPaths: []string{
@@ -125,7 +143,50 @@ func setupEnvTest() (*rest.Config, armclient.Applier, error) {
 		return nil, nil, errors.Wrapf(err, "creating recorder")
 	}
 
+	var subscriptionID string
+	var authorizer autorest.Authorizer
+	if r.Mode() == recorder.ModeRecording {
+		// if we are recording, we need auth
+		authorizer, err = armclient.AuthorizerFromEnvironment()
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "creating authorizer")
+		}
+
+		subscriptionID = os.Getenv(auth.SubscriptionID)
+		if subscriptionID == "" {
+			return nil, nil, errors.Wrapf(err, "required environment variable %q was not supplied", auth.SubscriptionID)
+		}
+	} else {
+		// if we are replaying, we won't need auth
+		// and we use a dummy subscription ID
+		authorizer = nil
+		subscriptionID = uuid.Nil.String()
+	}
+
 	r.AddSaveFilter(func(i *cassette.Interaction) error {
+		// rewrite all request/response fields to hide the real subscription ID
+		// this is *not* a security measure but intended to make the tests updateable from
+		// any subscription, so a contributer can update the tests against their own sub
+		hideSubID := func(s string) string {
+			return strings.ReplaceAll(s, subscriptionID, uuid.Nil.String())
+		}
+
+		i.Request.Body = hideSubID(i.Request.Body)
+		i.Response.Body = hideSubID(i.Response.Body)
+		i.Request.URL = hideSubID(i.Request.URL)
+
+		for _, values := range i.Request.Headers {
+			for i := range values {
+				values[i] = hideSubID(values[i])
+			}
+		}
+
+		for _, values := range i.Response.Headers {
+			for i := range values {
+				values[i] = hideSubID(values[i])
+			}
+		}
+
 		// remove all Authorization headers from stored requests
 		delete(i.Request.Headers, "Authorization")
 
@@ -147,18 +208,8 @@ func setupEnvTest() (*rest.Config, armclient.Applier, error) {
 
 	envtestContext.recorder = r
 
-	var authorizer autorest.Authorizer
-	// if we are recording, we need auth
-	if r.Mode() == recorder.ModeRecording {
-		authorizer, err = armclient.AuthorizerFromEnvironment()
-		if err != nil {
-			return nil, nil, errors.Wrapf(err, "creating authorizer")
-		}
-	}
-	// if we are replaying, we won't
-
 	log.Print("Creating ARM client")
-	armClient, err := armclient.NewAzureTemplateClient(authorizer)
+	armClient, err := armclient.NewAzureTemplateClient(authorizer, subscriptionID)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "creating ARM client")
 	}
@@ -231,24 +282,25 @@ func setup(options Options) error {
 	gomega.SetDefaultEventuallyPollingInterval(5 * time.Second)
 
 	var err error
-	var randomSeed int64
 	var config *rest.Config
-	var armClient armclient.Applier
+	var armClient *armclient.AzureTemplateClient
 	if options.useEnvTest {
-		randomSeed = 4 // guaranteed to be random
 		config, armClient, err = setupEnvTest()
 		if err != nil {
 			return errors.Wrapf(err, "setting up envtest")
 		}
 	} else {
-		randomSeed = time.Now().UnixNano()
-
 		authorizer, err := armclient.AuthorizerFromEnvironment()
 		if err != nil {
 			return errors.Wrapf(err, "unable to get authorization settings")
 		}
 
-		armClient, err = armclient.NewAzureTemplateClient(authorizer)
+		subID := os.Getenv(auth.SubscriptionID)
+		if subID == "" {
+			return errors.Errorf("env var %q was not set", auth.SubscriptionID)
+		}
+
+		armClient, err = armclient.NewAzureTemplateClient(authorizer, subID)
 		if err != nil {
 			return errors.Wrapf(err, "unable to create ARM client")
 		}
@@ -264,7 +316,6 @@ func setup(options Options) error {
 		testcommon.DefaultTestRegion,
 		TestNamespace,
 		armClient,
-		randomSeed,
 		controllers.ResourceStateAnnotation,
 		controllers.ResourceErrorAnnotation)
 
@@ -278,7 +329,8 @@ func setup(options Options) error {
 	}
 
 	// Create a shared resource group, for tests to use
-	sharedResourceGroup := newCtx.NewTestResourceGroup()
+	// we fake the test name here:
+	sharedResourceGroup := newCtx.ForTestName("setup").NewTestResourceGroup()
 	err = newCtx.KubeClient.Create(ctx, sharedResourceGroup)
 	if err != nil {
 		return errors.Wrapf(err, "creating shared resource group")

@@ -6,9 +6,8 @@ Licensed under the MIT license.
 package testcommon
 
 import (
-	"os"
+	"testing"
 
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	resources "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.resources/v20200601"
@@ -20,28 +19,33 @@ const ResourcePrefix = "k8sinfratest"
 const DefaultTestRegion = "westus" // Could make this an env variable if we wanted
 
 type TestContext struct {
-	Namer       *ResourceNamer
+	NameConfig  *ResourceNameConfig
 	AzureClient armclient.Applier
 
-	AzureRegion       string
-	AzureSubscription string
+	AzureRegion string
 }
 
-func NewTestContext(region string, armClient armclient.Applier, randomSeed int64) (*TestContext, error) {
-	subscription, ok := os.LookupEnv("AZURE_SUBSCRIPTION_ID")
-	if !ok {
-		return nil, errors.New("couldn't find AZURE_SUBSCRIPTION_ID")
+func (tc TestContext) ForTest(t *testing.T) ArmPerTestContext {
+	return ArmPerTestContext{
+		TestContext: tc,
+		Namer:       tc.NameConfig.NewResourceNamer(t.Name()),
 	}
+}
 
+type ArmPerTestContext struct {
+	TestContext
+	Namer ResourceNamer
+}
+
+func NewTestContext(region string, armClient armclient.Applier) (*TestContext, error) {
 	return &TestContext{
-		AzureClient:       armClient,
-		AzureRegion:       region,
-		AzureSubscription: subscription,
-		Namer:             NewResourceNamer(ResourcePrefix, "-", 6, randomSeed),
+		AzureClient: armClient,
+		AzureRegion: region,
+		NameConfig:  NewResourceNameConfig(ResourcePrefix, "-", 6),
 	}, nil
 }
 
-func (tc *TestContext) NewTestResourceGroup() *resources.ResourceGroup {
+func (tc ArmPerTestContext) NewTestResourceGroup() *resources.ResourceGroup {
 	return &resources.ResourceGroup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: tc.Namer.GenerateName("rg"),

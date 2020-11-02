@@ -47,7 +47,7 @@ func setup() error {
 		return nil
 	}
 
-	deploymentName := tc.Namer.GenerateName("deployment")
+	deploymentName := tc.NameConfig.GenerateName("deployment")
 	deployment := armclient.NewSubscriptionDeployment(tc.AzureSubscription, tc.AzureRegion, deploymentName, resourceGroupSpec)
 
 	log.Printf(

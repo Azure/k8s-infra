@@ -18,6 +18,7 @@ import (
 func Test_ResourceGroup_CRUD(t *testing.T) {
 	g := NewGomegaWithT(t)
 	ctx := context.Background()
+	testContext := testContext.ForTest(t)
 
 	// Create a resource group
 	rg := testContext.NewTestResourceGroup()
@@ -50,6 +51,7 @@ func Test_ResourceGroup_CRUD(t *testing.T) {
 func Test_StorageAccount_CRUD(t *testing.T) {
 	g := NewGomegaWithT(t)
 	ctx := context.Background()
+	testContext := testContext.ForTest(t)
 
 	// Custom namer because storage accounts have strict names
 	namer := testContext.Namer.WithSeparator("")

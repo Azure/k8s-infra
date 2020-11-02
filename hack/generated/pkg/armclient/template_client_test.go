@@ -31,7 +31,7 @@ func Test_NewResourceGroupDeployment(t *testing.T) {
 
 	typedResourceGroupSpec := resourceGroupSpec.(resources.ResourceGroupSpecArm)
 
-	deploymentName := testContext.Namer.GenerateName("deployment")
+	deploymentName := testContext.NameConfig.GenerateName("deployment")
 	deployment := armclient.NewSubscriptionDeployment(testContext.AzureSubscription, testContext.AzureRegion, deploymentName, resourceGroupSpec)
 
 	log.Printf(
@@ -61,11 +61,12 @@ func Test_NewResourceGroupDeployment(t *testing.T) {
 
 func Test_NewResourceGroupDeployment_Error(t *testing.T) {
 	g := NewGomegaWithT(t)
+
 	ctx := context.Background()
 
-	deploymentName := testContext.Namer.GenerateName("deployment")
+	deploymentName := testContext.NameConfig.GenerateName("deployment")
 
-	rgName := testContext.Namer.GenerateName("rg")
+	rgName := testContext.NameConfig.GenerateName("rg")
 
 	resourceGroup := resources.ResourceGroup{
 		ObjectMeta: metav1.ObjectMeta{
