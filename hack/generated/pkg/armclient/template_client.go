@@ -274,7 +274,8 @@ func (atc *AzureTemplateClient) HeadResource(ctx context.Context, id string, api
 	}
 
 	idAndAPIVersion := id + fmt.Sprintf("?api-version=%s", apiVersion)
-	err := atc.RawClient.GetResource(ctx, idAndAPIVersion, nil)
+	ignored := struct{}{}
+	err := atc.RawClient.GetResource(ctx, idAndAPIVersion, &ignored)
 	switch {
 	case IsNotFound(err):
 		return false, nil
