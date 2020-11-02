@@ -122,6 +122,8 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 
 func (o ObjectSerializationTestCase) RequiredImports() *PackageImportSet {
 	result := NewPackageImportSet()
+	result.AddImportOfReference(CmpReference)
+	result.AddImportOfReference(CmpOptsReference)
 	result.AddImportOfReference(DiffReference)
 	result.AddImportOfReference(GopterReference)
 	result.AddImportOfReference(GopterGenReference)
