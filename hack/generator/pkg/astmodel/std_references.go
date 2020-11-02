@@ -6,6 +6,8 @@
 package astmodel
 
 var (
+	CmpReference        PackageReference = MakeExternalPackageReference("github.com/google/go-cmp/cmp")
+	CmpOptsReference    PackageReference = MakeExternalPackageReference("github.com/google/go-cmp/cmpopts")
 	DiffReference       PackageReference = MakeExternalPackageReference("github.com/kylelemons/godebug/diff")
 	FmtReference        PackageReference = MakeExternalPackageReference("fmt")
 	GopterReference     PackageReference = MakeExternalPackageReference("github.com/leanovate/gopter")
