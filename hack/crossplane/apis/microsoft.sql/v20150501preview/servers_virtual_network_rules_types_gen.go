@@ -5,6 +5,7 @@ package v20150501preview
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,11 +27,13 @@ type ServersVirtualNetworkRulesList struct {
 }
 
 type ServersVirtualNetworkRules_Spec struct {
-	ForProvider ServersVirtualNetworkRulesParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           ServersVirtualNetworkRulesParameters `json:"forProvider"`
 }
 
 type VirtualNetworkRule_Status struct {
-	AtProvider ServersVirtualNetworkRulesObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              ServersVirtualNetworkRulesObservation `json:"atProvider"`
 }
 
 type ServersVirtualNetworkRulesObservation struct {

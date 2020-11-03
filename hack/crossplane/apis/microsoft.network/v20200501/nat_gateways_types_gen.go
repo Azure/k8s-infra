@@ -5,6 +5,7 @@ package v20200501
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,11 +27,13 @@ type NatGatewaysList struct {
 }
 
 type NatGateway_Status struct {
-	AtProvider NatGatewaysObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              NatGatewaysObservation `json:"atProvider"`
 }
 
 type NatGateways_Spec struct {
-	ForProvider NatGatewaysParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           NatGatewaysParameters `json:"forProvider"`
 }
 
 type NatGatewaysObservation struct {

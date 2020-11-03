@@ -5,6 +5,7 @@ package v20200501
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,11 +27,13 @@ type PrivateEndpointsList struct {
 }
 
 type PrivateEndpoint_Status struct {
-	AtProvider PrivateEndpointsObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              PrivateEndpointsObservation `json:"atProvider"`
 }
 
 type PrivateEndpoints_Spec struct {
-	ForProvider PrivateEndpointsParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           PrivateEndpointsParameters `json:"forProvider"`
 }
 
 type PrivateEndpointsObservation struct {

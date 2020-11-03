@@ -5,6 +5,7 @@ package v20200501
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,11 +27,13 @@ type ServiceEndpointPoliciesList struct {
 }
 
 type ServiceEndpointPolicies_Spec struct {
-	ForProvider ServiceEndpointPoliciesParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           ServiceEndpointPoliciesParameters `json:"forProvider"`
 }
 
 type ServiceEndpointPolicy_Status struct {
-	AtProvider ServiceEndpointPoliciesObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              ServiceEndpointPoliciesObservation `json:"atProvider"`
 }
 
 type ServiceEndpointPoliciesObservation struct {

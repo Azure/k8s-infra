@@ -5,6 +5,7 @@ package v20150501preview
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,11 +27,13 @@ type ServersFailoverGroupsList struct {
 }
 
 type FailoverGroup_Status struct {
-	AtProvider ServersFailoverGroupsObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              ServersFailoverGroupsObservation `json:"atProvider"`
 }
 
 type ServersFailoverGroups_Spec struct {
-	ForProvider ServersFailoverGroupsParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           ServersFailoverGroupsParameters `json:"forProvider"`
 }
 
 type ServersFailoverGroupsObservation struct {

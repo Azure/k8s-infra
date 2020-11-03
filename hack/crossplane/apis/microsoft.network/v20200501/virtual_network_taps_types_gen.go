@@ -5,6 +5,7 @@ package v20200501
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,11 +27,13 @@ type VirtualNetworkTapsList struct {
 }
 
 type VirtualNetworkTap_Status struct {
-	AtProvider VirtualNetworkTapsObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              VirtualNetworkTapsObservation `json:"atProvider"`
 }
 
 type VirtualNetworkTaps_Spec struct {
-	ForProvider VirtualNetworkTapsParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           VirtualNetworkTapsParameters `json:"forProvider"`
 }
 
 type VirtualNetworkTapsObservation struct {

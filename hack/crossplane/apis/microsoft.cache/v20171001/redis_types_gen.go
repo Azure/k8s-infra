@@ -5,6 +5,7 @@ package v20171001
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,11 +27,13 @@ type RedisList struct {
 }
 
 type RedisResource_Status struct {
-	AtProvider RedisObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              RedisObservation `json:"atProvider"`
 }
 
 type Redis_Spec struct {
-	ForProvider RedisParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           RedisParameters `json:"forProvider"`
 }
 
 type RedisObservation struct {

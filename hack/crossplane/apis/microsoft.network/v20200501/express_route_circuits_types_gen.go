@@ -5,6 +5,7 @@ package v20200501
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -27,11 +28,13 @@ type ExpressRouteCircuitsList struct {
 }
 
 type ExpressRouteCircuit_Status struct {
-	AtProvider ExpressRouteCircuitsObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              ExpressRouteCircuitsObservation `json:"atProvider"`
 }
 
 type ExpressRouteCircuits_Spec struct {
-	ForProvider ExpressRouteCircuitsParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           ExpressRouteCircuitsParameters `json:"forProvider"`
 }
 
 type ExpressRouteCircuitsObservation struct {

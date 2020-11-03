@@ -5,6 +5,7 @@ package v20200501
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,11 +27,13 @@ type NetworkWatchersFlowLogsList struct {
 }
 
 type FlowLog_Status struct {
-	AtProvider NetworkWatchersFlowLogsObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              NetworkWatchersFlowLogsObservation `json:"atProvider"`
 }
 
 type NetworkWatchersFlowLogs_Spec struct {
-	ForProvider NetworkWatchersFlowLogsParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           NetworkWatchersFlowLogsParameters `json:"forProvider"`
 }
 
 type NetworkWatchersFlowLogsObservation struct {

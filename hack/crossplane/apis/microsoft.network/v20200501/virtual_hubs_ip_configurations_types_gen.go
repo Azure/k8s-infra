@@ -5,6 +5,7 @@ package v20200501
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,11 +27,13 @@ type VirtualHubsIpConfigurationsList struct {
 }
 
 type HubIpConfiguration_Status struct {
-	AtProvider VirtualHubsIpConfigurationsObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              VirtualHubsIpConfigurationsObservation `json:"atProvider"`
 }
 
 type VirtualHubsIpConfigurations_Spec struct {
-	ForProvider VirtualHubsIpConfigurationsParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           VirtualHubsIpConfigurationsParameters `json:"forProvider"`
 }
 
 type VirtualHubsIpConfigurationsObservation struct {

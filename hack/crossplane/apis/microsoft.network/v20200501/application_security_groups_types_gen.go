@@ -5,6 +5,7 @@ package v20200501
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -27,11 +28,13 @@ type ApplicationSecurityGroupsList struct {
 }
 
 type ApplicationSecurityGroup_Status struct {
-	AtProvider ApplicationSecurityGroupsObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              ApplicationSecurityGroupsObservation `json:"atProvider"`
 }
 
 type ApplicationSecurityGroups_Spec struct {
-	ForProvider ApplicationSecurityGroupsParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           ApplicationSecurityGroupsParameters `json:"forProvider"`
 }
 
 type ApplicationSecurityGroupsObservation struct {

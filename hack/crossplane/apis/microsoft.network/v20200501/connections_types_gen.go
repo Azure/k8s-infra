@@ -5,6 +5,7 @@ package v20200501
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,11 +27,13 @@ type ConnectionsList struct {
 }
 
 type Connections_Spec struct {
-	ForProvider ConnectionsParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           ConnectionsParameters `json:"forProvider"`
 }
 
 type VirtualNetworkGatewayConnection_Status struct {
-	AtProvider ConnectionsObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              ConnectionsObservation `json:"atProvider"`
 }
 
 type ConnectionsObservation struct {

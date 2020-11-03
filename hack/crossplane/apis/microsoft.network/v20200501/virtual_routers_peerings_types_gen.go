@@ -5,6 +5,7 @@ package v20200501
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,11 +27,13 @@ type VirtualRoutersPeeringsList struct {
 }
 
 type VirtualRouterPeering_Status struct {
-	AtProvider VirtualRoutersPeeringsObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              VirtualRoutersPeeringsObservation `json:"atProvider"`
 }
 
 type VirtualRoutersPeerings_Spec struct {
-	ForProvider VirtualRoutersPeeringsParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           VirtualRoutersPeeringsParameters `json:"forProvider"`
 }
 
 type VirtualRoutersPeeringsObservation struct {

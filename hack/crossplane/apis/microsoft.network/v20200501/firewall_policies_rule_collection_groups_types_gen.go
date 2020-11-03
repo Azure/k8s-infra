@@ -6,6 +6,7 @@ package v20200501
 import (
 	"encoding/json"
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,11 +28,13 @@ type FirewallPoliciesRuleCollectionGroupsList struct {
 }
 
 type FirewallPoliciesRuleCollectionGroups_Spec struct {
-	ForProvider FirewallPoliciesRuleCollectionGroupsParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           FirewallPoliciesRuleCollectionGroupsParameters `json:"forProvider"`
 }
 
 type FirewallPolicyRuleCollectionGroup_Status struct {
-	AtProvider FirewallPoliciesRuleCollectionGroupsObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              FirewallPoliciesRuleCollectionGroupsObservation `json:"atProvider"`
 }
 
 type FirewallPoliciesRuleCollectionGroupsObservation struct {

@@ -135,6 +135,8 @@ func crossplaneCorePipelineStages(idFactory astmodel.IdentifierFactory, configur
 
 		addCrossplaneForProvider(idFactory),
 		addCrossplaneAtProvider(idFactory),
+		addCrossplaneEmbeddedResourceSpec(idFactory),
+		addCrossplaneEmbeddedResourceStatus(idFactory),
 
 		// applyKubernetesResourceInterface(idFactory),
 		// createStorageTypes(),

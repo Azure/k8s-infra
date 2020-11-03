@@ -5,6 +5,7 @@ package v20200501
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,11 +27,13 @@ type LocalNetworkGatewaysList struct {
 }
 
 type LocalNetworkGateway_Status struct {
-	AtProvider LocalNetworkGatewaysObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              LocalNetworkGatewaysObservation `json:"atProvider"`
 }
 
 type LocalNetworkGateways_Spec struct {
-	ForProvider LocalNetworkGatewaysParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           LocalNetworkGatewaysParameters `json:"forProvider"`
 }
 
 type LocalNetworkGatewaysObservation struct {

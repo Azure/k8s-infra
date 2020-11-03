@@ -5,6 +5,7 @@ package v20200501
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,11 +27,13 @@ type VpnSitesList struct {
 }
 
 type VpnSite_Status struct {
-	AtProvider VpnSitesObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              VpnSitesObservation `json:"atProvider"`
 }
 
 type VpnSites_Spec struct {
-	ForProvider VpnSitesParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           VpnSitesParameters `json:"forProvider"`
 }
 
 type VpnSitesObservation struct {

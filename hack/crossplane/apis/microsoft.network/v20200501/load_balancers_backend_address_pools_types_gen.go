@@ -5,6 +5,7 @@ package v20200501
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,11 +27,13 @@ type LoadBalancersBackendAddressPoolsList struct {
 }
 
 type BackendAddressPool_Status struct {
-	AtProvider LoadBalancersBackendAddressPoolsObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              LoadBalancersBackendAddressPoolsObservation `json:"atProvider"`
 }
 
 type LoadBalancersBackendAddressPools_Spec struct {
-	ForProvider LoadBalancersBackendAddressPoolsParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           LoadBalancersBackendAddressPoolsParameters `json:"forProvider"`
 }
 
 type LoadBalancersBackendAddressPoolsObservation struct {

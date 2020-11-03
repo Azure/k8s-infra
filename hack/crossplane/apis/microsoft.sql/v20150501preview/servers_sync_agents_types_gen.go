@@ -5,6 +5,7 @@ package v20150501preview
 
 import (
 	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
+	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,11 +27,13 @@ type ServersSyncAgentsList struct {
 }
 
 type ServersSyncAgents_Spec struct {
-	ForProvider ServersSyncAgentsParameters `json:"forProvider"`
+	v1alpha1.ResourceSpec `json:",inline"`
+	ForProvider           ServersSyncAgentsParameters `json:"forProvider"`
 }
 
 type SyncAgent_Status struct {
-	AtProvider ServersSyncAgentsObservation `json:"atProvider"`
+	v1alpha1.ResourceStatus `json:",inline"`
+	AtProvider              ServersSyncAgentsObservation `json:"atProvider"`
 }
 
 type ServersSyncAgentsObservation struct {
