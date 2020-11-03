@@ -11,8 +11,6 @@ import (
 	"strings"
 )
 
-// Utility methods for adding comments
-
 func AddWrappedComments(commentList *[]*ast.Comment, comments []string, width int) {
 	for _, comment := range comments {
 		// Skip empty comments

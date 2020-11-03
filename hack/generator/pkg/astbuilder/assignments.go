@@ -11,7 +11,8 @@ import (
 )
 
 // SimpleAssignment performs a simple assignment like:
-// 	<lhs> <tok> <rhs>
+// 	   <lhs> := <rhs>       // tok = token.DEFINE
+// or  <lhs> = <rhs>        // tok = token.ASSIGN
 func SimpleAssignment(lhs ast.Expr, tok token.Token, rhs ast.Expr) *ast.AssignStmt {
 	return &ast.AssignStmt{
 		Lhs: []ast.Expr{
@@ -24,8 +25,9 @@ func SimpleAssignment(lhs ast.Expr, tok token.Token, rhs ast.Expr) *ast.AssignSt
 	}
 }
 
-// SimpleAssignment performs a simple assignment like:
-// 	<lhs>, err <tok> <rhs>
+// SimpleAssignmentWithErr performs a simple assignment like:
+// 	    <lhs>, err := <rhs>       // tok = token.DEFINE
+// 	or  <lhs>, err = <rhs>        // tok = token.ASSIGN
 func SimpleAssignmentWithErr(lhs ast.Expr, tok token.Token, rhs ast.Expr) *ast.AssignStmt {
 	errId := ast.NewIdent("err")
 	return &ast.AssignStmt{

@@ -35,8 +35,9 @@ func CheckErrorAndReturn(otherReturns ...ast.Expr) ast.Stmt {
 	}
 }
 
-// NewQualifiedStruct creates a new assignment statement where a struct is constructed and stored in a variable of the given name. For example:
-// 	<varName> := <packageRef>.<structName>{}
+// NewQualifiedStruct creates a new assignment statement where a struct is constructed and stored in a variable of the given name.
+// For example:
+//     <varName> := <packageRef>.<structName>{}
 func NewQualifiedStruct(varName *ast.Ident, qualifier *ast.Ident, structName *ast.Ident) ast.Stmt {
 	return SimpleAssignment(
 		varName,
@@ -49,8 +50,9 @@ func NewQualifiedStruct(varName *ast.Ident, qualifier *ast.Ident, structName *as
 		})
 }
 
-// NewStruct creates a new assignment statement where a struct is constructed and stored in a variable of the given name. For example:
-// 	<varName> := <structName>{}
+// NewStruct creates a new assignment statement where a struct is constructed and stored in a variable of the given name.
+// For example:
+//     <varName> := <structName>{}
 func NewStruct(varName *ast.Ident, structName *ast.Ident) ast.Stmt {
 	return SimpleAssignment(
 		varName,
@@ -60,7 +62,7 @@ func NewStruct(varName *ast.Ident, structName *ast.Ident) ast.Stmt {
 		})
 }
 
-// LocalVariableDeclaration performs a local variable declaration for use in a method like:
+// LocalVariableDeclaration performs a local variable declaration for use within a method like:
 // 	var <ident> <typ>
 func LocalVariableDeclaration(ident *ast.Ident, typ ast.Expr, comment string) ast.Stmt {
 	return &ast.DeclStmt{
@@ -70,7 +72,7 @@ func LocalVariableDeclaration(ident *ast.Ident, typ ast.Expr, comment string) as
 
 // VariableDeclaration performs a global variable declaration like:
 // 	var <ident> <typ>
-// For a LocalVariable in a method, use LocalVariableDeclaration() to create an ast.Stmt
+// For a LocalVariable within a method, use LocalVariableDeclaration() to create an ast.Stmt instead
 func VariableDeclaration(ident *ast.Ident, typ ast.Expr, comment string) *ast.GenDecl {
 	decl := &ast.GenDecl{
 		Tok: token.VAR,
@@ -91,7 +93,7 @@ func VariableDeclaration(ident *ast.Ident, typ ast.Expr, comment string) *ast.Ge
 }
 
 // AppendList returns a statement for a list append, like:
-//	<lhs> = append(<lhs>, <rhs>)
+//     <lhs> = append(<lhs>, <rhs>)
 func AppendList(lhs ast.Expr, rhs ast.Expr) ast.Stmt {
 	return SimpleAssignment(
 		lhs,

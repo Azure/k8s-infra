@@ -132,7 +132,7 @@ func (fn *FuncDetails) AddParameter(id string, parameterType ast.Expr) {
 	fn.Params = append(fn.Params, field)
 }
 
-// AddReturn adds another return to the function definition
+// AddReturns adds (possibly many) return values to the function definition
 func (fn *FuncDetails) AddReturns(types ...string) {
 	for _, t := range types {
 		field := &ast.Field{
@@ -142,6 +142,7 @@ func (fn *FuncDetails) AddReturns(types ...string) {
 	}
 }
 
+// AddComments() adds multiple comments to the function declaration
 func (fn *FuncDetails) AddComments(comment ...string) {
 	fn.Comments = append(fn.Comments, comment...)
 }

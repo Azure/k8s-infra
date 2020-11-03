@@ -149,7 +149,7 @@ func (builder *convertFromArmBuilder) namePropertyHandler(
 			Sel: ast.NewIdent(string(toProp.PropertyName())),
 		},
 		token.ASSIGN,
-		astbuilder.CallMethodByName(
+		astbuilder.CallQualifiedFuncByName(
 			astmodel.GenRuntimePackageName,
 			"ExtractKubernetesResourceNameFromArmName",
 			&ast.SelectorExpr{
@@ -545,7 +545,7 @@ func (builder *convertFromArmBuilder) convertComplexTypeNameProperty(
 		astbuilder.SimpleAssignment(
 			ast.NewIdent("err"),
 			token.ASSIGN,
-			astbuilder.CallMethod(
+			astbuilder.CallQualifiedFunc(
 				propertyLocalVar, ast.NewIdent(builder.methodName), ast.NewIdent(ownerName), params.source)))
 	results = append(results, astbuilder.CheckErrorAndReturn())
 	if params.assignmentHandler == nil {

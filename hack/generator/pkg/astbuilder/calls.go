@@ -7,6 +7,7 @@ package astbuilder
 
 import "go/ast"
 
+// CallFunc() creates an expression to call a function with specified arguments
 func CallFunc(funcName *ast.Ident, arguments ...ast.Expr) ast.Expr {
 	return &ast.CallExpr{
 		Fun:  funcName,
@@ -14,36 +15,49 @@ func CallFunc(funcName *ast.Ident, arguments ...ast.Expr) ast.Expr {
 	}
 }
 
-func InvokeFunc(funcName *ast.Ident, arguments ...ast.Expr) ast.Stmt {
-	return &ast.ExprStmt{
-		X: CallFunc(funcName, arguments...),
-	}
-}
-
+// CallFuncByName() generates an expression to call a function of the specified name with the
+// given arguments
 func CallFuncByName(funcName string, arguments ...ast.Expr) ast.Expr {
 	return CallFunc(ast.NewIdent(funcName), arguments...)
 }
 
-func CallMethod(receiver *ast.Ident, method *ast.Ident, arguments ...ast.Expr) ast.Expr {
+// CallQualifiedFunc() generates an expression to call a qualified function with the specified
+// arguments
+func CallQualifiedFunc(qualifier *ast.Ident, method *ast.Ident, arguments ...ast.Expr) ast.Expr {
 	return &ast.CallExpr{
 		Fun: &ast.SelectorExpr{
-			X:   receiver,
+			X:   qualifier,
 			Sel: method,
 		},
 		Args: arguments,
 	}
 }
 
-func CallMethodByName(receiver string, method string, arguments ...ast.Expr) ast.Expr {
-	return CallMethod(ast.NewIdent(receiver), ast.NewIdent(method), arguments...)
+// CallQualifiedFuncByName() generates an expression to call a qualified function of the specified
+// name with the given arguments
+func CallQualifiedFuncByName(receiver string, method string, arguments ...ast.Expr) ast.Expr {
+	return CallQualifiedFunc(ast.NewIdent(receiver), ast.NewIdent(method), arguments...)
 }
 
-func InvokeMethod(receiver *ast.Ident, method *ast.Ident, arguments ...ast.Expr) ast.Stmt {
+// InvokeFunc() creates a statement to invoke a function with specified arguments
+// If you want to use the result of the function call as a value, use CallFunc() instead
+func InvokeFunc(funcName *ast.Ident, arguments ...ast.Expr) ast.Stmt {
 	return &ast.ExprStmt{
-		X: CallMethod(receiver, method, arguments...),
+		X: CallFunc(funcName, arguments...),
 	}
 }
 
-func InvokeMethodByName(receiver string, method string, arguments ...ast.Expr) ast.Stmt {
-	return InvokeMethod(ast.NewIdent(receiver), ast.NewIdent(method), arguments...)
+// InvokeQualifiedFunc() creates a statement to invoke a qualified function with specified arguments
+// If you want to use the result of the function call as a value, use CallQualifiedFunc() instead
+func InvokeQualifiedFunc(qualifier *ast.Ident, method *ast.Ident, arguments ...ast.Expr) ast.Stmt {
+	return &ast.ExprStmt{
+		X: CallQualifiedFunc(qualifier, method, arguments...),
+	}
+}
+
+// InvokeQualifiedFuncByName() creates a statement to invoke a qualified function of the specified
+// name with the given arguments
+// If you want to use the result of the function call as a value, use CallQualifiedFuncByName() instead
+func InvokeQualifiedFuncByName(qualifier string, method string, arguments ...ast.Expr) ast.Stmt {
+	return InvokeQualifiedFunc(ast.NewIdent(qualifier), ast.NewIdent(method), arguments...)
 }
