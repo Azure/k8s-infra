@@ -19,10 +19,10 @@ vars:
 tasks:
   default:
     desc: Perform all local pre-commit tasks.
-    deps: [header-check, format-code, test, generate-arm]
+    deps: [header-check, format-code, lint, test, generate-arm]
 
   ci: 
-    deps: [header-check, test-cover, generate-arm]
+    deps: [header-check, lint, test-cover, generate-arm]
 
   build:
     desc: Generate the {{.GENERATOR_APP}} binary.

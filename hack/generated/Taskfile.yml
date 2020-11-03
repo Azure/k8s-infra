@@ -24,10 +24,10 @@ tasks:
   # tests bogging down the dev cycle
   default:
     desc: Perform all local pre-commit tasks.
-    deps: [generate-crds, header-check, format-code, test]
+    deps: [generate-crds, header-check, lint, format-code, test]
   
   # There is a ci specific target because we want the CI pass to fail if
-  # the code has not been go fmt-ed, whereas locally we want "make all"
+  # the code has not been go fmt-ed, whereas locally we want "task (default)"
   # to just format the code for you
   ci:
     # no description as it is not for local use
@@ -38,11 +38,12 @@ tasks:
 
   ci-rest:
     # these can all be run in parallel
-    deps: [header-check, test-cover, test-integration-envtest]
+    deps: [header-check, lint, test-cover, test-integration-envtest]
 
   lint:
     desc: Run lint checks.
-    cmds: [golangci-lint run -v]
+    cmds: 
+    - golangci-lint run -v {{.GENERATED_GO_DIRS_TO_TEST|catLines}}
 
   lint-full:
     desc: Run all lint checks.
@@ -98,6 +99,8 @@ tasks:
   
   cleanup-azure-resources:
     desc: Removes any old resources created by tests.
+    # This finds all resource groups which match the specified pattern (k8sinfratest)
+    # and are older than a day (86400 seconds). This is a bit horrible but it works...
     cmds:
       - |
         rgs=`az group list --query '[*].{Name: name, CreatedAt: tags.CreatedAt}' \
