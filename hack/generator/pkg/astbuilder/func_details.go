@@ -56,6 +56,15 @@ func NewTestFuncDetails(testName string, body ...ast.Stmt) *FuncDetails {
 //	}
 func DefineFunc(funcDetails *FuncDetails) *ast.FuncDecl {
 
+	// Safety check that we are making something valid
+	if (funcDetails.ReceiverIdent == nil) != (funcDetails.ReceiverType == nil) {
+		reason := fmt.Sprintf(
+			"ReceiverIdent and ReceiverType must both be specified, or both omitted. ReceiverIdent: %q, ReceiverType: %q",
+			funcDetails.ReceiverIdent,
+			funcDetails.ReceiverType)
+		panic(reason)
+	}
+
 	// Filter out any nil statements
 	// this helps creation of the funcDetails go simpler
 	var body []ast.Stmt
