@@ -64,33 +64,18 @@ func (builder *convertFromArmBuilder) functionDeclaration() *ast.FuncDecl {
 		ReceiverType: &ast.StarExpr{
 			X: builder.receiverTypeExpr,
 		},
-		Params: []*ast.Field{
-			{
-				Type: &ast.SelectorExpr{
-					X:   ast.NewIdent(astmodel.GenRuntimePackageName),
-					Sel: ast.NewIdent("KnownResourceReference"),
-				},
-				Names: []*ast.Ident{
-					ast.NewIdent(builder.idFactory.CreateIdentifier(astmodel.OwnerProperty, astmodel.NotExported)),
-				},
-			},
-			{
-				Type: ast.NewIdent("interface{}"),
-				Names: []*ast.Ident{
-					builder.inputIdent,
-				},
-			},
-		},
-		Returns: []*ast.Field{
-			{
-				Type: ast.NewIdent("error"),
-			},
-		},
 		Body: builder.functionBodyStatements(),
 	}
 
 	fn.AddComments("populates a Kubernetes CRD object from an Azure ARM object")
-
+	fn.AddParameter(
+		builder.idFactory.CreateIdentifier(astmodel.OwnerProperty, astmodel.NotExported),
+		&ast.SelectorExpr{
+			X:   ast.NewIdent(astmodel.GenRuntimePackageName),
+			Sel: ast.NewIdent("KnownResourceReference"),
+		})
+	fn.AddParameter(builder.inputIdent.Name, ast.NewIdent("interface{}"))
+	fn.AddReturns("error")
 	return fn.DefineFunc()
 }
 

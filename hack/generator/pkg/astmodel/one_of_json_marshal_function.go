@@ -103,21 +103,13 @@ func (f *OneOfJSONMarshalFunction) AsFunc(
 		Name:          ast.NewIdent(f.Name()),
 		ReceiverIdent: ast.NewIdent(receiverName),
 		ReceiverType:  receiver.AsType(codeGenerationContext),
-		Returns: []*ast.Field{
-			{
-				Type: ast.NewIdent("[]byte"),
-			},
-			{
-				Type: ast.NewIdent("error"),
-			},
-		},
-		Body: statements,
+		Body:          statements,
 	}
 
 	fn.AddComments(fmt.Sprintf(
 		"defers JSON marshaling to the first non-nil property, because %s represents a discriminated union (JSON OneOf)",
 		receiver.name))
-
+	fn.AddReturns("[]byte", "error")
 	return fn.DefineFunc()
 }
 

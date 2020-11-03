@@ -59,25 +59,11 @@ func (builder *convertToArmBuilder) functionDeclaration() *ast.FuncDecl {
 		ReceiverType: &ast.StarExpr{
 			X: builder.receiverTypeExpr,
 		},
-		Params: []*ast.Field{
-			{
-				Type: ast.NewIdent("string"),
-				Names: []*ast.Ident{
-					ast.NewIdent(nameParameterString),
-				},
-			},
-		},
-		Returns: []*ast.Field{
-			{
-				Type: ast.NewIdent("interface{}"),
-			},
-			{
-				Type: ast.NewIdent("error"),
-			},
-		},
 		Body: builder.functionBodyStatements(),
 	}
 
+	fn.AddParameter(nameParameterString, ast.NewIdent("string"))
+	fn.AddReturns("interface{}", "error")
 	fn.AddComments("converts from a Kubernetes CRD object to an ARM object")
 
 	return fn.DefineFunc()

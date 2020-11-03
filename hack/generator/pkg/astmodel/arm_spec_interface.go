@@ -146,12 +146,6 @@ func armSpecInterfaceSimpleGetFunction(
 		// TODO: for example on resource we use ptr receiver... the inconsistency is
 		// TODO: awkward...
 		ReceiverType: receiverType,
-		Params:       nil,
-		Returns: []*ast.Field{
-			{
-				Type: ast.NewIdent("string"),
-			},
-		},
 		Body: []ast.Stmt{
 			&ast.ReturnStmt{
 				Results: []ast.Expr{
@@ -162,6 +156,7 @@ func armSpecInterfaceSimpleGetFunction(
 	}
 
 	fn.AddComments(fmt.Sprintf("returns the %s of the resource", propertyName))
+	fn.AddReturns("string")
 
 	return fn.DefineFunc()
 }

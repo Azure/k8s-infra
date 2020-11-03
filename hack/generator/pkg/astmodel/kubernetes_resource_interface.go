@@ -221,12 +221,6 @@ func azureNameFunction(k *objectFunction, codeGenerationContext *CodeGenerationC
 		ReceiverType: &ast.StarExpr{
 			X: receiverType,
 		},
-		Params: nil,
-		Returns: []*ast.Field{
-			{
-				Type: ast.NewIdent("string"),
-			},
-		},
 		Body: []ast.Stmt{
 			&ast.ReturnStmt{
 				Results: []ast.Expr{
@@ -240,6 +234,6 @@ func azureNameFunction(k *objectFunction, codeGenerationContext *CodeGenerationC
 	}
 
 	fn.AddComments("returns the Azure name of the resource")
-
+	fn.AddReturns("string")
 	return fn.DefineFunc()
 }
