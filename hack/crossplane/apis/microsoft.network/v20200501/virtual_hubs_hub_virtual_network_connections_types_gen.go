@@ -76,7 +76,10 @@ type VirtualHubsHubVirtualNetworkConnectionsParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Properties: Properties of the hub virtual network connection.
-	Properties HubVirtualNetworkConnectionProperties `json:"properties"`
+	Properties                HubVirtualNetworkConnectionProperties `json:"properties"`
+	ResourceGroupName         string                                `json:"resourceGroupName"`
+	ResourceGroupNameRef      *v1alpha1.Reference                   `json:"resourceGroupNameRef,omitempty"`
+	ResourceGroupNameSelector *v1alpha1.Selector                    `json:"resourceGroupNameSelector,omitempty"`
 
 	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
 	//setting the scope for extension resources 2) deploying resources to the tenant
@@ -88,7 +91,10 @@ type VirtualHubsHubVirtualNetworkConnectionsParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Type: Resource type
-	Type VirtualHubsHubVirtualNetworkConnectionsSpecType `json:"type"`
+	Type                    VirtualHubsHubVirtualNetworkConnectionsSpecType `json:"type"`
+	VirtualHubsName         string                                          `json:"virtualHubsName"`
+	VirtualHubsNameRef      *v1alpha1.Reference                             `json:"virtualHubsNameRef,omitempty"`
+	VirtualHubsNameSelector *v1alpha1.Selector                              `json:"virtualHubsNameSelector,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/HubVirtualNetworkConnectionProperties

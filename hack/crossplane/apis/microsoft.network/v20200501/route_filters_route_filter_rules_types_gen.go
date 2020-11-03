@@ -79,7 +79,13 @@ type RouteFiltersRouteFilterRulesParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Properties: Properties of the route filter rule.
-	Properties RouteFilterRulePropertiesFormat `json:"properties"`
+	Properties                RouteFilterRulePropertiesFormat `json:"properties"`
+	ResourceGroupName         string                          `json:"resourceGroupName"`
+	ResourceGroupNameRef      *v1alpha1.Reference             `json:"resourceGroupNameRef,omitempty"`
+	ResourceGroupNameSelector *v1alpha1.Selector              `json:"resourceGroupNameSelector,omitempty"`
+	RouteFiltersName          string                          `json:"routeFiltersName"`
+	RouteFiltersNameRef       *v1alpha1.Reference             `json:"routeFiltersNameRef,omitempty"`
+	RouteFiltersNameSelector  *v1alpha1.Selector              `json:"routeFiltersNameSelector,omitempty"`
 
 	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
 	//setting the scope for extension resources 2) deploying resources to the tenant

@@ -65,7 +65,10 @@ type ExpressRouteCrossConnectionsPeeringsParameters struct {
 	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
 
 	//DependsOn: Collection of resources this resource depends on
-	DependsOn []string `json:"dependsOn,omitempty"`
+	DependsOn                                []string            `json:"dependsOn,omitempty"`
+	ExpressRouteCrossConnectionsName         string              `json:"expressRouteCrossConnectionsName"`
+	ExpressRouteCrossConnectionsNameRef      *v1alpha1.Reference `json:"expressRouteCrossConnectionsNameRef,omitempty"`
+	ExpressRouteCrossConnectionsNameSelector *v1alpha1.Selector  `json:"expressRouteCrossConnectionsNameSelector,omitempty"`
 
 	//Location: Location to deploy resource to
 	Location *v20150101.ResourceLocations `json:"location,omitempty"`
@@ -76,7 +79,10 @@ type ExpressRouteCrossConnectionsPeeringsParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Properties: Properties of the express route cross connection peering.
-	Properties ExpressRouteCrossConnectionPeeringProperties `json:"properties"`
+	Properties                ExpressRouteCrossConnectionPeeringProperties `json:"properties"`
+	ResourceGroupName         string                                       `json:"resourceGroupName"`
+	ResourceGroupNameRef      *v1alpha1.Reference                          `json:"resourceGroupNameRef,omitempty"`
+	ResourceGroupNameSelector *v1alpha1.Selector                           `json:"resourceGroupNameSelector,omitempty"`
 
 	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
 	//setting the scope for extension resources 2) deploying resources to the tenant

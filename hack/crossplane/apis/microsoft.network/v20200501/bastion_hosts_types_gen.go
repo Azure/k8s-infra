@@ -84,7 +84,10 @@ type BastionHostsParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Properties: Represents the bastion host resource.
-	Properties BastionHostPropertiesFormat `json:"properties"`
+	Properties                BastionHostPropertiesFormat `json:"properties"`
+	ResourceGroupName         string                      `json:"resourceGroupName"`
+	ResourceGroupNameRef      *v1alpha1.Reference         `json:"resourceGroupNameRef,omitempty"`
+	ResourceGroupNameSelector *v1alpha1.Selector          `json:"resourceGroupNameSelector,omitempty"`
 
 	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
 	//setting the scope for extension resources 2) deploying resources to the tenant

@@ -74,11 +74,17 @@ type NetworkVirtualAppliancesVirtualApplianceSitesParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Name: Name of the resource
-	Name string `json:"name"`
+	Name                                 string              `json:"name"`
+	NetworkVirtualAppliancesName         string              `json:"networkVirtualAppliancesName"`
+	NetworkVirtualAppliancesNameRef      *v1alpha1.Reference `json:"networkVirtualAppliancesNameRef,omitempty"`
+	NetworkVirtualAppliancesNameSelector *v1alpha1.Selector  `json:"networkVirtualAppliancesNameSelector,omitempty"`
 
 	// +kubebuilder:validation:Required
 	//Properties: The properties of the Virtual Appliance Sites.
-	Properties VirtualApplianceSiteProperties `json:"properties"`
+	Properties                VirtualApplianceSiteProperties `json:"properties"`
+	ResourceGroupName         string                         `json:"resourceGroupName"`
+	ResourceGroupNameRef      *v1alpha1.Reference            `json:"resourceGroupNameRef,omitempty"`
+	ResourceGroupNameSelector *v1alpha1.Selector             `json:"resourceGroupNameSelector,omitempty"`
 
 	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
 	//setting the scope for extension resources 2) deploying resources to the tenant

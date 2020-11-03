@@ -81,12 +81,18 @@ type ServersFailoverGroupsParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Properties: Properties of a failover group.
-	Properties FailoverGroupProperties `json:"properties"`
+	Properties                FailoverGroupProperties `json:"properties"`
+	ResourceGroupName         string                  `json:"resourceGroupName"`
+	ResourceGroupNameRef      *v1alpha1.Reference     `json:"resourceGroupNameRef,omitempty"`
+	ResourceGroupNameSelector *v1alpha1.Selector      `json:"resourceGroupNameSelector,omitempty"`
 
 	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
 	//setting the scope for extension resources 2) deploying resources to the tenant
 	//scope in non-tenant scope deployments
-	Scope *string `json:"scope,omitempty"`
+	Scope               *string             `json:"scope,omitempty"`
+	ServersName         string              `json:"serversName"`
+	ServersNameRef      *v1alpha1.Reference `json:"serversNameRef,omitempty"`
+	ServersNameSelector *v1alpha1.Selector  `json:"serversNameSelector,omitempty"`
 
 	//Tags: Name-value pairs to add to the resource
 	Tags map[string]string `json:"tags,omitempty"`

@@ -72,11 +72,17 @@ type NetworkSecurityGroupsSecurityRulesParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Name: Name of the resource
-	Name string `json:"name"`
+	Name                              string              `json:"name"`
+	NetworkSecurityGroupsName         string              `json:"networkSecurityGroupsName"`
+	NetworkSecurityGroupsNameRef      *v1alpha1.Reference `json:"networkSecurityGroupsNameRef,omitempty"`
+	NetworkSecurityGroupsNameSelector *v1alpha1.Selector  `json:"networkSecurityGroupsNameSelector,omitempty"`
 
 	// +kubebuilder:validation:Required
 	//Properties: Properties of the security rule.
-	Properties SecurityRulePropertiesFormat `json:"properties"`
+	Properties                SecurityRulePropertiesFormat `json:"properties"`
+	ResourceGroupName         string                       `json:"resourceGroupName"`
+	ResourceGroupNameRef      *v1alpha1.Reference          `json:"resourceGroupNameRef,omitempty"`
+	ResourceGroupNameSelector *v1alpha1.Selector           `json:"resourceGroupNameSelector,omitempty"`
 
 	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
 	//setting the scope for extension resources 2) deploying resources to the tenant

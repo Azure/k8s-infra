@@ -69,7 +69,10 @@ type FirewallPoliciesRuleCollectionGroupsParameters struct {
 	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
 
 	//DependsOn: Collection of resources this resource depends on
-	DependsOn []string `json:"dependsOn,omitempty"`
+	DependsOn                    []string            `json:"dependsOn,omitempty"`
+	FirewallPoliciesName         string              `json:"firewallPoliciesName"`
+	FirewallPoliciesNameRef      *v1alpha1.Reference `json:"firewallPoliciesNameRef,omitempty"`
+	FirewallPoliciesNameSelector *v1alpha1.Selector  `json:"firewallPoliciesNameSelector,omitempty"`
 
 	//Location: Location to deploy resource to
 	Location *v20150101.ResourceLocations `json:"location,omitempty"`
@@ -80,7 +83,10 @@ type FirewallPoliciesRuleCollectionGroupsParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Properties: The properties of the firewall policy rule collection group.
-	Properties FirewallPolicyRuleCollectionGroupProperties `json:"properties"`
+	Properties                FirewallPolicyRuleCollectionGroupProperties `json:"properties"`
+	ResourceGroupName         string                                      `json:"resourceGroupName"`
+	ResourceGroupNameRef      *v1alpha1.Reference                         `json:"resourceGroupNameRef,omitempty"`
+	ResourceGroupNameSelector *v1alpha1.Selector                          `json:"resourceGroupNameSelector,omitempty"`
 
 	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
 	//setting the scope for extension resources 2) deploying resources to the tenant

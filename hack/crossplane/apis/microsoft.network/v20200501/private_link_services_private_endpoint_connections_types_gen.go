@@ -75,11 +75,17 @@ type PrivateLinkServicesPrivateEndpointConnectionsParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Name: Name of the resource
-	Name string `json:"name"`
+	Name                            string              `json:"name"`
+	PrivateLinkServicesName         string              `json:"privateLinkServicesName"`
+	PrivateLinkServicesNameRef      *v1alpha1.Reference `json:"privateLinkServicesNameRef,omitempty"`
+	PrivateLinkServicesNameSelector *v1alpha1.Selector  `json:"privateLinkServicesNameSelector,omitempty"`
 
 	// +kubebuilder:validation:Required
 	//Properties: Properties of the private end point connection.
-	Properties PrivateEndpointConnectionProperties `json:"properties"`
+	Properties                PrivateEndpointConnectionProperties `json:"properties"`
+	ResourceGroupName         string                              `json:"resourceGroupName"`
+	ResourceGroupNameRef      *v1alpha1.Reference                 `json:"resourceGroupNameRef,omitempty"`
+	ResourceGroupNameSelector *v1alpha1.Selector                  `json:"resourceGroupNameSelector,omitempty"`
 
 	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
 	//setting the scope for extension resources 2) deploying resources to the tenant

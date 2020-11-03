@@ -76,7 +76,13 @@ type RedisFirewallRulesParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Properties: Specifies a range of IP addresses permitted to connect to the cache
-	Properties RedisFirewallRuleProperties `json:"properties"`
+	Properties                RedisFirewallRuleProperties `json:"properties"`
+	RedisName                 string                      `json:"redisName"`
+	RedisNameRef              *v1alpha1.Reference         `json:"redisNameRef,omitempty"`
+	RedisNameSelector         *v1alpha1.Selector          `json:"redisNameSelector,omitempty"`
+	ResourceGroupName         string                      `json:"resourceGroupName"`
+	ResourceGroupNameRef      *v1alpha1.Reference         `json:"resourceGroupNameRef,omitempty"`
+	ResourceGroupNameSelector *v1alpha1.Selector          `json:"resourceGroupNameSelector,omitempty"`
 
 	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
 	//setting the scope for extension resources 2) deploying resources to the tenant

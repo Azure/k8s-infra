@@ -78,7 +78,10 @@ type VirtualHubsIpConfigurationsParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Properties: The properties of the Virtual Hub IPConfigurations.
-	Properties HubIPConfigurationPropertiesFormat `json:"properties"`
+	Properties                HubIPConfigurationPropertiesFormat `json:"properties"`
+	ResourceGroupName         string                             `json:"resourceGroupName"`
+	ResourceGroupNameRef      *v1alpha1.Reference                `json:"resourceGroupNameRef,omitempty"`
+	ResourceGroupNameSelector *v1alpha1.Selector                 `json:"resourceGroupNameSelector,omitempty"`
 
 	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
 	//setting the scope for extension resources 2) deploying resources to the tenant
@@ -90,7 +93,10 @@ type VirtualHubsIpConfigurationsParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Type: Resource type
-	Type VirtualHubsIpConfigurationsSpecType `json:"type"`
+	Type                    VirtualHubsIpConfigurationsSpecType `json:"type"`
+	VirtualHubsName         string                              `json:"virtualHubsName"`
+	VirtualHubsNameRef      *v1alpha1.Reference                 `json:"virtualHubsNameRef,omitempty"`
+	VirtualHubsNameSelector *v1alpha1.Selector                  `json:"virtualHubsNameSelector,omitempty"`
 }
 
 //Generated from: https://schema.management.azure.com/schemas/2020-05-01/Microsoft.Network.json#/definitions/HubIPConfigurationPropertiesFormat

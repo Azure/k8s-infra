@@ -75,12 +75,18 @@ type ServersDatabasesSyncGroupsSyncMembersParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Properties: Properties of a sync member.
-	Properties SyncMemberProperties `json:"properties"`
+	Properties                SyncMemberProperties `json:"properties"`
+	ResourceGroupName         string               `json:"resourceGroupName"`
+	ResourceGroupNameRef      *v1alpha1.Reference  `json:"resourceGroupNameRef,omitempty"`
+	ResourceGroupNameSelector *v1alpha1.Selector   `json:"resourceGroupNameSelector,omitempty"`
 
 	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
 	//setting the scope for extension resources 2) deploying resources to the tenant
 	//scope in non-tenant scope deployments
-	Scope *string `json:"scope,omitempty"`
+	Scope                                  *string             `json:"scope,omitempty"`
+	ServersDatabasesSyncGroupsName         string              `json:"serversDatabasesSyncGroupsName"`
+	ServersDatabasesSyncGroupsNameRef      *v1alpha1.Reference `json:"serversDatabasesSyncGroupsNameRef,omitempty"`
+	ServersDatabasesSyncGroupsNameSelector *v1alpha1.Selector  `json:"serversDatabasesSyncGroupsNameSelector,omitempty"`
 
 	//Tags: Name-value pairs to add to the resource
 	Tags map[string]string `json:"tags,omitempty"`

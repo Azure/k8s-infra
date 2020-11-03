@@ -72,11 +72,17 @@ type PrivateEndpointsPrivateDnsZoneGroupsParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Name: Name of the resource
-	Name string `json:"name"`
+	Name                         string              `json:"name"`
+	PrivateEndpointsName         string              `json:"privateEndpointsName"`
+	PrivateEndpointsNameRef      *v1alpha1.Reference `json:"privateEndpointsNameRef,omitempty"`
+	PrivateEndpointsNameSelector *v1alpha1.Selector  `json:"privateEndpointsNameSelector,omitempty"`
 
 	// +kubebuilder:validation:Required
 	//Properties: Properties of the private dns zone group.
-	Properties PrivateDnsZoneGroupPropertiesFormat `json:"properties"`
+	Properties                PrivateDnsZoneGroupPropertiesFormat `json:"properties"`
+	ResourceGroupName         string                              `json:"resourceGroupName"`
+	ResourceGroupNameRef      *v1alpha1.Reference                 `json:"resourceGroupNameRef,omitempty"`
+	ResourceGroupNameSelector *v1alpha1.Selector                  `json:"resourceGroupNameSelector,omitempty"`
 
 	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
 	//setting the scope for extension resources 2) deploying resources to the tenant

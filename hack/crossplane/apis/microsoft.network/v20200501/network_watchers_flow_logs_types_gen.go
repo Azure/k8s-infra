@@ -80,11 +80,17 @@ type NetworkWatchersFlowLogsParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Name: Name of the resource
-	Name string `json:"name"`
+	Name                        string              `json:"name"`
+	NetworkWatchersName         string              `json:"networkWatchersName"`
+	NetworkWatchersNameRef      *v1alpha1.Reference `json:"networkWatchersNameRef,omitempty"`
+	NetworkWatchersNameSelector *v1alpha1.Selector  `json:"networkWatchersNameSelector,omitempty"`
 
 	// +kubebuilder:validation:Required
 	//Properties: Properties of the flow log.
-	Properties FlowLogPropertiesFormat `json:"properties"`
+	Properties                FlowLogPropertiesFormat `json:"properties"`
+	ResourceGroupName         string                  `json:"resourceGroupName"`
+	ResourceGroupNameRef      *v1alpha1.Reference     `json:"resourceGroupNameRef,omitempty"`
+	ResourceGroupNameSelector *v1alpha1.Selector      `json:"resourceGroupNameSelector,omitempty"`
 
 	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
 	//setting the scope for extension resources 2) deploying resources to the tenant

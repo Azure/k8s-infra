@@ -59,8 +59,11 @@ type ApplicationGatewaysPrivateEndpointConnectionsParameters struct {
 	// +kubebuilder:validation:Required
 	//ApiVersion: API Version of the resource type, optional when apiProfile is used
 	//on the template
-	ApiVersion ApplicationGatewaysPrivateEndpointConnectionsSpecApiVersion `json:"apiVersion"`
-	Comments   *string                                                     `json:"comments,omitempty"`
+	ApiVersion                      ApplicationGatewaysPrivateEndpointConnectionsSpecApiVersion `json:"apiVersion"`
+	ApplicationGatewaysName         string                                                      `json:"applicationGatewaysName"`
+	ApplicationGatewaysNameRef      *v1alpha1.Reference                                         `json:"applicationGatewaysNameRef,omitempty"`
+	ApplicationGatewaysNameSelector *v1alpha1.Selector                                          `json:"applicationGatewaysNameSelector,omitempty"`
+	Comments                        *string                                                     `json:"comments,omitempty"`
 
 	//Condition: Condition of the resource
 	Condition *bool                   `json:"condition,omitempty"`
@@ -78,7 +81,10 @@ type ApplicationGatewaysPrivateEndpointConnectionsParameters struct {
 
 	// +kubebuilder:validation:Required
 	//Properties: Properties of the application gateway private endpoint connection.
-	Properties ApplicationGatewayPrivateEndpointConnectionProperties `json:"properties"`
+	Properties                ApplicationGatewayPrivateEndpointConnectionProperties `json:"properties"`
+	ResourceGroupName         string                                                `json:"resourceGroupName"`
+	ResourceGroupNameRef      *v1alpha1.Reference                                   `json:"resourceGroupNameRef,omitempty"`
+	ResourceGroupNameSelector *v1alpha1.Selector                                    `json:"resourceGroupNameSelector,omitempty"`
 
 	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
 	//setting the scope for extension resources 2) deploying resources to the tenant
