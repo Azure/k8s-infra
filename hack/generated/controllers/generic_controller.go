@@ -60,7 +60,7 @@ type GenericReconciler struct {
 	GVK                  schema.GroupVersionKind
 	Controller           controller.Controller
 	RequeueDelay         time.Duration
-	CreateDeploymentName func() (string, error)
+	CreateDeploymentName func(azureName string) (string, error)
 }
 
 type ReconcileAction string
@@ -81,7 +81,7 @@ type Options struct {
 
 	// options specific to our controller
 	RequeueDelay            time.Duration
-	DeploymentNameGenerator func() (string, error)
+	DeploymentNameGenerator func(azureName string) (string, error)
 }
 
 func RegisterAll(mgr ctrl.Manager, applier armclient.Applier, objs []runtime.Object, log logr.Logger, options Options) []error {
@@ -600,7 +600,7 @@ func (gr *GenericReconciler) resourceSpecToDeployment(ctx context.Context, data 
 	}
 
 	if !deploymentNameOk {
-		deploymentName, err = (gr.CreateDeploymentName)()
+		deploymentName, err = (gr.CreateDeploymentName)(data.metaObj.AzureName())
 		if err != nil {
 			return nil, err
 		}
