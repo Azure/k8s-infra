@@ -6,8 +6,8 @@
 package astmodel
 
 import (
-	"github.com/pkg/errors"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
+	"github.com/pkg/errors"
 	"go/ast"
 	"go/token"
 )
