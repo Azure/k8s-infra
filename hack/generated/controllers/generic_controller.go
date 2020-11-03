@@ -29,6 +29,7 @@ import (
 
 	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
+	"github.com/Azure/k8s-infra/hack/generated/pkg/reflecthelpers"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/armresourceresolver"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/patch"
@@ -38,6 +39,15 @@ const (
 	// ResourceSigAnnotationKey is an annotation key which holds the value of the hash of the spec
 	GenericControllerFinalizer = "generated.infra.azure.com/finalizer"
 )
+
+// TODO: We need to generate this
+// +kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;patch
+// +kubebuilder:rbac:groups=microsoft.resources.infra.azure.com,resources=resourcegroups,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=microsoft.resources.infra.azure.com,resources=resourcegroups/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=microsoft.storage.infra.azure.com,resources=storageaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=microsoft.storage.infra.azure.com,resources=storageaccounts/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=microsoft.batch.infra.azure.com,resources=batchaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=microsoft.batch.infra.azure.com,resources=batchaccounts/status,verbs=get;update;patch
 
 // GenericReconciler reconciles resources
 type GenericReconciler struct {
@@ -206,7 +216,7 @@ func (gr *GenericReconciler) DetermineReconcileAction(data *ReconcileMetadata) (
 	// TODO: See: https://github.com/Azure/k8s-infra/issues/274
 	// Determine if we need to update ownership first
 	owner := data.metaObj.Owner()
-	if owner != nil && owner.Kind != "ResourceGroup" && len(data.metaObj.GetOwnerReferences()) == 0 { // TODO: Remove RG hack
+	if owner != nil && len(data.metaObj.GetOwnerReferences()) == 0 {
 		// TODO: This could all be rolled into CreateDeployment if we wanted
 		return ReconcileActionManageOwnership, gr.ManageOwnership, nil
 	}
@@ -261,7 +271,7 @@ func (gr *GenericReconciler) StartDeleteOfResource(
 	}
 
 	err = gr.Patch(ctx, data, func(ctx context.Context, mutData *ReconcileMetadata) error {
-		emptyStatus, err := NewEmptyArmResourceStatus(mutData.metaObj)
+		emptyStatus, err := reflecthelpers.NewEmptyArmResourceStatus(mutData.metaObj)
 		if err != nil {
 			return errors.Wrapf(err, "creating empty status for %q", resource.GetId())
 		}
@@ -374,13 +384,18 @@ func (gr *GenericReconciler) MonitorDeployment(ctx context.Context, action Recon
 			return errors.Wrapf(err, "getting deployment %q from ARM", deployment.Id)
 		}
 
-		if deployment.Properties != nil && deployment.Properties.ProvisioningState == armclient.SucceededProvisioningState {
+		if deployment.IsSuccessful() {
 			// TODO: There's some overlap here with what Update does
 			if len(deployment.Properties.OutputResources) == 0 {
 				return errors.Errorf("template deployment didn't have any output resources")
 			}
 
-			status, err = gr.getStatus(ctx, deployment.Properties.OutputResources[0].ID, data)
+			resourceID, err := deployment.ResourceID()
+			if err != nil {
+				return errors.Wrap(err, "getting resource ID from resource")
+			}
+
+			status, err = gr.getStatus(ctx, resourceID, data)
 			if err != nil {
 				return errors.Wrap(err, "getting status from ARM")
 			}
@@ -486,7 +501,7 @@ func (gr *GenericReconciler) ManageOwnership(ctx context.Context, action Reconci
 //////////////////////////////////////////
 
 func (gr *GenericReconciler) constructArmResource(ctx context.Context, data *ReconcileMetadata) (genruntime.ArmResource, error) {
-	deployableSpec, err := ConvertResourceToDeployableResource(ctx, gr.ResourceResolver, data.metaObj)
+	deployableSpec, err := reflecthelpers.ConvertResourceToDeployableResource(ctx, gr.ResourceResolver, data.metaObj)
 	if err != nil {
 		return nil, errors.Wrapf(err, "converting to armResourceSpec")
 	}
@@ -497,13 +512,13 @@ func (gr *GenericReconciler) constructArmResource(ctx context.Context, data *Rec
 }
 
 func (gr *GenericReconciler) getStatus(ctx context.Context, id string, data *ReconcileMetadata) (genruntime.ArmTransformer, error) {
-	deployableSpec, err := ConvertResourceToDeployableResource(ctx, gr.ResourceResolver, data.metaObj)
+	deployableSpec, err := reflecthelpers.ConvertResourceToDeployableResource(ctx, gr.ResourceResolver, data.metaObj)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO: do we tolerate not exists here?
-	armStatus, err := NewEmptyArmResourceStatus(data.metaObj)
+	armStatus, err := reflecthelpers.NewEmptyArmResourceStatus(data.metaObj)
 	if err != nil {
 		return nil, errors.Wrapf(err, "constructing ARM status for resource: %q", id)
 	}
@@ -523,19 +538,22 @@ func (gr *GenericReconciler) getStatus(ctx context.Context, id string, data *Rec
 	}
 
 	// Convert the ARM shape to the Kube shape
-	status, err := NewEmptyStatus(data.metaObj)
+	status, err := reflecthelpers.NewEmptyStatus(data.metaObj)
 	if err != nil {
 		return nil, errors.Wrapf(err, "constructing Kube status object for resource: %q", id)
 	}
 
-	// TODO: need to use KnownOwner?
 	owner := data.metaObj.Owner()
-	correctOwner := genruntime.KnownResourceReference{
-		Name: owner.Name,
+	var knownOwner genruntime.KnownResourceReference
+	if owner != nil {
+		knownOwner = genruntime.KnownResourceReference{
+			Name: owner.Name,
+		}
 	}
 
 	// Fill the kube status with the results from the arm status
-	err = status.PopulateFromArm(correctOwner, ValueOfPtr(armStatus)) // TODO: PopulateFromArm expects a value... ick
+	// TODO: The owner parameter here should be optional
+	err = status.PopulateFromArm(knownOwner, reflecthelpers.ValueOfPtr(armStatus)) // TODO: PopulateFromArm expects a value... ick
 	if err != nil {
 		return nil, errors.Wrapf(err, "converting ARM status to Kubernetes status")
 	}
@@ -544,7 +562,7 @@ func (gr *GenericReconciler) getStatus(ctx context.Context, id string, data *Rec
 }
 
 func (gr *GenericReconciler) resourceSpecToDeployment(ctx context.Context, data *ReconcileMetadata) (*armclient.Deployment, error) {
-	deployableSpec, err := ConvertResourceToDeployableResource(ctx, gr.ResourceResolver, data.metaObj)
+	deploySpec, err := reflecthelpers.ConvertResourceToDeployableResource(ctx, gr.ResourceResolver, data.metaObj)
 	if err != nil {
 		return nil, err
 	}
@@ -559,24 +577,43 @@ func (gr *GenericReconciler) resourceSpecToDeployment(ctx context.Context, data 
 			deploymentNameOk)
 	}
 
-	var deployment *armclient.Deployment
-	if deploymentIdOk && deploymentNameOk {
-		deployment = gr.ARMClient.NewDeployment(
-			deployableSpec.ResourceGroup(),
-			deploymentName,
-			deployableSpec.Spec())
-		deployment.Id = deploymentId
-	} else {
-		deploymentName, err := CreateDeploymentName()
+	if !deploymentNameOk {
+		deploymentName, err = CreateDeploymentName()
 		if err != nil {
 			return nil, err
 		}
-		deployment = gr.ARMClient.NewDeployment(
-			deployableSpec.ResourceGroup(),
-			deploymentName,
-			deployableSpec.Spec())
 	}
+
+	deployment := gr.createDeployment(deploySpec, deploymentName, deploymentId)
 	return deployment, nil
+}
+
+func (gr *GenericReconciler) createDeployment(
+	deploySpec genruntime.DeployableResource,
+	deploymentName string,
+	deploymentId string) *armclient.Deployment {
+
+	var deployment *armclient.Deployment
+	switch res := deploySpec.(type) {
+	case *genruntime.ResourceGroupResource:
+		deployment = gr.ARMClient.NewResourceGroupDeployment(
+			res.ResourceGroup(),
+			deploymentName,
+			res.Spec())
+	case *genruntime.SubscriptionResource:
+		deployment = gr.ARMClient.NewSubscriptionDeployment(
+			res.Location(),
+			deploymentName,
+			res.Spec())
+	default:
+		panic(fmt.Sprintf("unknown deployable resource kind: %T", deploySpec))
+	}
+
+	if deploymentId != "" {
+		deployment.Id = deploymentId
+	}
+
+	return deployment
 }
 
 func (gr *GenericReconciler) Patch(

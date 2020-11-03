@@ -41,6 +41,10 @@ func IsResourceType(t Type) bool {
 	return ok
 }
 
+func IsResourceDefinition(def TypeDefinition) bool {
+	return IsResourceType(def.Type())
+}
+
 // NewAzureResourceType defines a new resource type for Azure. It ensures that
 // the resource has certain expected properties such as type and name.
 // The typeName parameter is just used for logging.
@@ -227,19 +231,16 @@ func (definition *ResourceType) WithOwner(owner *TypeName) *ResourceType {
 }
 
 // RequiredPackageReferences returns a list of packages required by this
-func (definition *ResourceType) RequiredPackageReferences() []PackageReference {
-	references := definition.spec.RequiredPackageReferences()
+func (definition *ResourceType) RequiredPackageReferences() *PackageReferenceSet {
+	references := NewPackageReferenceSet(MetaV1PackageReference)
+	references.Merge(definition.spec.RequiredPackageReferences())
 
 	if definition.status != nil {
-		references = append(references, definition.status.RequiredPackageReferences()...)
+		references.Merge(definition.status.RequiredPackageReferences())
 	}
 
-	references = append(references, MetaV1PackageReference)
-	// references = append(references, MakeGenRuntimePackageReference())
-	// references = append(references, MakeExternalPackageReference("fmt"))
-
 	// Interface imports
-	references = append(references, definition.InterfaceImplementer.RequiredPackageReferences()...)
+	references.Merge(definition.InterfaceImplementer.RequiredPackageReferences())
 
 	return references
 }

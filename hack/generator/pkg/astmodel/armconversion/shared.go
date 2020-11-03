@@ -8,6 +8,7 @@ package armconversion
 import (
 	"fmt"
 	"go/ast"
+	"go/token"
 	"sync"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
@@ -40,6 +41,30 @@ func (builder conversionBuilder) propertyConversionHandler(
 	panic(fmt.Sprintf("No property found for %s", toProp.PropertyName()))
 }
 
+// deepCopyJSON special cases copying JSON-type fields to call the DeepCopy method.
+// It generates code that looks like:
+//     <destination> = *<source>.DeepCopy()
+func (builder *conversionBuilder) deepCopyJSON(
+	params complexPropertyConversionParameters) []ast.Stmt {
+	newSource := &ast.UnaryExpr{
+		X: &ast.CallExpr{
+			Fun: &ast.SelectorExpr{
+				X:   params.source,
+				Sel: ast.NewIdent("DeepCopy"),
+			},
+			Args: []ast.Expr{},
+		},
+		Op: token.MUL,
+	}
+	assignmentHandler := params.assignmentHandler
+	if assignmentHandler == nil {
+		assignmentHandler = assignmentHandlerAssign
+	}
+	return []ast.Stmt{
+		assignmentHandler(params.destination, newSource),
+	}
+}
+
 type propertyConversionHandler = func(toProp *astmodel.PropertyDefinition, fromType *astmodel.ObjectType) []ast.Stmt
 
 var once sync.Once
@@ -63,17 +88,18 @@ func GetAzureNameProperty(idFactory astmodel.IdentifierFactory) *astmodel.Proper
 
 func getReceiverObjectType(codeGenerationContext *astmodel.CodeGenerationContext, receiver astmodel.TypeName) *astmodel.ObjectType {
 	// Determine the type we're operating on
-	receiverType, err := codeGenerationContext.GetImportedDefinition(receiver)
+	rt, err := codeGenerationContext.GetImportedDefinition(receiver)
 	if err != nil {
 		panic(err)
 	}
 
-	kubeType, ok := receiverType.Type().(*astmodel.ObjectType)
+	receiverType, ok := rt.Type().(*astmodel.ObjectType)
 	if !ok {
-		panic(fmt.Sprintf("receiver for ArmConversionFunction is not of type ObjectType. TypeName: %v, Type %T", receiver, receiverType.Type()))
+		// Don't expect to have any wrapper types left at this point
+		panic(fmt.Sprintf("receiver for ArmConversionFunction is not of expected type. TypeName: %v, Type %T", receiver, rt.Type()))
 	}
 
-	return kubeType
+	return receiverType
 }
 
 func generateTypeConversionAssignments(
@@ -129,7 +155,12 @@ type complexPropertyConversionParameters struct {
 	destinationType   astmodel.Type
 	nameHint          string
 	conversionContext []astmodel.Type
-	assignmentHandler func(result ast.Expr, destination ast.Expr) ast.Stmt
+	assignmentHandler func(destination, source ast.Expr) ast.Stmt
+
+	// sameTypes indicates that the source and destination types are
+	// the same, so no conversion between Arm and non-Arm types is
+	// required (although structure copying is).
+	sameTypes bool
 }
 
 func (params complexPropertyConversionParameters) copy() complexPropertyConversionParameters {

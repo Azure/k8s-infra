@@ -135,7 +135,7 @@ func (file *FileDefinition) generateImports() *PackageImportSet {
 	var requiredImports = NewPackageImportSet()
 
 	for _, s := range file.definitions {
-		for _, r := range s.RequiredPackageReferences() {
+		for _, r := range s.RequiredPackageReferences().AsSlice() {
 			requiredImports.AddImportOfReference(r)
 		}
 	}
@@ -155,10 +155,10 @@ func (file *FileDefinition) generateImports() *PackageImportSet {
 			if !imp.Equals(otherImp) && imp.PackageName() == otherImp.PackageName() {
 				klog.Warningf(
 					"File %v: import %v (named %v) and import %v (named %v) conflict",
-					file.packageReference.PackagePath(),
-					imp.PackageReference.PackagePath(),
+					file.packageReference,
+					imp.packageReference,
 					imp.PackageName(),
-					otherImp.PackageReference.PackagePath(),
+					otherImp.packageReference,
 					otherImp.PackageName())
 			}
 		}
@@ -234,12 +234,14 @@ func (file *FileDefinition) AsAst() ast.Node {
 		"Licensed under the MIT license.",
 		CodeGenerationComment)
 
+	packageName := file.packageReference.PackageName()
+
 	// We set Package (the offset of the package keyword) so that it follows the header comments
 	result := &ast.File{
 		Doc: &ast.CommentGroup{
 			List: header,
 		},
-		Name:    ast.NewIdent(file.packageReference.PackageName()),
+		Name:    ast.NewIdent(packageName),
 		Decls:   decls,
 		Package: token.Pos(headerLen),
 	}
