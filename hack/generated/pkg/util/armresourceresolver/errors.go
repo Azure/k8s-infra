@@ -32,7 +32,7 @@ func (e *OwnerNotFound) Error() string {
 }
 
 func (e *OwnerNotFound) Is(err error) bool {
-	var typedErr OwnerNotFound
+	var typedErr *OwnerNotFound
 	if errors.As(err, &typedErr) {
 		return e.OwnerName == typedErr.OwnerName
 	}
