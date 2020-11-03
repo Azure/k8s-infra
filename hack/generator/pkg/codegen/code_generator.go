@@ -127,6 +127,7 @@ func crossplaneCorePipelineStages(idFactory astmodel.IdentifierFactory, configur
 		// ARM types for resources etc:
 		applyExportFilters(configuration),
 		stripUnreferencedTypeDefinitions(),
+		replaceAnyTypeWithJSON(),
 
 		filterOutDefinitionsUsingAnyType(configuration.AnyTypePackages),
 
@@ -136,6 +137,7 @@ func crossplaneCorePipelineStages(idFactory astmodel.IdentifierFactory, configur
 		addCrossplaneAtProvider(idFactory),
 
 		// applyKubernetesResourceInterface(idFactory),
+		// createStorageTypes(),
 		simplifyDefinitions(),
 
 		// Safety checks at the end:

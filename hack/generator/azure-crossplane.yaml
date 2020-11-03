@@ -101,7 +101,6 @@ exportFilters:
 # TODO: get rid of these, either by chasing the teams generating
 # weird json or by handling them differently in the generator.
 anyTypePackages:
-  - microsoft.network/v20200501
 
 typeTransformers:
   - group: definitions
