@@ -91,7 +91,7 @@ func (builder *convertFromArmBuilder) functionDeclaration() *ast.FuncDecl {
 
 	fn.AddComments("populates a Kubernetes CRD object from an Azure ARM object")
 
-	return astbuilder.DefineFunc(fn)
+	return fn.DefineFunc()
 }
 
 func (builder *convertFromArmBuilder) functionBodyStatements() []ast.Stmt {

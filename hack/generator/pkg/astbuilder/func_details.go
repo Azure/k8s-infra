@@ -54,43 +54,43 @@ func NewTestFuncDetails(testName string, body ...ast.Stmt) *FuncDetails {
 //	func (<receiverIdent> <receiverType>) <name>(<params...>) (<returns...>) {
 // 		<body...>
 //	}
-func DefineFunc(funcDetails *FuncDetails) *ast.FuncDecl {
+func (fn *FuncDetails) DefineFunc() *ast.FuncDecl {
 
 	// Safety check that we are making something valid
-	if (funcDetails.ReceiverIdent == nil) != (funcDetails.ReceiverType == nil) {
+	if (fn.ReceiverIdent == nil) != (fn.ReceiverType == nil) {
 		reason := fmt.Sprintf(
 			"ReceiverIdent and ReceiverType must both be specified, or both omitted. ReceiverIdent: %q, ReceiverType: %q",
-			funcDetails.ReceiverIdent,
-			funcDetails.ReceiverType)
+			fn.ReceiverIdent,
+			fn.ReceiverType)
 		panic(reason)
 	}
 
 	// Filter out any nil statements
-	// this helps creation of the funcDetails go simpler
+	// this helps creation of the fn go simpler
 	var body []ast.Stmt
-	for _, s := range funcDetails.Body {
+	for _, s := range fn.Body {
 		if s != nil {
 			body = append(body, s)
 		}
 	}
 
 	var comment []*ast.Comment
-	if len(funcDetails.Comments) > 0 {
-		funcDetails.Comments[0] = fmt.Sprintf("// %s %s", funcDetails.Name, funcDetails.Comments[0])
-		AddComments(&comment, funcDetails.Comments)
+	if len(fn.Comments) > 0 {
+		fn.Comments[0] = fmt.Sprintf("// %s %s", fn.Name, fn.Comments[0])
+		AddComments(&comment, fn.Comments)
 	}
 
 	result := &ast.FuncDecl{
-		Name: funcDetails.Name,
+		Name: fn.Name,
 		Doc: &ast.CommentGroup{
 			List: comment,
 		},
 		Type: &ast.FuncType{
 			Params: &ast.FieldList{
-				List: funcDetails.Params,
+				List: fn.Params,
 			},
 			Results: &ast.FieldList{
-				List: funcDetails.Returns,
+				List: fn.Returns,
 			},
 		},
 		Body: &ast.BlockStmt{
@@ -98,14 +98,14 @@ func DefineFunc(funcDetails *FuncDetails) *ast.FuncDecl {
 		},
 	}
 
-	if funcDetails.ReceiverIdent != nil {
+	if fn.ReceiverIdent != nil {
 		// We have a receiver, so include it
 
 		field := &ast.Field{
 			Names: []*ast.Ident{
-				funcDetails.ReceiverIdent,
+				fn.ReceiverIdent,
 			},
-			Type: funcDetails.ReceiverType,
+			Type: fn.ReceiverType,
 		}
 
 		recv := ast.FieldList{

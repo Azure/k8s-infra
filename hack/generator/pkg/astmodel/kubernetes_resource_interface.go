@@ -144,7 +144,7 @@ func ownerFunction(k *objectFunction, codeGenerationContext *CodeGenerationConte
 
 	fn.AddComments("returns the ResourceReference of the owner, or nil if there is no owner")
 
-	return astbuilder.DefineFunc(fn)
+	return fn.DefineFunc()
 }
 
 func lookupGroupAndKindStmt(
@@ -241,5 +241,5 @@ func azureNameFunction(k *objectFunction, codeGenerationContext *CodeGenerationC
 
 	fn.AddComments("returns the Azure name of the resource")
 
-	return astbuilder.DefineFunc(fn)
+	return fn.DefineFunc()
 }

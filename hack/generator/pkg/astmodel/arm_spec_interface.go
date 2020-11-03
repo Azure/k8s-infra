@@ -163,5 +163,5 @@ func armSpecInterfaceSimpleGetFunction(
 
 	fn.AddComments(fmt.Sprintf("returns the %s of the resource", propertyName))
 
-	return astbuilder.DefineFunc(fn)
+	return fn.DefineFunc()
 }

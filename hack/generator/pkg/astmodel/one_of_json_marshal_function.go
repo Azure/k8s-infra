@@ -118,9 +118,7 @@ func (f *OneOfJSONMarshalFunction) AsFunc(
 		"defers JSON marshaling to the first non-nil property, because %s represents a discriminated union (JSON OneOf)",
 		receiver.name))
 
-	result := astbuilder.DefineFunc(fn)
-
-	return result
+	return fn.DefineFunc()
 }
 
 // RequiredImports returns a list of packages required by this

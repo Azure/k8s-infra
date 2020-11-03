@@ -80,7 +80,7 @@ func (builder *convertToArmBuilder) functionDeclaration() *ast.FuncDecl {
 
 	fn.AddComments("converts from a Kubernetes CRD object to an ARM object")
 
-	return astbuilder.DefineFunc(fn)
+	return fn.DefineFunc()
 }
 
 func (builder *convertToArmBuilder) functionBodyStatements() []ast.Stmt {
