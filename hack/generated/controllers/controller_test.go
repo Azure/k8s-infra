@@ -60,7 +60,7 @@ func Test_StorageAccount_CRUD(t *testing.T) {
 	testContext, err := testContext.ForTest(t)
 	g.Expect(err).ToNot(HaveOccurred())
 
-	rg, err := testContext.CreateNewTestResourceGroup(testcommon.DoNotWait)
+	rg, err := testContext.CreateNewTestResourceGroup(testcommon.WaitForCreation)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	// Custom namer because storage accounts have strict names
