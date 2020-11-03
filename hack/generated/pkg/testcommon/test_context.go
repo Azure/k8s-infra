@@ -30,18 +30,11 @@ type TestContext struct {
 
 type PerTestContext struct {
 	TestContext
+	T                   *testing.T
 	AzureClientRecorder *recorder.Recorder
 	AzureClient         armclient.Applier
 	Namer               ResourceNamer
 	TestName            string
-}
-
-func (ctx PerTestContext) Cleanup() {
-	log.Printf("stopping ARM client recorder")
-	err := ctx.AzureClientRecorder.Stop()
-	if err != nil {
-		panic(err)
-	}
 }
 
 // If you modify this make sure to modify the cleanup-test-azure-resources target in the Makefile too
@@ -56,11 +49,7 @@ func NewTestContext(region string, recordReplay bool) TestContext {
 }
 
 func (tc TestContext) ForTest(t *testing.T) (PerTestContext, error) {
-	return tc.ForTestName(t.Name())
-}
-
-func (tc TestContext) ForTestName(testName string) (PerTestContext, error) {
-	authorizer, subscriptionID, recorder, err := createRecorder(testName, tc.RecordReplay)
+	authorizer, subscriptionID, recorder, err := createRecorder(t.Name(), tc.RecordReplay)
 	if err != nil {
 		return PerTestContext{}, errors.Wrapf(err, "creating recorder")
 	}
@@ -70,12 +59,26 @@ func (tc TestContext) ForTestName(testName string) (PerTestContext, error) {
 		return PerTestContext{}, errors.Wrapf(err, "creating ARM client")
 	}
 
+	// replace the ARM client transport (a bit hacky)
+	httpClient := armClient.RawClient.Sender.(*http.Client)
+	httpClient.Transport = recorder
+
+	t.Cleanup(func() {
+		log.Printf("stopping ARM client recorder")
+		err := recorder.Stop()
+		if err != nil {
+			// cleanup function should not error-out
+			log.Printf("unable to stop ARM client recorder: %s", err.Error())
+		}
+	})
+
 	return PerTestContext{
 		TestContext:         tc,
-		Namer:               tc.NameConfig.NewResourceNamer(testName),
+		T:                   t,
+		Namer:               tc.NameConfig.NewResourceNamer(t.Name()),
 		AzureClient:         armClient,
 		AzureClientRecorder: recorder,
-		TestName:            testName,
+		TestName:            t.Name(),
 	}, nil
 }
 

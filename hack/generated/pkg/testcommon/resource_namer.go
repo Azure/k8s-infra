@@ -23,10 +23,12 @@ type ResourceNamer struct {
 	rand *rand.Rand
 }
 
-func (rnc ResourceNameConfig) NewResourceNamer(name string) ResourceNamer {
+// NewResourceNamer returns a ResourceNamer that generates random
+// suffixes based upon the test name
+func (rnc ResourceNameConfig) NewResourceNamer(testName string) ResourceNamer {
 	hasher := fnv.New64()
-	n, err := hasher.Write([]byte(name))
-	if n != len(name) || err != nil {
+	n, err := hasher.Write([]byte(testName))
+	if n != len(testName) || err != nil {
 		panic("failed to write hash")
 	}
 

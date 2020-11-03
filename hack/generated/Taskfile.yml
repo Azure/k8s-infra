@@ -85,14 +85,26 @@ tasks:
     - go test -short -tags=noexit -race -covermode atomic -coverprofile=cover.out -coverpkg="./..." {{.GENERATED_GO_DIRS_TO_TEST|catLines}}
     - gcov2lcov -infile cover.out -outfile coverage.lcov
 
-  test-integration-envtest:
-    desc: Run integration tests with envtest and output coverage.
+  copy-valid-crds:
     cmds:
     # copy CRD files that are needed to a different folder, at the moment we cannot load all CRD files
     - mkdir -p config/crd/bases/valid
     - cp config/crd/bases/microsoft.batch.infra.azure.com_batchaccounts.yaml config/crd/bases/valid
     - cp config/crd/bases/microsoft.storage.infra.azure.com_storageaccounts.yaml config/crd/bases/valid
     - cp config/crd/bases/microsoft.resources.infra.azure.com_resourcegroups.yaml config/crd/bases/valid
+
+  test-integration-envtest:
+    desc: Run integration tests with envtest using record/replay and output coverage.
+    deps: [copy-valid-crds]
+    cmds:
+    # -race fails at the moment in controller-runtime
+    - go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." ./controllers/... -envtest -recordReplay -v
+    - gcov2lcov -infile cover-integration-envtest.out -outfile coverage-integration-envtest.lcov
+
+  test-integration-envtest-live:
+    desc: Run integration tests with envtest against live data and output coverage.
+    deps: [copy-valid-crds]
+    cmds:
     # -race fails at the moment in controller-runtime
     - go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." ./controllers/... -envtest  -v
     - gcov2lcov -infile cover-integration-envtest.out -outfile coverage-integration-envtest.lcov

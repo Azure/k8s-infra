@@ -19,8 +19,5 @@ func createRealKubeContext(perTestContext PerTestContext) (*KubeBaseTestContext,
 	return &KubeBaseTestContext{
 		PerTestContext: perTestContext,
 		KubeConfig:     config,
-		Cleanup: func() {
-			perTestContext.Cleanup()
-		},
 	}, nil
 }

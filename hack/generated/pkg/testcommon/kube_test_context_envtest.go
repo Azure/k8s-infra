@@ -38,6 +38,14 @@ func createEnvtestContext(perTestContext PerTestContext) (*KubeBaseTestContext, 
 		return nil, errors.Wrapf(err, "starting envtest environment")
 	}
 
+	perTestContext.T.Cleanup(func() {
+		log.Print("Stopping envtest")
+		err := environment.Stop()
+		if err != nil {
+			log.Printf("unable to stop envtest environment: %s", err.Error())
+		}
+	})
+
 	log.Print("Creating & starting controller-runtime manager")
 	mgr, err := ctrl.NewManager(config, ctrl.Options{
 		Scheme:             CreateScheme(),
@@ -56,8 +64,14 @@ func createEnvtestContext(perTestContext PerTestContext) (*KubeBaseTestContext, 
 		}
 	}()
 
+	perTestContext.T.Cleanup(func() {
+		log.Print("Stopping controller-runtime manager")
+		close(stopManager)
+	})
+
 	var requeueDelay time.Duration // defaults to 5s when zero is passed
 	if perTestContext.AzureClientRecorder.Mode() == recorder.ModeReplaying {
+		log.Print("Minimizing requeue delay")
 		// skip requeue delays when replaying
 		requeueDelay = 100 * time.Millisecond
 	}
@@ -83,18 +97,6 @@ func createEnvtestContext(perTestContext PerTestContext) (*KubeBaseTestContext, 
 	return &KubeBaseTestContext{
 		PerTestContext: perTestContext,
 		KubeConfig:     config,
-		Cleanup: func() {
-			log.Print("Stopping controller-runtime manager")
-			close(stopManager)
-
-			log.Print("Stopping envtest")
-			err := environment.Stop()
-			if err != nil {
-				panic(errors.Wrapf(err, "stopping envtest environment"))
-			}
-
-			perTestContext.Cleanup()
-		},
 	}, nil
 }
 

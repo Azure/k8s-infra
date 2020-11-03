@@ -7,12 +7,14 @@ package testcommon
 
 import (
 	"context"
+	"log"
 	"testing"
 	"time"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -23,6 +25,7 @@ import (
 	batch "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.batch/v20170901"
 	resources "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.resources/v20200601"
 	storage "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.storage/v20190401"
+	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 )
 
 // TODO: State Annotation parameter should be removed once the interface for Status determined and promoted
@@ -58,11 +61,7 @@ func NewKubeContext(
 }
 
 func (ctx KubeGlobalContext) ForTest(t *testing.T) (KubePerTestContext, error) {
-	return ctx.ForTestName(t.Name())
-}
-
-func (ctx KubeGlobalContext) ForTestName(testName string) (KubePerTestContext, error) {
-	perTestContext, err := ctx.TestContext.ForTestName(testName)
+	perTestContext, err := ctx.TestContext.ForTest(t)
 	if err != nil {
 		return KubePerTestContext{}, err
 	}
@@ -101,7 +100,6 @@ func (ctx KubeGlobalContext) ForTestName(testName string) (KubePerTestContext, e
 
 	err = result.createTestNamespace()
 	if err != nil {
-		result.Cleanup()
 		return KubePerTestContext{}, err
 	}
 
@@ -112,7 +110,6 @@ type KubeBaseTestContext struct {
 	PerTestContext
 
 	KubeConfig *rest.Config
-	Cleanup    func()
 }
 
 type KubePerTestContext struct {
@@ -181,4 +178,56 @@ func CreateScheme() *runtime.Scheme {
 	_ = resources.AddToScheme(scheme)
 
 	return scheme
+}
+
+type WaitCondition bool
+
+const (
+	WaitForCreation WaitCondition = true
+	DoNotWait       WaitCondition = false
+)
+
+// CreateNewTestResourceGroup creates a new randomly-named resource group
+// and registers it to be deleted up when the context is cleaned up
+func (tc *KubePerTestContext) CreateNewTestResourceGroup(wait WaitCondition) (*resources.ResourceGroup, error) {
+	ctx := context.Background()
+
+	rg := tc.NewTestResourceGroup()
+
+	log.Printf("Creating test resource group %q", rg.Name)
+	err := tc.KubeClient.Create(ctx, rg)
+	if err != nil {
+		return nil, errors.Wrapf(err, "creating resource group")
+	}
+
+	// register the RG for cleanup
+	// important to do this before waiting for it, so that
+	// we delete it even if we time out
+	tc.T.Cleanup(func() {
+		ctx := context.Background()
+		log.Printf("Deleting test resource group %q", rg.Name)
+		err := tc.KubeClient.Delete(ctx, rg)
+		if err != nil {
+			// don't error out, just warn
+			log.Printf("Unable to delete resource group: %s", err.Error())
+		}
+	})
+
+	if wait {
+		err = WaitFor(ctx, 2*time.Minute, func(ctx context.Context) (bool, error) {
+			return tc.Ensure.Provisioned(ctx, rg)
+		})
+
+		if err != nil {
+			return nil, errors.Wrapf(err, "waiting for resource group creation")
+		}
+	}
+
+	return rg, nil
+}
+
+func AsOwner(obj v1.ObjectMeta) genruntime.KnownResourceReference {
+	return genruntime.KnownResourceReference{
+		Name: obj.Name,
+	}
 }
