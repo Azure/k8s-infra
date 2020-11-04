@@ -60,6 +60,7 @@ type GenericReconciler struct {
 	GVK                  schema.GroupVersionKind
 	Controller           controller.Controller
 	RequeueDelay         time.Duration
+	RequeueDelayFast     time.Duration
 	CreateDeploymentName func(azureName string) (string, error)
 }
 
@@ -81,6 +82,7 @@ type Options struct {
 
 	// options specific to our controller
 	RequeueDelay         time.Duration
+	RequeueDelayFast     time.Duration
 	CreateDeploymentName func(azureName string) (string, error)
 }
 
@@ -88,6 +90,10 @@ func (options *Options) setDefaults() {
 	// default requeue delay to 5 seconds
 	if options.RequeueDelay == 0 {
 		options.RequeueDelay = 5 * time.Second
+	}
+
+	if options.RequeueDelayFast == 0 {
+		options.RequeueDelayFast = 50 * time.Millisecond
 	}
 
 	// override deployment name generator, if provided
@@ -139,6 +145,7 @@ func register(mgr ctrl.Manager, applier armclient.Applier, obj runtime.Object, l
 		Recorder:             mgr.GetEventRecorderFor(controllerName),
 		GVK:                  gvk,
 		RequeueDelay:         options.RequeueDelay,
+		RequeueDelayFast:     options.RequeueDelayFast,
 		CreateDeploymentName: options.CreateDeploymentName,
 	}
 
@@ -519,7 +526,7 @@ func (gr *GenericReconciler) ManageOwnership(ctx context.Context, action Reconci
 
 	// TODO: Fast requeue as we're moving to the next stage... Do we prefer this or doing it "all at once"?
 	return ctrl.Result{
-		RequeueAfter: 50 * time.Millisecond,
+		RequeueAfter: gr.RequeueDelayFast,
 	}, nil
 }
 
