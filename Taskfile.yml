@@ -103,12 +103,14 @@ tasks:
 
   controller:lint:
     desc: Run fast lint checks.
+    deps: [generate-types]
     dir: "{{.CONTROLLER_ROOT}}"
     cmds: 
     - golangci-lint run -v $({{.GENERATED_DIRS_TO_LINT_CMD}})
 
   controller:lint-full:
     desc: Run all lint checks.
+    deps: [generate-types]
     dir: "{{.CONTROLLER_ROOT}}"
     cmds: 
     - golangci-lint run -v --fast=false $({{.GENERATED_DIRS_TO_LINT_CMD}})
