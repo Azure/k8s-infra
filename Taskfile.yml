@@ -9,9 +9,9 @@ vars:
 
   # the 'api' dir contains generated code so we want to exclude it
   # for go-fmt the root dir must be excluded (it recurses)
-  GENERATED_DIRS_TO_FMT_CMD: go list -f '{{"{{.Dir}}"}}' ./...  | grep -vE '/apis(/|$)|/generated$'
+  GENERATED_DIRS_TO_FMT_CMD: go list -f '{{"{{.Dir}}"}}' ./...  | grep -vE '/apis(/|$)|/generated$' | tr '\n' ' '
   # for lint/test the root dir must be included
-  GENERATED_DIRS_TO_LINT_CMD: go list -f '{{"{{.Dir}}"}}' ./...  | grep -vE '/apis(/|$)'
+  GENERATED_DIRS_TO_LINT_CMD: go list -f '{{"{{.Dir}}"}}' ./...  | grep -vE '/apis(/|$)' | tr '\n' ' '
 
 tasks:
   default:
@@ -161,7 +161,7 @@ tasks:
     deps: [controller:copy-valid-crds]
     cmds:
     # -race fails at the moment in controller-runtime
-    - go test ./... -envtest -recordReplay -v
+    - ENVTEST=1 RECORD_REPLAY=1 go test -v $({{.GENERATED_DIRS_TO_LINT_CMD}})
 
   controller:test-integration-envtest-cover:
     desc: Run integration tests with envtest using record/replay and output coverage.
@@ -169,7 +169,7 @@ tasks:
     deps: [controller:copy-valid-crds]
     cmds:
     # -race fails at the moment in controller-runtime
-    - go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." ./... -envtest -recordReplay -v
+    - ENVTEST=1 RECORD_REPLAY=1 go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." -v $({{.GENERATED_DIRS_TO_LINT_CMD}})
     - gcov2lcov -infile cover-integration-envtest.out -outfile coverage-integration-envtest.lcov
 
   controller:test-integration-envtest-live:
@@ -178,7 +178,7 @@ tasks:
     deps: [controller:copy-valid-crds, cleanup-azure-resources]
     cmds:
     # -race fails at the moment in controller-runtime
-    - go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." ./... -envtest  -v
+    - ENVTEST=1 go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." -v $({{.GENERATED_DIRS_TO_LINT_CMD}})
     - gcov2lcov -infile cover-integration-envtest.out -outfile coverage-integration-envtest.lcov
 
   generate-crds:

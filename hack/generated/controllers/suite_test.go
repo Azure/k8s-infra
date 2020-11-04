@@ -6,7 +6,6 @@ Licensed under the MIT license.
 package controllers_test
 
 import (
-	"flag"
 	"log"
 	"os"
 	"testing"
@@ -63,9 +62,8 @@ type Options struct {
 }
 
 func getOptions() Options {
-	options := Options{}
-	flag.BoolVar(&options.useEnvTest, "envtest", false, "Use the envtest package to run tests? If not, a cluster must be configured already in .kubeconfig.")
-	flag.BoolVar(&options.recordReplay, "recordReplay", false, "Record/replay the ARM requests/responses.")
-	flag.Parse()
-	return options
+	return Options{
+		useEnvTest:   os.Getenv("ENVTEST") != "",
+		recordReplay: os.Getenv("RECORD_REPLAY") != "",
+	}
 }

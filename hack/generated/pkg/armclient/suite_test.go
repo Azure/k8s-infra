@@ -6,7 +6,6 @@ Licensed under the MIT license.
 package armclient_test
 
 import (
-	"flag"
 	"log"
 	"os"
 	"testing"
@@ -42,9 +41,7 @@ func teardown() error {
 }
 
 func TestMain(m *testing.M) {
-	var recordReplay bool
-	flag.BoolVar(&recordReplay, "recordReplay", false, "Record/replay the ARM requests/responses.")
-	flag.Parse()
+	recordReplay := os.Getenv("RECORD_REPLAY") != ""
 	os.Exit(testcommon.SetupTeardownTestMain(
 		m,
 		true,
