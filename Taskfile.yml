@@ -37,7 +37,7 @@ tasks:
     deps: [header-check, generator:format-code, generator:lint, generator:test]
 
   generator:ci:
-    deps: [header-check, generator:lint-full, generator:test-cover]
+    deps: [header-check, generator:lint-full, generator:test-cover, generate-types]
 
   generator:test:
     desc: Run {{.GENERATOR_APP}} unit tests.
