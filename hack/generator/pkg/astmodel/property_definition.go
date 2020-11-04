@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 	"go/ast"
-	"go/token"
 	"sort"
 	"strings"
 )
@@ -271,15 +270,12 @@ func (property *PropertyDefinition) AsField(codeGenerationContext *CodeGeneratio
 		names = []*ast.Ident{ast.NewIdent(string(property.propertyName))}
 	}
 
-	// We don't use LiteralString() for the tag as it adds extra quotes
+	// We don't use StringLiteral() for the tag as it adds extra quotes
 	result := &ast.Field{
 		Doc:   &ast.CommentGroup{},
 		Names: names,
 		Type:  property.PropertyType().AsType(codeGenerationContext),
-		Tag: &ast.BasicLit{
-			Kind:  token.STRING,
-			Value: fmt.Sprintf("`%s`", tags),
-		},
+		Tag:   astbuilder.TestLiteralf("`%s`", tags),
 	}
 
 	// generate validation comments:

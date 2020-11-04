@@ -84,7 +84,7 @@ func defineField(fieldName string, fieldType ast.Expr, tag string) *ast.Field {
 
 	result := &ast.Field{
 		Type: fieldType,
-		Tag:  astbuilder.LiteralString(tag),
+		Tag:  astbuilder.TextLiteral(tag),
 	}
 
 	if fieldName != "" {

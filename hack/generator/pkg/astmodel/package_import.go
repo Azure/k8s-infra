@@ -40,7 +40,7 @@ func (pi PackageImport) AsImportSpec() *ast.ImportSpec {
 
 	return &ast.ImportSpec{
 		Name: name,
-		Path: astbuilder.LiteralString(pi.packageReference.PackagePath()),
+		Path: astbuilder.StringLiteral(pi.packageReference.PackagePath()),
 	}
 }
 

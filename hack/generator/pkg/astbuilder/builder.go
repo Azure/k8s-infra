@@ -223,7 +223,7 @@ func FormatError(formatString string, args ...ast.Expr) ast.Expr {
 	var callArgs []ast.Expr
 	callArgs = append(
 		callArgs,
-		LiteralString(formatString))
+		StringLiteral(formatString))
 	callArgs = append(callArgs, args...)
 	return CallQualifiedFuncByName("fmt", "Errorf", callArgs...)
 }
