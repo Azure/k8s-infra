@@ -23,7 +23,7 @@ tasks:
   # Note: test-int can be run manually but is not included here so as to avoid slow
   # tests bogging down the dev cycle
   default:
-    desc: Perform all local pre-commit tasks.
+    desc: Perform all fast local pre-commit tasks.
     deps: [generate-crds, header-check, lint, format-code, test]
   
   # There is a ci specific target because we want the CI pass to fail if
@@ -48,20 +48,21 @@ tasks:
 
   ci-rest:
     # these can all be run in parallel
-    deps: [header-check, lint, test-cover, test-integration-envtest]
+    deps: [header-check, lint-full, test-cover, test-integration-envtest]
 
   ci-rest-live:
     # these can all be run in parallel
-    deps: [header-check, lint, test-cover, test-integration-envtest-live]
+    deps: [header-check, lint-full, test-cover, test-integration-envtest-live]
 
   lint:
-    desc: Run lint checks.
+    desc: Run fast lint checks.
     cmds: 
     - golangci-lint run -v {{.GENERATED_GO_DIRS_TO_TEST|catLines}}
 
   lint-full:
     desc: Run all lint checks.
-    cmds: [golangci-lint run -v --fast=false]
+    cmds: 
+    - golangci-lint run -v --fast=false {{.GENERATED_GO_DIRS_TO_TEST|catLines}}
 
   format-code:
     desc: Ensure all code is correctly formatted.

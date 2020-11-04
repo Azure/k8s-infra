@@ -18,11 +18,11 @@ vars:
 
 tasks:
   default:
-    desc: Perform all local pre-commit tasks.
+    desc: Perform all fast local pre-commit tasks.
     deps: [header-check, format-code, lint, test, generate-arm]
 
   ci: 
-    deps: [header-check, lint, test-cover, generate-arm]
+    deps: [header-check, lint-full, test-cover, generate-arm]
 
   build:
     desc: Generate the {{.GENERATOR_APP}} binary.
@@ -47,7 +47,7 @@ tasks:
     - gcov2lcov -infile cover.out -outfile coverage.lcov
 
   lint:
-    desc: Run lint checks.
+    desc: Run fast lint checks.
     cmds:
     - golangci-lint run -v
 
