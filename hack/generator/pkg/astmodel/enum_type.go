@@ -91,21 +91,11 @@ func (enum *EnumType) createBaseDeclaration(
 
 func (enum *EnumType) createValueDeclaration(name TypeName, value EnumValue) ast.Spec {
 
-	enumIdentifier := ast.NewIdent(name.Name())
 	valueIdentifier := ast.NewIdent(GetEnumValueId(name, value))
-
-	valueLiteral := ast.BasicLit{
-		Kind:  token.STRING,
-		Value: value.Value,
-	}
-
 	valueSpec := &ast.ValueSpec{
 		Names: []*ast.Ident{valueIdentifier},
 		Values: []ast.Expr{
-			&ast.CallExpr{
-				Fun:  enumIdentifier,
-				Args: []ast.Expr{&valueLiteral},
-			},
+			astbuilder.CallFuncByName(name.Name(), astbuilder.LiteralString(value.Value)),
 		},
 	}
 
