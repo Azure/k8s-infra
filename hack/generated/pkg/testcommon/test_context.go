@@ -83,7 +83,7 @@ func (tc TestContext) ForTest(t *testing.T) (PerTestContext, error) {
 }
 
 func createRecorder(testName string, recordReplay bool) (autorest.Authorizer, string, *recorder.Recorder, error) {
-	cassetteName := "fixtures/" + testName
+	cassetteName := "recordings/" + testName
 
 	var err error
 	var r *recorder.Recorder
