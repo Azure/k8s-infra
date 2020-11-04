@@ -16,24 +16,15 @@ vars:
 tasks:
   default:
     desc: Perform all fast local pre-commit tasks.
-    cmds:
-    # golangci-lint cannot be run in parallel
-    - task: generator:quick-checks
-    - task: controller:quick-checks
+    deps: [generator:quick-checks, controller:quick-checks]
 
   ci:
     desc: Run all CI checks.
-    cmds:
-    # golangci-lint cannot be run in parallel
-    - task: generator:ci
-    - task: controller:ci
+    deps: [generator:ci, controller:ci]
 
   ci-live:
     desc: Run all CI checks with live Azure resources. Requires that auth environment variables are set.
-    cmds:
-    # golangci-lint cannot be run in parallel
-    - task: generator:ci
-    - task: controller:ci-live
+    deps: [generator:ci, controller:ci-live]
 
   # Generator targets:
   generator:quick-checks:
