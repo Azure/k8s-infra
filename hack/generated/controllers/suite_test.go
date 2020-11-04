@@ -20,7 +20,6 @@ import (
 
 const (
 	TestNamespace          = "k8s-infra-test-ns"
-	DefaultTestRegion      = "westus" // Could make this an env variable if we wanted
 	DefaultResourceTimeout = 2 * time.Minute
 )
 
@@ -37,7 +36,7 @@ func setup(options Options) {
 		options.useEnvTest,
 		options.recordReplay,
 		TestNamespace,
-		DefaultTestRegion,
+		testcommon.DefaultTestRegion,
 		controllers.ResourceStateAnnotation,
 		controllers.ResourceErrorAnnotation)
 

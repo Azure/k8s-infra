@@ -39,6 +39,12 @@ tasks:
     cmds:
     - go test ./... -tags=noexit
 
+  generator:format-code:
+    desc: Ensure all code is correctly formatted.
+    dir: "{{.GENERATOR_ROOT}}"
+    cmds: 
+    - go fmt .
+
   generator:lint:
     desc: Run {{.GENERATOR_APP}} fast lint checks.
     dir: "{{.GENERATOR_ROOT}}"
@@ -87,7 +93,7 @@ tasks:
 
   # Controller targets:
   controller:quick-checks:
-    deps: [header-check, generated:format-code, generated:lint, generated:test]
+    deps: [header-check, controller:format-code, controller:lint, controller:test]
 
   controller:ci:
     deps: [header-check, controller:lint-full, controller:test-cover, controller:test-integration-envtest-cover]
@@ -155,7 +161,7 @@ tasks:
     deps: [controller:copy-valid-crds]
     cmds:
     # -race fails at the moment in controller-runtime
-    - go test ./controllers/... -envtest -recordReplay -v
+    - go test ./... -envtest -recordReplay -v
 
   controller:test-integration-envtest-cover:
     desc: Run integration tests with envtest using record/replay and output coverage.
@@ -163,7 +169,7 @@ tasks:
     deps: [controller:copy-valid-crds]
     cmds:
     # -race fails at the moment in controller-runtime
-    - go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." ./controllers/... -envtest -recordReplay -v
+    - go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." ./... -envtest -recordReplay -v
     - gcov2lcov -infile cover-integration-envtest.out -outfile coverage-integration-envtest.lcov
 
   controller:test-integration-envtest-live:
@@ -172,7 +178,7 @@ tasks:
     deps: [controller:copy-valid-crds, cleanup-azure-resources]
     cmds:
     # -race fails at the moment in controller-runtime
-    - go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." ./controllers/... -envtest  -v
+    - go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." ./... -envtest  -v
     - gcov2lcov -infile cover-integration-envtest.out -outfile coverage-integration-envtest.lcov
 
   generate-crds:

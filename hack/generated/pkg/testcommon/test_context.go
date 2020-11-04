@@ -22,6 +22,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	DefaultTestRegion = "westus" // Could make this an env variable if we wanted
+)
+
 type TestContext struct {
 	AzureRegion  string
 	NameConfig   *ResourceNameConfig
@@ -33,6 +37,7 @@ type PerTestContext struct {
 	T                   *testing.T
 	AzureClientRecorder *recorder.Recorder
 	AzureClient         armclient.Applier
+	AzureMatch          *ArmMatcher
 	Namer               ResourceNamer
 	TestName            string
 }
@@ -77,6 +82,7 @@ func (tc TestContext) ForTest(t *testing.T) (PerTestContext, error) {
 		T:                   t,
 		Namer:               tc.NameConfig.NewResourceNamer(t.Name()),
 		AzureClient:         armClient,
+		AzureMatch:          NewArmMatcher(armClient),
 		AzureClientRecorder: recorder,
 		TestName:            t.Name(),
 	}, nil
