@@ -21,6 +21,10 @@ If you want to use this:
 
 ### Without VS Code
 
-The same `Dockerfile` can also be used if you are not using VS Code; it is stored under `.devcontainer/devcontainer.json` and can be used to create a development container with all the tooling preinstalled.
+The same `Dockerfile` can also be used if you are not using VS Code; it is stored in the root `.devcontainer` directory and can be used to create a development container with all the tooling preinstalled.
 
 ## Running integration tests
+
+Run `task generated:test-integration-envtest`.
+
+TODO: instructions on record/replay usage, etc.
