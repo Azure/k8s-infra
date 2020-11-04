@@ -30,15 +30,28 @@ tasks:
   # the code has not been go fmt-ed, whereas locally we want "task (default)"
   # to just format the code for you
   ci:
+    # CI with record-replay resources
     # no description as it is not for local use
     # order must be explicit as CRDs must be generated before header check
     cmds:
     - task: generate-crds
     - task: ci-rest
 
+  ci-live:
+    # CI with live Azure resources
+    # no description as it is not for local use
+    # order must be explicit as CRDs must be generated before header check
+    cmds:
+    - task: generate-crds
+    - task: ci-rest-live
+
   ci-rest:
     # these can all be run in parallel
     deps: [header-check, lint, test-cover, test-integration-envtest]
+
+  ci-rest-live:
+    # these can all be run in parallel
+    deps: [header-check, lint, test-cover, test-integration-envtest-live]
 
   lint:
     desc: Run lint checks.

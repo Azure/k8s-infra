@@ -14,3 +14,9 @@ tasks:
     cmds:
     - task: generator:ci
     - task: generated:ci
+
+  ci-live:
+    desc: Run all CI checks with live Azure resources.
+    cmds:
+    - task: generator:ci
+    - task: generated:ci-live
