@@ -42,6 +42,7 @@ tasks:
     # no description as it is not for local use
     # order must be explicit as CRDs must be generated before header check
     cmds:
+    - task: cleanup-azure-resources
     - task: generate-crds
     - task: ci-rest-live
 
