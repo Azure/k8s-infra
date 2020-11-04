@@ -14,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -226,7 +225,7 @@ func (tc *KubePerTestContext) CreateNewTestResourceGroup(wait WaitCondition) (*r
 	return rg, nil
 }
 
-func AsOwner(obj v1.ObjectMeta) genruntime.KnownResourceReference {
+func AsOwner(obj metav1.ObjectMeta) genruntime.KnownResourceReference {
 	return genruntime.KnownResourceReference{
 		Name: obj.Name,
 	}
