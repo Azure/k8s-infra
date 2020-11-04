@@ -154,6 +154,14 @@ func (o ObjectSerializationTestCase) createTestRunner() ast.Decl {
 		token.DEFINE,
 		astbuilder.CallQualifiedFuncByName("gopter", "DefaultTestParameters"))
 
+	configureMaxSize := astbuilder.SimpleAssignment(
+		&ast.SelectorExpr{
+			X:   parameters,
+			Sel: ast.NewIdent("MaxSize"),
+		},
+		token.ASSIGN,
+		astbuilder.IntLiteral(10))
+
 	// properties := gopter.NewProperties(parameters)
 	defineProperties := astbuilder.SimpleAssignment(
 		properties,
@@ -184,6 +192,7 @@ func (o ObjectSerializationTestCase) createTestRunner() ast.Decl {
 	fn := astbuilder.NewTestFuncDetails(
 		o.testName,
 		defineParameters,
+		configureMaxSize,
 		defineProperties,
 		defineTestCase,
 		runTests)

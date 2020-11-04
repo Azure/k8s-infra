@@ -44,3 +44,11 @@ func StringLiteral(content string) *ast.BasicLit {
 func StringLiteralf(format string, a ...interface{}) *ast.BasicLit {
 	return StringLiteral(fmt.Sprintf(format, a...))
 }
+
+// IntLiteral() create the AST node for a literal integer value
+func IntLiteral(value int) *ast.BasicLit {
+	return &ast.BasicLit{
+		Value: fmt.Sprint(value),
+		Kind:  token.INT,
+	}
+}
