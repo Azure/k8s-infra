@@ -96,10 +96,10 @@ tasks:
     deps: [header-check, controller:format-code, controller:lint, controller:test]
 
   controller:ci:
-    deps: [header-check, controller:lint-full, controller:test-cover, controller:test-integration-envtest-cover]
+    deps: [header-check, controller:lint-full, controller:test-integration-envtest-cover]
 
   controller:ci-live:
-    deps: [header-check, controller:lint-full, controller:test-cover, controller:test-integration-envtest-live]
+    deps: [header-check, controller:lint-full, controller:test-integration-envtest-live]
 
   controller:lint:
     desc: Run fast lint checks.
