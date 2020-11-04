@@ -120,7 +120,7 @@ type KubePerTestContext struct {
 	Match      *KubeMatcher
 }
 
-func (tc *KubePerTestContext) createTestNamespace() error {
+func (tc KubePerTestContext) createTestNamespace() error {
 	ctx := context.Background()
 
 	ns := &corev1.Namespace{
@@ -188,7 +188,7 @@ const (
 
 // CreateNewTestResourceGroup creates a new randomly-named resource group
 // and registers it to be deleted up when the context is cleaned up
-func (tc *KubePerTestContext) CreateNewTestResourceGroup(wait WaitCondition) (*resources.ResourceGroup, error) {
+func (tc KubePerTestContext) CreateNewTestResourceGroup(wait WaitCondition) (*resources.ResourceGroup, error) {
 	ctx := context.Background()
 
 	rg := tc.NewTestResourceGroup()
