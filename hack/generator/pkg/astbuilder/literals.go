@@ -37,5 +37,5 @@ func StringLiteral(content string) *ast.BasicLit {
 // StringLiteralf() creates the AST node for a literal string value based on a format string
 // Leading and trailing quotes are added as required and any existing quotes are escaped
 func StringLiteralf(format string, a ...interface{}) *ast.BasicLit {
-	return StringLiteral(fmt.Sprintf(format, a))
+	return StringLiteral(fmt.Sprintf(format, a...))
 }

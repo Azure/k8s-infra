@@ -118,7 +118,7 @@ func (builder *convertFromArmBuilder) assertInputTypeIsArm() []ast.Stmt {
 		result,
 		astbuilder.ReturnIfNotOk(
 			astbuilder.FormatError(
-				fmt.Sprintf("\"unexpected type supplied for %s() function. Expected %s, got %%T\"",
+				fmt.Sprintf("unexpected type supplied for %s() function. Expected %s, got %%T",
 					builder.methodName,
 					builder.armTypeIdent.Name),
 				builder.inputIdent)))
