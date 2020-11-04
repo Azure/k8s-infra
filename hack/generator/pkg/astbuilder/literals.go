@@ -30,7 +30,11 @@ func TestLiteralf(format string, a ...interface{}) *ast.BasicLit {
 // Leading and trailing quotes are added as required and any existing quotes are escaped
 func StringLiteral(content string) *ast.BasicLit {
 	// Pay attention to the string escaping here!
-	c := "\"" + strings.ReplaceAll(content, "\"", "\\\"") + "\""
+	escaped := content
+	escaped = strings.ReplaceAll(escaped, "\\", "\\\\")
+	escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
+
+	c := "\"" + escaped + "\""
 	return TextLiteral(c)
 }
 
