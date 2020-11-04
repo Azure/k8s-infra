@@ -18,26 +18,29 @@ tasks:
     desc: Perform all fast local pre-commit tasks.
     cmds: 
     - task: generator:quick-checks
+    - task: generate-crds # required here to prevent it running twice in controller:quick-checks, remove once go-task dedupes dependencies
     - task: controller:quick-checks
 
   ci:
     desc: Run all CI checks.
     cmds: 
     - task: generator:ci
+    - task: generate-crds # required here to prevent it running twice in controller:ci, remove once go-task dedupes dependencies
     - task: controller:ci
 
   ci-live:
     desc: Run all CI checks with live Azure resources. Requires that auth environment variables are set.
     cmds: 
     - task: generator:ci
+    - task: generate-crds # required here to prevent it running twice in controller:ci-live, remove once go-task dedupes dependencies
     - task: controller:ci-live
 
   # Generator targets:
   generator:quick-checks:
-    deps: [header-check, generator:format-code, generator:lint, generator:test, generate-types]
+    deps: [header-check, generator:format-code, generator:lint, generator:test]
 
   generator:ci:
-    deps: [header-check, generator:lint-full, generator:test-cover, generate-types]
+    deps: [header-check, generator:lint-full, generator:test-cover]
 
   generator:test:
     desc: Run {{.GENERATOR_APP}} unit tests.
@@ -109,14 +112,14 @@ tasks:
 
   controller:lint:
     desc: Run fast lint checks.
-    deps: [generate-types]
+    deps: [generate-crds]
     dir: "{{.CONTROLLER_ROOT}}"
     cmds: 
     - golangci-lint run -v $({{.GENERATED_DIRS_TO_LINT_CMD}})
 
   controller:lint-full:
     desc: Run all lint checks.
-    deps: [generate-types]
+    deps: [generate-crds]
     dir: "{{.CONTROLLER_ROOT}}"
     cmds: 
     - golangci-lint run -v --fast=false $({{.GENERATED_DIRS_TO_LINT_CMD}})
@@ -130,12 +133,14 @@ tasks:
   controller:test:
     desc: Run {{.CONTROLLER_APP}} unit tests.
     dir: "{{.CONTROLLER_ROOT}}"
+    deps: [generate-crds]
     cmds:
     - go test $({{.GENERATED_DIRS_TO_LINT_CMD}}) -short -tags=noexit
 
   controller:test-cover:
     desc: Run {{.CONTROLLER_APP}} unit tests and output coverage.
     dir: "{{.CONTROLLER_ROOT}}"
+    deps: [generate-crds]
     cmds: 
     - go test -short -tags=noexit -race -covermode atomic -coverprofile=cover.out -coverpkg="./..." $({{.GENERATED_DIRS_TO_LINT_CMD}})
     - gcov2lcov -infile cover.out -outfile coverage.lcov
