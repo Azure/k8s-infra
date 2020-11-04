@@ -34,7 +34,7 @@ tasks:
 
   # Generator targets:
   generator:quick-checks:
-    deps: [header-check, generator:format-code, generator:lint, generator:test]
+    deps: [header-check, generator:format-code, generator:lint, generator:test, generate-types]
 
   generator:ci:
     deps: [header-check, generator:lint-full, generator:test-cover, generate-types]
