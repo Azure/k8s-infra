@@ -84,7 +84,7 @@ type Options struct {
 	CreateDeploymentName func(azureName string) (string, error)
 }
 
-func (o *Options) setDefaults() {
+func (options *Options) setDefaults() {
 	// default requeue delay to 5 seconds
 	if options.RequeueDelay == 0 {
 		options.RequeueDelay = 5 * time.Second
