@@ -37,14 +37,6 @@ jobs:
           flag-name: pr-generator-${{ runner.os }}
           parallel: true
 
-      - name: Upload generated coverage to coveralls
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.github_token }}
-          path-to-lcov: ./hack/generated/coverage.lcov
-          flag-name: pr-generated-${{ runner.os }}
-          parallel: true
-
       - name: Upload generated integration coverage to coveralls
         uses: coverallsapp/github-action@master
         with:
