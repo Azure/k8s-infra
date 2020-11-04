@@ -80,11 +80,26 @@ type Options struct {
 	controller.Options
 
 	// options specific to our controller
-	RequeueDelay            time.Duration
-	DeploymentNameGenerator func(azureName string) (string, error)
+	RequeueDelay         time.Duration
+	CreateDeploymentName func(azureName string) (string, error)
+}
+
+func (o *Options) setDefaults() {
+	// default requeue delay to 5 seconds
+	if options.RequeueDelay == 0 {
+		options.RequeueDelay = 5 * time.Second
+	}
+
+	// override deployment name generator, if provided
+	if options.CreateDeploymentName == nil {
+		options.CreateDeploymentName = createDeploymentName
+	}
 }
 
 func RegisterAll(mgr ctrl.Manager, applier armclient.Applier, objs []runtime.Object, log logr.Logger, options Options) []error {
+
+	options.setDefaults()
+
 	var errs []error
 	for _, obj := range objs {
 		if err := register(mgr, applier, obj, log, options); err != nil {
@@ -124,17 +139,7 @@ func register(mgr ctrl.Manager, applier armclient.Applier, obj runtime.Object, l
 		Recorder:             mgr.GetEventRecorderFor(controllerName),
 		GVK:                  gvk,
 		RequeueDelay:         options.RequeueDelay,
-		CreateDeploymentName: CreateDeploymentName,
-	}
-
-	// default requeue delay to 5 seconds
-	if reconciler.RequeueDelay == 0 {
-		reconciler.RequeueDelay = 5 * time.Second
-	}
-
-	// override deployment name generator, if provided
-	if options.DeploymentNameGenerator != nil {
-		reconciler.CreateDeploymentName = options.DeploymentNameGenerator
+		CreateDeploymentName: options.CreateDeploymentName,
 	}
 
 	ctrlBuilder := ctrl.NewControllerManagedBy(mgr).

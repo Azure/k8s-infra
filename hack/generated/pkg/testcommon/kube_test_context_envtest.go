@@ -83,7 +83,7 @@ func createEnvtestContext(perTestContext PerTestContext) (*KubeBaseTestContext, 
 		controllers.KnownTypes,
 		klogr.New(),
 		controllers.Options{
-			DeploymentNameGenerator: func(azureName string) (string, error) {
+			CreateDeploymentName: func(azureName string) (string, error) {
 				result := uuid.NewSHA1(uuid.Nil, []byte(perTestContext.TestName+"/"+azureName))
 				return fmt.Sprintf("k8s_%s", result.String()), nil
 			},
