@@ -26,7 +26,7 @@ func createEnvtestContext(perTestContext PerTestContext) (*KubeBaseTestContext, 
 
 	environment := envtest.Environment{
 		CRDDirectoryPaths: []string{
-			"../config/crd/bases/valid",
+			"../config/crd/bases/valid", // TODO: remove '/valid' once all CRDs are valid
 		},
 	}
 
