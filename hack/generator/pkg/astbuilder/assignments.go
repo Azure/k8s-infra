@@ -11,7 +11,7 @@ import (
 )
 
 // SimpleAssignment performs a simple assignment like:
-// 	   <lhs> := <rhs>       // tok = token.DEFINE
+//     <lhs> := <rhs>       // tok = token.DEFINE
 // or  <lhs> = <rhs>        // tok = token.ASSIGN
 func SimpleAssignment(lhs ast.Expr, tok token.Token, rhs ast.Expr) *ast.AssignStmt {
 	return &ast.AssignStmt{

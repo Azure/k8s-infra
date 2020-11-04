@@ -71,6 +71,7 @@ func LocalVariableDeclaration(ident *ast.Ident, typ ast.Expr, comment string) as
 }
 
 // VariableDeclaration performs a global variable declaration like:
+//  // <comment>
 // 	var <ident> <typ>
 // For a LocalVariable within a method, use LocalVariableDeclaration() to create an ast.Stmt instead
 func VariableDeclaration(ident *ast.Ident, typ ast.Expr, comment string) *ast.GenDecl {
