@@ -275,7 +275,7 @@ func (property *PropertyDefinition) AsField(codeGenerationContext *CodeGeneratio
 		Doc:   &ast.CommentGroup{},
 		Names: names,
 		Type:  property.PropertyType().AsType(codeGenerationContext),
-		Tag:   astbuilder.TestLiteralf("`%s`", tags),
+		Tag:   astbuilder.TextLiteralf("`%s`", tags),
 	}
 
 	// generate validation comments:
