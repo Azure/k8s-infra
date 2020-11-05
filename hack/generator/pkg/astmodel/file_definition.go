@@ -135,9 +135,7 @@ func (file *FileDefinition) generateImports() *PackageImportSet {
 	var requiredImports = NewPackageImportSet()
 
 	for _, s := range file.definitions {
-		for _, r := range s.RequiredPackageReferences().AsSlice() {
-			requiredImports.AddImportOfReference(r)
-		}
+		requiredImports.AddImportsOfReferences(s.RequiredPackageReferences().AsSlice()...)
 	}
 
 	// Don't need to import the current package
