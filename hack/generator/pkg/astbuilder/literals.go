@@ -21,8 +21,8 @@ func TextLiteral(content string) *ast.BasicLit {
 	}
 }
 
-// TestLiteralf() creates the AST node for literal text based on a format string
-func TestLiteralf(format string, a ...interface{}) *ast.BasicLit {
+// TextLiteralf() creates the AST node for literal text based on a format string
+func TextLiteralf(format string, a ...interface{}) *ast.BasicLit {
 	return TextLiteral(fmt.Sprintf(format, a...))
 }
 
