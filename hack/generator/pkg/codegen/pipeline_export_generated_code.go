@@ -237,9 +237,9 @@ func (export *progressMeter) Log() {
 		return
 	}
 
-	ellapsed := time.Since(started).Round(time.Millisecond)
+	elapsed := time.Since(started).Round(time.Millisecond)
 	if export.label != "" {
-		klog.V(2).Infof("Wrote %d files containing %d definitions for %v in %v", export.files, export.definitions, export.label, ellapsed)
+		klog.V(2).Infof("Wrote %d files containing %d definitions for %v in %v", export.files, export.definitions, export.label, elapsed)
 	} else {
 		klog.V(2).Infof("Wrote %d files containing %d definitions in %v", export.files, export.definitions, time.Since(started))
 	}
