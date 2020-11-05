@@ -105,7 +105,7 @@ func (r *ResourceType) WithKubernetesResourceInterfaceImpl(
 	}
 
 	return r.WithInterface(NewInterfaceImplementation(
-		MakeTypeName(MakeGenRuntimePackageReference(), "KubernetesResource"),
+		MakeTypeName(GenRuntimeReference, "KubernetesResource"),
 		ownerFunc,
 		azureNameFunc)), nil
 }
@@ -215,7 +215,7 @@ func (k *objectFunction) Name() string {
 
 func (k *objectFunction) RequiredPackageReferences() *PackageReferenceSet {
 	// We only require GenRuntime
-	return NewPackageReferenceSet(MakeGenRuntimePackageReference())
+	return NewPackageReferenceSet(GenRuntimeReference)
 }
 
 func (k *objectFunction) References() TypeNameSet {

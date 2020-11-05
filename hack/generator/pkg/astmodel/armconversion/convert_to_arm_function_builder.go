@@ -14,7 +14,7 @@ import (
 	ast "github.com/dave/dst"
 )
 
-var KubernetesResourceInterfaceName astmodel.TypeName = astmodel.MakeTypeName(astmodel.MakeGenRuntimePackageReference(), "KubernetesResource")
+var KubernetesResourceInterfaceName astmodel.TypeName = astmodel.MakeTypeName(astmodel.GenRuntimeReference, "KubernetesResource")
 
 const nameParameterString = "name"
 

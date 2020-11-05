@@ -70,6 +70,8 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 	types := genContext.GetTypesInCurrentPackage()
 
 	properties := o.makePropertyMap()
+
+	// Find all the simple generators (those with no external dependencies)
 	simpleGenerators, err := o.createGenerators(properties, genPackageName, types, o.createIndependentGenerator)
 	if err != nil {
 		errs = append(errs, err)
@@ -77,12 +79,15 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 
 	haveSimpleGenerators := len(simpleGenerators) > 0
 
+	// Find all the complex generators (dependent on other generators we'll be generating elsewhere)
 	relatedGenerators, err := o.createGenerators(properties, genPackageName, types, o.createRelatedGenerator)
 	if err != nil {
 		errs = append(errs, err)
 	}
 
 	haveRelatedGenerators := len(relatedGenerators) > 0
+
+	// Remove generators from our
 
 	// TODO - enable this once we reduce the noise
 	// TODO - work out how to create a generator for a type in a different package
@@ -122,16 +127,19 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 
 func (o ObjectSerializationTestCase) RequiredImports() *PackageImportSet {
 	result := NewPackageImportSet()
-	result.AddImportOfReference(CmpReference)
-	result.AddImportOfReference(CmpOptsReference)
+
+	// Standard Go Packages
+	result.AddImportsOfReferences(JsonReference, ReflectReference, TestingReference)
+
+	// Cmp
+	result.AddImportsOfReferences(CmpReference, CmpOptsReference)
+
+	// Gopter
+	result.AddImportsOfReferences(GopterReference, GopterGenReference, GopterPropReference)
+
+	// Other References
 	result.AddImportOfReference(DiffReference)
-	result.AddImportOfReference(GopterReference)
-	result.AddImportOfReference(GopterGenReference)
-	result.AddImportOfReference(GopterPropReference)
-	result.AddImportOfReference(JsonReference)
 	result.AddImportOfReference(PrettyReference)
-	result.AddImportOfReference(ReflectReference)
-	result.AddImportOfReference(TestingReference)
 
 	return result
 }
