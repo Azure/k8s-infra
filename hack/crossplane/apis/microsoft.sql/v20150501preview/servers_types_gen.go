@@ -4,14 +4,12 @@
 package v20150501preview
 
 import (
-	"github.com/Azure/k8s-infra/hack/crossplane/apis/deploymenttemplate/v20150101"
 	"github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:storageversion
 type Servers struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -70,14 +68,6 @@ type ServersParameters struct {
 	//ApiVersion: API Version of the resource type, optional when apiProfile is used
 	//on the template
 	ApiVersion ServersSpecApiVersion `json:"apiVersion"`
-	Comments   *string               `json:"comments,omitempty"`
-
-	//Condition: Condition of the resource
-	Condition *bool                   `json:"condition,omitempty"`
-	Copy      *v20150101.ResourceCopy `json:"copy,omitempty"`
-
-	//DependsOn: Collection of resources this resource depends on
-	DependsOn []string `json:"dependsOn,omitempty"`
 
 	//Identity: Azure Active Directory identity configuration for a resource.
 	Identity *ResourceIdentity `json:"identity,omitempty"`
@@ -95,11 +85,6 @@ type ServersParameters struct {
 	ResourceGroupName         string              `json:"resourceGroupName"`
 	ResourceGroupNameRef      *v1alpha1.Reference `json:"resourceGroupNameRef,omitempty"`
 	ResourceGroupNameSelector *v1alpha1.Selector  `json:"resourceGroupNameSelector,omitempty"`
-
-	//Scope: Scope for the resource or deployment. Today, this works for two cases: 1)
-	//setting the scope for extension resources 2) deploying resources to the tenant
-	//scope in non-tenant scope deployments
-	Scope *string `json:"scope,omitempty"`
 
 	//Tags: Name-value pairs to add to the resource
 	Tags map[string]string `json:"tags,omitempty"`

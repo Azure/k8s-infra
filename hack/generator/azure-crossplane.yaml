@@ -74,10 +74,10 @@ exportFilters:
 #    name: 'ManagedServiceIdentity*'
 #    because: Has AnyType
 
-  - action: include
-    version: v20200501
-    group: microsoft.network
-    because: Including microsoft.network for Crossplane
+#  - action: include
+#    version: v20200501
+#    group: microsoft.network
+#    because: Including microsoft.network for Crossplane
   - action: include
     version: v20171001
     group: microsoft.cache
@@ -128,6 +128,12 @@ typeTransformers:
   # only readonly properties that have all been removed in the swagger
   # -> deployment template conversion.
 
+  - group: deploymenttemplate
+    name: ResourceLocations
+    target:
+      name: string
+    because: Modeling this as an enum doesn't work well in the context of CRDs because new regions are regularly added
+
   - group: microsoft.eventgrid
     version: v20190601
     name: Domains_Spec
@@ -141,6 +147,41 @@ typeTransformers:
     property: Properties
     remove: true
     because: it has no writable properties in swagger
+
+  - name: "*"
+    property: Condition
+    ifType:
+      name: bool
+      optional: true
+    remove: true
+    because: It exists on ARMResource but doesn't make sense in the context of a CRD
+  - name: "*"
+    property: Copy
+    ifType:
+      group: deploymenttemplate
+      version: v20150101
+      name: ResourceCopy
+      optional: true
+    remove: true
+    because: It exists on ARMResource but doesn't make sense in the context of a CRD
+  - name: "*"
+    property: DependsOn
+    remove: true
+    because: It exists on ARMResource but doesn't make sense in the context of a CRD
+  - name: "*"
+    property: Scope
+    ifType:
+      name: string
+      optional: true
+    remove: true
+    because: It exists on ARMResource but doesn't make sense in the context of a CRD
+  - name: "*"
+    property: Comments
+    ifType:
+      name: string
+      optional: true
+    remove: true
+    because: It exists on ARMResource but doesn't make sense in the context of a CRD
 
 status:
   schemaRoot: "./azure-rest-api-specs/specification"
