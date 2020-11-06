@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"time"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/pkg/errors"
@@ -27,11 +28,6 @@ func exportPackages(outputPath string) PipelineStage {
 			packages, err := CreatePackagesForDefinitions(types)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to assign generated definitions to packages")
-			}
-
-			packages, err = MarkLatestResourceVersionsForStorage(packages)
-			if err != nil {
-				return nil, errors.Wrapf(err, "unable to mark latest resource versions for as storage versions")
 			}
 
 			err = writeFiles(ctx, packages, outputPath)
@@ -71,60 +67,7 @@ func CreatePackagesForDefinitions(definitions astmodel.Types) (map[astmodel.Pack
 	return packages, nil
 }
 
-// MarkLatestResourceVersionsForStorage marks the latest version of each resource as the storage version
-func MarkLatestResourceVersionsForStorage(
-	packages map[astmodel.PackageReference]*astmodel.PackageDefinition) (map[astmodel.PackageReference]*astmodel.PackageDefinition, error) {
-
-	result := make(map[astmodel.PackageReference]*astmodel.PackageDefinition)
-
-	resourceLookup, err := groupResourcesByVersion(packages)
-	if err != nil {
-		return nil, err
-	}
-
-	for pkgRef, pkg := range packages {
-
-		resultPkg := astmodel.NewPackageDefinition(pkg.GroupName, pkg.PackageName, pkg.GeneratorVersion)
-		for _, def := range pkg.Definitions() {
-			// see if it is a resource
-			if resourceType, ok := def.Type().(*astmodel.ResourceType); ok {
-
-				unversionedName, err := getUnversionedName(def.Name())
-				if err != nil {
-					// should never happen as all resources have versioned names
-					return nil, err
-				}
-
-				allVersionsOfResource := resourceLookup[unversionedName]
-				latestVersionOfResource := allVersionsOfResource[len(allVersionsOfResource)-1]
-
-				thisPackagePath := def.Name().PackageReference.PackagePath()
-				latestPackagePath := latestVersionOfResource.Name().PackageReference.PackagePath()
-
-				// mark as storage version if it's the latest version
-				isLatestVersion := thisPackagePath == latestPackagePath
-				if isLatestVersion {
-					def = astmodel.MakeTypeDefinition(def.Name(), resourceType.MarkAsStorageVersion()).
-						WithDescription(def.Description())
-				}
-
-				resultPkg.AddDefinition(def)
-			} else {
-				// otherwise simply add it
-				resultPkg.AddDefinition(def)
-			}
-		}
-
-		result[pkgRef] = resultPkg
-	}
-
-	return result, nil
-}
-
 func writeFiles(ctx context.Context, packages map[astmodel.PackageReference]*astmodel.PackageDefinition, outputPath string) error {
-	fileCount := 0
-	definitionCount := 0
-
 	var pkgs []*astmodel.PackageDefinition
 	for _, pkg := range packages {
 		pkgs = append(pkgs, pkg)
@@ -139,7 +82,11 @@ func writeFiles(ctx context.Context, packages map[astmodel.PackageReference]*ast
 	})
 
 	// emit each package
-	klog.V(0).Infof("Writing output files into %q", outputPath)
+	klog.V(0).Infof("Writing %d packages into %q", len(pkgs), outputPath)
+
+	globalProgress := newProgressMeter()
+	groupProgress := newProgressMeter()
+
 	for _, pkg := range pkgs {
 		if ctx.Err() != nil { // check for cancellation
 			return ctx.Err()
@@ -160,53 +107,59 @@ func writeFiles(ctx context.Context, packages map[astmodel.PackageReference]*ast
 			return errors.Wrapf(err, "error writing definitions into %q", outputDir)
 		}
 
-		fileCount += count
-		definitionCount += pkg.DefinitionCount()
+		globalProgress.LogProgress("", pkg.DefinitionCount(), count)
+		groupProgress.LogProgress(pkg.GroupName, pkg.DefinitionCount(), count)
 	}
 
-	klog.V(0).Infof("Completed writing %v files containing %v definitions", fileCount, definitionCount)
+	globalProgress.Log()
+
 	return nil
 }
 
-func groupResourcesByVersion(packages map[astmodel.PackageReference]*astmodel.PackageDefinition) (map[unversionedName][]astmodel.TypeDefinition, error) {
-
-	result := make(map[unversionedName][]astmodel.TypeDefinition)
-
-	for _, pkg := range packages {
-		for _, def := range pkg.Definitions() {
-			if _, ok := def.Type().(*astmodel.ResourceType); ok {
-				name, err := getUnversionedName(def.Name())
-				if err != nil {
-					// this should never happen as resources will all have versioned names
-					return nil, errors.Wrapf(err, "Unable to extract unversioned name in groupResources")
-				}
-
-				result[name] = append(result[name], def)
-			}
-		}
+func newProgressMeter() *progressMeter {
+	return &progressMeter{
+		resetAt: time.Now(),
 	}
-
-	// order each set of resources by package name (== by version as these are sortable dates)
-	for _, slice := range result {
-		sort.Slice(slice, func(i, j int) bool {
-			return slice[i].Name().PackageReference.PackageName() < slice[j].Name().PackageReference.PackageName()
-		})
-	}
-
-	return result, nil
 }
 
-func getUnversionedName(name astmodel.TypeName) (unversionedName, error) {
-	if localRef, ok := name.PackageReference.AsLocalPackage(); ok {
-		group := localRef.Group()
-
-		return unversionedName{group, name.Name()}, nil
-	}
-
-	return unversionedName{}, errors.New("expected local reference")
+// progressMeter is a utility struct used to improve our reporting of progress while exporting files
+type progressMeter struct {
+	label       string
+	definitions int
+	files       int
+	resetAt     time.Time
 }
 
-type unversionedName struct {
-	group string
-	name  string
+// Log() writes a log message for our progress to this point
+func (export *progressMeter) Log() {
+	started := export.resetAt
+	export.resetAt = time.Now()
+
+	if export.definitions == 0 && export.files == 0 {
+		return
+	}
+
+	elapsed := time.Since(started).Round(time.Millisecond)
+	if export.label != "" {
+		klog.V(2).Infof("Wrote %d files containing %d definitions for %v in %v", export.files, export.definitions, export.label, elapsed)
+	} else {
+		klog.V(2).Infof("Wrote %d files containing %d definitions in %v", export.files, export.definitions, time.Since(started))
+	}
+
+	export.resetAt = time.Now()
+}
+
+// LogProgress() accumulates totals until a new label is supplied, when it will write a log message
+func (export *progressMeter) LogProgress(label string, definitions int, files int) {
+	if export.label != label {
+		// New group, output our current totals and reset
+		export.Log()
+		export.definitions = 0
+		export.files = 0
+		export.resetAt = time.Now()
+	}
+
+	export.label = label
+	export.definitions += definitions
+	export.files += files
 }
