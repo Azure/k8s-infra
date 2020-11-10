@@ -29,6 +29,6 @@ RUN sed -i '/^completions=/a kubectl\ngo\ntask' "/home/vscode/.bashrc"
 RUN echo 'complete -F __start_kubectl k' >> "/home/vscode/.bashrc"
 
 # Setup go-task completions
-RUN curl -sL "https://raw.githubusercontent.com/go-task/task/v3.0.0/completion/bash/task.bash" > "$HOME/.oh-my-bash/completions/task.completion.sh"
+RUN curl -sL "https://raw.githubusercontent.com/go-task/task/v3.0.0/completion/bash/task.bash" > "/home/vscode/.oh-my-bash/completions/task.completion.sh"
 
 ENV KIND_CLUSTER_NAME=k8sinfra
