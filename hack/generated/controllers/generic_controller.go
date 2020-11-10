@@ -689,8 +689,6 @@ func (gr *GenericReconciler) Patch(
 func (gr *GenericReconciler) isOwnerReady(ctx context.Context, data *ReconcileMetadata) (bool, error) {
 	_, err := gr.ResourceResolver.GetOwner(ctx, data.metaObj)
 	if err != nil {
-		data.log.Info("error", "Err", err)
-
 		var typedErr *armresourceresolver.OwnerNotFound
 		if errors.As(err, &typedErr) {
 			data.log.V(4).Info("Owner does not yet exist", "NamespacedName", typedErr.OwnerName)
