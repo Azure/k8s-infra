@@ -102,6 +102,9 @@ func (c *Client) PutDeployment(ctx context.Context, deployment *Deployment) (*De
 		autorest.ByUnmarshallingJSON(deployment),
 		autorest.ByClosing())
 	if err != nil {
+		// TODO: rethink how to do this
+		// set deployment ID even if it failed
+		deployment.Id = entityPath
 		tab.For(ctx).Error(err)
 		return nil, err
 	}
