@@ -55,6 +55,7 @@ func Test_ResourceGroup_CRUD(t *testing.T) {
 }
 
 func Test_StorageAccount_CRUD(t *testing.T) {
+	t.Parallel()
 
 	g := NewGomegaWithT(t)
 	ctx := context.Background()
