@@ -178,7 +178,7 @@ func (o ObjectSerializationTestCase) createTestRunner() ast.Decl {
 		"prop",
 		"ForAll",
 		o.idOfTestMethod(),
-		astbuilder.CallFunc(o.idOfGeneratorMethod(o.subject)))
+		astbuilder.CallFuncByName(o.idOfGeneratorMethod(o.subject)))
 
 	// properties.Property("...", prop.ForAll(RunTestForX, XGenerator())
 	defineTestCase := astbuilder.InvokeQualifiedFunc(
@@ -303,7 +303,7 @@ func (o ObjectSerializationTestCase) createGeneratorDeclaration(genType *ast.Sel
 	comment := fmt.Sprintf(
 		"Generator of %v instances for property testing - lazily instantiated by %v()",
 		o.Subject(),
-		o.idOfGeneratorMethod(o.subject).Name)
+		o.idOfGeneratorMethod(o.subject))
 
 	decl := astbuilder.VariableDeclaration(
 		o.idOfSubjectGeneratorGlobal(),
@@ -320,7 +320,7 @@ func (o ObjectSerializationTestCase) createGeneratorMethod(
 	haveRelatedGenerators bool) ast.Decl {
 
 	fn := &astbuilder.FuncDetails{
-		Name: o.idOfGeneratorMethod(o.subject),
+		Name: ast.NewIdent(o.idOfGeneratorMethod(o.subject)),
 		Returns: []*ast.Field{
 			{
 				Type: genType,
@@ -616,11 +616,11 @@ func (o ObjectSerializationTestCase) idOfGeneratorGlobal(name TypeName) *ast.Ide
 	return ast.NewIdent(id)
 }
 
-func (o ObjectSerializationTestCase) idOfGeneratorMethod(typeName TypeName) *ast.Ident {
+func (o ObjectSerializationTestCase) idOfGeneratorMethod(typeName TypeName) string {
 	name := o.idFactory.CreateIdentifier(
 		fmt.Sprintf("%vGenerator", typeName.Name()),
 		Exported)
-	return ast.NewIdent(name)
+	return name
 }
 
 func (o ObjectSerializationTestCase) idOfIndependentGeneratorsFactoryMethod() *ast.Ident {
