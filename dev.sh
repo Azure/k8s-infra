@@ -14,4 +14,5 @@ fi
 export PATH="$PATH:$TOOL_DEST:$TOOL_DEST/kubebuilder/bin"
 
 echo "Entering $SHELL with expanded PATH (use 'exit' to quit):"
+echo "Try running 'task -l' to see possible commands."
 $SHELL
