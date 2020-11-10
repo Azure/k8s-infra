@@ -18,6 +18,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
 // TODO: Naming?
@@ -142,6 +143,20 @@ func AuthorizerFromEnvironment() (autorest.Authorizer, error) {
 		return nil, err
 	}
 
+	// the previous never returns an error, so we must do
+	// the checks ourselves…
+	var errs []error
+	requiredEnvVars := []string{auth.SubscriptionID, auth.ClientSecret, auth.ClientID, auth.TenantID}
+	for _, requiredEnvVar := range requiredEnvVars {
+		if envSettings.Values[requiredEnvVar] == "" {
+			errs = append(errs, errors.Errorf("environment variable %s must be set", requiredEnvVar))
+		}
+	}
+
+	if len(errs) > 0 {
+		return nil, kerrors.NewAggregate(errs)
+	}
+
 	authorizer, err := envSettings.GetAuthorizer()
 	if err != nil {
 		return nil, err
@@ -208,9 +223,11 @@ func (atc *AzureTemplateClient) DeleteDeployment(ctx context.Context, deployment
 
 func (atc *AzureTemplateClient) GetDeployment(ctx context.Context, deploymentId string) (*Deployment, error) {
 	var deployment Deployment
-	if err := atc.RawClient.GetResource(ctx, idWithAPIVersion(deploymentId), &deployment); err != nil {
-		return &deployment, err
+	err := atc.RawClient.GetResource(ctx, idWithAPIVersion(deploymentId), &deployment)
+	if err != nil {
+		return nil, err
 	}
+
 	return &deployment, nil
 }
 
