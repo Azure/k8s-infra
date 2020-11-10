@@ -83,5 +83,3 @@ curl -L "https://go.kubebuilder.io/dl/2.3.1/${os}/${arch}" | tar -xz -C /tmp/
 mv "/tmp/kubebuilder_2.3.1_${os}_${arch}" "$KUBEBUILDER_DEST"
 
 echo "Installed tools: $(ls "$TOOL_DEST")"
-
-# TODO: update paths?
