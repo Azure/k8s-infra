@@ -87,6 +87,11 @@ func (codeGenContext *CodeGenerationContext) GetImportedDefinition(typeName Type
 // GetDefinitionsInPackage() returns the actual definitions from a specific package
 func (codeGenContext *CodeGenerationContext) GetTypesInPackage(ref PackageReference) (Types, bool) {
 	def, ok := codeGenContext.generatedPackages[ref]
+	if !ok {
+		// Package reference not found
+		return nil, false
+	}
+
 	return def.definitions, ok
 }
 
