@@ -67,30 +67,24 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 	}
 
 	var errs []error
-	types := genContext.GetTypesInCurrentPackage()
-
 	properties := o.makePropertyMap()
 
 	// Find all the simple generators (those with no external dependencies)
-	simpleGenerators, err := o.createGenerators(properties, genPackageName, types, o.createIndependentGenerator)
+	haveSimpleGenerators, simpleGenerators, err := o.createGenerators(properties, genPackageName, genContext, o.createIndependentGenerator)
 	if err != nil {
 		errs = append(errs, err)
 	}
-
-	haveSimpleGenerators := len(simpleGenerators) > 0
 
 	// Find all the complex generators (dependent on other generators we'll be generating elsewhere)
-	relatedGenerators, err := o.createGenerators(properties, genPackageName, types, o.createRelatedGenerator)
+	haveRelatedGenerators, relatedGenerators, err := o.createGenerators(properties, genPackageName, genContext, o.createRelatedGenerator)
 	if err != nil {
 		errs = append(errs, err)
 	}
 
-	haveRelatedGenerators := len(relatedGenerators) > 0
+	// Remove properties from our runtime
+	o.removeByPackage(properties, GenRuntimeReference)
 
-	// Remove generators from our
-
-	// TODO - enable this once we reduce the noise
-	// TODO - work out how to create a generator for a type in a different package
+	// Write errors for any properties we don't handle
 	for _, p := range properties {
 		errs = append(errs, errors.Errorf("No generator created for %v (%v)", p.PropertyName(), p.PropertyType()))
 	}
@@ -451,8 +445,8 @@ func (o ObjectSerializationTestCase) createGeneratorsFactoryMethod(methodName *a
 func (o ObjectSerializationTestCase) createGenerators(
 	properties map[PropertyName]*PropertyDefinition,
 	genPackageName string,
-	types Types,
-	factory func(name string, propertyType Type, genPackageName string, types Types) (ast.Expr, error)) ([]ast.Stmt, error) {
+	genContext *CodeGenerationContext,
+	factory func(name string, propertyType Type, genPackageName string, genContext *CodeGenerationContext) (ast.Expr, error)) (bool, []ast.Stmt, error) {
 
 	gensIdent := ast.NewIdent("gens")
 
@@ -462,7 +456,7 @@ func (o ObjectSerializationTestCase) createGenerators(
 	// Iterate over all properties, creating generators where possible
 	var errs []error
 	for name, prop := range properties {
-		g, err := factory(string(name), prop.PropertyType(), genPackageName, types)
+		g, err := factory(string(name), prop.PropertyType(), genPackageName, genContext)
 		if err != nil {
 			errs = append(errs, err)
 		} else if g != nil {
@@ -483,14 +477,16 @@ func (o ObjectSerializationTestCase) createGenerators(
 		delete(properties, name)
 	}
 
-	return result, kerrors.NewAggregate(errs)
+	return len(result) > 0, result, kerrors.NewAggregate(errs)
 }
 
+// createIndependentGenerator() will create a generator if the property has a primitive type that
+// is directly supported by a Gopter generator, returning nil if the property type isn't supported.
 func (o ObjectSerializationTestCase) createIndependentGenerator(
 	name string,
 	propertyType Type,
 	genPackageName string,
-	types Types) (ast.Expr, error) {
+	genContext *CodeGenerationContext) (ast.Expr, error) {
 
 	// Handle simple primitive properties
 	switch propertyType {
@@ -506,9 +502,10 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 
 	switch t := propertyType.(type) {
 	case TypeName:
+		types := genContext.GetTypesInCurrentPackage()
 		def, ok := types[t]
 		if ok {
-			return o.createIndependentGenerator(def.Name().name, def.theType, genPackageName, types)
+			return o.createIndependentGenerator(def.Name().name, def.theType, genPackageName, genContext)
 		}
 		return nil, nil
 
@@ -516,7 +513,7 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 		return o.createEnumGenerator(name, genPackageName, t)
 
 	case *OptionalType:
-		g, err := o.createIndependentGenerator(name, t.Element(), genPackageName, types)
+		g, err := o.createIndependentGenerator(name, t.Element(), genPackageName, genContext)
 		if err != nil {
 			return nil, err
 		} else if g != nil {
@@ -524,7 +521,7 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 		}
 
 	case *ArrayType:
-		g, err := o.createIndependentGenerator(name, t.Element(), genPackageName, types)
+		g, err := o.createIndependentGenerator(name, t.Element(), genPackageName, genContext)
 		if err != nil {
 			return nil, err
 		} else if g != nil {
@@ -532,12 +529,12 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 		}
 
 	case *MapType:
-		keyGen, err := o.createIndependentGenerator(name, t.KeyType(), genPackageName, types)
+		keyGen, err := o.createIndependentGenerator(name, t.KeyType(), genPackageName, genContext)
 		if err != nil {
 			return nil, err
 		}
 
-		valueGen, err := o.createIndependentGenerator(name, t.ValueType(), genPackageName, types)
+		valueGen, err := o.createIndependentGenerator(name, t.ValueType(), genPackageName, genContext)
 		if err != nil {
 			return nil, err
 		}
@@ -551,6 +548,8 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 	return nil, nil
 }
 
+// createRelatedGenerator() will create a generator if the property has a complex type that is
+// defined within the current package, returning nil if the property type isn't supported.
 func (o ObjectSerializationTestCase) createRelatedGenerator(
 	name string,
 	propertyType Type,
@@ -578,7 +577,7 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 		}
 
 	case *ArrayType:
-		g, err := o.createRelatedGenerator(name, t.Element(), genPackageName, types)
+		g, err := o.createRelatedGenerator(name, t.Element(), genPackageName, genContext)
 		if err != nil {
 			return nil, err
 		} else if g != nil {
