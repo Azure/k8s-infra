@@ -135,6 +135,13 @@ func (o ObjectSerializationTestCase) RequiredImports() *PackageImportSet {
 	result.AddImportOfReference(DiffReference)
 	result.AddImportOfReference(PrettyReference)
 
+	for _, prop := range o.objectType.Properties() {
+		ref := PackageReferenceOf(prop.propertyType)
+		if ref != nil {
+			result.AddImportOfReference(ref)
+		}
+	}
+
 	return result
 }
 
@@ -554,14 +561,24 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 	name string,
 	propertyType Type,
 	genPackageName string,
-	types Types) (ast.Expr, error) {
+	genContext *CodeGenerationContext) (ast.Expr, error) {
 
 	switch t := propertyType.(type) {
 	case TypeName:
-		_, ok := types[t]
+		_, ok := genContext.GetTypesInPackage(t.PackageReference)
 		if ok {
-			// Only create a generator for a property referencing a type in this package
-			return astbuilder.CallFunc(o.idOfGeneratorMethod(t)), nil
+			// This is a type we're defining, so we can create a generator for it
+			if t.PackageReference.Equals(genContext.CurrentPackage()) {
+				// create a generator for a property referencing a type in this package
+				return astbuilder.CallFuncByName(o.idOfGeneratorMethod(t)), nil
+			}
+
+			importName, err := genContext.GetImportedPackageName(t.PackageReference)
+			if err != nil {
+				return nil, err
+			}
+
+			return astbuilder.CallQualifiedFuncByName(importName, o.idOfGeneratorMethod(t)), nil
 		}
 
 		//TODO: Should we invoke a generator for stuff from our runtime package?
@@ -569,7 +586,7 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 		return nil, nil
 
 	case *OptionalType:
-		g, err := o.createRelatedGenerator(name, t.Element(), genPackageName, types)
+		g, err := o.createRelatedGenerator(name, t.Element(), genPackageName, genContext)
 		if err != nil {
 			return nil, err
 		} else if g != nil {
