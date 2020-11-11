@@ -95,7 +95,20 @@ func injectEmbeddedStructType() PipelineStage {
 func runGoldenTest(t *testing.T, path string, testConfig GoldenTestConfig) {
 	testName := strings.TrimPrefix(t.Name(), "TestGolden/")
 
+	codegen, err := NewTestCodeGenerator(testName, path, t, testConfig)
+	if err != nil {
+		t.Fatalf("failed to create code generator: %v", err)
+	}
+
+	err = codegen.Generate(context.TODO())
+	if err != nil {
+		t.Fatalf("codegen failed: %v", err)
+	}
+}
+
+func NewTestCodeGenerator(testName string, path string, t *testing.T, testConfig GoldenTestConfig) (*CodeGenerator, error) {
 	g := goldie.New(t)
+
 	testSchemaLoader := func(ctx context.Context, source string) (*gojsonschema.Schema, error) {
 		inputFile, err := ioutil.ReadFile(path)
 		if err != nil {
@@ -209,10 +222,7 @@ func runGoldenTest(t *testing.T, path string, testConfig GoldenTestConfig) {
 
 	codegen.pipeline = pipeline
 
-	err = codegen.Generate(context.TODO())
-	if err != nil {
-		t.Fatalf("codegen failed: %v", err)
-	}
+	return codegen, nil
 }
 
 func loadTestSchemaIntoTypes(
