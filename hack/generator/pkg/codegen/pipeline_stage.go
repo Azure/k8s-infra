@@ -19,7 +19,9 @@ type PipelineStage struct {
 	// Description of the stage to use when logging
 	description string
 	// Stage implementation
-	Action func(context.Context, astmodel.Types) (astmodel.Types, error)
+	action func(context.Context, astmodel.Types) (astmodel.Types, error)
+	// Tag used for filtering
+	targets []PipelineTarget
 }
 
 // MakePipelineStage creates a new pipeline stage that's ready for execution
@@ -30,7 +32,7 @@ func MakePipelineStage(
 	return PipelineStage{
 		id:          id,
 		description: description,
-		Action:      action,
+		action:      action,
 	}
 }
 
