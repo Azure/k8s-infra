@@ -83,7 +83,7 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 
 	// Remove properties from our runtime
 	o.removeByPackage(properties, GenRuntimeReference)
-	
+
 	o.removeByPackage(properties, ApiExtensionsReference)     // TODO: Handle generators for Arbitrary JSON
 	o.removeByPackage(properties, ApiExtensionsJsonReference) // TODO: Handle generators for Arbitrary JSON
 
@@ -139,8 +139,7 @@ func (o ObjectSerializationTestCase) RequiredImports() *PackageImportSet {
 	result.AddImportOfReference(PrettyReference)
 
 	for _, prop := range o.objectType.Properties() {
-		ref := PackageReferenceOf(prop.propertyType)
-		if ref != nil {
+		for _, ref := range prop.PropertyType().RequiredPackageReferences().AsSlice() {
 			result.AddImportOfReference(ref)
 		}
 	}
@@ -603,6 +602,22 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 		} else if g != nil {
 			return astbuilder.CallQualifiedFuncByName(genPackageName, "SliceOf", g), nil
 		}
+
+	case *MapType:
+		// We only support primitive types as keys
+		keyGen, err := o.createIndependentGenerator(name, t.KeyType(), genPackageName, genContext)
+		if err != nil {
+			return nil, err
+		}
+
+		valueGen, err := o.createRelatedGenerator(name, t.ValueType(), genPackageName, genContext)
+		if err != nil {
+			return nil, err
+		}
+
+		if keyGen != nil && valueGen != nil {
+			return astbuilder.CallQualifiedFuncByName(genPackageName, "MapOf", keyGen, valueGen), nil
+		}
 	}
 
 	// Not a property we can handle here
@@ -618,10 +633,9 @@ func (o *ObjectSerializationTestCase) removeByPackage(
 	var toRemove []PropertyName
 	for name, prop := range properties {
 		propertyType := prop.PropertyType()
-		if typeName, ok := propertyType.(*TypeName); ok {
-			if typeName.PackageReference.Equals(ref) {
-				toRemove = append(toRemove, name)
-			}
+		refs := propertyType.RequiredPackageReferences()
+		if refs.Contains(ref) {
+			toRemove = append(toRemove, name)
 		}
 	}
 

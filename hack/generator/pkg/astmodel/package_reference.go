@@ -25,14 +25,3 @@ type PackageReference interface {
 	// String returns the string representation of the package reference
 	String() string
 }
-
-func PackageReferenceOf(t Type) PackageReference {
-	switch t := t.(type) {
-	case TypeName:
-		return t.PackageReference
-	case *OptionalType:
-		return PackageReferenceOf(t.element)
-	}
-
-	return nil
-}
