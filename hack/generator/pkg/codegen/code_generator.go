@@ -20,18 +20,18 @@ type CodeGenerator struct {
 	pipeline      []PipelineStage
 }
 
-// NewCodeGeneratorFromConfigFile produces a new Generator with the given configuration file
-func NewCodeGeneratorFromConfigFile(configurationFile string) (*CodeGenerator, error) {
+// NewArmCodeGeneratorFromConfigFile produces a new Generator with the given configuration file
+func NewArmCodeGeneratorFromConfigFile(configurationFile string) (*CodeGenerator, error) {
 	configuration, err := config.LoadConfiguration(configurationFile)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewCodeGeneratorFromConfig(configuration, astmodel.NewIdentifierFactory())
+	return NewArmCodeGeneratorFromConfig(configuration, astmodel.NewIdentifierFactory())
 }
 
-// NewCodeGeneratorFromConfig produces a new Generator with the given configuration
-func NewCodeGeneratorFromConfig(configuration *config.Configuration, idFactory astmodel.IdentifierFactory) (*CodeGenerator, error) {
+// NewArmCodeGeneratorFromConfig produces a new Generator with the given configuration
+func NewArmCodeGeneratorFromConfig(configuration *config.Configuration, idFactory astmodel.IdentifierFactory) (*CodeGenerator, error) {
 	var pipeline []PipelineStage
 	pipeline = append(pipeline, loadSchemaIntoTypes(idFactory, configuration, defaultSchemaLoader))
 	pipeline = append(pipeline, corePipelineStages(idFactory, configuration)...)
