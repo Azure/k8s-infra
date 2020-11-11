@@ -15,6 +15,10 @@ var (
 	// References to our Libraries
 	GenRuntimeReference PackageReference = MakeExternalPackageReference(genRuntimePathPrefix)
 
+	// References to other libraries
+	ApiExtensionsReference     = MakeExternalPackageReference("k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1")
+	ApiExtensionsJsonReference = MakeExternalPackageReference("k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1/JSON")
+
 	// References to libraries used for testing
 	CmpReference        PackageReference = MakeExternalPackageReference("github.com/google/go-cmp/cmp")
 	CmpOptsReference    PackageReference = MakeExternalPackageReference("github.com/google/go-cmp/cmp/cmpopts")
