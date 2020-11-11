@@ -83,6 +83,9 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 
 	// Remove properties from our runtime
 	o.removeByPackage(properties, GenRuntimeReference)
+	
+	o.removeByPackage(properties, ApiExtensionsReference)     // TODO: Handle generators for Arbitrary JSON
+	o.removeByPackage(properties, ApiExtensionsJsonReference) // TODO: Handle generators for Arbitrary JSON
 
 	// Write errors for any properties we don't handle
 	for _, p := range properties {
@@ -604,6 +607,28 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 
 	// Not a property we can handle here
 	return nil, nil
+}
+
+// removeByNamespace() remove all properties with types from the specified namespace
+func (o *ObjectSerializationTestCase) removeByPackage(
+	properties map[PropertyName]*PropertyDefinition,
+	ref PackageReference) {
+
+	// Work out which properties need to be removed because their types come from the specified package
+	var toRemove []PropertyName
+	for name, prop := range properties {
+		propertyType := prop.PropertyType()
+		if typeName, ok := propertyType.(*TypeName); ok {
+			if typeName.PackageReference.Equals(ref) {
+				toRemove = append(toRemove, name)
+			}
+		}
+	}
+
+	// Remove them
+	for _, name := range toRemove {
+		delete(properties, name)
+	}
 }
 
 // makePropertyMap() makes a map of all the properties on our subject type
