@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) Microsoft Corporation.
+ * Licensed under the MIT license.
+ */
+
 package codegen
 
 import (
@@ -30,8 +35,8 @@ func TestNewTestCodeGeneratorCreatesRightPipeline(t *testing.T) {
 	gold := goldie.New(t)
 	g := NewGomegaWithT(t)
 
-	config := makeDefaultTestConfig()
-	codegen, err := NewTestCodeGenerator("Sample", "path", t, config)
+	cfg := makeDefaultTestConfig()
+	codegen, err := NewTestCodeGenerator("Sample", "path", t, cfg)
 	g.Expect(err).To(BeNil())
 
 	result := writePipeline("Expected Pipeline Stages for Test Code Generation", codegen)

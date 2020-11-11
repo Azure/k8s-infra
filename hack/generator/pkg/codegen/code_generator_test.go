@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) Microsoft Corporation.
+ * Licensed under the MIT license.
+ */
+
 package codegen
 
 import (
@@ -10,8 +15,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// Remove all stages from the pipeline with the given ids
-// Will panic if you specify an unknown id
+// RemoveStages will remove all stages from the pipeline with the given ids.
+// Only available for test builds.
+// Will panic if you specify an unknown id.
 func (generator *CodeGenerator) RemoveStages(stageIds ...string) {
 	stagesToRemove := make(map[string]bool)
 	for _, s := range stageIds {
@@ -38,8 +44,9 @@ func (generator *CodeGenerator) RemoveStages(stageIds ...string) {
 	generator.pipeline = pipeline
 }
 
-// Replace all uses of an existing stage with another one
-// Will panic if the existing stage is not found
+// ReplaceStage replaces all uses of an existing stage with another one.
+// Only available for test builds.
+// Will panic if the existing stage is not found.
 func (generator *CodeGenerator) ReplaceStage(existingStage string, stage PipelineStage) {
 	replaced := false
 	for i, s := range generator.pipeline {
@@ -54,7 +61,9 @@ func (generator *CodeGenerator) ReplaceStage(existingStage string, stage Pipelin
 	}
 }
 
-// Inject a new stage immediately after the first occurence of an existing stage
+// InjectStageAfter injects a new stage immediately after the first occurrence of an existing stage
+// Only available for test builds.
+// Will panic if the existing stage is not found.
 func (generator *CodeGenerator) InjectStageAfter(existingStage string, stage PipelineStage) {
 	injected := false
 
@@ -75,10 +84,14 @@ func (generator *CodeGenerator) InjectStageAfter(existingStage string, stage Pip
 	}
 }
 
+// HasStage tests whether the pipeline has a stage with the given id
+// Only available for test builds.
 func (generator *CodeGenerator) HasStage(id string) bool {
 	return generator.IndexOfStage(id) != -1
 }
 
+// IndexOfStage returns the index of the stage, if present, or -1 if not
+// Only available for test builds.
 func (generator *CodeGenerator) IndexOfStage(id string) int {
 	for i, s := range generator.pipeline {
 		if s.HasId(id) {

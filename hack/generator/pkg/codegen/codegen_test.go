@@ -109,6 +109,7 @@ func runGoldenTest(t *testing.T, path string, testConfig GoldenTestConfig) {
 func NewTestCodeGenerator(testName string, path string, t *testing.T, testConfig GoldenTestConfig) (*CodeGenerator, error) {
 	idFactory := astmodel.NewIdentifierFactory()
 	cfg := config.NewConfiguration()
+
 	codegen, err := NewCodeGeneratorFromConfig(cfg, idFactory)
 	if err != nil {
 		t.Fatalf("could not create code generator: %v", err)
