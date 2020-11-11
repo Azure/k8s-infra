@@ -9,6 +9,7 @@ import (
 	"fmt"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sort"
+	"strings"
 )
 
 // PackageImportSet represents a set of distinct PackageImport references
@@ -115,19 +116,35 @@ func (set *PackageImportSet) ApplyName(ref PackageReference, name string) {
 // ResolveConflicts() attempts to resolve any import conflicts and returns an error if any cannot be resolved
 func (set *PackageImportSet) ResolveConflicts() error {
 
-	// Determine if there are any conflicting imports -- these are imports with the same "name"
-	// but a different package path
-	imports := set.AsSortedSlice(ByNameInGroups)
+	// Try to resolve any conflicts by renaming imports where they occur
+	for _, imports := range set.createMapByPackageName() {
+		if len(imports) <= 1 {
+			// Only one import with this name, so no conflict
+			continue
+		}
+
+		// For each import, try to assign it an alternative name
+		for _, imp := range imports {
+			alternate := set.alternatePackageNameFor(imp)
+			set.AddImport(imp.WithName(alternate))
+		}
+	}
+
+	// Check for any remaining conflicts
 	var errs []error
-	for _, imp := range imports {
-		for _, otherImp := range imports {
-			if !imp.Equals(otherImp) && imp.PackageName() == otherImp.PackageName() {
-				errs = append(errs, fmt.Errorf("Import %v (named %v) and import %v (named %v) conflict",
-					imp.packageReference,
-					imp.PackageName(),
-					otherImp.packageReference,
-					otherImp.PackageName()))
-			}
+	for name, imports := range set.createMapByPackageName() {
+		if len(imports) <= 1 {
+			// Only one import, so no conflict
+			continue
+		}
+
+		for _, imp := range imports {
+			err := fmt.Errorf(
+				"import '%s' of '%s' conflicts with %d other import(s) of the same name",
+				name,
+				imp.packageReference.PackagePath(),
+				len(imports)-1)
+			errs = append(errs, err)
 		}
 	}
 
@@ -136,6 +153,17 @@ func (set *PackageImportSet) ResolveConflicts() error {
 	}
 
 	return nil
+}
+
+// Create a map where all imports are indexed by their package name
+func (set *PackageImportSet) createMapByPackageName() map[string][]PackageImport {
+	result := make(map[string][]PackageImport)
+	for _, imp := range set.imports {
+		name := imp.PackageName()
+		result[name] = append(result[name], imp)
+	}
+
+	return result
 }
 
 // ByNameInGroups() orders PackageImport instances by name,
@@ -164,4 +192,20 @@ func ByNameInGroups(left PackageImport, right PackageImport) bool {
 
 	// Explicit names are the same, both local or both external
 	return left.packageReference.String() < right.packageReference.String()
+}
+
+func (set *PackageImportSet) alternatePackageNameFor(imp PackageImport) string {
+	if imp.HasExplicitName() {
+		// Don't override explicit names
+		return imp.name
+	}
+
+	pathBits := strings.Split(imp.packageReference.PackagePath(), "/")
+	index := len(pathBits) - 1
+	if index > 0 {
+		index--
+	}
+
+	nameBits := strings.Split(pathBits[index], ".")
+	return nameBits[len(nameBits)-1]
 }

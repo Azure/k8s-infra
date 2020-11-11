@@ -234,10 +234,10 @@ func TestPackageImportSet_ResolveConflicts_GivenExplicitlyNamedConflicts_Returns
 	set.AddImport(importB)
 
 	err := set.ResolveConflicts()
-	g.Expect(err).ToNot(BeNil())
+	g.Expect(err).NotTo(BeNil())
 }
 
-func TestPackageImportSet_ResolveConflicts_GivenImplicityNamedConflicts_ReturnsNoError(t *testing.T) {
+func TestPackageImportSet_ResolveConflicts_GivenImplicityNamedConflicts_AssignsExpectedNames(t *testing.T) {
 	g := NewGomegaWithT(t)
 	importA := NewPackageImport(emailTestRef)
 	importB := NewPackageImport(networkTestRef)
@@ -251,4 +251,12 @@ func TestPackageImportSet_ResolveConflicts_GivenImplicityNamedConflicts_ReturnsN
 
 	err := set.ResolveConflicts()
 	g.Expect(err).To(BeNil())
+
+	imp, ok := set.ImportFor(emailTestRef)
+	g.Expect(ok).To(BeTrue())
+	g.Expect(imp.name).To(Equal("email"))
+
+	imp, ok = set.ImportFor(networkTestRef)
+	g.Expect(ok).To(BeTrue())
+	g.Expect(imp.name).To(Equal("network"))
 }
