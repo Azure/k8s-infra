@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -380,7 +381,7 @@ func (gr *GenericReconciler) CreateDeployment(ctx context.Context, action Reconc
 
 	if err != nil {
 		var reqErr *autorestAzure.RequestError
-		if errors.As(err, &reqErr) && reqErr.StatusCode == 409 { /* == Conflict */
+		if errors.As(err, &reqErr) && reqErr.StatusCode == http.StatusConflict {
 			data.log.Info("Deployment already exists", "id", toDeploy.Id)
 		} else {
 			return ctrl.Result{}, err
