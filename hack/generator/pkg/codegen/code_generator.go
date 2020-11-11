@@ -55,7 +55,9 @@ func corePipelineStages(idFactory astmodel.IdentifierFactory, configuration *con
 
 		// Flatten out any nested resources created by allOf, etc. we want to do this before naming types or things
 		// get named with names like Resource_Spec_Spec_Spec:
-		flattenResources(), stripUnreferencedTypeDefinitions(),
+		flattenResources(),
+
+		stripUnreferencedTypeDefinitions(),
 
 		// Name all anonymous object, enum, and validated types (required by controller-gen):
 		nameTypesForCRD(idFactory),
@@ -78,7 +80,9 @@ func corePipelineStages(idFactory astmodel.IdentifierFactory, configuration *con
 		// Apply export filters before generating
 		// ARM types for resources etc:
 		applyExportFilters(configuration),
+
 		stripUnreferencedTypeDefinitions(),
+
 		replaceAnyTypeWithJSON(),
 		reportOnTypesAndVersions(configuration),
 
