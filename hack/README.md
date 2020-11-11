@@ -11,7 +11,7 @@ If you want to use this:
 1. Install VS Code and the [Remote Development](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack) extension (check installation instructions there).
 2. Run the VS Code command (with `Ctrl-Shift-P`): `Remote Containers: Clone Repository in Container Volume...`
   
-   **Note**: in Windows, it is important to clone directly into a container instead of cloning first and then loading that with the `Remote Containers` extension, as the tooling performs a lot of file I/O and if this is performed against a volume mounted in WSL, then it is unusably slow.
+   **Note**: in Windows, it is important to clone directly into a container instead of cloning first and then loading that with the `Remote Containers` extension, as the tooling performs a lot of file I/O, and if this is performed against a volume mounted in WSL then it is unusably slow.
 
    To complete the clone:
    1. Select "`GitHub`".
@@ -35,7 +35,7 @@ $ # After that you can start a terminal in the development container with:
 $ docker run -v $(git rev-parse --show-toplevel):/go/src -w /go/src -u $(id -u ${USER}):$(id -g ${USER}) -it k8sinfradev:latest
 ```
 
-It is not recommended to mount the source like this on Windows (WSL2) as the cross-VM file operations are _much_ slower.
+It is not recommended to mount the source like this on Windows (WSL2) as the cross-VM file operations are very slow.
 
 ### ./dev.sh
 
