@@ -5,7 +5,11 @@
 
 package astmodel
 
-import "sort"
+import (
+	"fmt"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	"sort"
+)
 
 // PackageImportSet represents a set of distinct PackageImport references
 type PackageImportSet struct {
@@ -106,6 +110,32 @@ func (set *PackageImportSet) ApplyName(ref PackageReference, name string) {
 		// Modifying the map directly to bypass any rules enforced by AddImport()
 		set.imports[ref] = NewPackageImport(ref).WithName(name)
 	}
+}
+
+// ResolveConflicts() attempts to resolve any import conflicts and returns an error if any cannot be resolved
+func (set *PackageImportSet) ResolveConflicts() error {
+
+	// Determine if there are any conflicting imports -- these are imports with the same "name"
+	// but a different package path
+	imports := set.AsSortedSlice(ByNameInGroups)
+	var errs []error
+	for _, imp := range imports {
+		for _, otherImp := range imports {
+			if !imp.Equals(otherImp) && imp.PackageName() == otherImp.PackageName() {
+				errs = append(errs, fmt.Errorf("Import %v (named %v) and import %v (named %v) conflict",
+					imp.packageReference,
+					imp.PackageName(),
+					otherImp.packageReference,
+					otherImp.PackageName()))
+			}
+		}
+	}
+
+	if len(errs) > 0 {
+		return kerrors.NewAggregate(errs)
+	}
+
+	return nil
 }
 
 // ByNameInGroups() orders PackageImport instances by name,

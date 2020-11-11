@@ -14,6 +14,10 @@ var (
 	simpleTestRef PackageReference = MakeExternalPackageReference("simple")
 	pathTestRef   PackageReference = MakeExternalPackageReference("package/path")
 
+	// Important for these two package references to have the same version so that they conflict
+	emailTestRef   PackageReference = MakeExternalPackageReference("microsoft.email/v20180801")
+	networkTestRef PackageReference = MakeExternalPackageReference("microsoft.network/v20180801")
+
 	simpleTestImport         = NewPackageImport(simpleTestRef)
 	pathTestImport           = NewPackageImport(pathTestRef)
 	simpleTestImportWithName = simpleTestImport.WithName("simple")
@@ -214,4 +218,37 @@ func TestByNameInGroups_AppliesExpectedOrdering(t *testing.T) {
 			g.Expect(less).To(Equal(c.less))
 		})
 	}
+}
+
+/*
+ * Resolve Conflict Tests
+ */
+
+func TestPackageImportSet_ResolveConflicts_GivenExplicitlyNamedConflicts_ReturnsErrors(t *testing.T) {
+	g := NewGomegaWithT(t)
+	importA := NewPackageImport(emailTestRef).WithName("collide")
+	importB := NewPackageImport(networkTestRef).WithName("collide")
+
+	set := NewPackageImportSet()
+	set.AddImport(importA)
+	set.AddImport(importB)
+
+	err := set.ResolveConflicts()
+	g.Expect(err).ToNot(BeNil())
+}
+
+func TestPackageImportSet_ResolveConflicts_GivenImplicityNamedConflicts_ReturnsNoError(t *testing.T) {
+	g := NewGomegaWithT(t)
+	importA := NewPackageImport(emailTestRef)
+	importB := NewPackageImport(networkTestRef)
+
+	// Check our prerequisite still holds
+	g.Expect(importA.PackageName()).To(Equal(importB.PackageName()))
+
+	set := NewPackageImportSet()
+	set.AddImport(importA)
+	set.AddImport(importB)
+
+	err := set.ResolveConflicts()
+	g.Expect(err).To(BeNil())
 }
