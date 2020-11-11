@@ -6,7 +6,7 @@
 package astmodel
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sort"
 	"strings"
@@ -132,11 +132,14 @@ func (set *PackageImportSet) ResolveConflicts() error {
 
 	// Check for any remaining conflicts
 	var errs []error
-	for name, imports := range set.createMapByPackageName() {
-		if len(imports) <= 1 {
-			// Only one import, so no conflict
-			continue
-		}
+	set.foreachConflict(func(imp PackageImport) PackageImport {
+		err := errors.Errorf(
+			"import '%s' of '%s' conflicts with other import(s) of the same name",
+			imp.name,
+			imp.packageReference.PackagePath())
+		errs = append(errs, err)
+		return imp
+	})
 
 		for _, imp := range imports {
 			err := fmt.Errorf(
