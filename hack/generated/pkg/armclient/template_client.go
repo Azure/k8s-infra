@@ -145,6 +145,7 @@ func AuthorizerFromEnvironment() (autorest.Authorizer, error) {
 
 	// the previous never returns an error, so we must do
 	// the checks ourselves…
+	// see: https://github.com/Azure/go-autorest/issues/580
 	var errs []error
 	requiredEnvVars := []string{auth.SubscriptionID, auth.ClientSecret, auth.ClientID, auth.TenantID}
 	for _, requiredEnvVar := range requiredEnvVars {
