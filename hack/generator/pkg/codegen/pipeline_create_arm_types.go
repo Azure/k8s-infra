@@ -344,10 +344,6 @@ func modifyKubeResourceSpecDefinition(
 			} else {
 				// with multiple values, provide an AzureName function that casts from the
 				// enum-valued AzureName property:
-				var values []string
-				for _, opt := range options {
-					values = append(values, opt.Value)
-				}
 
 				// the property type must be a TypeName pointing to an enum at this
 				// point in the pipeline so let's assert that:
