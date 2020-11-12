@@ -102,12 +102,38 @@ func (builder *convertToArmBuilder) functionBodyStatements() []ast.Stmt {
 // Conversion handlers
 //////////////////////
 
+var KubernetesResourceInterfaceName astmodel.TypeName = astmodel.MakeTypeName(astmodel.MakeGenRuntimePackageReference(), "KubernetesResource")
+
 func (builder *convertToArmBuilder) namePropertyHandler(
 	toProp *astmodel.PropertyDefinition,
 	fromType *astmodel.ObjectType) []ast.Stmt {
 
+	if toProp.PropertyName() != "Name" || !builder.isResource {
+		return nil
+	}
+
+	// first see if we have a function or interface implementation that provides
+	// an AzureName() function to invoke
+	if fromType.HasFunctionWithName(astmodel.AzureNameProperty) ||
+		fromType.Implements(KubernetesResourceInterfaceName) {
+
+		result := astbuilder.SimpleAssignment(
+			&ast.SelectorExpr{
+				X:   builder.resultIdent,
+				Sel: ast.NewIdent(string(toProp.PropertyName())),
+			},
+			token.ASSIGN,
+			astbuilder.CallFunc(&ast.SelectorExpr{
+				X:   builder.receiverIdent,
+				Sel: ast.NewIdent(astmodel.AzureNameProperty),
+			}))
+
+		return []ast.Stmt{result}
+	}
+
+	// otherwise we will try to read directly from an AzureName property
 	_, ok := fromType.Property(GetAzureNameProperty(builder.idFactory).PropertyName())
-	if !ok || toProp.PropertyName() != "Name" || !builder.isResource {
+	if !ok {
 		return nil
 	}
 
@@ -118,6 +144,7 @@ func (builder *convertToArmBuilder) namePropertyHandler(
 		},
 		token.ASSIGN,
 		ast.NewIdent(nameParameterString))
+
 	return []ast.Stmt{result}
 }
 

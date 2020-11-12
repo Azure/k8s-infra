@@ -38,7 +38,7 @@ func (builder conversionBuilder) propertyConversionHandler(
 		}
 	}
 
-	panic(fmt.Sprintf("No property found for %s", toProp.PropertyName()))
+	panic(fmt.Sprintf("No property found for %s in method %s\nFrom: %+v\nTo: %+v", toProp.PropertyName(), builder.methodName, *builder.kubeType, *builder.armType))
 }
 
 // deepCopyJSON special cases copying JSON-type fields to call the DeepCopy method.

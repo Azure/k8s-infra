@@ -134,15 +134,52 @@ func (builder *convertFromArmBuilder) namePropertyHandler(
 	toProp *astmodel.PropertyDefinition,
 	fromType *astmodel.ObjectType) []ast.Stmt {
 
-	if !toProp.Equals(GetAzureNameProperty(builder.idFactory)) || !builder.isResource {
+	if !builder.isResource || !toProp.HasName(astmodel.AzureNameProperty) {
+		return nil
+	}
+
+	if typeName, ok := toProp.PropertyType().(astmodel.TypeName); ok {
+		// we are assigning to (presumbaly) an enum-typed AzureName property, (no way to check that here)
+		// we will cast the result of ExtractKubernetesResourceNameFromArmName
+		// to the target type:
+
+		// Check to make sure that the ARM object has a "Name" property (which matches our "AzureName")
+		fromProp, ok := fromType.Property("Name")
+		if !ok {
+			panic("ARM resource missing property 'Name'")
+		}
+
+		result := astbuilder.SimpleAssignment(
+			&ast.SelectorExpr{
+				X:   builder.receiverIdent,
+				Sel: ast.NewIdent(string(toProp.PropertyName())),
+			},
+			token.ASSIGN,
+			astbuilder.CallFunc(
+				// "calling" enum name is equivalent to casting
+				ast.NewIdent(typeName.Name()),
+				astbuilder.CallQualifiedFuncByName(
+					astmodel.GenRuntimePackageName,
+					"ExtractKubernetesResourceNameFromArmName",
+					&ast.SelectorExpr{
+						X:   builder.typedInputIdent,
+						Sel: ast.NewIdent(string(fromProp.PropertyName())),
+					})))
+
+		return []ast.Stmt{result}
+	}
+
+	// otherwise check if we are writing to a string-typed AzureName property
+	if !toProp.Equals(GetAzureNameProperty(builder.idFactory)) {
 		return nil
 	}
 
 	// Check to make sure that the ARM object has a "Name" property (which matches our "AzureName")
 	fromProp, ok := fromType.Property("Name")
 	if !ok {
-		panic("Arm resource missing property 'Name'")
+		panic("ARM resource missing property 'Name'")
 	}
+
 	result := astbuilder.SimpleAssignment(
 		&ast.SelectorExpr{
 			X:   builder.receiverIdent,
@@ -158,7 +195,6 @@ func (builder *convertFromArmBuilder) namePropertyHandler(
 			}))
 
 	return []ast.Stmt{result}
-
 }
 
 func (builder *convertFromArmBuilder) ownerPropertyHandler(

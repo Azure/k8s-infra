@@ -28,6 +28,12 @@ func (i InterfaceImplementer) WithInterface(iface *InterfaceImplementation) Inte
 	return result
 }
 
+// Implements returns true if the implementer has an implementation for the named interface
+func (i InterfaceImplementer) Implements(interfaceName TypeName) bool {
+	_, ok := i.interfaces[interfaceName]
+	return ok
+}
+
 func (i InterfaceImplementer) References() TypeNameSet {
 	var results TypeNameSet
 	for _, iface := range i.interfaces {
