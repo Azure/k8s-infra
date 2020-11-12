@@ -148,6 +148,7 @@ func AuthorizerFromEnvironment() (autorest.Authorizer, error) {
 	// see: https://github.com/Azure/go-autorest/issues/580
 	var errs []error
 	requiredEnvVars := []string{auth.SubscriptionID, auth.ClientSecret, auth.ClientID, auth.TenantID}
+	// TODO: this doesn't support, for example, MSI auth
 	for _, requiredEnvVar := range requiredEnvVars {
 		if envSettings.Values[requiredEnvVar] == "" {
 			errs = append(errs, errors.Errorf("environment variable %s must be set", requiredEnvVar))
