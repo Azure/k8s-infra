@@ -387,6 +387,8 @@ func (gr *GenericReconciler) CreateDeployment(ctx context.Context, action Reconc
 				// TODO: what if GetEntityPath doesn't work due to malformed deployment?
 				data.log.Info("Deployment already exists", "id", deployId)
 			}
+
+			// TODO: we need to diff the old/new deployment here and detect if we need to do a redeploy
 		} else {
 			return ctrl.Result{}, err
 		}
