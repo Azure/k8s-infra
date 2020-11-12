@@ -63,11 +63,12 @@ func (c *Client) WithExponentialRetries(attempts int, backoff time.Duration, max
 	return &result
 }
 
-// TODO: Wondering if we should avoid returning deployment here since we're just updating it in place anyway
-func (c *Client) PutDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error) {
+// PutDeployment creates or updates a deployment in Azure, and updates the given Deployment
+// with the current deployment state.
+func (c *Client) PutDeployment(ctx context.Context, deployment *Deployment) error {
 	entityPath, err := deployment.GetEntityPath()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	preparer := autorest.CreatePreparer(
@@ -77,13 +78,13 @@ func (c *Client) PutDeployment(ctx context.Context, deployment *Deployment) (*De
 	req, err := c.newRequest(ctx, http.MethodPut, entityPath)
 	if err != nil {
 		tab.For(ctx).Error(err)
-		return nil, err
+		return err
 	}
 
 	req, err = preparer.Prepare(req)
 	if err != nil {
 		tab.For(ctx).Error(err)
-		return nil, err
+		return err
 	}
 
 	// The linter below doesn't realize that the response is closed in the course of
@@ -93,7 +94,7 @@ func (c *Client) PutDeployment(ctx context.Context, deployment *Deployment) (*De
 
 	if err != nil {
 		tab.For(ctx).Error(err)
-		return nil, err
+		return err
 	}
 
 	err = autorest.Respond(
@@ -102,14 +103,11 @@ func (c *Client) PutDeployment(ctx context.Context, deployment *Deployment) (*De
 		autorest.ByUnmarshallingJSON(deployment),
 		autorest.ByClosing())
 	if err != nil {
-		// TODO: rethink how to do this
-		// set deployment ID even if it failed
-		deployment.Id = entityPath
 		tab.For(ctx).Error(err)
-		return nil, err
+		return err
 	}
 
-	return deployment, nil
+	return nil
 }
 
 func (c *Client) GetResource(ctx context.Context, resourceID string, resource interface{}) error {

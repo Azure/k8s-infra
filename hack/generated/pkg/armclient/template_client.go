@@ -23,7 +23,7 @@ import (
 
 // TODO: Naming?
 type Applier interface {
-	CreateDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error)
+	CreateDeployment(ctx context.Context, deployment *Deployment) error
 	DeleteDeployment(ctx context.Context, deploymentId string) error
 	GetDeployment(ctx context.Context, deploymentId string) (*Deployment, error)
 	NewResourceGroupDeployment(resourceGroup string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment
@@ -205,8 +205,9 @@ func (atc *AzureTemplateClient) GetResource(ctx context.Context, id string, apiV
 	return err
 }
 
-// CreateDeployment deploys a resource to Azure via a deployment template
-func (atc *AzureTemplateClient) CreateDeployment(ctx context.Context, deployment *Deployment) (*Deployment, error) {
+// CreateDeployment deploys a resource to Azure via a deployment template,
+// and updates the given Deployment with the current state.
+func (atc *AzureTemplateClient) CreateDeployment(ctx context.Context, deployment *Deployment) error {
 	return atc.RawClient.PutDeployment(ctx, deployment)
 }
 

@@ -370,19 +370,23 @@ func (gr *GenericReconciler) MonitorDelete(
 }
 
 func (gr *GenericReconciler) CreateDeployment(ctx context.Context, action ReconcileAction, data *ReconcileMetadata) (ctrl.Result, error) {
-	toDeploy, err := gr.resourceSpecToDeployment(ctx, data)
+	deployment, err := gr.resourceSpecToDeployment(ctx, data)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	// Try to create deployment:
 	data.log.Info("Starting new deployment to Azure", "action", string(action))
-	deployment, err := gr.ARMClient.CreateDeployment(ctx, toDeploy)
+	err = gr.ARMClient.CreateDeployment(ctx, deployment)
 
 	if err != nil {
 		var reqErr *autorestAzure.RequestError
 		if errors.As(err, &reqErr) && reqErr.StatusCode == http.StatusConflict {
-			data.log.Info("Deployment already exists", "id", toDeploy.Id)
+			deployId, err := deployment.GetEntityPath()
+			if err != nil {
+				// TODO: what if GetEntityPath doesn't work due to malformed deployment?
+				data.log.Info("Deployment already exists", "id", deployId)
+			}
 		} else {
 			return ctrl.Result{}, err
 		}
