@@ -143,6 +143,8 @@ func StorageAccount_BlobServices_CRUD(t *testing.T, testContext testcommon.KubeP
 	})
 
 	// TODO: Delete doesn't seem to work?
+	// — is this because it is not a real resource but properties on the storage account?
+	// We probably need to ask the Storage team.
 	/*
 		err = testContext.KubeClient.Delete(ctx, blobService)
 		g.Expect(err).ToNot(HaveOccurred())
