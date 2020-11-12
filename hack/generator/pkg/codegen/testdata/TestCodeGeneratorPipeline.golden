@@ -1,0 +1,22 @@
+Expected Pipeline Stages for Test Code Generation
+-------------------------------------------------
+loadSchema                          test       Load and walk schema (test)
+augmentStatus                       import     Add information from Swagger specs for 'status' fields
+allof-anyof-objects                 core       Convert allOf and oneOf to object types
+flatten-resources                   core       Flatten nested resource types
+stripUnused                         test       Strip unused types for test
+nameTypes                           core       Name inner types for CRD
+propertyRewrites                    core       Applying type transformers to properties
+determineResourceOwnership          azure      Determine ARM resource relationships
+removeAliases                       core       Remove type aliases
+pluralizeNames                      core       Improve resource pluralization
+stripUnused                         test       Strip unused types for test
+filterTypes                         core       Filter generated types
+stripUnused                         test       Strip unused types for test
+replaceAnyTypeWithJSON              core       Replacing interface{}s with arbitrary JSON
+applyKubernetesResourceInterface    azure      Ensures that every resource implements the KubernetesResource interface
+simplifyDefinitions                 core       Flatten definitions by removing wrapper types
+jsonTestCases                       core       Add test cases to verify JSON serialization
+markStorageVersion                  core       Marking the latest version of each resource as the storage version
+statusCheck                         core       Check for missing status information
+exportPackages                      test       Export packages for test
