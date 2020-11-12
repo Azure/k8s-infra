@@ -139,7 +139,7 @@ func (builder *convertFromArmBuilder) namePropertyHandler(
 	}
 
 	if typeName, ok := toProp.PropertyType().(astmodel.TypeName); ok {
-		// we are assigning to (presumbaly) an enum-typed AzureName property, (no way to check that here)
+		// we are assigning to (presumably) an enum-typed AzureName property, (no way to check that here)
 		// we will cast the result of ExtractKubernetesResourceNameFromArmName
 		// to the target type:
 
