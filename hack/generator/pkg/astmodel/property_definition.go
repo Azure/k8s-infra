@@ -46,13 +46,6 @@ func (property *PropertyDefinition) PropertyName() PropertyName {
 	return property.propertyName
 }
 
-// WithName returns a new property with the specified names
-func (property *PropertyDefinition) WithNames(propName PropertyName) *PropertyDefinition {
-	result := *property
-	result.propertyName = propName
-	return &result
-}
-
 // PropertyType returns the data type of the property
 func (property *PropertyDefinition) PropertyType() Type {
 	return property.propertyType
