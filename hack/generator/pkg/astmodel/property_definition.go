@@ -7,10 +7,11 @@ package astmodel
 
 import (
 	"fmt"
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 	"go/ast"
 	"sort"
 	"strings"
+
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 )
 
 // PropertyName is a semantic type
@@ -43,6 +44,13 @@ func NewPropertyDefinition(propertyName PropertyName, jsonName string, propertyT
 // PropertyName returns the name of the property
 func (property *PropertyDefinition) PropertyName() PropertyName {
 	return property.propertyName
+}
+
+// WithName returns a new property with the specified names
+func (property *PropertyDefinition) WithNames(propName PropertyName) *PropertyDefinition {
+	result := *property
+	result.propertyName = propName
+	return &result
 }
 
 // PropertyType returns the data type of the property

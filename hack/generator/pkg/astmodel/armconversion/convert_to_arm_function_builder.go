@@ -132,7 +132,7 @@ func (builder *convertToArmBuilder) namePropertyHandler(
 	}
 
 	// otherwise we will try to read directly from an AzureName property
-	_, ok := fromType.Property(GetAzureNameProperty(builder.idFactory).PropertyName())
+	_, ok := fromType.Property(astmodel.AzureNameProperty)
 	if !ok {
 		return nil
 	}

@@ -167,7 +167,7 @@ func (fakeResourceSpec *FakeResource_Spec) PopulateFromArm(owner genruntime.Know
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/Foo
 type FooArm struct {
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/Foo
@@ -183,10 +183,7 @@ func (foo *Foo) ConvertToArm(name string) (interface{}, error) {
 		return nil, nil
 	}
 	result := FooArm{}
-	if foo.Name != nil {
-		nameTyped := *foo.Name
-		result.Name = &nameTyped
-	}
+	result.Name = foo.Name
 	return result, nil
 }
 
@@ -196,6 +193,7 @@ func (foo *Foo) PopulateFromArm(owner genruntime.KnownResourceReference, armInpu
 	if !ok {
 		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected FooArm, got %T", armInput)
 	}
+	var err error
 	if typedInput.Name != nil {
 		nameTyped := *typedInput.Name
 		foo.Name = &nameTyped

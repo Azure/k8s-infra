@@ -302,13 +302,12 @@ func modifyKubeResourceSpecDefinition(
 	}
 
 	remapProperties := func(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
-		var err error // hide external err value
-
 		// TODO: Right now the Kubernetes type has all of its standard requiredness (validations). If we want to allow
 		// TODO: users to submit "just a name and owner" types we will have to strip some validation until
 		// TODO: https://github.com/kubernetes-sigs/controller-tools/issues/461 is fixed
 
 		// drop Type property
+		// TODO: handle this generically so we automatically insert 1-value enums?
 		t = t.WithoutProperty("Type")
 
 		nameProp, hasName := t.Property("Name")
@@ -316,52 +315,9 @@ func modifyKubeResourceSpecDefinition(
 			return t, nil
 		}
 
-		// drop Name property
-		t = t.WithoutProperty("Name")
-
-		namePropType := nameProp.PropertyType()
-		// resolve property type if it is a typename
-		if typeName, ok := namePropType.(astmodel.TypeName); ok {
-			namePropType, err = definitions.FullyResolve(typeName)
-			if err != nil {
-				return nil, errors.Wrapf(err, "Unable to resolve type of Name property: %s", namePropType.String())
-			}
-		}
-
-		// handle different types of Name property
-		switch namePropType := namePropType.(type) {
-		case *astmodel.EnumType:
-			if !namePropType.BaseType().Equals(astmodel.StringType) {
-				return nil, errors.Errorf("Unable to handle non-string enum base type in Name property")
-			}
-
-			options := namePropType.Options()
-			if len(options) == 1 {
-				// if there is only one possible value,
-				// we make an AzureName function that returns it, and do not
-				// provide an AzureName property on the spec
-				return t.WithFixedValueAzureNameFunction(options[0].Value, idFactory), nil
-			} else {
-				// with multiple values, provide an AzureName function that casts from the
-				// enum-valued AzureName property:
-
-				// the property type must be a TypeName pointing to an enum at this
-				// point in the pipeline so let's assert that:
-				enumType := nameProp.PropertyType().(astmodel.TypeName)
-				prop := armconversion.GetAzureNameProperty(idFactory).WithType(enumType)
-				return t.WithProperty(prop).WithEnumAzureNameFunction(idFactory), nil
-			}
-
-		case *astmodel.PrimitiveType:
-			if !namePropType.Equals(astmodel.StringType) {
-				return nil, errors.Errorf("Cannot use type %s as type of Name property", namePropType.String())
-			}
-
-			return t.WithoutProperty("Name").WithProperty(armconversion.GetAzureNameProperty(idFactory)), nil
-
-		default:
-			return nil, errors.Errorf("Unsupported type for Name property: %s", namePropType.String())
-		}
+		// rename Name to AzureName
+		azureNameProp := armconversion.GetAzureNameProperty(idFactory).WithType(nameProp.PropertyType())
+		return t.WithoutProperty("Name").WithProperty(azureNameProp), nil
 	}
 
 	kubernetesDef, err := resourceSpecDef.ApplyObjectTransformations(remapProperties, injectOwnerProperty)
