@@ -402,7 +402,14 @@ func convertPropertiesToArmTypes(t *astmodel.ObjectType, definitions astmodel.Ty
 		if prop.HasName("Name") {
 			// all resource Name properties must be strings on their way to ARM
 			// as nested resources will have the owner etc added to the start:
-			result = result.WithProperty(prop.WithType(astmodel.StringType))
+
+			// preserve optionality (this occurs in some Status types)
+			if _, ok := prop.PropertyType().(*astmodel.OptionalType); ok {
+				result = result.WithProperty(prop.WithType(astmodel.NewOptionalType(astmodel.StringType)))
+			} else {
+				result = result.WithProperty(prop.WithType(astmodel.StringType))
+			}
+
 		} else {
 			propType := prop.PropertyType()
 			newType, err := convertArmPropertyTypeIfNeeded(definitions, propType)
