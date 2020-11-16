@@ -92,7 +92,7 @@ func (fakeResourceSpec *FakeResource_Spec) ConvertToArm(name string) (interface{
 	if fakeResourceSpec == nil {
 		return nil, nil
 	}
-	result := FakeResource_SpecArm{}
+	var result FakeResource_SpecArm
 	result.ApiVersion = fakeResourceSpec.ApiVersion
 	result.Name = name
 	result.Type = FakeResourceSpecTypeMicrosoftAzureFakeResource

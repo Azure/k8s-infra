@@ -92,7 +92,7 @@ func (aResourceSpec *AResource_Spec) ConvertToArm(name string) (interface{}, err
 	if aResourceSpec == nil {
 		return nil, nil
 	}
-	result := AResource_SpecArm{}
+	var result AResource_SpecArm
 	result.ApiVersion = aResourceSpec.ApiVersion
 	result.Name = name
 	result.Type = AResourceSpecTypeMicrosoftAzureAResource

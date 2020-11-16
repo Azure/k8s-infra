@@ -561,7 +561,7 @@ func (builder *convertFromArmBuilder) convertComplexTypeNameProperty(
 
 	ownerName := builder.idFactory.CreateIdentifier(astmodel.OwnerProperty, astmodel.NotExported)
 
-	newStruct := astbuilder.NewStruct(propertyLocalVar, ast.NewIdent(destinationType.Name()))
+	newVariable := astbuilder.NewVariable(propertyLocalVar, ast.NewIdent(destinationType.Name()))
 	if !destinationType.PackageReference.Equals(builder.codeGenerationContext.CurrentPackage()) {
 		// struct name has to be qualified
 		packageName, err := builder.codeGenerationContext.GetImportedPackageName(destinationType.PackageReference)
@@ -569,13 +569,13 @@ func (builder *convertFromArmBuilder) convertComplexTypeNameProperty(
 			panic(err)
 		}
 
-		newStruct = astbuilder.NewQualifiedStruct(
+		newVariable = astbuilder.NewVariableQualified(
 			propertyLocalVar,
 			ast.NewIdent(packageName),
 			ast.NewIdent(destinationType.Name()))
 	}
 
-	results = append(results, newStruct)
+	results = append(results, newVariable)
 	results = append(
 		results,
 		astbuilder.SimpleAssignment(

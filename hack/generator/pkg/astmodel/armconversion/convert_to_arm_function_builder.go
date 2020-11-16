@@ -77,7 +77,7 @@ func (builder *convertToArmBuilder) functionBodyStatements() []ast.Stmt {
 	result = append(
 		result,
 		astbuilder.ReturnIfNil(builder.receiverIdent, ast.NewIdent("nil"), ast.NewIdent("nil")))
-	result = append(result, astbuilder.NewStruct(builder.resultIdent, builder.armTypeIdent))
+	result = append(result, astbuilder.NewVariable(builder.resultIdent, builder.armTypeIdent))
 
 	// Each ARM object property needs to be filled out
 	result = append(

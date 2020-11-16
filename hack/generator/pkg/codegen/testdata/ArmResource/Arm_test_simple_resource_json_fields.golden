@@ -103,7 +103,7 @@ func (fakeResourceSpec *FakeResource_Spec) ConvertToArm(name string) (interface{
 	if fakeResourceSpec == nil {
 		return nil, nil
 	}
-	result := FakeResource_SpecArm{}
+	var result FakeResource_SpecArm
 	result.ApiVersion = fakeResourceSpec.ApiVersion
 	result.JsonObject = make(map[string]v1.JSON)
 	for key, value := range fakeResourceSpec.JsonObject {
