@@ -27,7 +27,7 @@ type ArmConversionFunction struct {
 	armType     *astmodel.ObjectType
 	idFactory   astmodel.IdentifierFactory
 	direction   ConversionDirection
-	specType    bool
+	isSpecType  bool
 }
 
 var _ astmodel.Function = &ArmConversionFunction{}

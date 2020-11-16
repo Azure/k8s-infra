@@ -20,7 +20,7 @@ type conversionBuilder struct {
 	armTypeIdent               *ast.Ident
 	codeGenerationContext      *astmodel.CodeGenerationContext
 	idFactory                  astmodel.IdentifierFactory
-	specType                   bool
+	isSpecType                 bool
 	methodName                 string
 	kubeType                   *astmodel.ObjectType
 	armType                    *astmodel.ObjectType
@@ -140,7 +140,7 @@ func NewArmTransformerImpl(
 			armType:     armType,
 			idFactory:   idFactory,
 			direction:   ConversionDirectionToArm,
-			specType:    typeType == SpecType,
+			isSpecType:  typeType == SpecType,
 		}
 	}
 
@@ -150,7 +150,7 @@ func NewArmTransformerImpl(
 		armType:     armType,
 		idFactory:   idFactory,
 		direction:   ConversionDirectionFromArm,
-		specType:    typeType == SpecType,
+		isSpecType:  typeType == SpecType,
 	}
 
 	createEmptyArmValueFunc := CreateEmptyArmValueFunc{idFactory: idFactory, armTypeName: armTypeName}
