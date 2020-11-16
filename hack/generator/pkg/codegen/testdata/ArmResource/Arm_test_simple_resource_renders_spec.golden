@@ -99,6 +99,11 @@ func (fakeResourceSpec *FakeResource_Spec) ConvertToArm(name string) (interface{
 	return result, nil
 }
 
+// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
+func (fakeResourceSpec *FakeResource_Spec) CreateEmptyArmValue() interface{} {
+	return FakeResource_SpecArm{}
+}
+
 // PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
 func (fakeResourceSpec *FakeResource_Spec) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
 	typedInput, ok := armInput.(FakeResource_SpecArm)

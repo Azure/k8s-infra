@@ -205,6 +205,11 @@ func (aSpec *A_Spec) ConvertToArm(name string) (interface{}, error) {
 	return result, nil
 }
 
+// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
+func (aSpec *A_Spec) CreateEmptyArmValue() interface{} {
+	return A_SpecArm{}
+}
+
 // PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
 func (aSpec *A_Spec) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
 	typedInput, ok := armInput.(A_SpecArm)
@@ -254,6 +259,11 @@ func (bSpec *B_Spec) ConvertToArm(name string) (interface{}, error) {
 	return result, nil
 }
 
+// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
+func (bSpec *B_Spec) CreateEmptyArmValue() interface{} {
+	return B_SpecArm{}
+}
+
 // PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
 func (bSpec *B_Spec) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
 	typedInput, ok := armInput.(B_SpecArm)
@@ -301,6 +311,11 @@ func (cSpec *C_Spec) ConvertToArm(name string) (interface{}, error) {
 	result.Name = name
 	result.Type = CSpecTypeMicrosoftAzureC
 	return result, nil
+}
+
+// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
+func (cSpec *C_Spec) CreateEmptyArmValue() interface{} {
+	return C_SpecArm{}
 }
 
 // PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object

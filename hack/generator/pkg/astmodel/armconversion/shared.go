@@ -20,12 +20,20 @@ type conversionBuilder struct {
 	armTypeIdent               *ast.Ident
 	codeGenerationContext      *astmodel.CodeGenerationContext
 	idFactory                  astmodel.IdentifierFactory
-	isResource                 bool
+	specType                   bool
 	methodName                 string
 	kubeType                   *astmodel.ObjectType
 	armType                    *astmodel.ObjectType
 	propertyConversionHandlers []propertyConversionHandler
 }
+
+type TypeType int
+
+const (
+	OrdinaryType TypeType = iota
+	SpecType
+	StatusType
+)
 
 func (builder conversionBuilder) propertyConversionHandler(
 	toProp *astmodel.PropertyDefinition,
@@ -121,15 +129,19 @@ func NewArmTransformerImpl(
 	armTypeName astmodel.TypeName,
 	armType *astmodel.ObjectType,
 	idFactory astmodel.IdentifierFactory,
-	isResource bool) *astmodel.InterfaceImplementation {
+	typeType TypeType) *astmodel.InterfaceImplementation {
 
-	convertToArmFunc := &ArmConversionFunction{
-		name:        "ConvertToArm",
-		armTypeName: armTypeName,
-		armType:     armType,
-		idFactory:   idFactory,
-		direction:   ConversionDirectionToArm,
-		isResource:  isResource,
+	var convertToArmFunc *ArmConversionFunction
+	if typeType != StatusType {
+		// status type should not have ConvertToARM
+		convertToArmFunc = &ArmConversionFunction{
+			name:        "ConvertToArm",
+			armTypeName: armTypeName,
+			armType:     armType,
+			idFactory:   idFactory,
+			direction:   ConversionDirectionToArm,
+			specType:    typeType == SpecType,
+		}
 	}
 
 	populateFromArmFunc := &ArmConversionFunction{
@@ -138,15 +150,24 @@ func NewArmTransformerImpl(
 		armType:     armType,
 		idFactory:   idFactory,
 		direction:   ConversionDirectionFromArm,
-		isResource:  isResource,
+		specType:    typeType == SpecType,
 	}
 
-	result := astmodel.NewInterfaceImplementation(
-		astmodel.MakeTypeName(astmodel.MakeGenRuntimePackageReference(), "ArmTransformer"),
-		convertToArmFunc,
-		populateFromArmFunc)
+	createEmptyArmValueFunc := CreateEmptyArmValueFunc{idFactory: idFactory, armTypeName: armTypeName}
 
-	return result
+	if convertToArmFunc != nil {
+		return astmodel.NewInterfaceImplementation(
+			astmodel.MakeTypeName(astmodel.MakeGenRuntimePackageReference(), "ArmTransformer"),
+			createEmptyArmValueFunc,
+			convertToArmFunc,
+			populateFromArmFunc)
+	} else {
+		// only convert in one direction with the FromArmConverter interface
+		return astmodel.NewInterfaceImplementation(
+			astmodel.MakeTypeName(astmodel.MakeGenRuntimePackageReference(), "FromArmConverter"),
+			createEmptyArmValueFunc,
+			populateFromArmFunc)
+	}
 }
 
 type complexPropertyConversionParameters struct {

@@ -36,7 +36,7 @@ func newConvertToArmFunctionBuilder(
 			receiverTypeExpr:      receiver.AsType(codeGenerationContext),
 			armTypeIdent:          ast.NewIdent(c.armTypeName.Name()),
 			idFactory:             c.idFactory,
-			isResource:            c.isResource,
+			specType:              c.specType,
 			codeGenerationContext: codeGenerationContext,
 		},
 		resultIdent: ast.NewIdent("result"),
@@ -109,7 +109,7 @@ func (builder *convertToArmBuilder) namePropertyHandler(
 	fromType *astmodel.ObjectType) []ast.Stmt {
 
 	_, ok := fromType.Property(astmodel.AzureNameProperty)
-	if !ok || toProp.PropertyName() != "Name" || !builder.isResource {
+	if !ok || toProp.PropertyName() != "Name" || !builder.specType {
 		return nil
 	}
 
@@ -131,7 +131,7 @@ func (builder *convertToArmBuilder) typePropertyHandler(
 	toProp *astmodel.PropertyDefinition,
 	fromType *astmodel.ObjectType) []ast.Stmt {
 
-	if toProp.PropertyName() != "Type" || !builder.isResource {
+	if toProp.PropertyName() != "Type" || !builder.specType {
 		return nil
 	}
 

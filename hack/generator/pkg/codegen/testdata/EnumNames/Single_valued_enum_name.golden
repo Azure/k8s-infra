@@ -99,6 +99,11 @@ func (aResourceSpec *AResource_Spec) ConvertToArm(name string) (interface{}, err
 	return result, nil
 }
 
+// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
+func (aResourceSpec *AResource_Spec) CreateEmptyArmValue() interface{} {
+	return AResource_SpecArm{}
+}
+
 // PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
 func (aResourceSpec *AResource_Spec) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
 	typedInput, ok := armInput.(AResource_SpecArm)
