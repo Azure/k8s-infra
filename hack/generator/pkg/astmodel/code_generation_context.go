@@ -83,18 +83,3 @@ func (codeGenContext *CodeGenerationContext) GetImportedDefinition(typeName Type
 
 	return pkg.GetDefinition(typeName)
 }
-
-// GetFullyResolvedDefinition resolves a Type until it is no longer a TypeName
-func (codeGenContext *CodeGenerationContext) GetFullyResolvedDefinition(t Type) (Type, error) {
-	tName, ok := t.(TypeName)
-	for ok {
-		t, err := codeGenContext.GetImportedDefinition(tName)
-		if err != nil {
-			return nil, err
-		}
-
-		tName, ok = t.Type().(TypeName)
-	}
-
-	return t, nil
-}
