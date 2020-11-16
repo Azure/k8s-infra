@@ -68,7 +68,7 @@ func (r *ResourceType) WithKubernetesResourceInterfaceImpl(
 			// if there is only one possible value,
 			// we make an AzureName function that returns it, and do not
 			// provide an AzureName property on the spec
-			//r = r.WithSpec(spec.WithoutProperty(AzureNameProperty))
+			r = r.WithSpec(spec.WithoutProperty(AzureNameProperty))
 			nameFunc = withFixedValueAzureNameFunction(options[0].Value)
 		} else {
 			// with multiple values, provide an AzureName function that casts from the

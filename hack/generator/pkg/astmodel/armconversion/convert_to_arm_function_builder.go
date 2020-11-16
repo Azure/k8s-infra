@@ -108,8 +108,7 @@ func (builder *convertToArmBuilder) namePropertyHandler(
 	toProp *astmodel.PropertyDefinition,
 	fromType *astmodel.ObjectType) []ast.Stmt {
 
-	_, ok := fromType.Property(astmodel.AzureNameProperty)
-	if !ok || toProp.PropertyName() != "Name" || !builder.isSpecType {
+	if toProp.PropertyName() != "Name" || !builder.isSpecType {
 		return nil
 	}
 

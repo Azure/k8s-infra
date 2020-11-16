@@ -39,6 +39,11 @@ type AResourceList struct {
 	Items           []AResource `json:"items"`
 }
 
+// +kubebuilder:validation:Enum={"onlyonevalue"}
+type AResourceSpecName string
+
+const AResourceSpecNameOnlyonevalue = AResourceSpecName("onlyonevalue")
+
 type AResource_SpecArm struct {
 	ApiVersion AResourceSpecApiVersion `json:"apiVersion"`
 	Name       string                  `json:"name"`
@@ -77,10 +82,6 @@ type AResource_Spec struct {
 	// +kubebuilder:validation:Required
 	ApiVersion AResourceSpecApiVersion `json:"apiVersion"`
 
-	//AzureName: The name of the resource in Azure. This is often the same as the name
-	//of the resource in Kubernetes but it doesn't have to be.
-	AzureName AResourceSpecName `json:"azureName"`
-
 	// +kubebuilder:validation:Required
 	Owner genruntime.KnownResourceReference `group:"microsoft.resources.infra.azure.com" json:"owner" kind:"ResourceGroup"`
 }
@@ -111,16 +112,9 @@ func (aResourceSpec *AResource_Spec) PopulateFromArm(owner genruntime.KnownResou
 		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected AResource_SpecArm, got %T", armInput)
 	}
 	aResourceSpec.ApiVersion = typedInput.ApiVersion
-	aResourceSpec.AzureName = AResourceSpecName(genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name))
 	aResourceSpec.Owner = owner
 	return nil
 }
-
-// +kubebuilder:validation:Enum={"onlyonevalue"}
-type AResourceSpecName string
-
-const AResourceSpecNameOnlyonevalue = AResourceSpecName("onlyonevalue")
-
 func init() {
 	SchemeBuilder.Register(&AResource{}, &AResourceList{})
 }

@@ -20,15 +20,31 @@ func applyKubernetesResourceInterface(idFactory astmodel.IdentifierFactory) Pipe
 		"Ensures that every resource implements the KubernetesResource interface",
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 
+			skip := make(map[astmodel.TypeName]struct{})
+
 			result := make(astmodel.Types)
-			for resourceName, typeDef := range types {
+			for typeName, typeDef := range types {
+				if _, ok := skip[typeName]; ok {
+					continue
+				}
+
 				if resource, ok := typeDef.Type().(*astmodel.ResourceType); ok {
-					resource, err := resource.WithKubernetesResourceInterfaceImpl(idFactory, types)
+					newResource, err := resource.WithKubernetesResourceInterfaceImpl(idFactory, types)
 					if err != nil {
-						return nil, errors.Wrapf(err, "Couldn't implement Kubernetes resource interface for %q", resourceName)
+						return nil, errors.Wrapf(err, "Couldn't implement Kubernetes resource interface for %q", typeName)
 					}
 
-					newDef := typeDef.WithType(resource)
+					// this is really very ugly; a better way?
+					if _, ok := newResource.SpecType().(astmodel.TypeName); !ok {
+						// the resource Spec was replaced with a new definition; update it
+						// by replacing the named definition:
+						specName := resource.SpecType().(astmodel.TypeName)
+						result[specName] = astmodel.MakeTypeDefinition(specName, newResource.SpecType())
+						skip[specName] = struct{}{}
+						newResource = newResource.WithSpec(specName)
+					}
+
+					newDef := typeDef.WithType(newResource)
 					result.Add(newDef)
 				} else {
 					result.Add(typeDef)
