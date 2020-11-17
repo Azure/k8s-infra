@@ -113,20 +113,35 @@ func (set *PackageImportSet) ApplyName(ref PackageReference, name string) {
 	}
 }
 
-// ResolveConflicts() attempts to resolve any import conflicts and returns an error if any cannot be resolved
+// ResolveConflicts() attempts to resolve any import conflicts and returns an error if any cannot
+// be resolved
 func (set *PackageImportSet) ResolveConflicts() error {
+	remappedImports := make(map[PackageReference]PackageImport)
 
 	// Try to resolve any conflicts by renaming imports where they occur
-	// For our first pass, we use a simple naming scheme based on the service type (e.g. email, service, batch)
+	// For our first pass, we use a simple naming scheme based on the service type (e.g. email,
+	// service, batch)
 	set.foreachConflict(func(imp PackageImport) PackageImport {
-		name := set.serviceNameForImport(imp)
+		name := set.ServiceNameForImport(imp)
+		if imp.HasExplicitName() && imp.name != name {
+			// Don't change any custom names that have already been set
+			return imp
+		}
+
+		remappedImports[imp.packageReference] = imp
 		return imp.WithName(name)
 	})
 
-	// For any remaining conflicts, use a more complex naming scheme that includes the service version (e.g. emailv20180801, servicev20150501, batchv20170401)
+	// For any remaining conflicts, use a more complex naming scheme that includes the service
+	// version (e.g. emailv20180801, servicev20150501, batchv20170401)
 	set.foreachConflict(func(imp PackageImport) PackageImport {
-		name := set.versionedNameForImport(imp)
-		return imp.WithName(name)
+		// Only rename imports we already renamed above
+		if _, ok := remappedImports[imp.packageReference]; ok {
+			name := set.versionedNameForImport(imp)
+			return imp.WithName(name)
+		}
+
+		return imp
 	})
 
 	// If any conflicts remain, generate errors so we know about it
@@ -210,7 +225,10 @@ func ByNameInGroups(left PackageImport, right PackageImport) bool {
 	return left.packageReference.String() < right.packageReference.String()
 }
 
-func (set *PackageImportSet) serviceNameForImport(imp PackageImport) string {
+// Extract the last part of the name of the service for use to disambiguate imports
+// E.g. for microsoft.batch/v201700401, extract "batch"
+//      for microsoft.storage/v20200101 extract "storage" and so on
+func (set *PackageImportSet) ServiceNameForImport(imp PackageImport) string {
 	pathBits := strings.Split(imp.packageReference.PackagePath(), "/")
 	index := len(pathBits) - 1
 	if index > 0 {
@@ -221,13 +239,10 @@ func (set *PackageImportSet) serviceNameForImport(imp PackageImport) string {
 	return nameBits[len(nameBits)-1]
 }
 
+// Create a versioned name based on the service for use to disambiguate imports
+// E.g. for microsoft.batch/v201700401, extract "batchv201700401"
+//      for microsoft.storage/v20200101 extract "storagev20200101" and so on
 func (set *PackageImportSet) versionedNameForImport(imp PackageImport) string {
-	pathBits := strings.Split(imp.packageReference.PackagePath(), "/")
-	index := len(pathBits) - 1
-	if index > 0 {
-		index--
-	}
-
-	nameBits := strings.Split(pathBits[index], ".")
-	return nameBits[len(nameBits)-1] + imp.packageReference.PackageName()
+	service := set.ServiceNameForImport(imp)
+	return service + imp.packageReference.PackageName()
 }
