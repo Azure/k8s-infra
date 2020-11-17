@@ -147,6 +147,14 @@ func (file *FileDefinition) generateImports() *PackageImportSet {
 	// TODO: Make this configurable
 	requiredImports.ApplyName(MetaV1PackageReference, "metav1")
 
+	// Force local imports to have explicit names based on the service
+	for _, imp := range requiredImports.AsSlice() {
+		if IsLocalPackageReference(imp.packageReference) && !imp.HasExplicitName() {
+			name := requiredImports.ServiceNameForImport(imp)
+			requiredImports.AddImport(imp.WithName(name))
+		}
+	}
+
 	// Resolve any conflicts and report any that couldn't be fixed up automatically
 	err := requiredImports.ResolveConflicts()
 	if err != nil {
