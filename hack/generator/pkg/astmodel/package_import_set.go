@@ -117,20 +117,19 @@ func (set *PackageImportSet) ApplyName(ref PackageReference, name string) {
 func (set *PackageImportSet) ResolveConflicts() error {
 
 	// Try to resolve any conflicts by renaming imports where they occur
-	for _, imports := range set.createMapByPackageName() {
-		if len(imports) <= 1 {
-			// Only one import with this name, so no conflict
-			continue
-		}
+	// For our first pass, we use a simple naming scheme based on the service type (e.g. email, service, batch)
+	set.foreachConflict(func(imp PackageImport) PackageImport {
+		name := set.serviceNameForImport(imp)
+		return imp.WithName(name)
+	})
 
-		// For each import, try to assign it an alternative name
-		for _, imp := range imports {
-			alternate := set.alternatePackageNameFor(imp)
-			set.AddImport(imp.WithName(alternate))
-		}
-	}
+	// For any remaining conflicts, use a more complex naming scheme that includes the service version (e.g. emailv20180801, servicev20150501, batchv20170401)
+	set.foreachConflict(func(imp PackageImport) PackageImport {
+		name := set.versionedNameForImport(imp)
+		return imp.WithName(name)
+	})
 
-	// Check for any remaining conflicts
+	// If any conflicts remain, generate errors so we know about it
 	var errs []error
 	set.foreachConflict(func(imp PackageImport) PackageImport {
 		err := errors.Errorf(
@@ -141,16 +140,6 @@ func (set *PackageImportSet) ResolveConflicts() error {
 		return imp
 	})
 
-		for _, imp := range imports {
-			err := fmt.Errorf(
-				"import '%s' of '%s' conflicts with %d other import(s) of the same name",
-				name,
-				imp.packageReference.PackagePath(),
-				len(imports)-1)
-			errs = append(errs, err)
-		}
-	}
-
 	if len(errs) > 0 {
 		return kerrors.NewAggregate(errs)
 	}
@@ -158,12 +147,36 @@ func (set *PackageImportSet) ResolveConflicts() error {
 	return nil
 }
 
-// Create a map where all imports are indexed by their package name
+// foreachConflict() applies the provided action to each conflict
+// Used to resolve conflicts and to log details of any remaining ones.
+func (set *PackageImportSet) foreachConflict(action func(packageImport PackageImport) PackageImport) {
+	for _, imports := range set.findConflictingImports() {
+		// For each import, apply the action and use the modified import
+		for _, imp := range imports {
+			set.imports[imp.packageReference] = action(imp)
+		}
+	}
+}
+
+// createMapByPackageName() creates a map where all imports are indexed by their package name
+// If there are multiple packages with the same package name, they'll end up indexed together
 func (set *PackageImportSet) createMapByPackageName() map[string][]PackageImport {
 	result := make(map[string][]PackageImport)
 	for _, imp := range set.imports {
 		name := imp.PackageName()
 		result[name] = append(result[name], imp)
+	}
+
+	return result
+}
+
+// findConflictingImports() finds all the imports that conflict because they have the same name
+func (set *PackageImportSet) findConflictingImports() map[string][]PackageImport {
+	result := make(map[string][]PackageImport)
+	for n, s := range set.createMapByPackageName() {
+		if len(s) > 1 {
+			result[n] = s
+		}
 	}
 
 	return result
@@ -197,12 +210,7 @@ func ByNameInGroups(left PackageImport, right PackageImport) bool {
 	return left.packageReference.String() < right.packageReference.String()
 }
 
-func (set *PackageImportSet) alternatePackageNameFor(imp PackageImport) string {
-	if imp.HasExplicitName() {
-		// Don't override explicit names
-		return imp.name
-	}
-
+func (set *PackageImportSet) serviceNameForImport(imp PackageImport) string {
 	pathBits := strings.Split(imp.packageReference.PackagePath(), "/")
 	index := len(pathBits) - 1
 	if index > 0 {
@@ -211,4 +219,15 @@ func (set *PackageImportSet) alternatePackageNameFor(imp PackageImport) string {
 
 	nameBits := strings.Split(pathBits[index], ".")
 	return nameBits[len(nameBits)-1]
+}
+
+func (set *PackageImportSet) versionedNameForImport(imp PackageImport) string {
+	pathBits := strings.Split(imp.packageReference.PackagePath(), "/")
+	index := len(pathBits) - 1
+	if index > 0 {
+		index--
+	}
+
+	nameBits := strings.Split(pathBits[index], ".")
+	return nameBits[len(nameBits)-1] + imp.packageReference.PackageName()
 }
