@@ -27,7 +27,7 @@ type Type interface {
 	AsType(codeGenerationContext *CodeGenerationContext) ast.Expr
 
 	// AsDeclarations renders as a Go abstract syntax tree for a declaration
-	AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl
+	AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string, validations []KubeBuilderValidation) []ast.Decl
 
 	// Equals returns true if the passed type is the same as this one, false otherwise
 	Equals(t Type) bool

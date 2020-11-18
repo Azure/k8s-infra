@@ -8,6 +8,7 @@ package codegen
 import (
 	"context"
 	"fmt"
+
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
@@ -51,6 +52,11 @@ func resolveTypeName(visitor *astmodel.TypeVisitor, name astmodel.TypeName, type
 		panic(fmt.Sprintf("Couldn't find type for type name %s", name))
 	}
 
+	if len(def.Validations()) > 0 {
+		// can't inline a type that has validations
+		return name, nil
+	}
+
 	// If this typeName definition has a type of object, enum, or resource, or resourceList
 	// it's okay. Everything else we want to pull up one level to remove the alias
 	switch concreteType := def.Type().(type) {
@@ -71,6 +77,8 @@ func resolveTypeName(visitor *astmodel.TypeVisitor, name astmodel.TypeName, type
 	case *astmodel.ArrayType:
 		return visitor.Visit(concreteType, nil)
 	case *astmodel.MapType:
+		return visitor.Visit(concreteType, nil)
+	case astmodel.ValidatedType:
 		return visitor.Visit(concreteType, nil)
 	default:
 		panic(fmt.Sprintf("Don't know how to resolve type %T for typeName %s", concreteType, name))

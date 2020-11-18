@@ -42,8 +42,8 @@ func (at *ArmType) AsType(codeGenerationContext *CodeGenerationContext) ast.Expr
 }
 
 // AsDeclarations renders as a Go abstract syntax tree for a declaration
-func (at *ArmType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
-	return at.objectType.AsDeclarations(codeGenerationContext, name, description)
+func (at *ArmType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string, validations []KubeBuilderValidation) []ast.Decl {
+	return at.objectType.AsDeclarations(codeGenerationContext, name, description, validations)
 }
 
 // Equals decides if the types are the same

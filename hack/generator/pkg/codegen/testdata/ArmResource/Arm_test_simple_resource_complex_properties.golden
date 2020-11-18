@@ -85,7 +85,6 @@ type FakeResourceSpecType string
 const FakeResourceSpecTypeMicrosoftAzureFakeResource = FakeResourceSpecType("Microsoft.Azure/FakeResource")
 
 type FakeResource_Spec struct {
-
 	// +kubebuilder:validation:Required
 	ApiVersion FakeResourceSpecApiVersion `json:"apiVersion"`
 
@@ -93,11 +92,9 @@ type FakeResource_Spec struct {
 	//of the resource in Kubernetes but it doesn't have to be.
 	AzureName string                 `json:"azureName"`
 	Color     *FakeResourceSpecColor `json:"color,omitempty"`
-
 	// +kubebuilder:validation:Required
 	Foo         Foo  `json:"foo"`
 	OptionalFoo *Foo `json:"optionalFoo,omitempty"`
-
 	// +kubebuilder:validation:Required
 	Owner genruntime.KnownResourceReference `group:"microsoft.resources.infra.azure.com" json:"owner" kind:"ResourceGroup"`
 }

@@ -7,12 +7,13 @@ package codegen
 
 import (
 	"context"
+
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/pkg/errors"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
-// nameTypesForCRD - for CRDs all inner enums and objects must be named, so we do it here
+// nameTypesForCRD - for CRDs all inner enums and objects and validated types must be named, so we do it here
 func nameTypesForCRD(idFactory astmodel.IdentifierFactory) PipelineStage {
 
 	return MakePipelineStage(
@@ -74,6 +75,22 @@ func nameInnerTypes(
 		return namedEnum.Name(), nil
 	}
 
+	visitor.VisitValidatedType = func(this *astmodel.TypeVisitor, v astmodel.ValidatedType, ctx interface{}) (astmodel.Type, error) {
+		// a validated type anywhere except directly under a property
+		// must be named so that we can put the validations on it
+		nameHint := ctx.(string)
+		newElementType, err := this.Visit(v.ElementType(), nameHint+"_Validated")
+		if err != nil {
+			return nil, err
+		}
+
+		name := astmodel.MakeTypeName(def.Name().PackageReference, nameHint)
+		validations := v.Validations().ToKubeBuilderValidations()
+		namedType := astmodel.MakeTypeDefinition(name, newElementType).WithValidations(validations)
+		resultTypes = append(resultTypes, namedType)
+		return namedType.Name(), nil
+	}
+
 	visitor.VisitObjectType = func(this *astmodel.TypeVisitor, it *astmodel.ObjectType, ctx interface{}) (astmodel.Type, error) {
 		nameHint := ctx.(string)
 
@@ -81,7 +98,19 @@ func nameInnerTypes(
 		var props []*astmodel.PropertyDefinition
 		// first map the inner types:
 		for _, prop := range it.Properties() {
-			newPropType, err := this.Visit(prop.PropertyType(), nameHint+"_"+string(prop.PropertyName()))
+
+			propType := prop.PropertyType()
+
+			// lift any validations out of the original type
+			// and put them on the property
+			if vt, ok := prop.PropertyType().(astmodel.ValidatedType); ok {
+				propType = vt.ElementType()
+				for _, validation := range vt.Validations().ToKubeBuilderValidations() {
+					prop = prop.WithValidation(validation)
+				}
+			}
+
+			newPropType, err := this.Visit(propType, nameHint+"_"+string(prop.PropertyName()))
 			if err != nil {
 				errs = append(errs, err)
 			} else {

@@ -179,14 +179,12 @@ type ASpecType string
 const ASpecTypeMicrosoftAzureA = ASpecType("Microsoft.Azure/A")
 
 type A_Spec struct {
-
 	// +kubebuilder:validation:Required
 	ApiVersion ASpecApiVersion `json:"apiVersion"`
 
 	//AzureName: The name of the resource in Azure. This is often the same as the name
 	//of the resource in Kubernetes but it doesn't have to be.
 	AzureName string `json:"azureName"`
-
 	// +kubebuilder:validation:Required
 	Owner genruntime.KnownResourceReference `group:"microsoft.resources.infra.azure.com" json:"owner" kind:"ResourceGroup"`
 }
@@ -233,14 +231,12 @@ type BSpecType string
 const BSpecTypeMicrosoftAzureB = BSpecType("Microsoft.Azure/B")
 
 type B_Spec struct {
-
 	// +kubebuilder:validation:Required
 	ApiVersion BSpecApiVersion `json:"apiVersion"`
 
 	//AzureName: The name of the resource in Azure. This is often the same as the name
 	//of the resource in Kubernetes but it doesn't have to be.
 	AzureName string `json:"azureName"`
-
 	// +kubebuilder:validation:Required
 	Owner genruntime.KnownResourceReference `group:"test.infra.azure.com" json:"owner" kind:"A"`
 }
@@ -287,14 +283,12 @@ type CSpecType string
 const CSpecTypeMicrosoftAzureC = CSpecType("Microsoft.Azure/C")
 
 type C_Spec struct {
-
 	// +kubebuilder:validation:Required
 	ApiVersion CSpecApiVersion `json:"apiVersion"`
 
 	//AzureName: The name of the resource in Azure. This is often the same as the name
 	//of the resource in Kubernetes but it doesn't have to be.
 	AzureName string `json:"azureName"`
-
 	// +kubebuilder:validation:Required
 	Owner genruntime.KnownResourceReference `group:"test.infra.azure.com" json:"owner" kind:"B"`
 }

@@ -58,6 +58,27 @@ func (r *ResourceType) WithKubernetesResourceInterfaceImpl(
 
 	// handle different types of Name property
 	switch namePropType := namePropType.(type) {
+	case ValidatedType:
+		if !namePropType.ElementType().Equals(StringType) {
+			return nil, errors.Errorf("unable to handle non-string validated types in Name property")
+		}
+
+		validations := namePropType.Validations().(StringValidations)
+		if validations.Pattern != nil {
+			if validations.Pattern.String() == "^.*/default$" {
+				r = r.WithSpec(spec.WithoutProperty(AzureNameProperty))
+				nameFunc = withFixedValueAzureNameFunction("default")
+			} else {
+				// ignoring for now:
+				nameFunc = azureNameFunction
+				//return nil, errors.Errorf("unable to handle pattern in Name property: %s", validations.Pattern.String())
+			}
+		} else {
+			// ignoring length validations for now
+			nameFunc = azureNameFunction
+			//return nil, errors.Errorf("unable to handle validations on Name property …TODO")
+		}
+
 	case *EnumType:
 		if !namePropType.BaseType().Equals(StringType) {
 			return nil, errors.Errorf("unable to handle non-string enum base type in Name property")
