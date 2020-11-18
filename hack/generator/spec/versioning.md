@@ -23,6 +23,10 @@ We're generating a large number of CRD definitions based on the JSON schema defi
   - [Relibility Testing](#relibility-testing)
   - [Golden Tests](#golden-tests)
 - [Conversion Flow](#conversion-flow)
+  - [Direct conversion to storage type](#direct-conversion-to-storage-type)
+  - [Two step conversion to storage type](#two-step-conversion-to-storage-type)
+  - [Multiple step conversion to storage type](#multiple-step-conversion-to-storage-type)
+  - [Two step conversion from storage type](#two-step-conversion-from-storage-type)
 - [Alternative Solutions](#alternative-solutions)
   - [Alternative: Fixed storage version](#alternative-fixed-storage-version)
   - [Alternative: Use the latest API version](#alternative-use-the-latest-api-version)
@@ -295,9 +299,40 @@ If neither rule is satisfied, the test will silently null out.
 
 ## Conversion Flow
 
-The interactions of types when doing conversions are complex, so it's worth showing them in detail. For the purposes of discussion, 
+To illustrate the operation of conversions, consider the following graph of related versions of `Person`:
 
-TODO
+![](images/versioning/conversions.png)
+
+API versions are shown across the top, with the associated storage versions directly below. The arrows show the direction of references between the packages, with a package at the start of the arrow importing the package at the end. For example, package `v3` imports `v3storage` and can access the types within. 
+
+The highlighted storage version **v4storage** is the currently nominated hub version - all conversions are to or from this type.
+
+### Direct conversion to storage type
+
+The simplest case is a conversion directly between **v4** and **v4storage**, which simply involves copying properties across:
+
+![](images/versioning/direct-conversion.png)
+
+
+### Two step conversion to storage type
+
+There's no direct conversion between a **v3.Person** and a **v4storage.Person**, so an intermediate step is required: we convert first to a **v3storage.Person**, and then to the final type:
+
+![](images/versioning/two-step-conversion.png)
+
+
+### Multiple step conversion to storage type
+
+The approach generalizes - at each stage, an intermediate instance is created, one step closer to the current hub type, and the properties are copied across:
+
+![](images/versioning/multiple-step-conversion.png)
+
+### Two step conversion from storage type
+
+When converting in the other direction, the process is similar - we show here just the two step case to illustrate.
+
+![](images/versioning/two-step-reverse-conversion.png)
+
 
 ## Alternative Solutions
 
