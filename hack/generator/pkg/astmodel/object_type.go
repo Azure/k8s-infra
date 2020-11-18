@@ -38,7 +38,7 @@ func NewObjectType() *ObjectType {
 	}
 }
 
-func (objectType *ObjectType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
+func (objectType *ObjectType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string, validations []KubeBuilderValidation) []ast.Decl {
 	declaration := &ast.GenDecl{
 		Decs: ast.GenDeclDecorations{
 			NodeDecs: ast.NodeDecs{
@@ -56,6 +56,7 @@ func (objectType *ObjectType) AsDeclarations(codeGenerationContext *CodeGenerati
 	}
 
 	astbuilder.AddWrappedComments(&declaration.Decs.Start, description, 200)
+	AddValidationComments(&declaration.Decs.Start, validations)
 
 	result := []ast.Decl{declaration}
 	result = append(result, objectType.InterfaceImplementer.AsDeclarations(codeGenerationContext, name, nil)...)

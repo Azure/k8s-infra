@@ -22,7 +22,7 @@ type PropertyDefinition struct {
 	propertyName PropertyName
 	propertyType Type
 	description  string
-	validations  []Validation
+	validations  []KubeBuilderValidation
 	tags         map[string][]string
 }
 
@@ -80,7 +80,7 @@ func (property *PropertyDefinition) HasName(name PropertyName) bool {
 }
 
 // WithValidation adds the given validation to the property's set of validations
-func (property *PropertyDefinition) WithValidation(validation Validation) *PropertyDefinition {
+func (property *PropertyDefinition) WithValidation(validation KubeBuilderValidation) *PropertyDefinition {
 	result := property.copy()
 	result.validations = append(result.validations, validation)
 	return result
@@ -208,7 +208,7 @@ func (property *PropertyDefinition) MakeOptional() *PropertyDefinition {
 
 	if property.HasRequiredValidation() {
 		// Need to remove the Required validation
-		var validations []Validation
+		var validations []KubeBuilderValidation
 		for _, v := range result.validations {
 			if !v.HasName(RequiredValidationName) {
 				validations = append(validations, v)
@@ -283,12 +283,7 @@ func (property *PropertyDefinition) AsField(codeGenerationContext *CodeGeneratio
 		Tag:   astbuilder.TextLiteralf("`%s`", tags),
 	}
 
-	// generate validation comments:
-	for _, validation := range property.validations {
-		result.Decs.Before = ast.EmptyLine
-		// these are not doc comments but they must go here to be emitted before the property
-		astbuilder.AddComment(&result.Decs.Start, GenerateKubebuilderComment(validation))
-	}
+	AddValidationComments(&result.Decs.Start, property.validations)
 
 	// generate comment:
 	if property.description != "" {
@@ -355,7 +350,7 @@ func (property *PropertyDefinition) copy() *PropertyDefinition {
 	}
 
 	result.validations = nil
-	result.validations = append([]Validation(nil), property.validations...)
+	result.validations = append([]KubeBuilderValidation(nil), property.validations...)
 
 	return &result
 }

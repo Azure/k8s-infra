@@ -18,6 +18,7 @@ type TypeDefinition struct {
 	name        TypeName
 	description []string
 	theType     Type
+	validations []KubeBuilderValidation
 }
 
 func MakeTypeDefinition(name TypeName, theType Type) TypeDefinition {
@@ -32,6 +33,17 @@ func (def TypeDefinition) Name() TypeName {
 // Type returns the type being associated with the name
 func (def TypeDefinition) Type() Type {
 	return def.theType
+}
+
+// WithValidations sets the validations being used on the type
+func (def TypeDefinition) WithValidations(validations []KubeBuilderValidation) TypeDefinition {
+	def.validations = validations
+	return def
+}
+
+// Validations returns the validations being used on the type
+func (def TypeDefinition) Validations() []KubeBuilderValidation {
+	return def.validations
 }
 
 // Description returns the description to be attached to this type definition (as a comment)
@@ -68,33 +80,41 @@ func (def TypeDefinition) WithName(typeName TypeName) TypeDefinition {
 }
 
 func (def TypeDefinition) AsDeclarations(codeGenerationContext *CodeGenerationContext) []ast.Decl {
-	return def.theType.AsDeclarations(codeGenerationContext, def.name, def.description)
+	return def.theType.AsDeclarations(codeGenerationContext, def.name, def.description, def.validations)
 }
 
 // AsSimpleDeclarations is a helper for types that only require a simple name/alias to be defined
-func AsSimpleDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string, theType Type) []ast.Decl {
+func AsSimpleDeclarations(
+	codeGenerationContext *CodeGenerationContext,
+	name TypeName,
+	description []string,
+	validations []KubeBuilderValidation,
+	theType Type) []ast.Decl {
+
 	var docComments ast.Decorations
 	if len(description) > 0 {
 		astbuilder.AddWrappedComments(&docComments, description, 120)
 	}
 
-	return []ast.Decl{
-		&ast.GenDecl{
-			Decs: ast.GenDeclDecorations{
-				NodeDecs: ast.NodeDecs{
-					Start:  docComments,
-					Before: ast.EmptyLine,
-				},
+	AddValidationComments(&docComments, validations)
+
+	result := &ast.GenDecl{
+		Decs: ast.GenDeclDecorations{
+			NodeDecs: ast.NodeDecs{
+				Start:  docComments,
+				Before: ast.EmptyLine,
 			},
-			Tok: token.TYPE,
-			Specs: []ast.Spec{
-				&ast.TypeSpec{
-					Name: ast.NewIdent(name.Name()),
-					Type: theType.AsType(codeGenerationContext),
-				},
+		},
+		Tok: token.TYPE,
+		Specs: []ast.Spec{
+			&ast.TypeSpec{
+				Name: ast.NewIdent(name.Name()),
+				Type: theType.AsType(codeGenerationContext),
 			},
 		},
 	}
+
+	return []ast.Decl{result}
 }
 
 // RequiredImports returns a list of packages required by this type

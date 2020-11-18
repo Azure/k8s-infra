@@ -57,8 +57,8 @@ func (st *StorageType) AsType(codeGenerationContext *CodeGenerationContext) ast.
 }
 
 // AsDeclarations renders as a Go abstract syntax tree for a declaration
-func (st *StorageType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
-	return st.objectType.AsDeclarations(codeGenerationContext, name, description)
+func (st *StorageType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string, validations []KubeBuilderValidation) []ast.Decl {
+	return st.objectType.AsDeclarations(codeGenerationContext, name, description, validations)
 }
 
 // Equals decides if the types are the same

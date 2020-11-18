@@ -233,7 +233,7 @@ func (resource *ResourceType) RequiredPackageReferences() *PackageReferenceSet {
 }
 
 // AsDeclarations converts the resource type to a set of go declarations
-func (resource *ResourceType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
+func (resource *ResourceType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string, validations []KubeBuilderValidation) []ast.Decl {
 
 	packageName, err := codeGenerationContext.GetImportedPackageName(MetaV1PackageReference)
 	if err != nil {
@@ -279,6 +279,7 @@ func (resource *ResourceType) AsDeclarations(codeGenerationContext *CodeGenerati
 	}
 
 	astbuilder.AddWrappedComments(&comments, description, 200)
+	AddValidationComments(&comments, validations)
 
 	resourceDeclaration := &ast.GenDecl{
 		Tok:   token.TYPE,
