@@ -23,17 +23,6 @@ func (st *StorageType) String() string {
 // StorageType is a Type
 var _ Type = &StorageType{}
 
-// IsStorageType returns true if the passed type is a storage type; false otherwise.
-func IsStorageType(t Type) bool {
-	_, ok := t.(*StorageType)
-	return ok
-}
-
-// IsStorageDefinition returns true if the passed definition is for a storage type; false otherwise.
-func IsStorageDefinition(definition TypeDefinition) bool {
-	return IsStorageType(definition.Type())
-}
-
 // RequiredImports returns a list of packages required by this type
 func (st *StorageType) RequiredPackageReferences() *PackageReferenceSet {
 	return st.objectType.RequiredPackageReferences()
