@@ -22,10 +22,50 @@ func TestNewFlaggedType_GivenFlaggedType_DoesNotWrapTypeFurther(t *testing.T) {
 	g := NewGomegaWithT(t)
 	inner := NewFlaggedType(StringType, ArmFlag)
 	outer := NewFlaggedType(inner, StorageFlag)
-
 	g.Expect(outer).ToNot(BeNil())
 	g.Expect(outer.HasFlag(ArmFlag)).To(BeTrue())
 	g.Expect(outer.HasFlag(StorageFlag)).To(BeTrue())
+}
+
+/*
+ * WithFlag() tests
+ */
+
+func TestFlaggedType_WithFlag_GivenFlag_ReturnsFlaggedTypeWithExpectedFlags(t *testing.T) {
+	g := NewGomegaWithT(t)
+	inner := NewFlaggedType(StringType, ArmFlag)
+	outer := inner.WithFlag(StorageFlag)
+	g.Expect(outer).ToNot(BeNil())
+	g.Expect(outer.HasFlag(ArmFlag)).To(BeTrue())
+	g.Expect(outer.HasFlag(StorageFlag)).To(BeTrue())
+}
+
+/*
+ * WithoutFlag() tests
+ */
+
+func TestFlaggedType_WithoutFlag_GivenOnlyFlag_ReturnsWrappedType(t *testing.T) {
+	g := NewGomegaWithT(t)
+	inner := NewFlaggedType(StringType, ArmFlag)
+	final := inner.WithoutFlag(ArmFlag)
+	g.Expect(final).To(Equal(StringType))
+}
+
+func TestFlaggedType_WithoutFlag_GivenExistingFlag_ReturnsFlaggedTypeWithExpectedFlags(t *testing.T) {
+	g := NewGomegaWithT(t)
+	inner := NewFlaggedType(StringType, ArmFlag, StorageFlag)
+	final := inner.WithoutFlag(ArmFlag).(*FlaggedType)
+	g.Expect(final.HasFlag(ArmFlag)).To(BeFalse())
+	g.Expect(final.HasFlag(StorageFlag)).To(BeTrue())
+}
+
+func TestFlaggedType_WithoutFlag_GivenUnusedFlag_ReturnsSameInstance(t *testing.T) {
+	g := NewGomegaWithT(t)
+	inner := NewFlaggedType(StringType, StorageFlag)
+	final := inner.WithoutFlag(ArmFlag).(*FlaggedType)
+	g.Expect(final.HasFlag(ArmFlag)).To(BeFalse())
+	g.Expect(final.HasFlag(StorageFlag)).To(BeTrue())
+	g.Expect(final).To(Equal(inner))
 }
 
 /*

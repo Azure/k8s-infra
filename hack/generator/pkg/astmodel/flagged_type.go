@@ -77,24 +77,24 @@ func (ft *FlaggedType) WithoutFlag(flag TypeFlag) Type {
 }
 
 // RequiredPackageReferences returns a set of packages imports required by this type
-func (ft FlaggedType) RequiredPackageReferences() *PackageReferenceSet {
+func (ft *FlaggedType) RequiredPackageReferences() *PackageReferenceSet {
 	return ft.element.RequiredPackageReferences()
 }
 
 // References returns the names of all types that this type
 // references.
-func (ft FlaggedType) References() TypeNameSet {
+func (ft *FlaggedType) References() TypeNameSet {
 	return ft.element.References()
 }
 
 // AsType renders as a Go abstract syntax tree for a type
 // (yes this says ast.Expr but that is what the Go 'ast' package uses for types)
-func (ft FlaggedType) AsType(ctx *CodeGenerationContext) ast.Expr {
+func (ft *FlaggedType) AsType(ctx *CodeGenerationContext) ast.Expr {
 	return ft.AsType(ctx)
 }
 
 // AsDeclarations renders as a Go abstract syntax tree for a declaration
-func (ft FlaggedType) AsDeclarations(ctx *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
+func (ft *FlaggedType) AsDeclarations(ctx *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
 	return ft.element.AsDeclarations(ctx, name, description)
 }
 
@@ -120,7 +120,7 @@ func (ft *FlaggedType) Equals(t Type) bool {
 
 // Make sure all Types have a printable version for debugging/user info.
 // This doesn't need to be a full representation of the type.
-func (ft FlaggedType) String() string {
+func (ft *FlaggedType) String() string {
 	var result strings.Builder
 	result.WriteString(ft.element.String())
 
