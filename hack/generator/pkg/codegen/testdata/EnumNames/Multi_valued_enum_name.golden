@@ -22,7 +22,7 @@ var _ genruntime.KubernetesResource = &AResource{}
 
 // AzureName returns the Azure name of the resource (string representation of github.com/Azure/k8s-infra/hack/generated/apis/test/v20200101/AResourceSpecName)
 func (aResource *AResource) AzureName() string {
-	return string(aResource.AzureName)
+	return string(aResource.Spec.AzureName)
 }
 
 // Owner returns the ResourceReference of the owner, or nil if there is no owner
@@ -40,9 +40,12 @@ type AResourceList struct {
 }
 
 type AResource_SpecArm struct {
+	// +kubebuilder:validation:Required
 	ApiVersion AResourceSpecApiVersion `json:"apiVersion"`
-	Name       string                  `json:"name"`
-	Type       AResourceSpecType       `json:"type"`
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+	// +kubebuilder:validation:Required
+	Type AResourceSpecType `json:"type"`
 }
 
 var _ genruntime.ArmResourceSpec = &AResource_SpecArm{}

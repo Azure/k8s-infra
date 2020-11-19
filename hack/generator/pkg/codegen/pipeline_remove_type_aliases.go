@@ -52,20 +52,17 @@ func resolveTypeName(visitor *astmodel.TypeVisitor, name astmodel.TypeName, type
 		panic(fmt.Sprintf("Couldn't find type for type name %s", name))
 	}
 
-	if len(def.Validations()) > 0 {
-		// can't inline a type that has validations
-		return name, nil
-	}
-
-	// If this typeName definition has a type of object, enum, or resource, or resourceList
+	// If this typeName definition has a type of object, enum, validated, resource, or resourceList
 	// it's okay. Everything else we want to pull up one level to remove the alias
 	switch concreteType := def.Type().(type) {
 	case *astmodel.ObjectType:
-		return def.Name(), nil
+		return def.Name(), nil // must remain named for controller-gen
 	case *astmodel.EnumType:
-		return def.Name(), nil
+		return def.Name(), nil // must remain named so there is somewhere to put validations
 	case *astmodel.ResourceType:
-		return def.Name(), nil
+		return def.Name(), nil // must remain named for controller-gen
+	case astmodel.ValidatedType:
+		return def.Name(), nil // must remain named so there is somewhere to put validations
 	case astmodel.TypeName:
 		// We need to resolve further because this type is an alias
 		klog.V(3).Infof("Found type alias %s, replacing it with %s", name, concreteType)
@@ -77,8 +74,6 @@ func resolveTypeName(visitor *astmodel.TypeVisitor, name astmodel.TypeName, type
 	case *astmodel.ArrayType:
 		return visitor.Visit(concreteType, nil)
 	case *astmodel.MapType:
-		return visitor.Visit(concreteType, nil)
-	case astmodel.ValidatedType:
 		return visitor.Visit(concreteType, nil)
 	default:
 		panic(fmt.Sprintf("Don't know how to resolve type %T for typeName %s", concreteType, name))

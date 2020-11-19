@@ -18,7 +18,6 @@ type TypeDefinition struct {
 	name        TypeName
 	description []string
 	theType     Type
-	validations []KubeBuilderValidation
 }
 
 func MakeTypeDefinition(name TypeName, theType Type) TypeDefinition {
@@ -33,17 +32,6 @@ func (def TypeDefinition) Name() TypeName {
 // Type returns the type being associated with the name
 func (def TypeDefinition) Type() Type {
 	return def.theType
-}
-
-// WithValidations sets the validations being used on the type
-func (def TypeDefinition) WithValidations(validations []KubeBuilderValidation) TypeDefinition {
-	def.validations = validations
-	return def
-}
-
-// Validations returns the validations being used on the type
-func (def TypeDefinition) Validations() []KubeBuilderValidation {
-	return def.validations
 }
 
 // Description returns the description to be attached to this type definition (as a comment)
@@ -80,7 +68,7 @@ func (def TypeDefinition) WithName(typeName TypeName) TypeDefinition {
 }
 
 func (def TypeDefinition) AsDeclarations(codeGenerationContext *CodeGenerationContext) []ast.Decl {
-	return def.theType.AsDeclarations(codeGenerationContext, def.name, def.description, def.validations)
+	return def.theType.AsDeclarations(codeGenerationContext, def.name, def.description, []KubeBuilderValidation{})
 }
 
 // AsSimpleDeclarations is a helper for types that only require a simple name/alias to be defined

@@ -40,13 +40,17 @@ type FakeResourceList struct {
 }
 
 type FakeResource_SpecArm struct {
-	ApiVersion    FakeResourceSpecApiVersion `json:"apiVersion"`
-	ArrayFoo      []FooArm                   `json:"arrayFoo"`
-	ArrayOfArrays [][]FooArm                 `json:"arrayOfArrays,omitempty"`
-	ArrayOfEnums  []Color                    `json:"arrayOfEnums,omitempty"`
-	ArrayOfMaps   []map[string]FooArm        `json:"arrayOfMaps,omitempty"`
-	Name          string                     `json:"name"`
-	Type          FakeResourceSpecType       `json:"type"`
+	// +kubebuilder:validation:Required
+	ApiVersion FakeResourceSpecApiVersion `json:"apiVersion"`
+	// +kubebuilder:validation:Required
+	ArrayFoo      []FooArm            `json:"arrayFoo"`
+	ArrayOfArrays [][]FooArm          `json:"arrayOfArrays,omitempty"`
+	ArrayOfEnums  []Color             `json:"arrayOfEnums,omitempty"`
+	ArrayOfMaps   []map[string]FooArm `json:"arrayOfMaps,omitempty"`
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+	// +kubebuilder:validation:Required
+	Type FakeResourceSpecType `json:"type"`
 }
 
 var _ genruntime.ArmResourceSpec = &FakeResource_SpecArm{}

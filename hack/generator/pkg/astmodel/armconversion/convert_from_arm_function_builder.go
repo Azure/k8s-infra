@@ -174,7 +174,9 @@ func (builder *convertFromArmBuilder) namePropertyHandler(
 	}
 
 	// otherwise check if we are writing to a string-typed AzureName property
-	if !toProp.Equals(GetAzureNameProperty(builder.idFactory)) {
+	// or validated type
+	_, isValidatedType := toProp.PropertyType().(astmodel.ValidatedType)
+	if !toProp.Equals(GetAzureNameProperty(builder.idFactory)) && !isValidatedType {
 		return nil
 	}
 
@@ -314,7 +316,7 @@ func (builder *convertFromArmBuilder) propertiesWithSameNameButDifferentTypeHand
 func (builder *convertFromArmBuilder) fromArmComplexPropertyConversion(
 	params complexPropertyConversionParameters) []ast.Stmt {
 
-	switch params.destinationType.(type) {
+	switch concrete := params.destinationType.(type) {
 	case *astmodel.OptionalType:
 		return builder.convertComplexOptionalProperty(params)
 	case *astmodel.ArrayType:
@@ -333,6 +335,10 @@ func (builder *convertFromArmBuilder) fromArmComplexPropertyConversion(
 		return builder.convertComplexTypeNameProperty(params)
 	case *astmodel.PrimitiveType:
 		return builder.assignPrimitiveType(params)
+	case astmodel.ValidatedType:
+		// pass through to underlying type
+		params.destinationType = concrete.ElementType()
+		return builder.fromArmComplexPropertyConversion(params)
 	default:
 		panic(fmt.Sprintf("don't know how to perform fromArm conversion for type: %T", params.destinationType))
 	}
