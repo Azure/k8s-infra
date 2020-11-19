@@ -162,6 +162,10 @@ func withFixedValueAzureNameFunction(fixedValue string) asFuncType {
 
 	// ensure fixedValue is quoted. This is always the case with enum values we pass,
 	// but let's be safe:
+	if len(fixedValue) == 0 {
+		panic("cannot created fixed value AzureName function with empty fixed value")
+	}
+
 	if !(fixedValue[0] == '"' && fixedValue[len(fixedValue)-1] == '"') {
 		fixedValue = fmt.Sprintf("%q", fixedValue)
 	}
