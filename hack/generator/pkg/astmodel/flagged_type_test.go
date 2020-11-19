@@ -18,6 +18,16 @@ func TestNewFlaggedType_GivenTypeAndFlag_ReturnsFlaggedTypeWithFlag(t *testing.T
 	g.Expect(ft.HasFlag(StorageFlag)).To(BeFalse())
 }
 
+func TestNewFlaggedType_GivenFlaggedType_DoesNotWrapTypeFurther(t *testing.T) {
+	g := NewGomegaWithT(t)
+	inner := NewFlaggedType(StringType, ArmFlag)
+	outer := NewFlaggedType(inner, StorageFlag)
+
+	g.Expect(outer).ToNot(BeNil())
+	g.Expect(outer.HasFlag(ArmFlag)).To(BeTrue())
+	g.Expect(outer.HasFlag(StorageFlag)).To(BeTrue())
+}
+
 /*
  * Equals() tests
  */
