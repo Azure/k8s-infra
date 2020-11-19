@@ -212,8 +212,8 @@ tasks:
     - "apis/**/*_gen.go" # depends on all generated types
     cmds:
     - find ./apis -type f -name "zz_generated.*" -delete
-    - controller-gen object:headerFile=../boilerplate.go.txt paths="./..."
     - if [ -d "./config/crd/bases" ]; then find "./config/crd/bases" -type f -delete; fi
+    - controller-gen object:headerFile=../boilerplate.go.txt paths="./..." || true
     - controller-gen {{.CRD_OPTIONS}} rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
     vars:
       CRD_OPTIONS: "crd:crdVersions=v1,allowDangerousTypes=true"

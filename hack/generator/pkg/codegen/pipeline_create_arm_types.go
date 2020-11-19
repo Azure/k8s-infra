@@ -235,15 +235,6 @@ func iterDefs(
 	return newDefs, nil
 }
 
-func removeValidations(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
-	for _, p := range t.Properties() {
-		p = p.WithoutValidation()
-		t = t.WithProperty(p)
-	}
-
-	return t, nil
-}
-
 func getResourceSpecDefinition(
 	definitions astmodel.Types,
 	resourceType *astmodel.ResourceType) (astmodel.TypeDefinition, error) {
@@ -304,8 +295,7 @@ func createArmTypeDefinition(definitions astmodel.Types, isSpecType bool, def as
 	}
 
 	armName := astmodel.CreateArmTypeName(def.Name())
-	armDef, err := def.WithName(armName).
-		ApplyObjectTransformations(removeValidations, convertPropertiesToArmTypesWrapper)
+	armDef, err := def.WithName(armName).ApplyObjectTransformations(convertPropertiesToArmTypesWrapper)
 	if err != nil {
 		return astmodel.TypeDefinition{},
 			errors.Wrapf(err, "creating ARM prototype %v from Kubernetes definition %v", armName, def.Name())
@@ -479,7 +469,7 @@ func createOwnerProperty(idFactory astmodel.IdentifierFactory, ownerTypeName *as
 	if localRef, ok := ownerTypeName.PackageReference.AsLocalPackage(); ok {
 		group := localRef.Group() + astmodel.GroupSuffix
 		prop = prop.WithTag("group", group).WithTag("kind", ownerTypeName.Name())
-		prop = prop.WithValidation(astmodel.ValidateRequired()) // Owner is already required
+		prop = prop.SetRequired(true) // Owner is always required
 	} else {
 		return nil, errors.New("owners from external packages not currently supported")
 	}

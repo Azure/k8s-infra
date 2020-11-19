@@ -85,8 +85,7 @@ func nameInnerTypes(
 		}
 
 		name := astmodel.MakeTypeName(def.Name().PackageReference, nameHint)
-		validations := v.Validations().ToKubeBuilderValidations()
-		namedType := astmodel.MakeTypeDefinition(name, newElementType).WithValidations(validations)
+		namedType := astmodel.MakeTypeDefinition(name, v.WithType(newElementType))
 		resultTypes = append(resultTypes, namedType)
 		return namedType.Name(), nil
 	}
@@ -98,23 +97,24 @@ func nameInnerTypes(
 		var props []*astmodel.PropertyDefinition
 		// first map the inner types:
 		for _, prop := range it.Properties() {
-
 			propType := prop.PropertyType()
-
-			// lift any validations out of the original type
-			// and put them on the property
-			if vt, ok := prop.PropertyType().(astmodel.ValidatedType); ok {
-				propType = vt.ElementType()
-				for _, validation := range vt.Validations().ToKubeBuilderValidations() {
-					prop = prop.WithValidation(validation)
+			nameHint := nameHint + "_" + string(prop.PropertyName())
+			if validated, ok := propType.(astmodel.ValidatedType); ok {
+				// handle validated types in properties specially,
+				// they don't need to be named, so skip directly to element type
+				newElementType, err := this.Visit(validated.ElementType(), nameHint)
+				if err != nil {
+					errs = append(errs, err)
+				} else {
+					props = append(props, prop.WithType(validated.WithType(newElementType)))
 				}
-			}
-
-			newPropType, err := this.Visit(propType, nameHint+"_"+string(prop.PropertyName()))
-			if err != nil {
-				errs = append(errs, err)
 			} else {
-				props = append(props, prop.WithType(newPropType))
+				newPropType, err := this.Visit(propType, nameHint)
+				if err != nil {
+					errs = append(errs, err)
+				} else {
+					props = append(props, prop.WithType(newPropType))
+				}
 			}
 		}
 

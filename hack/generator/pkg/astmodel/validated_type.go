@@ -162,12 +162,12 @@ func (v ValidatedType) WithType(newElement Type) ValidatedType {
 
 var _ Type = ValidatedType{}
 
-func (v ValidatedType) AsDeclarations(_ *CodeGenerationContext, _ TypeName, _ []string, _ []KubeBuilderValidation) []ast.Decl {
-	panic("Should have been removed by pipeline stage 'name types for CRDs'")
+func (v ValidatedType) AsDeclarations(c *CodeGenerationContext, name TypeName, description []string, validations []KubeBuilderValidation) []ast.Decl {
+	return v.ElementType().AsDeclarations(c, name, description, append(validations, v.Validations().ToKubeBuilderValidations()...))
 }
 
 func (v ValidatedType) AsType(_ *CodeGenerationContext) ast.Expr {
-	panic("Should have been removed by pipeline stage 'name types for CRDs'")
+	panic("Should never happen: validated types must either be named (handled by 'name types for CRDs' pipeline stage) or be directly under properties (handled by PropertyDefinition.AsField)")
 }
 
 func (v ValidatedType) References() TypeNameSet {

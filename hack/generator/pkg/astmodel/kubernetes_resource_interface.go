@@ -167,7 +167,10 @@ func withEnumAzureNameFunction(propType Type) asFuncType {
 							Fun: ast.NewIdent("string"),
 							Args: []ast.Expr{
 								&ast.SelectorExpr{
-									X:   ast.NewIdent(receiverIdent),
+									X: &ast.SelectorExpr{
+										X:   ast.NewIdent(receiverIdent),
+										Sel: ast.NewIdent("Spec"),
+									},
 									Sel: ast.NewIdent(AzureNameProperty),
 								},
 							},
