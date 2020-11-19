@@ -27,10 +27,10 @@ type conversionBuilder struct {
 	propertyConversionHandlers []propertyConversionHandler
 }
 
-type TypeType int
+type TypeKind int
 
 const (
-	OrdinaryType TypeType = iota
+	OrdinaryType TypeKind = iota
 	SpecType
 	StatusType
 )
@@ -129,7 +129,7 @@ func NewArmTransformerImpl(
 	armTypeName astmodel.TypeName,
 	armType *astmodel.ObjectType,
 	idFactory astmodel.IdentifierFactory,
-	typeType TypeType) *astmodel.InterfaceImplementation {
+	typeType TypeKind) *astmodel.InterfaceImplementation {
 
 	var convertToArmFunc *ArmConversionFunction
 	if typeType != StatusType {
