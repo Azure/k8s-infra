@@ -21,3 +21,12 @@ func (f TypeFlag) String() string {
 func (f TypeFlag) ApplyTo(t Type) *FlaggedType {
 	return NewFlaggedType(t, f)
 }
+
+// IsOn() returns true if t is a flagged type that has this flag
+func (f TypeFlag) IsOn(t Type) bool {
+	if ft, ok := t.(*FlaggedType); ok {
+		return ft.HasFlag(f)
+	}
+
+	return false
+}
