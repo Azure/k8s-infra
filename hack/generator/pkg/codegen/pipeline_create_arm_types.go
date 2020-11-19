@@ -172,6 +172,12 @@ func iterDefs(
 	newDefs := make(astmodel.Types)
 	actionedDefs := make(map[astmodel.TypeName]struct{})
 
+	// TODO: a better way to do all this following would be if we had Spec/Status tags
+	// for Spec/Status types. Then we would only do one pass over all types and
+	// just examine the flags, rather than walking all resources first and
+	// the remaining definitions in a different pass… and we wouldn’t have to deal with
+	// multiple uses of the same type (see the panic below), etc, etc…
+
 	// Do all the resources first - this ensures we avoid handling a spec before we've processed
 	// its associated resource.
 	for _, def := range definitions {
@@ -189,11 +195,13 @@ func iterDefs(
 			for _, def := range defs {
 				// don't add if already defined.
 				// some status types are shared by multiple resources…
+				// this would be fixed by TODO above
+
 				if alreadyDef, ok := newDefs[def.Name()]; !ok {
 					newDefs[def.Name()] = def
 				} else {
 					if !alreadyDef.Type().Equals(def.Type()) {
-						panic("mismatch")
+						panic("generated two types with identical names that do not equal each other")
 					}
 				}
 			}
@@ -367,7 +375,7 @@ func addArmConversionInterface(
 	kubeDef astmodel.TypeDefinition,
 	armDef astmodel.TypeDefinition,
 	idFactory astmodel.IdentifierFactory,
-	typeType armconversion.TypeType) (astmodel.TypeDefinition, error) {
+	typeType armconversion.TypeKind) (astmodel.TypeDefinition, error) {
 
 	objectType, err := astmodel.TypeAsObjectType(armDef.Type())
 	if err != nil {
