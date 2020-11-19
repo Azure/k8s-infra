@@ -14,6 +14,8 @@ import (
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
 
+var KubernetesResourceInterfaceName astmodel.TypeName = astmodel.MakeTypeName(astmodel.MakeGenRuntimePackageReference(), "KubernetesResource")
+
 const nameParameterString = "name"
 
 type convertToArmBuilder struct {
@@ -101,8 +103,6 @@ func (builder *convertToArmBuilder) functionBodyStatements() []ast.Stmt {
 //////////////////////
 // Conversion handlers
 //////////////////////
-
-var KubernetesResourceInterfaceName astmodel.TypeName = astmodel.MakeTypeName(astmodel.MakeGenRuntimePackageReference(), "KubernetesResource")
 
 func (builder *convertToArmBuilder) namePropertyHandler(
 	toProp *astmodel.PropertyDefinition,
