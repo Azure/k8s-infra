@@ -23,13 +23,6 @@ func (st *StorageType) String() string {
 // StorageType is a Type
 var _ Type = &StorageType{}
 
-// NewStorageType wraps an object type to indicate it's a dedicated storage version
-func NewStorageType(objectType ObjectType) *StorageType {
-	return &StorageType{
-		objectType: objectType,
-	}
-}
-
 // IsStorageType returns true if the passed type is a storage type; false otherwise.
 func IsStorageType(t Type) bool {
 	_, ok := t.(*StorageType)
