@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/Azure/k8s-infra/hack/generated/controllers"
@@ -22,12 +23,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
+var port int32 = 9443
+
 func createEnvtestContext(perTestContext PerTestContext) (*KubeBaseTestContext, error) {
 	log.Printf("Creating envtest for test %s", perTestContext.TestName)
 
 	environment := envtest.Environment{
 		CRDDirectoryPaths: []string{
 			"../config/crd/bases/valid", // TODO: remove '/valid' once all CRDs are valid
+		},
+		WebhookInstallOptions: envtest.WebhookInstallOptions{
+			DirectoryPaths: []string{},
 		},
 	}
 
@@ -50,6 +56,7 @@ func createEnvtestContext(perTestContext PerTestContext) (*KubeBaseTestContext, 
 	log.Print("Creating & starting controller-runtime manager")
 	mgr, err := ctrl.NewManager(config, ctrl.Options{
 		Scheme:             CreateScheme(),
+		Port:               int(atomic.AddInt32(&port, 1)),
 		MetricsBindAddress: "0", // disable serving metrics, or else we get conflicts listening on same port 8080
 	})
 

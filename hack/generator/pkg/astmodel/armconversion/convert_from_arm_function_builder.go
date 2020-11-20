@@ -142,65 +142,32 @@ func (builder *convertFromArmBuilder) namePropertyHandler(
 		return nil
 	}
 
-	if typeName, ok := toProp.PropertyType().(astmodel.TypeName); ok {
-		// we are assigning to (presumably) an enum-typed AzureName property, (no way to check that here)
-		// we will cast the result of ExtractKubernetesResourceNameFromArmName
-		// to the target type:
-
-		// Check to make sure that the ARM object has a "Name" property (which matches our "AzureName")
-		fromProp, ok := fromType.Property("Name")
-		if !ok {
-			panic("ARM resource missing property 'Name'")
-		}
-
-		result := astbuilder.SimpleAssignment(
-			&ast.SelectorExpr{
-				X:   ast.NewIdent(builder.receiverIdent),
-				Sel: ast.NewIdent(string(toProp.PropertyName())),
-			},
-			token.ASSIGN,
-			astbuilder.CallFunc(
-				// "calling" enum name is equivalent to casting
-				ast.NewIdent(typeName.Name()),
-				astbuilder.CallQualifiedFunc(
-					astmodel.GenRuntimePackageName,
-					"ExtractKubernetesResourceNameFromArmName",
-					&ast.SelectorExpr{
-						X:   ast.NewIdent(builder.typedInputIdent),
-						Sel: ast.NewIdent(string(fromProp.PropertyName())),
-					})))
-
-		return []ast.Stmt{result}
-	}
-
-	// otherwise check if we are writing to a string-typed AzureName property
-	// or validated type
-	_, isValidatedType := toProp.PropertyType().(astmodel.ValidatedType)
-	if !toProp.Equals(GetAzureNameProperty(builder.idFactory)) && !isValidatedType {
-		return nil
-	}
-
 	// Check to make sure that the ARM object has a "Name" property (which matches our "AzureName")
 	fromProp, ok := fromType.Property("Name")
 	if !ok {
 		panic("ARM resource missing property 'Name'")
 	}
 
-	result := astbuilder.SimpleAssignment(
-		&ast.SelectorExpr{
-			X:   ast.NewIdent(builder.receiverIdent),
-			Sel: ast.NewIdent(string(toProp.PropertyName())),
+	// Invoke SetAzureName(ExtractKubernetesResourceNameFromArmName(this.Name)):
+	return []ast.Stmt{
+		&ast.ExprStmt{
+			X: &ast.CallExpr{
+				Fun: &ast.SelectorExpr{
+					X:   ast.NewIdent(builder.receiverIdent),
+					Sel: ast.NewIdent("SetAzureName"),
+				},
+				Args: []ast.Expr{
+					astbuilder.CallQualifiedFuncByName(
+						astmodel.GenRuntimePackageName,
+						"ExtractKubernetesResourceNameFromArmName",
+						&ast.SelectorExpr{
+							X:   ast.NewIdent(builder.typedInputIdent),
+							Sel: ast.NewIdent(string(fromProp.PropertyName())),
+						}),
+				},
+			},
 		},
-		token.ASSIGN,
-		astbuilder.CallQualifiedFunc(
-			astmodel.GenRuntimePackageName,
-			"ExtractKubernetesResourceNameFromArmName",
-			&ast.SelectorExpr{
-				X:   ast.NewIdent(builder.typedInputIdent),
-				Sel: ast.NewIdent(string(fromProp.PropertyName())),
-			}))
-
-	return []ast.Stmt{result}
+	}
 }
 
 func (builder *convertFromArmBuilder) ownerPropertyHandler(

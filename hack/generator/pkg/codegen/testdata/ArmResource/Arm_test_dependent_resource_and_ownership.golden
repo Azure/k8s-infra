@@ -8,6 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"fmt"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // +kubebuilder:object:root=true
@@ -17,6 +18,17 @@ type A struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	Spec              A_Spec `json:"spec,omitempty"`
+}
+
+// +kubebuilder:webhook:path=/mutate-test-infra-azure-com-v20200101-a,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=test.infra.azure.com,resources=a,verbs=create;update,versions=v20200101,name=default.a.test.infra.azure.com
+
+var _ admission.Defaulter = &A{}
+
+// Default defaults the Azure name of the resource to the Kubernetes name
+func (a *A) Default() {
+	if a.Spec.AzureName == "" {
+		a.Spec.AzureName = a.Name
+	}
 }
 
 var _ genruntime.KubernetesResource = &A{}
@@ -75,6 +87,17 @@ type B struct {
 	Spec              B_Spec `json:"spec,omitempty"`
 }
 
+// +kubebuilder:webhook:path=/mutate-test-infra-azure-com-v20200101-b,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=test.infra.azure.com,resources=b,verbs=create;update,versions=v20200101,name=default.b.test.infra.azure.com
+
+var _ admission.Defaulter = &B{}
+
+// Default defaults the Azure name of the resource to the Kubernetes name
+func (b *B) Default() {
+	if b.Spec.AzureName == "" {
+		b.Spec.AzureName = b.Name
+	}
+}
+
 var _ genruntime.KubernetesResource = &B{}
 
 // AzureName returns the Azure name of the resource
@@ -129,6 +152,17 @@ type C struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	Spec              C_Spec `json:"spec,omitempty"`
+}
+
+// +kubebuilder:webhook:path=/mutate-test-infra-azure-com-v20200101-c,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=test.infra.azure.com,resources=c,verbs=create;update,versions=v20200101,name=default.c.test.infra.azure.com
+
+var _ admission.Defaulter = &C{}
+
+// Default defaults the Azure name of the resource to the Kubernetes name
+func (c *C) Default() {
+	if c.Spec.AzureName == "" {
+		c.Spec.AzureName = c.Name
+	}
 }
 
 var _ genruntime.KubernetesResource = &C{}
@@ -225,10 +259,13 @@ func (aSpec *A_Spec) PopulateFromArm(owner genruntime.KnownResourceReference, ar
 		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected A_SpecArm, got %T", armInput)
 	}
 	aSpec.ApiVersion = typedInput.ApiVersion
-	aSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
+	aSpec.SetAzureName(genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name))
 	aSpec.Owner = owner
 	return nil
 }
+
+// SetAzureName sets the Azure name of the resource
+func (aSpec *A_Spec) SetAzureName(azureName string) { aSpec.AzureName = azureName }
 
 // +kubebuilder:validation:Enum={"2020-06-01"}
 type BSpecApiVersion string
@@ -277,10 +314,13 @@ func (bSpec *B_Spec) PopulateFromArm(owner genruntime.KnownResourceReference, ar
 		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected B_SpecArm, got %T", armInput)
 	}
 	bSpec.ApiVersion = typedInput.ApiVersion
-	bSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
+	bSpec.SetAzureName(genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name))
 	bSpec.Owner = owner
 	return nil
 }
+
+// SetAzureName sets the Azure name of the resource
+func (bSpec *B_Spec) SetAzureName(azureName string) { bSpec.AzureName = azureName }
 
 // +kubebuilder:validation:Enum={"2020-06-01"}
 type CSpecApiVersion string
@@ -329,10 +369,13 @@ func (cSpec *C_Spec) PopulateFromArm(owner genruntime.KnownResourceReference, ar
 		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected C_SpecArm, got %T", armInput)
 	}
 	cSpec.ApiVersion = typedInput.ApiVersion
-	cSpec.AzureName = genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name)
+	cSpec.SetAzureName(genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name))
 	cSpec.Owner = owner
 	return nil
 }
+
+// SetAzureName sets the Azure name of the resource
+func (cSpec *C_Spec) SetAzureName(azureName string) { cSpec.AzureName = azureName }
 
 func init() {
 	SchemeBuilder.Register(&A{}, &AList{}, &B{}, &BList{}, &C{}, &CList{})

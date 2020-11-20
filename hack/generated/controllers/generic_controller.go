@@ -109,7 +109,6 @@ func (options *Options) setDefaults() {
 }
 
 func RegisterAll(mgr ctrl.Manager, applier armclient.Applier, objs []runtime.Object, log logr.Logger, options Options) []error {
-
 	options.setDefaults()
 
 	var errs []error
@@ -118,6 +117,7 @@ func RegisterAll(mgr ctrl.Manager, applier armclient.Applier, objs []runtime.Obj
 			errs = append(errs, err)
 		}
 	}
+
 	return errs
 }
 
