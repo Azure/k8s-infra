@@ -19,7 +19,7 @@ type A struct {
 	Spec              A_Spec `json:"spec,omitempty"`
 }
 
-// +kubebuilder:webhook:path=/mutate-test-infra-azure-com-v20200101-a,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=test.infra.azure.com,resources=a,verbs=create;update,versions=v20200101,name=default.a.test.infra.azure.com
+// +kubebuilder:webhook:path=/mutate-test-infra-azure-com-v20200101-a,mutating=true,sideEffects=None,matchPolicy=Exact,failurePolicy=fail,groups=test.infra.azure.com,resources=a,verbs=create;update,versions=v20200101,name=default.a.test.infra.azure.com
 
 var _ admission.Defaulter = &A{}
 
@@ -86,7 +86,7 @@ type B struct {
 	Spec              B_Spec `json:"spec,omitempty"`
 }
 
-// +kubebuilder:webhook:path=/mutate-test-infra-azure-com-v20200101-b,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=test.infra.azure.com,resources=b,verbs=create;update,versions=v20200101,name=default.b.test.infra.azure.com
+// +kubebuilder:webhook:path=/mutate-test-infra-azure-com-v20200101-b,mutating=true,sideEffects=None,matchPolicy=Exact,failurePolicy=fail,groups=test.infra.azure.com,resources=b,verbs=create;update,versions=v20200101,name=default.b.test.infra.azure.com
 
 var _ admission.Defaulter = &B{}
 
@@ -153,7 +153,7 @@ type C struct {
 	Spec              C_Spec `json:"spec,omitempty"`
 }
 
-// +kubebuilder:webhook:path=/mutate-test-infra-azure-com-v20200101-c,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=test.infra.azure.com,resources=c,verbs=create;update,versions=v20200101,name=default.c.test.infra.azure.com
+// +kubebuilder:webhook:path=/mutate-test-infra-azure-com-v20200101-c,mutating=true,sideEffects=None,matchPolicy=Exact,failurePolicy=fail,groups=test.infra.azure.com,resources=c,verbs=create;update,versions=v20200101,name=default.c.test.infra.azure.com
 
 var _ admission.Defaulter = &C{}
 

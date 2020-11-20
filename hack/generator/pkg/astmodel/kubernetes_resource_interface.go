@@ -115,7 +115,7 @@ func AddKubernetesResourceInterfaceImpls(
 		// e.g.  "default.backendaddresspool.infra.azure.com"
 		name := fmt.Sprintf("default.%s.%s", resource, group)
 
-		annotation := fmt.Sprintf("+kubebuilder:webhook:path=/%s,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=%s,resources=%s,verbs=create;update,versions=%s,name=%s", path, group, resource, version, name)
+		annotation := fmt.Sprintf("+kubebuilder:webhook:path=/%s,mutating=true,sideEffects=None,matchPolicy=Exact,failurePolicy=fail,groups=%s,resources=%s,verbs=create;update,versions=%s,name=%s", path, group, resource, version, name)
 		r = r.WithInterface(NewInterfaceImplementation(
 			MakeTypeName(admissionPackageReference, "Defaulter"),
 			&objectFunction{

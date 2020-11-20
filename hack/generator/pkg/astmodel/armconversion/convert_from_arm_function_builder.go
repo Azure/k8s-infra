@@ -157,7 +157,7 @@ func (builder *convertFromArmBuilder) namePropertyHandler(
 					Sel: ast.NewIdent("SetAzureName"),
 				},
 				Args: []ast.Expr{
-					astbuilder.CallQualifiedFuncByName(
+					astbuilder.CallQualifiedFunc(
 						astmodel.GenRuntimePackageName,
 						"ExtractKubernetesResourceNameFromArmName",
 						&ast.SelectorExpr{
