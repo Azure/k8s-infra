@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"fmt"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // +kubebuilder:object:root=true
@@ -16,6 +17,17 @@ type AResource struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	Spec              AResource_Spec `json:"spec,omitempty"`
+}
+
+// +kubebuilder:webhook:path=/mutate-test-infra-azure-com-v20200101-aresource,mutating=true,matchPolicy=Equivalent,failurePolicy=fail,groups=test.infra.azure.com,resources=aresource,verbs=create;update,versions=v20200101,name=default.aresource.test.infra.azure.com
+
+var _ admission.Defaulter = &AResource{}
+
+// Default defaults the Azure name of the resource to the Kubernetes name
+func (aResource *AResource) Default() {
+	if aResource.Spec.AzureName == "" {
+		aResource.Spec.AzureName = aResource.Name
+	}
 }
 
 var _ genruntime.KubernetesResource = &AResource{}
@@ -112,9 +124,14 @@ func (aResourceSpec *AResource_Spec) PopulateFromArm(owner genruntime.KnownResou
 		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected AResource_SpecArm, got %T", armInput)
 	}
 	aResourceSpec.ApiVersion = typedInput.ApiVersion
-	aResourceSpec.AzureName = AResourceSpecName(genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name))
+	aResourceSpec.SetAzureName(genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name))
 	aResourceSpec.Owner = owner
 	return nil
+}
+
+// SetAzureName sets the Azure name from the given github.com/Azure/k8s-infra/hack/generated/apis/test/v20200101/AResourceSpecName value
+func (aResourceSpec *AResource_Spec) SetAzureName(azureName string) {
+	aResourceSpec.AzureName = AResourceSpecName(azureName)
 }
 
 // +kubebuilder:validation:Enum={"one","three","two"}
