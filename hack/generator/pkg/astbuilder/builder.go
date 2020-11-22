@@ -249,7 +249,7 @@ func FormatError(formatString string, args ...ast.Expr) ast.Expr {
 		callArgs,
 		StringLiteral(formatString))
 	callArgs = append(callArgs, args...)
-	return CallQualifiedFuncByName("fmt", "Errorf", callArgs...)
+	return CallQualifiedFunc("fmt", "Errorf", callArgs...)
 }
 
 // AddrOf returns a statement that gets the address of the provided expression.

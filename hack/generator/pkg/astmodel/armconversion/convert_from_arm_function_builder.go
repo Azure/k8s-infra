@@ -162,7 +162,7 @@ func (builder *convertFromArmBuilder) namePropertyHandler(
 			astbuilder.CallFunc(
 				// "calling" enum name is equivalent to casting
 				ast.NewIdent(typeName.Name()),
-				astbuilder.CallQualifiedFuncByName(
+				astbuilder.CallQualifiedFunc(
 					astmodel.GenRuntimePackageName,
 					"ExtractKubernetesResourceNameFromArmName",
 					&ast.SelectorExpr{
@@ -190,7 +190,7 @@ func (builder *convertFromArmBuilder) namePropertyHandler(
 			Sel: ast.NewIdent(string(toProp.PropertyName())),
 		},
 		token.ASSIGN,
-		astbuilder.CallQualifiedFuncByName(
+		astbuilder.CallQualifiedFunc(
 			astmodel.GenRuntimePackageName,
 			"ExtractKubernetesResourceNameFromArmName",
 			&ast.SelectorExpr{
