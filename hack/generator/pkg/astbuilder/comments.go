@@ -47,12 +47,6 @@ func AddComment(commentList *ast.Decorations, comment string) {
 		line = "//" + line
 	}
 
-	/*
-		if *commentList == nil {
-			line = "\n" + line
-		}
-	*/
-
 	commentList.Append(line)
 }
 
