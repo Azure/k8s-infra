@@ -5,7 +5,9 @@
 
 package astbuilder
 
-import "go/ast"
+import (
+	ast "github.com/dave/dst"
+)
 
 // CallFunc() creates an expression to call a function with specified arguments, generating code
 // like:
@@ -27,11 +29,11 @@ func CallFuncByName(funcName string, arguments ...ast.Expr) ast.Expr {
 // CallQualifiedFunc() creates an expression to call a qualified function with the specified
 // arguments, generating code like:
 // <qualifier>.<funcName>(arguments...)
-func CallQualifiedFunc(qualifier *ast.Ident, funcName *ast.Ident, arguments ...ast.Expr) ast.Expr {
+func CallQualifiedFunc(qualifier string, funcName string, arguments ...ast.Expr) ast.Expr {
 	return &ast.CallExpr{
 		Fun: &ast.SelectorExpr{
-			X:   qualifier,
-			Sel: funcName,
+			X:   ast.NewIdent(qualifier),
+			Sel: ast.NewIdent(funcName),
 		},
 		Args: arguments,
 	}
@@ -41,7 +43,7 @@ func CallQualifiedFunc(qualifier *ast.Ident, funcName *ast.Ident, arguments ...a
 // name with the given arguments, generating code like:
 // <qualifier>.<funcName>(arguments...)
 func CallQualifiedFuncByName(qualifier string, funcName string, arguments ...ast.Expr) ast.Expr {
-	return CallQualifiedFunc(ast.NewIdent(qualifier), ast.NewIdent(funcName), arguments...)
+	return CallQualifiedFunc(qualifier, funcName, arguments...)
 }
 
 // InvokeFunc() creates a statement to invoke a function with specified arguments, generating code
@@ -58,7 +60,7 @@ func InvokeFunc(funcName *ast.Ident, arguments ...ast.Expr) ast.Stmt {
 // arguments, generating code like:
 // <qualifier>.<funcName>(arguments...)
 // If you want to use the result of the function call as a value, use CallQualifiedFunc() instead
-func InvokeQualifiedFunc(qualifier *ast.Ident, funcName *ast.Ident, arguments ...ast.Expr) ast.Stmt {
+func InvokeQualifiedFunc(qualifier string, funcName string, arguments ...ast.Expr) ast.Stmt {
 	return &ast.ExprStmt{
 		X: CallQualifiedFunc(qualifier, funcName, arguments...),
 	}
@@ -69,5 +71,5 @@ func InvokeQualifiedFunc(qualifier *ast.Ident, funcName *ast.Ident, arguments ..
 // <qualifier>.<funcName>(arguments...)
 // If you want to use the result of the function call as a value, use CallQualifiedFuncByName() instead
 func InvokeQualifiedFuncByName(qualifier string, funcName string, arguments ...ast.Expr) ast.Stmt {
-	return InvokeQualifiedFunc(ast.NewIdent(qualifier), ast.NewIdent(funcName), arguments...)
+	return InvokeQualifiedFunc(qualifier, funcName, arguments...)
 }
