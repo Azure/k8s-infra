@@ -39,13 +39,6 @@ func CallQualifiedFunc(qualifier string, funcName string, arguments ...ast.Expr)
 	}
 }
 
-// CallQualifiedFuncByName() creates an expression to call a qualified function of the specified
-// name with the given arguments, generating code like:
-// <qualifier>.<funcName>(arguments...)
-func CallQualifiedFuncByName(qualifier string, funcName string, arguments ...ast.Expr) ast.Expr {
-	return CallQualifiedFunc(qualifier, funcName, arguments...)
-}
-
 // InvokeFunc() creates a statement to invoke a function with specified arguments, generating code
 // like
 // <funcName>(arguments...)
