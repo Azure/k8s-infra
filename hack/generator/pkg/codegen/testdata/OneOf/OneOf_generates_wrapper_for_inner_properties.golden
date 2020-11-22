@@ -13,7 +13,6 @@ type Test struct {
 }
 
 type Test_Properties struct {
-
 	//Bar: Mutually exclusive with all other properties
 	Bar *Bar `json:"bar,omitempty"`
 

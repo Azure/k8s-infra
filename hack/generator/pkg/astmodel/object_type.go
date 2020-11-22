@@ -168,6 +168,12 @@ func (objectType *ObjectType) AsType(codeGenerationContext *CodeGenerationContex
 		fields = append(fields, f.AsField(codeGenerationContext))
 	}
 
+	if len(fields) > 0 {
+		// if first field has Before:EmptyLine decoration, switch it to NewLine
+		// this makes the output look nicer 🙂
+		fields[0].Decs.Before = ast.NewLine
+	}
+
 	return &ast.StructType{
 		Fields: &ast.FieldList{
 			List: fields,

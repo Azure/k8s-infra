@@ -54,13 +54,16 @@ type FakeResourceList struct {
 type FakeResource_SpecArm struct {
 	// +kubebuilder:validation:Required
 	ApiVersion FakeResourceSpecApiVersion `json:"apiVersion"`
+
 	// +kubebuilder:validation:Required
 	ArrayFoo      []FooArm            `json:"arrayFoo"`
 	ArrayOfArrays [][]FooArm          `json:"arrayOfArrays,omitempty"`
 	ArrayOfEnums  []Color             `json:"arrayOfEnums,omitempty"`
 	ArrayOfMaps   []map[string]FooArm `json:"arrayOfMaps,omitempty"`
+
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
+
 	// +kubebuilder:validation:Required
 	Type FakeResourceSpecType `json:"type"`
 }
@@ -105,6 +108,7 @@ const FakeResourceSpecTypeMicrosoftAzureFakeResource = FakeResourceSpecType("Mic
 type FakeResource_Spec struct {
 	// +kubebuilder:validation:Required
 	ApiVersion FakeResourceSpecApiVersion `json:"apiVersion"`
+
 	// +kubebuilder:validation:Required
 	ArrayFoo      []Foo            `json:"arrayFoo"`
 	ArrayOfArrays [][]Foo          `json:"arrayOfArrays,omitempty"`
@@ -114,6 +118,7 @@ type FakeResource_Spec struct {
 	//AzureName: The name of the resource in Azure. This is often the same as the name
 	//of the resource in Kubernetes but it doesn't have to be.
 	AzureName string `json:"azureName"`
+
 	// +kubebuilder:validation:Required
 	Owner genruntime.KnownResourceReference `group:"microsoft.resources.infra.azure.com" json:"owner" kind:"ResourceGroup"`
 }

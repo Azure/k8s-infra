@@ -54,8 +54,10 @@ type AResourceList struct {
 type AResource_SpecArm struct {
 	// +kubebuilder:validation:Required
 	ApiVersion AResourceSpecApiVersion `json:"apiVersion"`
+
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
+
 	// +kubebuilder:validation:Required
 	Type AResourceSpecType `json:"type"`
 }
@@ -94,6 +96,7 @@ type AResource_Spec struct {
 	//AzureName: The name of the resource in Azure. This is often the same as the name
 	//of the resource in Kubernetes but it doesn't have to be.
 	AzureName AResourceSpecName `json:"azureName"`
+
 	// +kubebuilder:validation:Required
 	Owner genruntime.KnownResourceReference `group:"microsoft.resources.infra.azure.com" json:"owner" kind:"ResourceGroup"`
 }

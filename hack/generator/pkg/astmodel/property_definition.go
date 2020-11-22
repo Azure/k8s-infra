@@ -255,12 +255,17 @@ func (property *PropertyDefinition) AsField(codeGenerationContext *CodeGeneratio
 		AddValidationComments(&doc, validated.Validations().ToKubeBuilderValidations())
 	}
 
+	before := ast.NewLine
+	if len(doc) > 0 {
+		before = ast.EmptyLine
+	}
+
 	// We don't use StringLiteral() for the tag as it adds extra quotes
 	result := &ast.Field{
 		Decs: ast.FieldDecorations{
 			NodeDecs: ast.NodeDecs{
-				Before: ast.NewLine,
 				Start:  doc,
+				Before: before,
 			},
 		},
 		Names: names,

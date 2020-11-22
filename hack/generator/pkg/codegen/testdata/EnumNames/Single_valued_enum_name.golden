@@ -47,8 +47,10 @@ const AResourceSpecNameOnlyonevalue = AResourceSpecName("onlyonevalue")
 type AResource_SpecArm struct {
 	// +kubebuilder:validation:Required
 	ApiVersion AResourceSpecApiVersion `json:"apiVersion"`
+
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
+
 	// +kubebuilder:validation:Required
 	Type AResourceSpecType `json:"type"`
 }
@@ -83,6 +85,7 @@ const AResourceSpecTypeMicrosoftAzureAResource = AResourceSpecType("Microsoft.Az
 type AResource_Spec struct {
 	// +kubebuilder:validation:Required
 	ApiVersion AResourceSpecApiVersion `json:"apiVersion"`
+
 	// +kubebuilder:validation:Required
 	Owner genruntime.KnownResourceReference `group:"microsoft.resources.infra.azure.com" json:"owner" kind:"ResourceGroup"`
 }

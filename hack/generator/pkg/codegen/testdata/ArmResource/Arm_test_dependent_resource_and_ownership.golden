@@ -54,8 +54,10 @@ type AList struct {
 type A_SpecArm struct {
 	// +kubebuilder:validation:Required
 	ApiVersion ASpecApiVersion `json:"apiVersion"`
+
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
+
 	// +kubebuilder:validation:Required
 	Type ASpecType `json:"type"`
 }
@@ -121,8 +123,10 @@ type BList struct {
 type B_SpecArm struct {
 	// +kubebuilder:validation:Required
 	ApiVersion BSpecApiVersion `json:"apiVersion"`
+
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
+
 	// +kubebuilder:validation:Required
 	Type BSpecType `json:"type"`
 }
@@ -188,8 +192,10 @@ type CList struct {
 type C_SpecArm struct {
 	// +kubebuilder:validation:Required
 	ApiVersion CSpecApiVersion `json:"apiVersion"`
+
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
+
 	// +kubebuilder:validation:Required
 	Type CSpecType `json:"type"`
 }
@@ -228,6 +234,7 @@ type A_Spec struct {
 	//AzureName: The name of the resource in Azure. This is often the same as the name
 	//of the resource in Kubernetes but it doesn't have to be.
 	AzureName string `json:"azureName"`
+
 	// +kubebuilder:validation:Required
 	Owner genruntime.KnownResourceReference `group:"microsoft.resources.infra.azure.com" json:"owner" kind:"ResourceGroup"`
 }
@@ -283,6 +290,7 @@ type B_Spec struct {
 	//AzureName: The name of the resource in Azure. This is often the same as the name
 	//of the resource in Kubernetes but it doesn't have to be.
 	AzureName string `json:"azureName"`
+
 	// +kubebuilder:validation:Required
 	Owner genruntime.KnownResourceReference `group:"test.infra.azure.com" json:"owner" kind:"A"`
 }
@@ -338,6 +346,7 @@ type C_Spec struct {
 	//AzureName: The name of the resource in Azure. This is often the same as the name
 	//of the resource in Kubernetes but it doesn't have to be.
 	AzureName string `json:"azureName"`
+
 	// +kubebuilder:validation:Required
 	Owner genruntime.KnownResourceReference `group:"test.infra.azure.com" json:"owner" kind:"B"`
 }
