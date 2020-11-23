@@ -58,11 +58,3 @@ func InvokeQualifiedFunc(qualifier string, funcName string, arguments ...ast.Exp
 		X: CallQualifiedFunc(qualifier, funcName, arguments...),
 	}
 }
-
-// InvokeQualifiedFuncByName() creates a statement to invoke a qualified function of the specified
-// name with the given arguments, generating code like:
-// <qualifier>.<funcName>(arguments...)
-// If you want to use the result of the function call as a value, use CallQualifiedFuncByName() instead
-func InvokeQualifiedFuncByName(qualifier string, funcName string, arguments ...ast.Expr) ast.Stmt {
-	return InvokeQualifiedFunc(qualifier, funcName, arguments...)
-}
