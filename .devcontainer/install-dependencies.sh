@@ -79,3 +79,13 @@ curl -L "https://go.kubebuilder.io/dl/2.3.1/${os}/${arch}" | tar -xz -C /tmp/
 mv "/tmp/kubebuilder_2.3.1_${os}_${arch}" "$KUBEBUILDER_DEST"
 
 echo "Installed tools: $(ls "$TOOL_DEST")"
+
+
+if [ "$1" = "devcontainer" ]; then 
+    echo "Setting up k8s webhook certificates"
+
+    mkdir -p /tmp/k8s-webhook-server/serving-certs
+    openssl genrsa 2048 > tls.key
+    openssl req -new -x509 -nodes -sha256 -days 3650 -key tls.key -subj '/' -out tls.crt
+    mv tls.key tls.crt /tmp/k8s-webhook-server/serving-certs
+fi
