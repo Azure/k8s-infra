@@ -69,7 +69,10 @@ func (writer GoFileWriter) createFileAst() *ast.File {
 		Decls: writer.declarations,
 	}
 
-	astbuilder.AddComments(&result.Doc.List, CodeGenerationComments)
+	for _, c := range CodeGenerationComments {
+		astbuilder.AddComment(&result.Doc.List, " "+c)
+	}
+
 	astbuilder.AddComment(&result.Doc.List, " Copyright (c) Microsoft Corporation.")
 	astbuilder.AddComment(&result.Doc.List, " Licensed under the MIT license.")
 
