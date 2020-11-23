@@ -309,9 +309,7 @@ func (builder *convertToArmBuilder) convertComplexOptionalProperty(
 
 	destinationType := params.destinationType.(*astmodel.OptionalType)
 
-	tempVarIdent := func() *ast.Ident {
-		return ast.NewIdent(builder.idFactory.CreateIdentifier(params.nameHint+"Typed", astmodel.NotExported))
-	}
+	tempVarIdent := builder.idFactory.CreateIdentifier(params.nameHint+"Typed", astmodel.NotExported)
 	tempVarType := destinationType.Element()
 
 	newSource := &ast.UnaryExpr{
@@ -320,7 +318,7 @@ func (builder *convertToArmBuilder) convertComplexOptionalProperty(
 	}
 
 	innerStatements := builder.toArmComplexPropertyConversion(
-		params.withDestination(tempVarIdent()).
+		params.withDestination(ast.NewIdent(tempVarIdent)).
 			withDestinationType(tempVarType).
 			withAdditionalConversionContext(destinationType).
 			withAssignmentHandler(assignmentHandlerDefine).
@@ -334,7 +332,7 @@ func (builder *convertToArmBuilder) convertComplexOptionalProperty(
 			token.ASSIGN,
 			&ast.UnaryExpr{
 				Op: token.AND,
-				X:  tempVarIdent(),
+				X:  ast.NewIdent(tempVarIdent),
 			}))
 
 	result := &ast.IfStmt{
