@@ -98,44 +98,45 @@ func AddKubernetesResourceInterfaceImpls(
 	}
 
 	if setNameFunction != nil {
-		// we also need to generate a Defaulter implementation
-
-		lpr, _ := resourceName.PackageReference.AsLocalPackage()
-
-		group := lpr.group              // e.g. "microsoft.network.infra.azure.com"
-		resource := resourceName.Name() // e.g. "backendaddresspools"
-		version := lpr.version          // e.g. "v1"
-
-		group = strings.ToLower(group + GroupSuffix)
-		nonPluralResource := strings.ToLower(resource)
-		resource = strings.ToLower(resource) + "s" // TODO: this should come from resource?
-
-		// e.g. "mutate-microsoft-network-infra-azure-com-v1-backendaddresspool"
-		// note that this must match _exactly_ how controller-runtime generates the path
-		// or it will not work!
-		path := fmt.Sprintf("/mutate-%s-%s-%s", strings.ReplaceAll(group, ".", "-"), version, nonPluralResource)
-
-		// e.g.  "default.v123.backendaddresspool.infra.azure.com"
-		name := fmt.Sprintf("default.%s.%s.%s", version, resource, group)
-
-		annotation := fmt.Sprintf("+kubebuilder:webhook:path=%s,mutating=true,sideEffects=None,matchPolicy=Exact,failurePolicy=fail,groups=%s,resources=%s,verbs=create;update,versions=%s,name=%s", path, group, resource, version, name)
-		r = r.WithInterface(
-			NewInterfaceImplementation(
-				DefaulterInterfaceName,
-				&objectFunction{
-					name:      "Default",
-					o:         spec,
-					idFactory: idFactory,
-					asFunc:    defaultAzureNameFunction,
-				}).WithAnnotation(annotation))
+		// we also need to generate a Defaulter implementation to default AzureName
+		r = r.WithInterface(generateDefaulter(resourceName, spec, idFactory))
 	}
 
 	return r, nil
 }
 
+var admissionPackageReference PackageReference = MakeExternalPackageReference("sigs.k8s.io/controller-runtime/pkg/webhook/admission")
 var DefaulterInterfaceName = MakeTypeName(admissionPackageReference, "Defaulter")
 
-var admissionPackageReference PackageReference = MakeExternalPackageReference("sigs.k8s.io/controller-runtime/pkg/webhook/admission")
+func generateDefaulter(resourceName TypeName, spec *ObjectType, idFactory IdentifierFactory) *InterfaceImplementation {
+	lpr, _ := resourceName.PackageReference.AsLocalPackage()
+
+	group := lpr.group              // e.g. "microsoft.network.infra.azure.com"
+	resource := resourceName.Name() // e.g. "backendaddresspools"
+	version := lpr.version          // e.g. "v1"
+
+	group = strings.ToLower(group + GroupSuffix)
+	nonPluralResource := strings.ToLower(resource)
+	resource = strings.ToLower(resource) + "s" // TODO: this should come from resource?
+
+	// e.g. "mutate-microsoft-network-infra-azure-com-v1-backendaddresspool"
+	// note that this must match _exactly_ how controller-runtime generates the path
+	// or it will not work!
+	path := fmt.Sprintf("/mutate-%s-%s-%s", strings.ReplaceAll(group, ".", "-"), version, nonPluralResource)
+
+	// e.g.  "default.v123.backendaddresspool.infra.azure.com"
+	name := fmt.Sprintf("default.%s.%s.%s", version, resource, group)
+
+	annotation := fmt.Sprintf("+kubebuilder:webhook:path=%s,mutating=true,sideEffects=None,matchPolicy=Exact,failurePolicy=fail,groups=%s,resources=%s,verbs=create;update,versions=%s,name=%s", path, group, resource, version, name)
+	return NewInterfaceImplementation(
+		DefaulterInterfaceName,
+		&objectFunction{
+			name:      "Default",
+			o:         spec,
+			idFactory: idFactory,
+			asFunc:    defaultAzureNameFunction,
+		}).WithAnnotation(annotation)
+}
 
 // note that this can, as a side-effect, update the resource type
 func getAzureNameFunctionsForType(r **ResourceType, spec *ObjectType, t Type, types Types) (asFuncType, asFuncType, error) {
