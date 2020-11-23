@@ -401,6 +401,17 @@ func (objectType *ObjectType) WithInterface(iface *InterfaceImplementation) *Obj
 	return result
 }
 
+// WithoutInterface removes the specified interface
+func (objectType *ObjectType) WithoutInterface(name TypeName) *ObjectType {
+	if !objectType.InterfaceImplementer.HasInterface(name) {
+		return objectType
+	}
+
+	result := objectType.copy()
+	result.InterfaceImplementer = result.InterfaceImplementer.WithoutInterface(name)
+	return result
+}
+
 func (objectType *ObjectType) copy() *ObjectType {
 	result := NewObjectType()
 

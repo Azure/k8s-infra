@@ -157,6 +157,16 @@ func (resource *ResourceType) WithStatus(statusType Type) *ResourceType {
 	return &result
 }
 
+func (resource *ResourceType) WithoutInterface(name TypeName) *ResourceType {
+	if !resource.InterfaceImplementer.HasInterface(name) {
+		return resource
+	}
+
+	result := *resource
+	result.InterfaceImplementer = result.InterfaceImplementer.WithoutInterface(name)
+	return &result
+}
+
 // WithInterface creates a new Resource with a function (method) attached to it
 func (resource *ResourceType) WithInterface(iface *InterfaceImplementation) *ResourceType {
 	// Create a copy of objectType to preserve immutability

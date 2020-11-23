@@ -178,10 +178,25 @@ tasks:
     - cp config/crd/bases/microsoft.storage.infra.azure.com_storageaccountsblobservicescontainers.yaml config/crd/bases/valid
     - cp config/crd/bases/microsoft.resources.infra.azure.com_resourcegroups.yaml config/crd/bases/valid
 
+  controller:copy-valid-webhooks:
+    dir: "{{.CONTROLLER_ROOT}}"
+    deps: [generate-crds]
+    cmds:
+    - mkdir -p config/webhook/valid
+    - yq delete {{.IN}} 'webhooks[*]' > {{.OUT}}
+    - yq read -c {{.IN}} 'webhooks.(rules[*].resources[*]. == batchaccount)' | yq prefix - webhooks | yq merge -a append - {{.OUT}} > {{.OUT}}_2 && mv {{.OUT}}_2 {{.OUT}}
+    - yq read -c {{.IN}} 'webhooks.(rules[*].resources[*]. == storageaccount)' | yq prefix - webhooks | yq merge -a append - {{.OUT}} > {{.OUT}}_2 && mv {{.OUT}}_2 {{.OUT}}
+    - yq read -c {{.IN}} 'webhooks.(rules[*].resources[*]. == storageaccountsblobservicescontainer)' | yq prefix - webhooks | yq merge -a append - {{.OUT}} > {{.OUT}}_2 && mv {{.OUT}}_2 {{.OUT}}
+
+    vars:
+      IN: config/webhook/manifests.yaml 
+      OUT: config/webhook/valid/manifests.yaml
+
+
   controller:test-integration-envtest:
     desc: Run integration tests with envtest using record/replay.
     dir: "{{.CONTROLLER_ROOT}}"
-    deps: [controller:copy-valid-crds]
+    deps: [controller:copy-valid-crds, controller:copy-valid-webhooks]
     cmds:
     # -race fails at the moment in controller-runtime
     - ENVTEST=1 RECORD_REPLAY=1 go test -v $({{.GENERATED_DIRS_TO_LINT_CMD}})
@@ -189,7 +204,7 @@ tasks:
   controller:test-integration-envtest-cover:
     desc: Run integration tests with envtest using record/replay and output coverage.
     dir: "{{.CONTROLLER_ROOT}}"
-    deps: [controller:copy-valid-crds]
+    deps: [controller:copy-valid-crds, controller:copy-valid-webhooks]
     cmds:
     # -race fails at the moment in controller-runtime
     - ENVTEST=1 RECORD_REPLAY=1 go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." -v $({{.GENERATED_DIRS_TO_LINT_CMD}})
@@ -198,7 +213,7 @@ tasks:
   controller:test-integration-envtest-live:
     desc: Run integration tests with envtest against live data and output coverage.
     dir: "{{.CONTROLLER_ROOT}}"
-    deps: [controller:copy-valid-crds, cleanup-azure-resources]
+    deps: [controller:copy-valid-crds, controller:copy-valid-webhooks, cleanup-azure-resources]
     cmds:
     # -race fails at the moment in controller-runtime
     - ENVTEST=1 go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." -v $({{.GENERATED_DIRS_TO_LINT_CMD}})

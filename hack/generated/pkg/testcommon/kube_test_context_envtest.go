@@ -33,7 +33,9 @@ func createEnvtestContext(perTestContext PerTestContext) (*KubeBaseTestContext, 
 			"../config/crd/bases/valid", // TODO: remove '/valid' once all CRDs are valid
 		},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			DirectoryPaths: []string{},
+			DirectoryPaths: []string{
+				"../config/webhook/valid", // TODO: remove '/valid'
+			},
 		},
 	}
 

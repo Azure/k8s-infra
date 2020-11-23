@@ -21,6 +21,17 @@ func MakeInterfaceImplementer() InterfaceImplementer {
 	return InterfaceImplementer{}
 }
 
+func (i InterfaceImplementer) HasInterface(name TypeName) bool {
+	_, ok := i.interfaces[name]
+	return ok
+}
+
+func (i InterfaceImplementer) WithoutInterface(name TypeName) InterfaceImplementer {
+	result := i.copy()
+	delete(result.interfaces, name)
+	return result
+}
+
 // WithInterface creates a new ObjectType with a function (method) attached to it
 func (i InterfaceImplementer) WithInterface(iface *InterfaceImplementation) InterfaceImplementer {
 	result := i.copy()

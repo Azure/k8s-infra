@@ -71,6 +71,7 @@ func makeStorageTypesVisitor(types astmodel.Types) astmodel.TypeVisitor {
 	result.VisitValidatedType = factory.visitValidatedType
 	result.VisitTypeName = factory.visitTypeName
 	result.VisitObjectType = factory.visitObjectType
+	result.VisitResourceType = factory.visitResourceType
 	result.VisitArmType = factory.visitArmType
 
 	factory.visitor = result
@@ -124,6 +125,15 @@ func (factory *StorageTypeFactory) visitTypeName(_ *astmodel.TypeVisitor, name a
 	return visitedName, nil
 }
 
+func (factory *StorageTypeFactory) visitResourceType(
+	this *astmodel.TypeVisitor,
+	resource *astmodel.ResourceType,
+	ctx interface{}) (astmodel.Type, error) {
+
+	// storage resource types do not need defaulter interface, they have no webhooks
+	return resource.WithoutInterface(astmodel.DefaulterInterfaceName), nil
+}
+
 func (factory *StorageTypeFactory) visitObjectType(
 	_ *astmodel.TypeVisitor,
 	object *astmodel.ObjectType,
@@ -148,6 +158,7 @@ func (factory *StorageTypeFactory) visitObjectType(
 	}
 
 	objectType := astmodel.NewObjectType().WithProperties(properties...)
+
 	return astmodel.NewStorageType(*objectType), nil
 }
 

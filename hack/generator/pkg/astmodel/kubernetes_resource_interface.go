@@ -112,22 +112,25 @@ func AddKubernetesResourceInterfaceImpls(
 		// e.g. "mutate-microsoft-network-infra-azure-com-v1-backendaddresspool"
 		path := fmt.Sprintf("mutate-%s-%s-%s", strings.ReplaceAll(group, ".", "-"), version, resource)
 
-		// e.g.  "default.backendaddresspool.infra.azure.com"
-		name := fmt.Sprintf("default.%s.%s", resource, group)
+		// e.g.  "default.v123.backendaddresspool.infra.azure.com"
+		name := fmt.Sprintf("default.%s.%s.%s", version, resource, group)
 
 		annotation := fmt.Sprintf("+kubebuilder:webhook:path=/%s,mutating=true,sideEffects=None,matchPolicy=Exact,failurePolicy=fail,groups=%s,resources=%s,verbs=create;update,versions=%s,name=%s", path, group, resource, version, name)
-		r = r.WithInterface(NewInterfaceImplementation(
-			MakeTypeName(admissionPackageReference, "Defaulter"),
-			&objectFunction{
-				name:      "Default",
-				o:         spec,
-				idFactory: idFactory,
-				asFunc:    defaultAzureNameFunction,
-			}).WithAnnotation(annotation))
+		r = r.WithInterface(
+			NewInterfaceImplementation(
+				DefaulterInterfaceName,
+				&objectFunction{
+					name:      "Default",
+					o:         spec,
+					idFactory: idFactory,
+					asFunc:    defaultAzureNameFunction,
+				}).WithAnnotation(annotation))
 	}
 
 	return r, nil
 }
+
+var DefaulterInterfaceName = MakeTypeName(admissionPackageReference, "Defaulter")
 
 var admissionPackageReference PackageReference = MakeExternalPackageReference("sigs.k8s.io/controller-runtime/pkg/webhook/admission")
 
