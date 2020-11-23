@@ -107,15 +107,18 @@ func AddKubernetesResourceInterfaceImpls(
 		version := lpr.version          // e.g. "v1"
 
 		group = strings.ToLower(group + GroupSuffix)
-		resource = strings.ToLower(resource)
+		nonPluralResource := strings.ToLower(resource)
+		resource = strings.ToLower(resource) + "s" // TODO: this should come from resource?
 
 		// e.g. "mutate-microsoft-network-infra-azure-com-v1-backendaddresspool"
-		path := fmt.Sprintf("mutate-%s-%s-%s", strings.ReplaceAll(group, ".", "-"), version, resource)
+		// note that this must match _exactly_ how controller-runtime generates the path
+		// or it will not work!
+		path := fmt.Sprintf("/mutate-%s-%s-%s", strings.ReplaceAll(group, ".", "-"), version, nonPluralResource)
 
 		// e.g.  "default.v123.backendaddresspool.infra.azure.com"
 		name := fmt.Sprintf("default.%s.%s.%s", version, resource, group)
 
-		annotation := fmt.Sprintf("+kubebuilder:webhook:path=/%s,mutating=true,sideEffects=None,matchPolicy=Exact,failurePolicy=fail,groups=%s,resources=%s,verbs=create;update,versions=%s,name=%s", path, group, resource, version, name)
+		annotation := fmt.Sprintf("+kubebuilder:webhook:path=%s,mutating=true,sideEffects=None,matchPolicy=Exact,failurePolicy=fail,groups=%s,resources=%s,verbs=create;update,versions=%s,name=%s", path, group, resource, version, name)
 		r = r.WithInterface(
 			NewInterfaceImplementation(
 				DefaulterInterfaceName,

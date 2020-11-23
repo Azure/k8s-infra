@@ -155,11 +155,11 @@ func register(mgr ctrl.Manager, applier armclient.Applier, obj runtime.Object, l
 		CreateDeploymentName: options.CreateDeploymentName,
 	}
 
-	ctrlBuilder := ctrl.NewControllerManagedBy(mgr).
+	c, err := ctrl.NewControllerManagedBy(mgr).
 		For(obj).
-		WithOptions(options.Options)
+		WithOptions(options.Options).
+		Build(reconciler)
 
-	c, err := ctrlBuilder.Build(reconciler)
 	if err != nil {
 		return errors.Wrap(err, "unable to build controllers / reconciler")
 	}
