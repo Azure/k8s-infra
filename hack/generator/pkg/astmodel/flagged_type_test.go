@@ -77,7 +77,7 @@ func TestFlaggedType_WithoutFlag_GivenUnusedFlag_ReturnsSameInstance(t *testing.
  * Equals() tests
  */
 
-func TestFlaggedType_Equals_GivenOther_HasExpectedresult(t *testing.T) {
+func TestFlaggedType_Equals_GivenOther_HasExpectedResult(t *testing.T) {
 	armString := NewFlaggedType(StringType, ArmFlag)
 	armInt := NewFlaggedType(IntType, ArmFlag)
 	storageString := NewFlaggedType(StringType, StorageFlag)
