@@ -95,7 +95,7 @@ func (ft *FlaggedType) References() TypeNameSet {
 // AsType renders as a Go abstract syntax tree for a type
 // (yes this says ast.Expr but that is what the Go 'ast' package uses for types)
 func (ft *FlaggedType) AsType(ctx *CodeGenerationContext) ast.Expr {
-	return ft.AsType(ctx)
+	return ft.element.AsType(ctx)
 }
 
 // AsDeclarations renders as a Go abstract syntax tree for a declaration
