@@ -92,28 +92,34 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 		errs = append(errs, errors.Errorf("No generator created for %v (%v)", p.PropertyName(), p.PropertyType()))
 	}
 
+	var result []ast.Decl
+
 	if !haveSimpleGenerators && !haveRelatedGenerators {
 		// No properties that we can generate to test - skip the testing completely
 		errs = append(errs, errors.Errorf("No property generators for %v", name))
-	}
+	} else {
+		result = append(result,
+			o.createTestRunner(),
+			o.createTestMethod(),
+			o.createGeneratorDeclaration(genType),
+			o.createGeneratorMethod(genPackageName, genType, haveSimpleGenerators, haveRelatedGenerators))
 
-	result := []ast.Decl{
-		o.createTestRunner(),
-		o.createTestMethod(),
-		o.createGeneratorDeclaration(genType),
-		o.createGeneratorMethod(genPackageName, genType, haveSimpleGenerators, haveRelatedGenerators),
-	}
+		if haveSimpleGenerators {
+			result = append(result, o.createGeneratorsFactoryMethod(o.idOfIndependentGeneratorsFactoryMethod(), simpleGenerators, genType))
+		}
 
-	if haveSimpleGenerators {
-		result = append(result, o.createGeneratorsFactoryMethod(o.idOfIndependentGeneratorsFactoryMethod(), simpleGenerators, genType))
-	}
-
-	if haveRelatedGenerators {
-		result = append(result, o.createGeneratorsFactoryMethod(o.idOfRelatedGeneratorsFactoryMethod(), relatedGenerators, genType))
+		if haveRelatedGenerators {
+			result = append(result, o.createGeneratorsFactoryMethod(o.idOfRelatedGeneratorsFactoryMethod(), relatedGenerators, genType))
+		}
 	}
 
 	if len(errs) > 0 {
-		klog.Warningf("Encountered %v issues creating JSON Serialisation test for %v", len(errs), name)
+		i := "issues"
+		if len(errs) == 1 {
+			i = "issue"
+		}
+
+		klog.Warningf("Encountered %d %s creating JSON Serialisation test for %s", len(errs), i, name)
 		for _, err := range errs {
 			klog.Warning(err)
 		}
