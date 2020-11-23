@@ -223,7 +223,7 @@ tasks:
   controller:test-integration-envtest-live:
     desc: Run integration tests with envtest against live data and output coverage.
     dir: "{{.CONTROLLER_ROOT}}"
-    deps: [controller:prep-inegration-tests, cleanup-azure-resources]
+    deps: [controller:prep-integration-tests, cleanup-azure-resources]
     cmds:
     # -race fails at the moment in controller-runtime
     - ENVTEST=1 go test -covermode atomic -coverprofile=cover-integration-envtest.out -coverpkg="./..." -v $({{.GENERATED_DIRS_TO_LINT_CMD}})
