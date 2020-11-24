@@ -87,36 +87,23 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 			o.createTestRunner(),
 			o.createTestMethod())
 
-		declaration, err := o.createGeneratorDeclaration(genContext)
-		if err != nil {
-			errs = append(errs, errors.Wrap(err, "creating generator declaration"))
-		} else {
-			result = append(result, declaration)
+		addMethod := func(decl ast.Decl, err error) {
+			if err != nil {
+				errs = append(errs, err)
+			} else {
+				result = append(result, decl)
+			}
 		}
 
-		generator, err := o.createGeneratorMethod(genContext, len(simpleGenerators) > 0, len(relatedGenerators) > 0)
-		if err != nil {
-			errs = append(errs, errors.Wrap(err, "creating generator method"))
-		} else {
-			result = append(result, generator)
-		}
+		addMethod(o.createGeneratorDeclaration(genContext))
+		addMethod(o.createGeneratorMethod(genContext, len(simpleGenerators) > 0, len(relatedGenerators) > 0))
 
 		if len(simpleGenerators) > 0 {
-			factory, err := o.createGeneratorsFactoryMethod(o.idOfIndependentGeneratorsFactoryMethod(), simpleGenerators, genContext)
-			if err != nil {
-				errs = append(errs, errors.Wrap(err, "creating independent generators method"))
-			} else {
-				result = append(result, factory)
-			}
+			addMethod(o.createGeneratorsFactoryMethod(o.idOfIndependentGeneratorsFactoryMethod(), simpleGenerators, genContext))
 		}
 
 		if len(relatedGenerators) > 0 {
-			factory, err := o.createGeneratorsFactoryMethod(o.idOfRelatedGeneratorsFactoryMethod(), relatedGenerators, genContext)
-			if err != nil {
-				errs = append(errs, errors.Wrap(err, "creating independent generators method"))
-			} else {
-				result = append(result, factory)
-			}
+			addMethod(o.createGeneratorsFactoryMethod(o.idOfRelatedGeneratorsFactoryMethod(), relatedGenerators, genContext))
 		}
 	}
 
