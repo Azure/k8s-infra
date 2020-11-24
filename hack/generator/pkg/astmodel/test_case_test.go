@@ -6,7 +6,7 @@
 package astmodel
 
 import (
-	"go/ast"
+	ast "github.com/dave/dst"
 )
 
 type FakeTestCase struct {
