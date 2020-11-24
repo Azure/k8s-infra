@@ -122,6 +122,10 @@ func (file *TestFileDefinition) generateImports() *PackageImportSet {
 		}
 	}
 
+	// Don't need to import the current package
+	selfImport := NewPackageImport(file.packageReference)
+	requiredImports.Remove(selfImport)
+
 	// Force local imports to have explicit names based on the service
 	for _, imp := range requiredImports.AsSlice() {
 		if IsLocalPackageReference(imp.packageReference) && !imp.HasExplicitName() {
