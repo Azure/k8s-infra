@@ -242,5 +242,5 @@ func Test_ResourceHierarchy_ResourceGroup_NestedResource(t *testing.T) {
 	rg, err := hierarchy.ResourceGroup()
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Expect(rg).To(Equal(resourceGroupName))
-	g.Expect(hierarchy.FullAzureName()).To(Equal(fmt.Sprintf("%s/%s", getAzureName(hierarchy[1]), getAzureName(hierarchy[2]))))
+	g.Expect(hierarchy.FullAzureName()).To(Equal(fmt.Sprintf("%s/%s", hierarchy[1].AzureName(), hierarchy[2].AzureName())))
 }
