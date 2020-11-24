@@ -183,17 +183,17 @@ func (o ObjectSerializationTestCase) createTestRunner() ast.Decl {
 	defineProperties := astbuilder.SimpleAssignment(
 		properties,
 		token.DEFINE,
-		astbuilder.CallQualifiedFuncByName("gopter", "NewProperties", parameters))
+		astbuilder.CallQualifiedFunc("gopter", "NewProperties", ast.NewIdent(parameters)))
 
 	// partial expression: name of the test
 	testName := astbuilder.StringLiteralf("Round trip of %v via JSON returns original", o.Subject())
 
 	// partial expression: prop.ForAll(RunTestForX, XGenerator())
-	propForAll := astbuilder.CallQualifiedFuncByName(
+	propForAll := astbuilder.CallQualifiedFunc(
 		"prop",
 		"ForAll",
-		o.idOfTestMethod(),
-		astbuilder.CallFuncByName(o.idOfGeneratorMethod(o.subject)))
+		ast.NewIdent(o.idOfTestMethod()),
+		astbuilder.CallFunc(o.idOfGeneratorMethod(o.subject)))
 
 	// properties.Property("...", prop.ForAll(RunTestForX, XGenerator())
 	defineTestCase := astbuilder.InvokeQualifiedFunc(
@@ -231,10 +231,11 @@ func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 	serialize := astbuilder.SimpleAssignmentWithErr(
 		binId,
 		token.DEFINE,
-		astbuilder.CallQualifiedFuncByName("json", "Marshal", subjectId))
+		astbuilder.CallQualifiedFunc("json", "Marshal", ast.NewIdent(subjectId)))
 
 	// if err != nil { return err.Error() }
 	serializeFailed := astbuilder.ReturnIfNotNil(errId, astbuilder.CallQualifiedFuncByName("err", "Error"))
+		astbuilder.CallQualifiedFunc("err", "Error"))
 
 	// var actual X
 	declare := astbuilder.NewVariable(actualId, o.Subject())
@@ -251,13 +252,17 @@ func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 
 	// if err != nil { return err.Error() }
 	deserializeFailed := astbuilder.ReturnIfNotNil(errId, astbuilder.CallQualifiedFuncByName("err", "Error"))
+		astbuilder.CallQualifiedFunc("err", "Error"))
 
 	// match := cmp.Equal(subject, actual, cmpopts.EquateEmpty())
-	equateEmpty := astbuilder.CallQualifiedFuncByName("cmpopts", "EquateEmpty")
+	equateEmpty := astbuilder.CallQualifiedFunc("cmpopts", "EquateEmpty")
 	compare := astbuilder.SimpleAssignment(
 		matchId,
 		token.DEFINE,
-		astbuilder.CallQualifiedFuncByName("cmp", "Equal", subjectId, actualId, equateEmpty))
+		astbuilder.CallQualifiedFunc("cmp", "Equal",
+			ast.NewIdent(subjectId),
+			ast.NewIdent(actualId),
+			equateEmpty))
 
 	// if !match { result := diff.Diff(subject, actual); return result }
 	prettyPrint := &ast.IfStmt{
@@ -270,15 +275,15 @@ func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 				astbuilder.SimpleAssignment(
 					actualFmtId,
 					token.DEFINE,
-					astbuilder.CallQualifiedFuncByName("pretty", "Sprint", actualId)),
+					astbuilder.CallQualifiedFunc("pretty", "Sprint", ast.NewIdent(actualId))),
 				astbuilder.SimpleAssignment(
 					subjectFmtId,
 					token.DEFINE,
-					astbuilder.CallQualifiedFuncByName("pretty", "Sprint", subjectId)),
+					astbuilder.CallQualifiedFunc("pretty", "Sprint", ast.NewIdent(subjectId))),
 				astbuilder.SimpleAssignment(
 					resultId,
 					token.DEFINE,
-					astbuilder.CallQualifiedFuncByName("diff", "Diff", subjectFmtId, actualFmtId)),
+					astbuilder.CallQualifiedFunc("diff", "Diff", ast.NewIdent(subjectFmtId), ast.NewIdent(actualFmtId))),
 				astbuilder.Returns(resultId),
 			},
 		},
@@ -375,10 +380,10 @@ func (o ObjectSerializationTestCase) createGeneratorMethod(
 		createIndependentGenerator := astbuilder.SimpleAssignment(
 			o.idOfSubjectGeneratorGlobal(),
 			token.ASSIGN,
-			astbuilder.CallQualifiedFuncByName(
-				genPackageName,
+			astbuilder.CallQualifiedFunc(
+				genPackage,
 				"Struct",
-				astbuilder.CallQualifiedFuncByName("reflect", "TypeOf", &ast.CompositeLit{Type: o.Subject()}),
+				astbuilder.CallQualifiedFunc("reflect", "TypeOf", &ast.CompositeLit{Type: o.Subject()}),
 				independentIdent))
 
 		fn.AddStatements(makeIndependentMap, addIndependentGenerators, createIndependentGenerator)
@@ -414,10 +419,10 @@ func (o ObjectSerializationTestCase) createGeneratorMethod(
 		createFullGenerator := astbuilder.SimpleAssignment(
 			o.idOfSubjectGeneratorGlobal(),
 			token.ASSIGN,
-			astbuilder.CallQualifiedFuncByName(
-				genPackageName,
+			astbuilder.CallQualifiedFunc(
+				genPackage,
 				"Struct",
-				astbuilder.CallQualifiedFuncByName("reflect", "TypeOf", &ast.CompositeLit{Type: o.Subject()}),
+				astbuilder.CallQualifiedFunc("reflect", "TypeOf", &ast.CompositeLit{Type: o.Subject()}),
 				allIdent))
 
 		fn.AddStatements(addRelatedGenerators, createFullGenerator)
@@ -506,13 +511,13 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 	// Handle simple primitive properties
 	switch propertyType {
 	case StringType:
-		return astbuilder.CallQualifiedFuncByName(genPackageName, "AlphaString"), nil
+		return astbuilder.CallQualifiedFunc(genPackageName, "AlphaString"), nil
 	case IntType:
-		return astbuilder.CallQualifiedFuncByName(genPackageName, "Int"), nil
+		return astbuilder.CallQualifiedFunc(genPackageName, "Int"), nil
 	case FloatType:
-		return astbuilder.CallQualifiedFuncByName(genPackageName, "Float32"), nil
+		return astbuilder.CallQualifiedFunc(genPackageName, "Float32"), nil
 	case BoolType:
-		return astbuilder.CallQualifiedFuncByName(genPackageName, "Bool"), nil
+		return astbuilder.CallQualifiedFunc(genPackageName, "Bool"), nil
 	}
 
 	switch t := propertyType.(type) {
@@ -532,7 +537,7 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 		if err != nil {
 			return nil, err
 		} else if g != nil {
-			return astbuilder.CallQualifiedFuncByName(genPackageName, "PtrOf", g), nil
+			return astbuilder.CallQualifiedFunc(genPackageName, "PtrOf", g), nil
 		}
 
 	case *ArrayType:
@@ -540,7 +545,7 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 		if err != nil {
 			return nil, err
 		} else if g != nil {
-			return astbuilder.CallQualifiedFuncByName(genPackageName, "SliceOf", g), nil
+			return astbuilder.CallQualifiedFunc(genPackageName, "SliceOf", g), nil
 		}
 
 	case *MapType:
@@ -555,7 +560,7 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 		}
 
 		if keyGen != nil && valueGen != nil {
-			return astbuilder.CallQualifiedFuncByName(genPackageName, "MapOf", keyGen, valueGen), nil
+			return astbuilder.CallQualifiedFunc(genPackageName, "MapOf", keyGen, valueGen), nil
 		}
 	}
 
@@ -578,7 +583,7 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 			// This is a type we're defining, so we can create a generator for it
 			if t.PackageReference.Equals(genContext.CurrentPackage()) {
 				// create a generator for a property referencing a type in this package
-				return astbuilder.CallFuncByName(o.idOfGeneratorMethod(t)), nil
+				return astbuilder.CallFunc(o.idOfGeneratorMethod(t)), nil
 			}
 
 			importName, err := genContext.GetImportedPackageName(t.PackageReference)
@@ -586,7 +591,7 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 				return nil, err
 			}
 
-			return astbuilder.CallQualifiedFuncByName(importName, o.idOfGeneratorMethod(t)), nil
+			return astbuilder.CallQualifiedFunc(importName, o.idOfGeneratorMethod(t)), nil
 		}
 
 		//TODO: Should we invoke a generator for stuff from our runtime package?
@@ -598,7 +603,7 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 		if err != nil {
 			return nil, err
 		} else if g != nil {
-			return astbuilder.CallQualifiedFuncByName(genPackageName, "PtrOf", g), nil
+			return astbuilder.CallQualifiedFunc(genPackageName, "PtrOf", g), nil
 		}
 
 	case *ArrayType:
@@ -606,7 +611,7 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 		if err != nil {
 			return nil, err
 		} else if g != nil {
-			return astbuilder.CallQualifiedFuncByName(genPackageName, "SliceOf", g), nil
+			return astbuilder.CallQualifiedFunc(genPackageName, "SliceOf", g), nil
 		}
 
 	case *MapType:
@@ -622,7 +627,7 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 		}
 
 		if keyGen != nil && valueGen != nil {
-			return astbuilder.CallQualifiedFuncByName(genPackageName, "MapOf", keyGen, valueGen), nil
+			return astbuilder.CallQualifiedFunc(genPackageName, "MapOf", keyGen, valueGen), nil
 		}
 	}
 
@@ -712,5 +717,5 @@ func (o ObjectSerializationTestCase) createEnumGenerator(enumName string, genPac
 		values = append(values, ast.NewIdent(id))
 	}
 
-	return astbuilder.CallQualifiedFuncByName(genPackageName, "OneConstOf", values...), nil
+	return astbuilder.CallQualifiedFunc(genPackageName, "OneConstOf", values...), nil
 }
