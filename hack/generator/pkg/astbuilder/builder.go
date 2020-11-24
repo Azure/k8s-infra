@@ -123,7 +123,7 @@ func AppendList(lhs ast.Expr, rhs ast.Expr) ast.Stmt {
 	return SimpleAssignment(
 		ast.Clone(lhs).(ast.Expr),
 		token.ASSIGN,
-		CallFuncByName("append", ast.Clone(lhs).(ast.Expr), ast.Clone(rhs).(ast.Expr)))
+		CallFunc("append", ast.Clone(lhs).(ast.Expr), ast.Clone(rhs).(ast.Expr)))
 }
 
 // InsertMap returns an assignment statement for inserting an item into a map, like:
@@ -269,5 +269,12 @@ func Returns(returns ...ast.Expr) ast.Stmt {
 			},
 		},
 		Results: returns,
+	}
+}
+
+func QualifiedTypeName(pkg string, name string) *ast.SelectorExpr {
+	return &ast.SelectorExpr{
+		X:   ast.NewIdent(pkg),
+		Sel: ast.NewIdent(name),
 	}
 }

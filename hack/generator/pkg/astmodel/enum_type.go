@@ -96,7 +96,7 @@ func (enum *EnumType) createValueDeclaration(name TypeName, value EnumValue) ast
 	valueSpec := &ast.ValueSpec{
 		Names: []*ast.Ident{ast.NewIdent(GetEnumValueId(name.name, value))},
 		Values: []ast.Expr{
-			astbuilder.CallFuncByName(name.Name(), astbuilder.TextLiteral(value.Value)),
+			astbuilder.CallFunc(name.Name(), astbuilder.TextLiteral(value.Value)),
 		},
 	}
 
