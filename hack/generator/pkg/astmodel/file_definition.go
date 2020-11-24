@@ -8,7 +8,6 @@ package astmodel
 import (
 	"go/token"
 	"io"
-	"k8s.io/klog/v2"
 	"os"
 	"sort"
 
@@ -287,10 +286,9 @@ func createComments(lines ...string) ast.Decorations {
 }
 
 // SaveToWriter writes the file to the specifier io.Writer
-func (file FileDefinition) SaveToWriter(filename string, dst io.Writer) error {
-	original := file.AsAst()
-
-	err := decorator.Fprint(dst, original)
+func (file FileDefinition) SaveToWriter(dst io.Writer) error {
+	content := file.AsAst()
+	err := decorator.Fprint(dst, content)
 	return err
 }
 
@@ -304,5 +302,5 @@ func (file FileDefinition) SaveToFile(filePath string) error {
 
 	defer f.Close()
 
-	return file.SaveToWriter(filePath, f)
+	return file.SaveToWriter(f)
 }

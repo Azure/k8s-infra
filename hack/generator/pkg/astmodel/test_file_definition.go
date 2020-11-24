@@ -6,7 +6,8 @@
 package astmodel
 
 import (
-	"go/ast"
+	ast "github.com/dave/dst"
+	"github.com/dave/dst/decorator"
 	"go/token"
 	"io"
 	"k8s.io/klog/v2"
@@ -34,10 +35,10 @@ func NewTestFileDefinition(
 }
 
 // SaveToWriter writes the file to the specifier io.Writer
-func (file TestFileDefinition) SaveToWriter(filename string, dst io.Writer) error {
-	name := ast.NewIdent(file.packageReference.PackageName())
-	writer := NewGoFileWriter(name, file.generateDeclarations())
-	return writer.SaveToWriter(filename, dst)
+func (file TestFileDefinition) SaveToWriter(dst io.Writer) error {
+	content := file.AsAst()
+	err := decorator.Fprint(dst, content)
+	return err
 }
 
 // SaveToFile writes this generated file to disk
@@ -50,11 +51,11 @@ func (file TestFileDefinition) SaveToFile(filePath string) error {
 
 	defer f.Close()
 
-	return file.SaveToWriter(filePath, f)
+	return file.SaveToWriter(f)
 }
 
 // AsAst generates an array of declarations for the content of the file
-func (file *TestFileDefinition) generateDeclarations() []ast.Decl {
+func (file *TestFileDefinition) AsAst() *ast.File {
 
 	var decls []ast.Decl
 
@@ -81,7 +82,28 @@ func (file *TestFileDefinition) generateDeclarations() []ast.Decl {
 		}
 	}
 
-	return decls
+	var comments []string
+	comments = append(comments, CodeGenerationComments...)
+	comments = append(comments,
+		"Copyright (c) Microsoft Corporation.",
+		"Licensed under the MIT license.")
+
+	header := createComments(comments...)
+
+	packageName := file.packageReference.PackageName()
+
+	result := &ast.File{
+		Decs: ast.FileDecorations{
+			NodeDecs: ast.NodeDecs{
+				Start: header,
+				After: ast.EmptyLine,
+			},
+		},
+		Name:  ast.NewIdent(packageName),
+		Decls: decls,
+	}
+
+	return result
 }
 
 // generateImports products the definitive set of imports for use in this file and

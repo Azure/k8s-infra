@@ -5,7 +5,7 @@
 
 package astmodel
 
-import "go/ast"
+import ast "github.com/dave/dst"
 
 // TestCase represents a test we generate to ensure the generated code works as expected
 type TestCase interface {
