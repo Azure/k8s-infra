@@ -38,7 +38,8 @@ func createResourceGroup(name string) *resources.ResourceGroup {
 			Name: name,
 		},
 		Spec: resources.ResourceGroupSpec{
-			Location: "West US",
+			Location:  "West US",
+			AzureName: name, // defaulter webhook will copy Name to AzureName
 		},
 	}
 }
@@ -57,6 +58,7 @@ func createResourceGroupRootedResource(rgName string, name string) (genruntime.M
 			Owner: genruntime.KnownResourceReference{
 				Name: rgName,
 			},
+			AzureName: name, // defaulter webhook will copy Name to AzureName
 		},
 	}
 
@@ -74,6 +76,7 @@ func createDeeplyNestedResource(rgName string, parentName string, name string) R
 			Owner: genruntime.KnownResourceReference{
 				Name: rgName,
 			},
+			AzureName: parentName, // defaulter webhook will copy Name to AzureName
 		},
 	}
 
