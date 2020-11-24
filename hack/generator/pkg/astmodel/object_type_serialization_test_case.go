@@ -55,13 +55,13 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 	properties := o.makePropertyMap()
 
 	// Find all the simple generators (those with no external dependencies)
-	haveSimpleGenerators, simpleGenerators, err := o.createGenerators(properties, genContext, o.createIndependentGenerator)
+	simpleGenerators, err := o.createGenerators(properties, genContext, o.createIndependentGenerator)
 	if err != nil {
 		errs = append(errs, err)
 	}
 
 	// Find all the complex generators (dependent on other generators we'll be generating elsewhere)
-	haveRelatedGenerators, relatedGenerators, err := o.createGenerators(properties, genContext, o.createRelatedGenerator)
+	relatedGenerators, err := o.createGenerators(properties, genContext, o.createRelatedGenerator)
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -79,7 +79,7 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 
 	var result []ast.Decl
 
-	if !haveSimpleGenerators && !haveRelatedGenerators {
+	if len(simpleGenerators) == 0 && len(relatedGenerators) == 0 {
 		// No properties that we can generate to test - skip the testing completely
 		errs = append(errs, errors.Errorf("No property generators for %v", name))
 	} else {
@@ -94,14 +94,14 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 			result = append(result, declaration)
 		}
 
-		generator, err := o.createGeneratorMethod(genContext, haveSimpleGenerators, haveRelatedGenerators)
+		generator, err := o.createGeneratorMethod(genContext, len(simpleGenerators) > 0, len(relatedGenerators) > 0)
 		if err != nil {
 			errs = append(errs, errors.Wrap(err, "creating generator method"))
 		} else {
 			result = append(result, generator)
 		}
 
-		if haveSimpleGenerators {
+		if len(simpleGenerators) > 0 {
 			factory, err := o.createGeneratorsFactoryMethod(o.idOfIndependentGeneratorsFactoryMethod(), simpleGenerators, genContext)
 			if err != nil {
 				errs = append(errs, errors.Wrap(err, "creating independent generators method"))
@@ -110,7 +110,7 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 			}
 		}
 
-		if haveRelatedGenerators {
+		if len(relatedGenerators) > 0 {
 			factory, err := o.createGeneratorsFactoryMethod(o.idOfRelatedGeneratorsFactoryMethod(), relatedGenerators, genContext)
 			if err != nil {
 				errs = append(errs, errors.Wrap(err, "creating independent generators method"))
@@ -494,7 +494,7 @@ func (o ObjectSerializationTestCase) createGeneratorsFactoryMethod(
 func (o ObjectSerializationTestCase) createGenerators(
 	properties map[PropertyName]*PropertyDefinition,
 	genContext *CodeGenerationContext,
-	factory func(name string, propertyType Type, genContext *CodeGenerationContext) (ast.Expr, error)) (bool, []ast.Stmt, error) {
+	factory func(name string, propertyType Type, genContext *CodeGenerationContext) (ast.Expr, error)) ([]ast.Stmt, error) {
 
 	gensIdent := ast.NewIdent("gens")
 
@@ -525,7 +525,7 @@ func (o ObjectSerializationTestCase) createGenerators(
 		delete(properties, name)
 	}
 
-	return len(result) > 0, result, kerrors.NewAggregate(errs)
+	return result, kerrors.NewAggregate(errs)
 }
 
 // createIndependentGenerator() will create a generator if the property has a primitive type that
