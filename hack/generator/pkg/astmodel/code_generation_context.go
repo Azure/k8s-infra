@@ -20,7 +20,7 @@ type CodeGenerationContext struct {
 	generatedPackages map[PackageReference]*PackageDefinition
 }
 
-// New CodeGenerationContext creates a new immutable code generation context
+// NewCodeGenerationContext creates a new immutable code generation context
 func NewCodeGenerationContext(
 	currentPackage PackageReference,
 	packageImports *PackageImportSet,
@@ -59,7 +59,6 @@ func (codeGenContext *CodeGenerationContext) GetImportedPackageName(reference Pa
 
 // GetGeneratedPackage gets a reference to the PackageDefinition referred to by the provided reference
 func (codeGenContext *CodeGenerationContext) GetGeneratedPackage(reference PackageReference) (*PackageDefinition, error) {
-
 	// Make sure that we're actually importing that package -- don't want to allow references to things we aren't importing
 	_, err := codeGenContext.GetImportedPackageName(reference)
 	if !reference.Equals(codeGenContext.currentPackage) && err != nil {
@@ -84,7 +83,7 @@ func (codeGenContext *CodeGenerationContext) GetImportedDefinition(typeName Type
 	return pkg.GetDefinition(typeName)
 }
 
-// GetDefinitionsInPackage() returns the actual definitions from a specific package
+// GetTypesInPackage returns the actual definitions from a specific package
 func (codeGenContext *CodeGenerationContext) GetTypesInPackage(ref PackageReference) (Types, bool) {
 	def, ok := codeGenContext.generatedPackages[ref]
 	if !ok {
@@ -95,7 +94,7 @@ func (codeGenContext *CodeGenerationContext) GetTypesInPackage(ref PackageRefere
 	return def.definitions, ok
 }
 
-// GetDefinitionsInCurrentPackage() returns the actual definitions from a specific package
+// GetTypesInCurrentPackage returns the actual definitions from a specific package
 func (codeGenContext *CodeGenerationContext) GetTypesInCurrentPackage() Types {
 	def, ok := codeGenContext.GetTypesInPackage(codeGenContext.currentPackage)
 	if !ok {

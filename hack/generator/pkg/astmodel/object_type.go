@@ -273,7 +273,7 @@ func (objectType *ObjectType) Equals(t Type) bool {
 		}
 
 		if !ourFunction.Equals(function) {
-			// Different testcase, even though same name; not-equal
+			// Different function, even though same name; not-equal
 			return false
 		}
 	}

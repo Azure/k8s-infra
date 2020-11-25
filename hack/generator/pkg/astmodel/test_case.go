@@ -13,7 +13,6 @@ type TestCase interface {
 	Name() string
 
 	// References returns the set of types to which this test case refers.
-	// Should *not* include the receiver of this function
 	References() TypeNameSet
 
 	// RequiredImports returns a set of the package imports required by this test case

@@ -27,6 +27,7 @@ type ObjectSerializationTestCase struct {
 
 var _ TestCase = &ObjectSerializationTestCase{}
 
+// NewObjectSerializationTestCase creates a new test case for the JSON serialization round tripability of the specified object type
 func NewObjectSerializationTestCase(
 	name TypeName,
 	objectType *ObjectType,
@@ -40,15 +41,20 @@ func NewObjectSerializationTestCase(
 	}
 }
 
+// Name returns the unique name of this test case
 func (o ObjectSerializationTestCase) Name() string {
 	return o.testName
 }
 
+// References returns the set of types to which this test case refers.
 func (o ObjectSerializationTestCase) References() TypeNameSet {
 	result := NewTypeNameSet()
 	return result
 }
 
+// AsFuncs renders the current test case and supporting methods as Go abstract syntax trees
+// subject is the name of the type under test
+// codeGenerationContext contains reference material to use when generating
 func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGenerationContext) []ast.Decl {
 
 	var errs []error
@@ -69,8 +75,10 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 	// Remove properties from our runtime
 	o.removeByPackage(properties, GenRuntimeReference)
 
-	o.removeByPackage(properties, ApiExtensionsReference)     // TODO: Handle generators for Arbitrary JSON
-	o.removeByPackage(properties, ApiExtensionsJsonReference) // TODO: Handle generators for Arbitrary JSON
+	// Temporarily remove properties related to support for Arbitrary JSON
+	// TODO: Add generators for these properties
+	o.removeByPackage(properties, ApiExtensionsReference)
+	o.removeByPackage(properties, ApiExtensionsJsonReference)
 
 	// Write errors for any properties we don't handle
 	for _, p := range properties {
@@ -122,6 +130,7 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 	return result
 }
 
+// RequiredImports returns a set of the package imports required by this test case
 func (o ObjectSerializationTestCase) RequiredImports() *PackageImportSet {
 	result := NewPackageImportSet()
 
@@ -147,10 +156,12 @@ func (o ObjectSerializationTestCase) RequiredImports() *PackageImportSet {
 	return result
 }
 
+// Equals determines if this TestCase is equal to another one
 func (o ObjectSerializationTestCase) Equals(_ TestCase) bool {
 	panic("implement me")
 }
 
+// createTestRunner generates the AST for the test runner itself
 func (o ObjectSerializationTestCase) createTestRunner() ast.Decl {
 
 	const (
@@ -214,6 +225,7 @@ func (o ObjectSerializationTestCase) createTestRunner() ast.Decl {
 	return fn.DefineFunc()
 }
 
+// createTestMethod generates the AST for a method to run a single test of JSON serialization
 func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 	const (
 		binId        = "bin"
@@ -340,6 +352,7 @@ func (o ObjectSerializationTestCase) createGeneratorDeclaration(genContext *Code
 	return decl, nil
 }
 
+// createGeneratorMethod generates the AST for a method used to populate our generator cache variable on demand
 func (o ObjectSerializationTestCase) createGeneratorMethod(ctx *CodeGenerationContext, haveSimpleGenerators bool, haveRelatedGenerators bool) (ast.Decl, error) {
 
 	gopterPackage, err := ctx.GetImportedPackageName(GopterReference)
@@ -445,6 +458,7 @@ func (o ObjectSerializationTestCase) createGeneratorMethod(ctx *CodeGenerationCo
 	return fn.DefineFunc(), nil
 }
 
+// createGeneratorsFactoryMethod generates the AST for a method creating gopter generators
 func (o ObjectSerializationTestCase) createGeneratorsFactoryMethod(
 	methodName string, generators []ast.Stmt, ctx *CodeGenerationContext) (ast.Decl, error) {
 
@@ -515,7 +529,7 @@ func (o ObjectSerializationTestCase) createGenerators(
 	return result, kerrors.NewAggregate(errs)
 }
 
-// createIndependentGenerator() will create a generator if the property has a primitive type that
+// createIndependentGenerator will create a generator if the property has a primitive type that
 // is directly supported by a Gopter generator, returning nil if the property type isn't supported.
 func (o ObjectSerializationTestCase) createIndependentGenerator(
 	name string,
@@ -587,7 +601,7 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 	return nil, nil
 }
 
-// createRelatedGenerator() will create a generator if the property has a complex type that is
+// createRelatedGenerator will create a generator if the property has a complex type that is
 // defined within the current package, returning nil if the property type isn't supported.
 func (o ObjectSerializationTestCase) createRelatedGenerator(
 	name string,
@@ -658,7 +672,7 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 	return nil, nil
 }
 
-// removeByNamespace() remove all properties with types from the specified namespace
+// removeByPackage remove all properties with types from the specified namespace
 func (o *ObjectSerializationTestCase) removeByPackage(
 	properties map[PropertyName]*PropertyDefinition,
 	ref PackageReference) {
@@ -679,7 +693,7 @@ func (o *ObjectSerializationTestCase) removeByPackage(
 	}
 }
 
-// makePropertyMap() makes a map of all the properties on our subject type
+// makePropertyMap makes a map of all the properties on our subject type
 func (o *ObjectSerializationTestCase) makePropertyMap() map[PropertyName]*PropertyDefinition {
 	result := make(map[PropertyName]*PropertyDefinition)
 	for _, prop := range o.objectType.Properties() {

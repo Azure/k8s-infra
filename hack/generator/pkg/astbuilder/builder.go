@@ -261,6 +261,9 @@ func AddrOf(exp ast.Expr) *ast.UnaryExpr {
 	}
 }
 
+// Returns creates a return statement with one or more expressions, of the form
+//    return <expr>
+// or return <expr>, <expr>, ...
 func Returns(returns ...ast.Expr) ast.Stmt {
 	return &ast.ReturnStmt{
 		Decs: ast.ReturnStmtDecorations{
@@ -272,6 +275,8 @@ func Returns(returns ...ast.Expr) ast.Stmt {
 	}
 }
 
+// QualifiedTypeName generates a reference to a type within an imported package
+// of the form <pkg>.<name>
 func QualifiedTypeName(pkg string, name string) *ast.SelectorExpr {
 	return &ast.SelectorExpr{
 		X:   ast.NewIdent(pkg),

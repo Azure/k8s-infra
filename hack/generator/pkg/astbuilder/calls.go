@@ -9,7 +9,7 @@ import (
 	ast "github.com/dave/dst"
 )
 
-// CallFunc() creates an expression to call a function with specified arguments, generating code
+// CallFunc creates an expression to call a function with specified arguments, generating code
 // like:
 // <funcName>(<arguments>...)
 func CallFunc(funcName string, arguments ...ast.Expr) ast.Expr {
@@ -19,7 +19,7 @@ func CallFunc(funcName string, arguments ...ast.Expr) ast.Expr {
 	}
 }
 
-// CallQualifiedFunc() creates an expression to call a qualified function with the specified
+// CallQualifiedFunc creates an expression to call a qualified function with the specified
 // arguments, generating code like:
 // <qualifier>.<funcName>(arguments...)
 func CallQualifiedFunc(qualifier string, funcName string, arguments ...ast.Expr) ast.Expr {
@@ -32,7 +32,7 @@ func CallQualifiedFunc(qualifier string, funcName string, arguments ...ast.Expr)
 	}
 }
 
-// InvokeFunc() creates a statement to invoke a function with specified arguments, generating code
+// InvokeFunc creates a statement to invoke a function with specified arguments, generating code
 // like
 // <funcName>(arguments...)
 // If you want to use the result of the function call as a value, use CallFunc() instead
@@ -42,7 +42,7 @@ func InvokeFunc(funcName string, arguments ...ast.Expr) ast.Stmt {
 	}
 }
 
-// InvokeQualifiedFunc() creates a statement to invoke a qualified function with specified
+// InvokeQualifiedFunc creates a statement to invoke a qualified function with specified
 // arguments, generating code like:
 // <qualifier>.<funcName>(arguments...)
 // If you want to use the result of the function call as a value, use CallQualifiedFunc() instead
