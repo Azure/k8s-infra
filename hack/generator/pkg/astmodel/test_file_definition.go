@@ -82,13 +82,11 @@ func (file *TestFileDefinition) AsAst() *ast.File {
 		}
 	}
 
-	var comments []string
-	comments = append(comments, CodeGenerationComments...)
-	comments = append(comments,
-		"Copyright (c) Microsoft Corporation.",
-		"Licensed under the MIT license.")
-
-	header := createComments(comments...)
+	var header []string
+	header = append(header, CodeGenerationComments...)
+	header = append(header,
+		"// Copyright (c) Microsoft Corporation.",
+		"// Licensed under the MIT license.")
 
 	packageName := file.packageReference.PackageName()
 
