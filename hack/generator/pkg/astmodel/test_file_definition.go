@@ -6,12 +6,13 @@
 package astmodel
 
 import (
-	ast "github.com/dave/dst"
-	"github.com/dave/dst/decorator"
 	"go/token"
 	"io"
-	"k8s.io/klog/v2"
 	"os"
+
+	ast "github.com/dave/dst"
+	"github.com/dave/dst/decorator"
+	"k8s.io/klog/v2"
 )
 
 // TestFileDefinition defines the content of a test file we're generating
