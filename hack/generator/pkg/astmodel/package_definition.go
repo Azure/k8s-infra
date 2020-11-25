@@ -113,7 +113,7 @@ func (pkgDef *PackageDefinition) writeCodeFile(
 	klog.V(5).Infof("Writing code file %q\n", outputFile)
 	err := genFile.SaveToFile(outputFile)
 	if err != nil {
-		return errors.Wrapf(err, "error writing definitions to file %q", outputFile)
+		return errors.Wrapf(err, "writing definitions to file %q", outputFile)
 	}
 
 	return nil
