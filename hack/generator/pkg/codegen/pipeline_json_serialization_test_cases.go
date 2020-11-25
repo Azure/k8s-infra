@@ -48,6 +48,7 @@ func makeObjectSerializationTestCaseFactory(idFactory astmodel.IdentifierFactory
 	}
 
 	visitor := astmodel.MakeTypeVisitor()
+	//visitor.VisitResourceType = result.visitResourceType
 	visitor.VisitObjectType = result.visitObjectType
 
 	result.visitor = visitor

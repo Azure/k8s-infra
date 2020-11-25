@@ -529,7 +529,6 @@ func (o ObjectSerializationTestCase) createGenerators(
 	return result, kerrors.NewAggregate(errs)
 }
 
-// createIndependentGenerator will create a generator if the property has a primitive type that
 // is directly supported by a Gopter generator, returning nil if the property type isn't supported.
 func (o ObjectSerializationTestCase) createIndependentGenerator(
 	name string,
@@ -601,7 +600,6 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 	return nil, nil
 }
 
-// createRelatedGenerator will create a generator if the property has a complex type that is
 // defined within the current package, returning nil if the property type isn't supported.
 func (o ObjectSerializationTestCase) createRelatedGenerator(
 	name string,
@@ -672,7 +670,6 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 	return nil, nil
 }
 
-// removeByPackage remove all properties with types from the specified namespace
 func (o *ObjectSerializationTestCase) removeByPackage(
 	properties map[PropertyName]*PropertyDefinition,
 	ref PackageReference) {
@@ -693,7 +690,6 @@ func (o *ObjectSerializationTestCase) removeByPackage(
 	}
 }
 
-// makePropertyMap makes a map of all the properties on our subject type
 func (o *ObjectSerializationTestCase) makePropertyMap() map[PropertyName]*PropertyDefinition {
 	result := make(map[PropertyName]*PropertyDefinition)
 	for _, prop := range o.objectType.Properties() {

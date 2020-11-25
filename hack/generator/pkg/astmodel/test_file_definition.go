@@ -6,12 +6,13 @@
 package astmodel
 
 import (
-	ast "github.com/dave/dst"
-	"github.com/dave/dst/decorator"
 	"go/token"
 	"io"
-	"k8s.io/klog/v2"
 	"os"
+
+	ast "github.com/dave/dst"
+	"github.com/dave/dst/decorator"
+	"k8s.io/klog/v2"
 )
 
 // TestFileDefinition defines the content of a test file we're generating
@@ -104,7 +105,6 @@ func (file *TestFileDefinition) AsAst() *ast.File {
 	return result
 }
 
-// generateImports produces the definitive set of imports for use in this file and
 // disambiguates any conflicts
 func (file *TestFileDefinition) generateImports() *PackageImportSet {
 	var requiredImports = NewPackageImportSet()

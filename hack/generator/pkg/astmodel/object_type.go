@@ -273,7 +273,25 @@ func (objectType *ObjectType) Equals(t Type) bool {
 		}
 
 		if !ourFunction.Equals(function) {
-			// Different function, even though same name; not-equal
+			// Different testcase, even though same name; not-equal
+			return false
+		}
+	}
+
+	if len(objectType.testcases) != len(other.testcases) {
+		// Different number of test cases, not equal
+		return false
+	}
+
+	for name, testcase := range other.testcases {
+		ourCase, ok := objectType.testcases[name]
+		if !ok {
+			// Didn't find the func, not equal
+			return false
+		}
+
+		if !ourCase.Equals(testcase) {
+			// Different testcase, even though same name; not-equal
 			return false
 		}
 	}
