@@ -100,5 +100,5 @@ func (report *PackagesMatrixReport) WriteTableTo(table *reporting.Table, pkg str
 	}
 
 	destination := path.Join(outputFolder, "versions_matrix.md")
-	return ioutil.WriteFile(destination, []byte(buffer.String()), 0644)
+	return ioutil.WriteFile(destination, []byte(buffer.String()), 0600)
 }
