@@ -17,11 +17,11 @@ func injectJsonSerializationTests(idFactory astmodel.IdentifierFactory) Pipeline
 		"jsonTestCases",
 		"Add test cases to verify JSON serialization",
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
-			stage := makeInjectJsonSerializationTestsStage(idFactory)
+			factory := makeObjectSerializationTestCaseFactory(idFactory)
 			result := make(astmodel.Types)
 			var errs []error
-			for n, d := range types {
-				updated, err := stage.visitor.VisitDefinition(d, n)
+			for _, d := range types {
+				updated, err := factory.AddTestTo(d)
 				if err != nil {
 					errs = append(errs, err)
 				} else {
@@ -37,38 +37,31 @@ func injectJsonSerializationTests(idFactory astmodel.IdentifierFactory) Pipeline
 		})
 }
 
-type injectJsonSerializationTestsStage struct {
+type objectSerializationTestCaseFactory struct {
 	visitor   astmodel.TypeVisitor
 	idFactory astmodel.IdentifierFactory
 }
 
-func makeInjectJsonSerializationTestsStage(idFactory astmodel.IdentifierFactory) injectJsonSerializationTestsStage {
-	result := injectJsonSerializationTestsStage{
+func makeObjectSerializationTestCaseFactory(idFactory astmodel.IdentifierFactory) objectSerializationTestCaseFactory {
+	result := objectSerializationTestCaseFactory{
 		idFactory: idFactory,
 	}
 
 	visitor := astmodel.MakeTypeVisitor()
-	//visitor.VisitResourceType = result.visitResourceType
 	visitor.VisitObjectType = result.visitObjectType
 
 	result.visitor = visitor
 	return result
 }
 
-func (s *injectJsonSerializationTestsStage) visitObjectType(
+func (s *objectSerializationTestCaseFactory) AddTestTo(def astmodel.TypeDefinition) (*astmodel.TypeDefinition, error) {
+	return s.visitor.VisitDefinition(def, def.Name())
+}
+
+func (s *objectSerializationTestCaseFactory) visitObjectType(
 	_ *astmodel.TypeVisitor, objectType *astmodel.ObjectType, ctx interface{}) (astmodel.Type, error) {
 	name := ctx.(astmodel.TypeName)
 	testcase := astmodel.NewObjectSerializationTestCase(name, objectType, s.idFactory)
 	result := objectType.WithTestCase(testcase)
 	return result, nil
 }
-
-/*
-func (s *injectJsonSerializationTestsStage) visitResourceType(
-	_ *astmodel.TypeVisitor, resource *astmodel.ResourceType, ctx interface{}) (astmodel.Type, error) {
-	name := ctx.(astmodel.TypeName)
-	testcase := astmodel.NewObjectSerializationTestCase(resource.SpecType())
-	result := resource.WithTestCase(testcase)
-	return result, nil
-}
-*/
