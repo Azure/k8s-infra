@@ -170,8 +170,7 @@ func getAzureNameFunctionsForType(r **ResourceType, spec *ObjectType, t Type, ty
 			return nil, nil, errors.Wrapf(err, "unable to resolve type of resource Name property: %s", azureNamePropType.String())
 		}
 
-		switch t := resolvedPropType.(type) {
-		case *EnumType:
+		if t, ok := resolvedPropType.(*EnumType); ok {
 			if !t.BaseType().Equals(StringType) {
 				return nil, nil, errors.Errorf("unable to handle non-string enum base type in Name property")
 			}
@@ -188,8 +187,8 @@ func getAzureNameFunctionsForType(r **ResourceType, spec *ObjectType, t Type, ty
 				// enum-valued AzureName property:
 				return getEnumAzureNameFunction(azureNamePropType), setEnumAzureNameFunction(azureNamePropType), nil
 			}
-		default:
-			panic("aaaah, real monsters")
+		} else {
+			return nil, nil, errors.Errorf("unable to produce AzureName()/SetAzureName() for Name property with type %s", resolvedPropType.String())
 		}
 
 	case *PrimitiveType:
