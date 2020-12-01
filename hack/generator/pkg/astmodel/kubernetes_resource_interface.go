@@ -17,9 +17,9 @@ import (
 
 // These are some magical field names which we're going to use or generate
 const (
-	AzureNameProperty    = "AzureName"
-	SetAzureNameProperty = "SetAzureName"
-	OwnerProperty        = "Owner"
+	AzureNameProperty = "AzureName"
+	SetAzureNameFunc  = "SetAzureName"
+	OwnerProperty     = "Owner"
 )
 
 // AddKubernetesResourceInterfaceImpls adds the required interfaces for
@@ -90,7 +90,7 @@ func AddKubernetesResourceInterfaceImpls(
 
 		r = r.WithSpec(specObj.WithFunction(
 			&objectFunction{
-				name:      SetAzureNameProperty,
+				name:      SetAzureNameFunc,
 				o:         specObj,
 				idFactory: idFactory,
 				asFunc:    setNameFunction,
