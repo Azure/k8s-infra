@@ -52,14 +52,9 @@ type AResourceList struct {
 }
 
 type AResource_SpecArm struct {
-	// +kubebuilder:validation:Required
 	ApiVersion AResourceSpecApiVersion `json:"apiVersion"`
-
-	// +kubebuilder:validation:Required
-	Name string `json:"name"`
-
-	// +kubebuilder:validation:Required
-	Type AResourceSpecType `json:"type"`
+	Name       string                  `json:"name"`
+	Type       AResourceSpecType       `json:"type"`
 }
 
 var _ genruntime.ArmResourceSpec = &AResource_SpecArm{}

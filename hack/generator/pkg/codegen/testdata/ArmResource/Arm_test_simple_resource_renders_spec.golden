@@ -52,14 +52,9 @@ type FakeResourceList struct {
 }
 
 type FakeResource_SpecArm struct {
-	// +kubebuilder:validation:Required
 	ApiVersion FakeResourceSpecApiVersion `json:"apiVersion"`
-
-	// +kubebuilder:validation:Required
-	Name string `json:"name"`
-
-	// +kubebuilder:validation:Required
-	Type FakeResourceSpecType `json:"type"`
+	Name       string                     `json:"name"`
+	Type       FakeResourceSpecType       `json:"type"`
 }
 
 var _ genruntime.ArmResourceSpec = &FakeResource_SpecArm{}

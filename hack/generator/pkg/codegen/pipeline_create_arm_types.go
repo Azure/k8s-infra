@@ -289,13 +289,30 @@ func createArmResourceSpecDefinition(
 	return armTypeDef, resourceSpecDef.Name(), nil
 }
 
+func removeValidations(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
+	for _, p := range t.Properties() {
+
+		// set all properties as not-required
+		p = p.SetRequired(false)
+
+		// remove all validation types by promoting inner type
+		if validated, ok := p.PropertyType().(astmodel.ValidatedType); ok {
+			p = p.WithType(validated.ElementType())
+		}
+
+		t = t.WithProperty(p)
+	}
+
+	return t, nil
+}
+
 func createArmTypeDefinition(definitions astmodel.Types, isSpecType bool, def astmodel.TypeDefinition) (astmodel.TypeDefinition, error) {
 	convertPropertiesToArmTypesWrapper := func(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
 		return convertPropertiesToArmTypes(t, isSpecType, definitions)
 	}
 
 	armName := astmodel.CreateArmTypeName(def.Name())
-	armDef, err := def.WithName(armName).ApplyObjectTransformations(convertPropertiesToArmTypesWrapper)
+	armDef, err := def.WithName(armName).ApplyObjectTransformations(removeValidations, convertPropertiesToArmTypesWrapper)
 	if err != nil {
 		return astmodel.TypeDefinition{},
 			errors.Wrapf(err, "creating ARM prototype %v from Kubernetes definition %v", armName, def.Name())

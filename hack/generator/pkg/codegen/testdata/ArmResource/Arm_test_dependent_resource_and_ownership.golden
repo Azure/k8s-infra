@@ -52,14 +52,9 @@ type AList struct {
 }
 
 type A_SpecArm struct {
-	// +kubebuilder:validation:Required
 	ApiVersion ASpecApiVersion `json:"apiVersion"`
-
-	// +kubebuilder:validation:Required
-	Name string `json:"name"`
-
-	// +kubebuilder:validation:Required
-	Type ASpecType `json:"type"`
+	Name       string          `json:"name"`
+	Type       ASpecType       `json:"type"`
 }
 
 var _ genruntime.ArmResourceSpec = &A_SpecArm{}
@@ -121,14 +116,9 @@ type BList struct {
 }
 
 type B_SpecArm struct {
-	// +kubebuilder:validation:Required
 	ApiVersion BSpecApiVersion `json:"apiVersion"`
-
-	// +kubebuilder:validation:Required
-	Name string `json:"name"`
-
-	// +kubebuilder:validation:Required
-	Type BSpecType `json:"type"`
+	Name       string          `json:"name"`
+	Type       BSpecType       `json:"type"`
 }
 
 var _ genruntime.ArmResourceSpec = &B_SpecArm{}
@@ -190,14 +180,9 @@ type CList struct {
 }
 
 type C_SpecArm struct {
-	// +kubebuilder:validation:Required
 	ApiVersion CSpecApiVersion `json:"apiVersion"`
-
-	// +kubebuilder:validation:Required
-	Name string `json:"name"`
-
-	// +kubebuilder:validation:Required
-	Type CSpecType `json:"type"`
+	Name       string          `json:"name"`
+	Type       CSpecType       `json:"type"`
 }
 
 var _ genruntime.ArmResourceSpec = &C_SpecArm{}
