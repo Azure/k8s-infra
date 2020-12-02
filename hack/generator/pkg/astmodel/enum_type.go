@@ -96,9 +96,9 @@ func (enum *EnumType) createBaseDeclaration(
 func (enum *EnumType) createValueDeclaration(name TypeName, value EnumValue) ast.Spec {
 
 	valueSpec := &ast.ValueSpec{
-		Names: []*ast.Ident{ast.NewIdent(GetEnumValueId(name, value))},
+		Names: []*ast.Ident{ast.NewIdent(GetEnumValueId(name.name, value))},
 		Values: []ast.Expr{
-			astbuilder.CallFuncByName(name.Name(), astbuilder.TextLiteral(value.Value)),
+			astbuilder.CallFunc(name.Name(), astbuilder.TextLiteral(value.Value)),
 		},
 	}
 
@@ -168,8 +168,8 @@ func (enum *EnumType) BaseType() *PrimitiveType {
 	return enum.baseType
 }
 
-func GetEnumValueId(name TypeName, value EnumValue) string {
-	return name.name + value.Identifier
+func GetEnumValueId(name string, value EnumValue) string {
+	return name + value.Identifier
 }
 
 // String implements fmt.Stringer

@@ -315,6 +315,16 @@ func (builder *convertFromArmBuilder) fromArmComplexPropertyConversion(
 // no conversion needed.
 func (builder *convertFromArmBuilder) assignPrimitiveType(
 	params complexPropertyConversionParameters) []ast.Stmt {
+
+	if params.assignmentHandler == nil {
+		return []ast.Stmt{
+			astbuilder.SimpleAssignment(
+				params.Destination(),
+				token.ASSIGN,
+				params.Source()),
+		}
+	}
+
 	return []ast.Stmt{
 		params.assignmentHandler(params.Destination(), params.Source()),
 	}
