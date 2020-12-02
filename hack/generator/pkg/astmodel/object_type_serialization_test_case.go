@@ -545,6 +545,8 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 	switch propertyType {
 	case StringType:
 		return astbuilder.CallQualifiedFunc(genPackage, "AlphaString"), nil
+	case UInt32Type:
+		return astbuilder.CallQualifiedFunc(genPackage, "UInt32"), nil
 	case IntType:
 		return astbuilder.CallQualifiedFunc(genPackage, "Int"), nil
 	case FloatType:
@@ -560,7 +562,6 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 		if ok {
 			return o.createIndependentGenerator(def.Name().name, def.theType, genContext)
 		}
-		return nil, nil
 
 	case *EnumType:
 		return o.createEnumGenerator(name, genPackage, t)
@@ -594,6 +595,15 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 
 		if keyGen != nil && valueGen != nil {
 			return astbuilder.CallQualifiedFunc(genPackage, "MapOf", keyGen, valueGen), nil
+		}
+
+	case ValidatedType:
+		// TODO: we should restrict the values of generated types
+		//       but at the moment this is only used for serialization tests, so doesn't affect
+		//       anything
+		gen, err := o.createIndependentGenerator(name, t.ElementType(), genContext)
+		if err == nil {
+			return gen, nil
 		}
 	}
 
@@ -670,8 +680,10 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 		// TODO: we should restrict the values of generated types
 		//       but at the moment this is only used for serialization tests, so doesn't affect
 		//       anything
-		element := t.ElementType()
-		return o.createIndependentGenerator(name, element, genContext)
+		gen, err := o.createRelatedGenerator(name, t.ElementType(), genContext)
+		if err == nil {
+			return gen, nil
+		}
 	}
 
 	// Not a property we can handle here
