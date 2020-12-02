@@ -7,13 +7,14 @@ package astmodel
 
 import (
 	"fmt"
-	ast "github.com/dave/dst"
 	"go/token"
 
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
+	ast "github.com/dave/dst"
 	"github.com/pkg/errors"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
+
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 )
 
 // ObjectSerializationTestCase represents a test that the object can be losslessly serialized to
@@ -664,6 +665,13 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 		if keyGen != nil && valueGen != nil {
 			return astbuilder.CallQualifiedFunc(genPackageName, "MapOf", keyGen, valueGen), nil
 		}
+
+	case ValidatedType:
+		// TODO: we should restrict the values of generated types
+		//       but at the moment this is only used for serialization tests, so doesn't affect
+		//       anything
+		element := t.ElementType()
+		return o.createIndependentGenerator(name, element, genContext)
 	}
 
 	// Not a property we can handle here
