@@ -193,12 +193,22 @@ func (builder *convertFromArmBuilder) propertiesWithSameNameAndTypeHandler(
 	fromType *astmodel.ObjectType) []ast.Stmt {
 
 	fromProp, ok := fromType.Property(toProp.PropertyName())
-
-	if !ok || !toProp.PropertyType().Equals(fromProp.PropertyType()) {
+	if !ok {
 		return nil
 	}
 
-	if typeRequiresCopying(toProp.PropertyType()) {
+	// check that we are assigning to the same type or a validated
+	// version of the same type
+	toType := toProp.PropertyType()
+	if toValidated, ok := toType.(astmodel.ValidatedType); ok {
+		toType = toValidated.ElementType()
+	}
+
+	if !toType.Equals(fromProp.PropertyType()) {
+		return nil
+	}
+
+	if typeRequiresCopying(toType) {
 		// We can't get away with just assigning this field, since
 		// it's a reference type. Use the conversion code to copy the
 		// elements.
@@ -213,7 +223,7 @@ func (builder *convertFromArmBuilder) propertiesWithSameNameAndTypeHandler(
 					X:   ast.NewIdent(builder.receiverIdent),
 					Sel: ast.NewIdent(string(toProp.PropertyName())),
 				},
-				destinationType:   toProp.PropertyType(),
+				destinationType:   toType,
 				nameHint:          string(toProp.PropertyName()),
 				conversionContext: nil,
 				assignmentHandler: nil,
@@ -307,7 +317,7 @@ func (builder *convertFromArmBuilder) fromArmComplexPropertyConversion(
 		params.destinationType = concrete.ElementType()
 		return builder.fromArmComplexPropertyConversion(params)
 	default:
-		panic(fmt.Sprintf("don't know how to perform fromArm conversion for type: %T", params.destinationType))
+		panic(fmt.Sprintf("don't know how to perform fromArm conversion for type: %s", params.destinationType.String()))
 	}
 }
 
@@ -315,15 +325,6 @@ func (builder *convertFromArmBuilder) fromArmComplexPropertyConversion(
 // no conversion needed.
 func (builder *convertFromArmBuilder) assignPrimitiveType(
 	params complexPropertyConversionParameters) []ast.Stmt {
-
-	if params.assignmentHandler == nil {
-		return []ast.Stmt{
-			astbuilder.SimpleAssignment(
-				params.Destination(),
-				token.ASSIGN,
-				params.Source()),
-		}
-	}
 
 	return []ast.Stmt{
 		params.assignmentHandler(params.Destination(), params.Source()),
