@@ -227,7 +227,7 @@ func Test_PropertyDefinitionWithType_GivenSameType_ReturnsExistingReference(t *t
 }
 
 /*
- * WithValidation() Tests
+ * SetRequired() Tests
  */
 
 func Test_PropertyDefinition_WhenMarkedRequired_IsRequired(t *testing.T) {
@@ -252,7 +252,7 @@ func Test_PropertyDefinition_WhenMarkedRequired_LeavesOriginalUnmodified(t *test
  * WithoutValidation() tests
  */
 
-func Test_PropertyDefinitionWithoutValidation_ReturnsPropertyWithoutValidation(t *testing.T) {
+func Test_PropertyDefinitionWithSetRequiredTrueThenFalse_ReturnsPropertyEqualToOriginal(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	origProperty := NewPropertyDefinition(propertyName, propertyJsonName, propertyType)
@@ -261,7 +261,7 @@ func Test_PropertyDefinitionWithoutValidation_ReturnsPropertyWithoutValidation(t
 	g.Expect(property).To(Equal(origProperty))
 }
 
-func Test_PropertyDefinitionWithoutValidation_LeavesOriginalUnmodified(t *testing.T) {
+func Test_PropertyDefinitionWithSetRequiredFalse_LeavesOriginalUnmodified(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType).SetRequired(true)
@@ -284,7 +284,7 @@ func Test_PropertyDefinitionMakeRequired_WhenOptional_ReturnsDifferentReference(
 	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s\"", propertyJsonName)))
 }
 
-func TestPropertyDefinitionMakeRequired_WhenOptional_ReturnsTypeWithMandatoryValidation(t *testing.T) {
+func TestPropertyDefinitionMakeRequired_WhenOptional_ReturnsTypeWithIsRequiredTrue(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType).MakeOptional()
@@ -302,7 +302,7 @@ func Test_PropertyDefinitionMakeRequired_WhenRequired_ReturnsExistingReference(t
 	g.Expect(updated).To(BeIdenticalTo(original))
 }
 
-func Test_PropertyDefinitionMakeRequired_WhenTypeOptionalAndValidationPresent_ReturnsNewReference(t *testing.T) {
+func Test_PropertyDefinitionMakeRequired_WhenTypeOptionalAndIsRequired_ReturnsNewReference(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType).
@@ -356,7 +356,7 @@ func TestPropertyDefinitionMakeOptional_WhenRequired_ReturnsDifferentReference(t
 	g.Expect(updated.renderedTags()).To(Equal(fmt.Sprintf("json:\"%s,omitempty\"", propertyJsonName)))
 }
 
-func TestPropertyDefinitionMakeOptional_WhenRequired_ReturnsTypeWithoutMandatoryValidation(t *testing.T) {
+func TestPropertyDefinitionMakeOptional_WhenRequired_ReturnsTypeWithIsRequiredFalse(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType).MakeRequired()
@@ -374,7 +374,7 @@ func Test_PropertyDefinitionMakeOptional_WhenOptional_ReturnsExistingReference(t
 	g.Expect(updated).To(BeIdenticalTo(original))
 }
 
-func Test_PropertyDefinitionMakeOptional_WhenTypeMandatoryAndMissingValidation_ReturnsNewReference(t *testing.T) {
+func Test_PropertyDefinitionMakeOptional_WhenTypeMandatoryAndIsRequiredFalse_ReturnsNewReference(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	original := NewPropertyDefinition(propertyName, propertyJsonName, propertyType)
