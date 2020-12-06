@@ -127,7 +127,16 @@ func generateDefaulter(resourceName TypeName, spec *ObjectType, idFactory Identi
 	// e.g.  "default.v123.backendaddresspool.infra.azure.com"
 	name := fmt.Sprintf("default.%s.%s.%s", version, resource, group)
 
-	annotation := fmt.Sprintf("+kubebuilder:webhook:path=%s,mutating=true,sideEffects=None,matchPolicy=Exact,failurePolicy=fail,groups=%s,resources=%s,verbs=create;update,versions=%s,name=%s", path, group, resource, version, name)
+	annotation := fmt.Sprintf(
+		"+kubebuilder:webhook:path=%s,mutating=true,sideEffects=None,"+
+			"matchPolicy=Exact,failurePolicy=fail,groups=%s,resources=%s,"+
+			"verbs=create;update,versions=%s,name=%s",
+		path,
+		group,
+		resource,
+		version,
+		name)
+
 	return NewInterfaceImplementation(
 		DefaulterInterfaceName,
 		&objectFunction{
