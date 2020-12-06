@@ -151,21 +151,17 @@ func (builder *convertFromArmBuilder) namePropertyHandler(
 	// Invoke SetAzureName(ExtractKubernetesResourceNameFromArmName(this.Name)):
 	return []ast.Stmt{
 		&ast.ExprStmt{
-			X: &ast.CallExpr{
-				Fun: &ast.SelectorExpr{
-					X:   ast.NewIdent(builder.receiverIdent),
-					Sel: ast.NewIdent("SetAzureName"),
-				},
-				Args: []ast.Expr{
-					astbuilder.CallQualifiedFunc(
-						astmodel.GenRuntimePackageName,
-						"ExtractKubernetesResourceNameFromArmName",
-						&ast.SelectorExpr{
-							X:   ast.NewIdent(builder.typedInputIdent),
-							Sel: ast.NewIdent(string(fromProp.PropertyName())),
-						}),
-				},
-			},
+			X: astbuilder.CallQualifiedFunc(
+				builder.receiverIdent,
+				"SetAzureName",
+				astbuilder.CallQualifiedFunc(
+					astmodel.GenRuntimePackageName,
+					"ExtractKubernetesResourceNameFromArmName",
+					&ast.SelectorExpr{
+						X:   ast.NewIdent(builder.typedInputIdent),
+						Sel: ast.NewIdent(string(fromProp.PropertyName())),
+					}),
+			),
 		},
 	}
 }
