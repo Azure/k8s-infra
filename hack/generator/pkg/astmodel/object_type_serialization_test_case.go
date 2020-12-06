@@ -166,10 +166,10 @@ func (o ObjectSerializationTestCase) Equals(_ TestCase) bool {
 func (o ObjectSerializationTestCase) createTestRunner() ast.Decl {
 
 	const (
-		parameters = "parameters"
-		properties = "properties"
-		property   = "property"
-		testingRun = "testingRun"
+		parameters = "Parameters"
+		properties = "Properties"
+		property   = "Property"
+		testingRun = "TestingRun"
 	)
 
 	t := ast.NewIdent("t")
