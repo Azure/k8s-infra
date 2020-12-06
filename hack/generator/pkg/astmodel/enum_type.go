@@ -40,12 +40,12 @@ func NewEnumType(baseType *PrimitiveType, options []EnumValue) *EnumType {
 }
 
 // AsDeclarations converts the EnumType to a series of Go AST Decls
-func (enum *EnumType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string, validations []KubeBuilderValidation) []ast.Decl {
-	result := []ast.Decl{enum.createBaseDeclaration(codeGenerationContext, name, description, validations)}
+func (enum *EnumType) AsDeclarations(codeGenerationContext *CodeGenerationContext, declContext DeclarationContext) []ast.Decl {
+	result := []ast.Decl{enum.createBaseDeclaration(codeGenerationContext, declContext.Name, declContext.Description, declContext.Validations)}
 
 	var specs []ast.Spec
 	for _, v := range enum.options {
-		s := enum.createValueDeclaration(name, v)
+		s := enum.createValueDeclaration(declContext.Name, v)
 		specs = append(specs, s)
 	}
 

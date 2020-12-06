@@ -43,8 +43,8 @@ func (prim *PrimitiveType) AsType(_ *CodeGenerationContext) ast.Expr {
 	return ast.NewIdent(prim.name)
 }
 
-func (prim *PrimitiveType) AsDeclarations(genContext *CodeGenerationContext, name TypeName, description []string, validations []KubeBuilderValidation) []ast.Decl {
-	return AsSimpleDeclarations(genContext, name, description, validations, prim)
+func (prim *PrimitiveType) AsDeclarations(genContext *CodeGenerationContext, declContext DeclarationContext) []ast.Decl {
+	return AsSimpleDeclarations(genContext, declContext, prim)
 }
 
 // RequiredPackageReferences returns a list of package required by this

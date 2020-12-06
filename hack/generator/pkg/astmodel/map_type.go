@@ -40,8 +40,8 @@ func NewStringMapType(value Type) *MapType {
 // assert that we implemented Type correctly
 var _ Type = (*MapType)(nil)
 
-func (m *MapType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string, validations []KubeBuilderValidation) []ast.Decl {
-	return AsSimpleDeclarations(codeGenerationContext, name, description, validations, m)
+func (m *MapType) AsDeclarations(codeGenerationContext *CodeGenerationContext, declContext DeclarationContext) []ast.Decl {
+	return AsSimpleDeclarations(codeGenerationContext, declContext, m)
 }
 
 // AsType implements Type for MapType to create the abstract syntax tree for a map

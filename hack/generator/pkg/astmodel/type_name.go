@@ -40,8 +40,8 @@ func (typeName TypeName) Name() string {
 // it is simply a reference to the name.
 var _ Type = TypeName{}
 
-func (typeName TypeName) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string, validations []KubeBuilderValidation) []ast.Decl {
-	return AsSimpleDeclarations(codeGenerationContext, name, description, validations, typeName)
+func (typeName TypeName) AsDeclarations(codeGenerationContext *CodeGenerationContext, declContext DeclarationContext) []ast.Decl {
+	return AsSimpleDeclarations(codeGenerationContext, declContext, typeName)
 }
 
 // AsType implements Type for TypeName

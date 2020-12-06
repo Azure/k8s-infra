@@ -40,7 +40,7 @@ func NewObjectType() *ObjectType {
 	}
 }
 
-func (objectType *ObjectType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string, validations []KubeBuilderValidation) []ast.Decl {
+func (objectType *ObjectType) AsDeclarations(codeGenerationContext *CodeGenerationContext, declContext DeclarationContext) []ast.Decl {
 	declaration := &ast.GenDecl{
 		Decs: ast.GenDeclDecorations{
 			NodeDecs: ast.NodeDecs{
@@ -51,18 +51,18 @@ func (objectType *ObjectType) AsDeclarations(codeGenerationContext *CodeGenerati
 		Tok: token.TYPE,
 		Specs: []ast.Spec{
 			&ast.TypeSpec{
-				Name: ast.NewIdent(name.Name()),
+				Name: ast.NewIdent(declContext.Name.Name()),
 				Type: objectType.AsType(codeGenerationContext),
 			},
 		},
 	}
 
-	astbuilder.AddWrappedComments(&declaration.Decs.Start, description, 200)
-	AddValidationComments(&declaration.Decs.Start, validations)
+	astbuilder.AddWrappedComments(&declaration.Decs.Start, declContext.Description, 200)
+	AddValidationComments(&declaration.Decs.Start, declContext.Validations)
 
 	result := []ast.Decl{declaration}
-	result = append(result, objectType.InterfaceImplementer.AsDeclarations(codeGenerationContext, name, nil)...)
-	result = append(result, objectType.generateMethodDecls(codeGenerationContext, name)...)
+	result = append(result, objectType.InterfaceImplementer.AsDeclarations(codeGenerationContext, declContext.Name, nil)...)
+	result = append(result, objectType.generateMethodDecls(codeGenerationContext, declContext.Name)...)
 	return result
 }
 

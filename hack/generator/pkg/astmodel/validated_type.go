@@ -162,8 +162,9 @@ func (v ValidatedType) WithType(newElement Type) ValidatedType {
 
 var _ Type = ValidatedType{}
 
-func (v ValidatedType) AsDeclarations(c *CodeGenerationContext, name TypeName, description []string, validations []KubeBuilderValidation) []ast.Decl {
-	return v.ElementType().AsDeclarations(c, name, description, append(validations, v.Validations().ToKubeBuilderValidations()...))
+func (v ValidatedType) AsDeclarations(c *CodeGenerationContext, declContext DeclarationContext) []ast.Decl {
+	declContext.Validations = append(declContext.Validations, v.validations.ToKubeBuilderValidations()...)
+	return v.ElementType().AsDeclarations(c, declContext)
 }
 
 func (v ValidatedType) AsType(_ *CodeGenerationContext) ast.Expr {

@@ -68,23 +68,26 @@ func (def TypeDefinition) WithName(typeName TypeName) TypeDefinition {
 }
 
 func (def TypeDefinition) AsDeclarations(codeGenerationContext *CodeGenerationContext) []ast.Decl {
-	return def.theType.AsDeclarations(codeGenerationContext, def.name, def.description, []KubeBuilderValidation{})
+	declContext := DeclarationContext{
+		Name:        def.name,
+		Description: def.description,
+	}
+
+	return def.theType.AsDeclarations(codeGenerationContext, declContext)
 }
 
 // AsSimpleDeclarations is a helper for types that only require a simple name/alias to be defined
 func AsSimpleDeclarations(
 	codeGenerationContext *CodeGenerationContext,
-	name TypeName,
-	description []string,
-	validations []KubeBuilderValidation,
+	declContext DeclarationContext,
 	theType Type) []ast.Decl {
 
 	var docComments ast.Decorations
-	if len(description) > 0 {
-		astbuilder.AddWrappedComments(&docComments, description, 120)
+	if len(declContext.Description) > 0 {
+		astbuilder.AddWrappedComments(&docComments, declContext.Description, 120)
 	}
 
-	AddValidationComments(&docComments, validations)
+	AddValidationComments(&docComments, declContext.Validations)
 
 	result := &ast.GenDecl{
 		Decs: ast.GenDeclDecorations{
@@ -96,7 +99,7 @@ func AsSimpleDeclarations(
 		Tok: token.TYPE,
 		Specs: []ast.Spec{
 			&ast.TypeSpec{
-				Name: ast.NewIdent(name.Name()),
+				Name: ast.NewIdent(declContext.Name.Name()),
 				Type: theType.AsType(codeGenerationContext),
 			},
 		},
