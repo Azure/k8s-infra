@@ -148,6 +148,7 @@ func generateDefaulter(resourceName TypeName, spec *ObjectType, idFactory Identi
 }
 
 // note that this can, as a side-effect, update the resource type
+// it is a bit ugly!
 func getAzureNameFunctionsForType(r **ResourceType, spec *ObjectType, t Type, types Types) (asFuncType, asFuncType, error) {
 	// handle different types of AzureName property
 	switch azureNamePropType := t.(type) {
@@ -223,7 +224,7 @@ type objectFunction struct {
 
 type asFuncType func(f *objectFunction, codeGenerationContext *CodeGenerationContext, receiver TypeName, methodName string) *ast.FuncDecl
 
-// getEnumAzureNameFunction adds an AzureName() function that casts an AzureName property
+// getEnumAzureNameFunction adds an AzureName() function that casts the AzureName property
 // with an enum value to a string
 func getEnumAzureNameFunction(enumType TypeName) asFuncType {
 	return func(f *objectFunction, codeGenerationContext *CodeGenerationContext, receiver TypeName, methodName string) *ast.FuncDecl {
@@ -266,6 +267,8 @@ func getEnumAzureNameFunction(enumType TypeName) asFuncType {
 	}
 }
 
+// setEnumAzureNameFunction returns a function that sets the AzureName property to the result of casting
+// the argument string to the given enum type
 func setEnumAzureNameFunction(enumType TypeName) asFuncType {
 	return func(f *objectFunction, codeGenerationContext *CodeGenerationContext, receiver TypeName, methodName string) *ast.FuncDecl {
 		receiverIdent := f.idFactory.CreateIdentifier(receiver.Name(), NotExported)
@@ -380,6 +383,7 @@ func IsKubernetesResourceProperty(name PropertyName) bool {
 	return name == AzureNameProperty || name == OwnerProperty
 }
 
+// ownerFunction returns a function that returns the owner of the resource
 func ownerFunction(k *objectFunction, codeGenerationContext *CodeGenerationContext, receiver TypeName, methodName string) *ast.FuncDecl {
 
 	receiverIdent := k.idFactory.CreateIdentifier(receiver.Name(), NotExported)
@@ -489,6 +493,8 @@ func createResourceReference(
 		})
 }
 
+// defaultAzureNameFunction returns a function that defaults the AzureName property of the resource spec
+// to the Name property of the resource spec
 func defaultAzureNameFunction(k *objectFunction, codeGenerationContext *CodeGenerationContext, receiver TypeName, methodName string) *ast.FuncDecl {
 	receiverIdent := k.idFactory.CreateIdentifier(receiver.Name(), NotExported)
 	receiverType := receiver.AsType(codeGenerationContext)
@@ -537,6 +543,8 @@ func defaultAzureNameFunction(k *objectFunction, codeGenerationContext *CodeGene
 	return fn.DefineFunc()
 }
 
+// setStringAzureNameFunction returns a function that sets the Name property of
+// the resource spec to the argument string
 func setStringAzureNameFunction(k *objectFunction, codeGenerationContext *CodeGenerationContext, receiver TypeName, methodName string) *ast.FuncDecl {
 	receiverIdent := k.idFactory.CreateIdentifier(receiver.Name(), NotExported)
 	receiverType := receiver.AsType(codeGenerationContext)
@@ -563,6 +571,7 @@ func setStringAzureNameFunction(k *objectFunction, codeGenerationContext *CodeGe
 	return fn.DefineFunc()
 }
 
+// getStringAzureNameFunction returns a function that returns the Name property of the resource spec
 func getStringAzureNameFunction(k *objectFunction, codeGenerationContext *CodeGenerationContext, receiver TypeName, methodName string) *ast.FuncDecl {
 	receiverIdent := k.idFactory.CreateIdentifier(receiver.Name(), NotExported)
 	receiverType := receiver.AsType(codeGenerationContext)
