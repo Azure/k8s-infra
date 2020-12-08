@@ -16,6 +16,7 @@ import (
 type CodeGenerationContext struct {
 	packageImports *PackageImportSet
 	currentPackage PackageReference
+	usedImports    *PackageImportSet
 
 	generatedPackages map[PackageReference]*PackageDefinition
 }
@@ -32,7 +33,8 @@ func NewCodeGenerationContext(
 	return &CodeGenerationContext{
 		currentPackage:    currentPackage,
 		packageImports:    imports,
-		generatedPackages: generatedPackages}
+		generatedPackages: generatedPackages,
+		usedImports:       NewPackageImportSet()}
 }
 
 // CurrentPackage returns the current package being generated
@@ -40,11 +42,19 @@ func (codeGenContext *CodeGenerationContext) CurrentPackage() PackageReference {
 	return codeGenContext.currentPackage
 }
 
-// PackageImports returns the set of package references in the current context
+// PackageImports returns the set of package imports in the current context
 func (codeGenContext *CodeGenerationContext) PackageImports() *PackageImportSet {
-	// return a copy of the map to ensure immutability
+	// return a copy to ensure immutability
 	result := NewPackageImportSet()
 	result.Merge(codeGenContext.packageImports)
+	return result
+}
+
+// UsedImports returns the set of package imports that have been used by the generated code
+func (codeGenContext *CodeGenerationContext) UsedPackageImports() *PackageImportSet {
+	// return a copy to ensure immutability
+	result := NewPackageImportSet()
+	result.Merge(codeGenContext.usedImports)
 	return result
 }
 
@@ -54,6 +64,8 @@ func (codeGenContext *CodeGenerationContext) GetImportedPackageName(reference Pa
 	if !ok {
 		return "", errors.Errorf("package %s not imported", reference)
 	}
+
+	codeGenContext.usedImports.AddImport(packageImport)
 	return packageImport.PackageName(), nil
 }
 
