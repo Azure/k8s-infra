@@ -143,9 +143,25 @@ func (file *TestFileDefinition) generateImports() *PackageImportSet {
 
 func (file *TestFileDefinition) generateImportSpecs(imports *PackageImportSet) []ast.Spec {
 	var importSpecs []ast.Spec
-	for _, requiredImport := range imports.AsSlice() {
+	for _, requiredImport := range imports.AsSortedSlice(file.orderImports) {
 		importSpecs = append(importSpecs, requiredImport.AsImportSpec())
 	}
 
 	return importSpecs
+}
+
+func (file *TestFileDefinition) orderImports(i PackageImport, j PackageImport) bool {
+	if i.HasExplicitName() && j.HasExplicitName() {
+		return i.name < j.name
+	}
+
+	if i.HasExplicitName() {
+		return true
+	}
+
+	if j.HasExplicitName() {
+		return false
+	}
+
+	return i.packageReference.String() < j.packageReference.String()
 }
