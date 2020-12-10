@@ -339,37 +339,27 @@ func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 	return fn.DefineFunc()
 }
 
-func (o ObjectSerializationTestCase) createGeneratorDeclaration(genContext *CodeGenerationContext) (ast.Decl, error) {
+func (o ObjectSerializationTestCase) createGeneratorDeclaration(genContext *CodeGenerationContext) ast.Decl {
 	comment := fmt.Sprintf(
 		"Generator of %v instances for property testing - lazily instantiated by %v()",
 		o.Subject(),
 		o.idOfGeneratorMethod(o.subject))
 
-	gopterPackage, err := genContext.GetImportedPackageName(GopterReference)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to generate generator declaration")
-	}
+	gopterPackage := genContext.MustGetImportedPackageName(GopterReference)
 
 	decl := astbuilder.VariableDeclaration(
 		o.idOfSubjectGeneratorGlobal(),
 		astbuilder.QualifiedTypeName(gopterPackage, "Gen"),
 		comment)
 
-	return decl, nil
+	return decl
 }
 
 // createGeneratorMethod generates the AST for a method used to populate our generator cache variable on demand
-func (o ObjectSerializationTestCase) createGeneratorMethod(ctx *CodeGenerationContext, haveSimpleGenerators bool, haveRelatedGenerators bool) (ast.Decl, error) {
+func (o ObjectSerializationTestCase) createGeneratorMethod(ctx *CodeGenerationContext, haveSimpleGenerators bool, haveRelatedGenerators bool) ast.Decl {
 
-	gopterPackage, err := ctx.GetImportedPackageName(GopterReference)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error looking up import name for %s", GopterReference)
-	}
-
-	genPackage, err := ctx.GetImportedPackageName(GopterGenReference)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error looking up import name for %s", GopterGenReference)
-	}
+	gopterPackage := ctx.MustGetImportedPackageName(GopterReference)
+	genPackage := ctx.MustGetImportedPackageName(GopterGenReference)
 
 	fn := &astbuilder.FuncDetails{
 		Name: o.idOfGeneratorMethod(o.subject),
@@ -466,17 +456,9 @@ func (o ObjectSerializationTestCase) createGeneratorMethod(ctx *CodeGenerationCo
 
 // createGeneratorsFactoryMethod generates the AST for a method creating gopter generators
 func (o ObjectSerializationTestCase) createGeneratorsFactoryMethod(
-	methodName string, generators []ast.Stmt, ctx *CodeGenerationContext) (ast.Decl, error) {
+	methodName string, generators []ast.Stmt, ctx *CodeGenerationContext) ast.Decl {
 
-	if len(generators) == 0 {
-		// No simple properties, don't generate a method
-		return nil, nil
-	}
-
-	gopterPackage, err := ctx.GetImportedPackageName(GopterReference)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error looking up import name %s for factory generation", GopterReference)
-	}
+	gopterPackage := ctx.MustGetImportedPackageName(GopterReference)
 
 	mapType := &ast.MapType{
 		Key:   ast.NewIdent("string"),
@@ -491,7 +473,7 @@ func (o ObjectSerializationTestCase) createGeneratorsFactoryMethod(
 	fn.AddComments("is a factory method for creating gopter generators")
 	fn.AddParameter("gens", mapType)
 
-	return fn.DefineFunc(), nil
+	return fn.DefineFunc()
 }
 
 // createGenerators creates AST fragments for gopter generators to create values for properties
@@ -551,10 +533,7 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 	propertyType Type,
 	genContext *CodeGenerationContext) (ast.Expr, error) {
 
-	genPackage, err := genContext.GetImportedPackageName(GopterGenReference)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to generate independent generator for %s", name)
-	}
+	genPackage := genContext.MustGetImportedPackageName(GopterGenReference)
 
 	// Handle simple primitive properties
 	switch propertyType {
@@ -622,10 +601,7 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 	propertyType Type,
 	genContext *CodeGenerationContext) (ast.Expr, error) {
 
-	genPackageName, err := genContext.GetImportedPackageName(GopterGenReference)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to generate related generator for %s", name)
-	}
+	genPackageName := genContext.MustGetImportedPackageName(GopterGenReference)
 
 	switch t := propertyType.(type) {
 	case TypeName:
@@ -634,15 +610,11 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 			// This is a type we're defining, so we can create a generator for it
 			if t.PackageReference.Equals(genContext.CurrentPackage()) {
 				// create a generator for a property referencing a type in this package
-				return astbuilder.CallFunc(o.idOfGeneratorMethod(t)), nil
+				return astbuilder.CallFunc(o.idOfGeneratorMethod(t))
 			}
 
-			importName, err := genContext.GetImportedPackageName(t.PackageReference)
-			if err != nil {
-				return nil, err
-			}
-
-			return astbuilder.CallQualifiedFunc(importName, o.idOfGeneratorMethod(t)), nil
+			importName := genContext.MustGetImportedPackageName(t.PackageReference)
+			return astbuilder.CallQualifiedFunc(importName, o.idOfGeneratorMethod(t))
 		}
 
 		//TODO: Should we invoke a generator for stuff from our runtime package?

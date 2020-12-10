@@ -69,6 +69,17 @@ func (codeGenContext *CodeGenerationContext) GetImportedPackageName(reference Pa
 	return packageImport.PackageName(), nil
 }
 
+// MustGetImportedPackageName gets the imported packages name or panics if the package was not imported
+// Use this when you're absolutely positively sure the package will be there already
+func (codeGenContext *CodeGenerationContext) MustGetImportedPackageName(reference PackageReference) string {
+	result, err := codeGenContext.GetImportedPackageName(reference)
+	if err != nil {
+		panic(err)
+	}
+
+	return result
+}
+
 // GetGeneratedPackage gets a reference to the PackageDefinition referred to by the provided reference
 func (codeGenContext *CodeGenerationContext) GetGeneratedPackage(reference PackageReference) (*PackageDefinition, error) {
 	// Make sure that we're actually importing that package -- don't want to allow references to things we aren't importing
