@@ -176,6 +176,8 @@ func (o ObjectSerializationTestCase) createTestRunner() ast.Decl {
 		testingRunMethod = "TestingRun"
 	)
 
+	testingPackage := codegenContext.MustGetImportedPackageName(TestingReference)
+
 	t := ast.NewIdent("t")
 
 	// parameters := gopter.DefaultTestParameters()
@@ -221,6 +223,7 @@ func (o ObjectSerializationTestCase) createTestRunner() ast.Decl {
 
 	// Define our function
 	fn := astbuilder.NewTestFuncDetails(
+		testingPackage,
 		o.testName,
 		defineParameters,
 		configureMaxSize,
