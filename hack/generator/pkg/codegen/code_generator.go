@@ -123,5 +123,7 @@ func (generator *CodeGenerator) Generate(ctx context.Context) error {
 		defs = defsOut
 	}
 
+	klog.Info("Finished")
+
 	return nil
 }
