@@ -577,10 +577,7 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 		// TODO: we should restrict the values of generated types
 		//       but at the moment this is only used for serialization tests, so doesn't affect
 		//       anything
-		gen, err := o.createIndependentGenerator(name, t.ElementType(), genContext)
-		if err == nil {
-			return gen, nil
-		}
+		return o.createIndependentGenerator(name, t.ElementType(), genContext)
 	}
 
 	// Not a simple property we can handle here
@@ -637,10 +634,7 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 		// TODO: we should restrict the values of generated types
 		//       but at the moment this is only used for serialization tests, so doesn't affect
 		//       anything
-		gen, err := o.createRelatedGenerator(name, t.ElementType(), genContext)
-		if err == nil {
-			return gen, nil
-		}
+		return o.createRelatedGenerator(name, t.ElementType(), genContext)
 	}
 
 	// Not a property we can handle here
