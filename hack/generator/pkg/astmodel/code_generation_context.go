@@ -6,6 +6,7 @@
 package astmodel
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 )
 
@@ -16,6 +17,7 @@ import (
 type CodeGenerationContext struct {
 	packageImports *PackageImportSet
 	currentPackage PackageReference
+	usedImports    *PackageImportSet
 
 	generatedPackages map[PackageReference]*PackageDefinition
 }
@@ -32,7 +34,8 @@ func NewCodeGenerationContext(
 	return &CodeGenerationContext{
 		currentPackage:    currentPackage,
 		packageImports:    imports,
-		generatedPackages: generatedPackages}
+		generatedPackages: generatedPackages,
+		usedImports:       NewPackageImportSet()}
 }
 
 // CurrentPackage returns the current package being generated
@@ -40,11 +43,19 @@ func (codeGenContext *CodeGenerationContext) CurrentPackage() PackageReference {
 	return codeGenContext.currentPackage
 }
 
-// PackageImports returns the set of package references in the current context
+// PackageImports returns the set of package imports in the current context
 func (codeGenContext *CodeGenerationContext) PackageImports() *PackageImportSet {
-	// return a copy of the map to ensure immutability
+	// return a copy to ensure immutability
 	result := NewPackageImportSet()
 	result.Merge(codeGenContext.packageImports)
+	return result
+}
+
+// UsedImports returns the set of package imports that have been used by the generated code
+func (codeGenContext *CodeGenerationContext) UsedPackageImports() *PackageImportSet {
+	// return a copy to ensure immutability
+	result := NewPackageImportSet()
+	result.Merge(codeGenContext.usedImports)
 	return result
 }
 
@@ -54,7 +65,20 @@ func (codeGenContext *CodeGenerationContext) GetImportedPackageName(reference Pa
 	if !ok {
 		return "", errors.Errorf("package %s not imported", reference)
 	}
+
+	codeGenContext.usedImports.AddImport(packageImport)
 	return packageImport.PackageName(), nil
+}
+
+// MustGetImportedPackageName gets the imported packages name or panics if the package was not imported
+// Use this when you're absolutely positively sure the package will be there already
+func (codeGenContext *CodeGenerationContext) MustGetImportedPackageName(reference PackageReference) string {
+	result, err := codeGenContext.GetImportedPackageName(reference)
+	if err != nil {
+		panic(err)
+	}
+
+	return result
 }
 
 // GetGeneratedPackage gets a reference to the PackageDefinition referred to by the provided reference
@@ -84,7 +108,13 @@ func (codeGenContext *CodeGenerationContext) GetImportedDefinition(typeName Type
 }
 
 // GetTypesInPackage returns the actual definitions from a specific package
-func (codeGenContext *CodeGenerationContext) GetTypesInPackage(ref PackageReference) (Types, bool) {
+func (codeGenContext *CodeGenerationContext) GetTypesInPackage(packageRef PackageReference) (Types, bool) {
+	ref := packageRef
+	if local, ok := ref.AsLocalPackage(); ok {
+		// Resolve to a local reference if possible
+		ref = local
+	}
+
 	def, ok := codeGenContext.generatedPackages[ref]
 	if !ok {
 		// Package reference not found
@@ -98,7 +128,8 @@ func (codeGenContext *CodeGenerationContext) GetTypesInPackage(ref PackageRefere
 func (codeGenContext *CodeGenerationContext) GetTypesInCurrentPackage() Types {
 	def, ok := codeGenContext.GetTypesInPackage(codeGenContext.currentPackage)
 	if !ok {
-		panic("Should always have definitions for the current package")
+		msg := fmt.Sprintf("Should always have definitions for the current package %v", codeGenContext.currentPackage)
+		panic(msg)
 	}
 
 	return def

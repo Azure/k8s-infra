@@ -9,10 +9,10 @@ import (
 	"fmt"
 	ast "github.com/dave/dst"
 	"go/token"
+	"sort"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 	"github.com/pkg/errors"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
 )
 
@@ -27,7 +27,7 @@ type ObjectSerializationTestCase struct {
 
 var _ TestCase = &ObjectSerializationTestCase{}
 
-// NewObjectSerializationTestCase creates a new test case for the JSON serialization round tripability of the specified object type
+// NewObjectSerializationTestCase creates a new test case for the JSON serialization round-trip-ability of the specified object type
 func NewObjectSerializationTestCase(
 	name TypeName,
 	objectType *ObjectType,
@@ -61,16 +61,10 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 	properties := o.makePropertyMap()
 
 	// Find all the simple generators (those with no external dependencies)
-	simpleGenerators, err := o.createGenerators(properties, genContext, o.createIndependentGenerator)
-	if err != nil {
-		errs = append(errs, err)
-	}
+	simpleGenerators := o.createGenerators(properties, genContext, o.createIndependentGenerator)
 
 	// Find all the complex generators (dependent on other generators we'll be generating elsewhere)
-	relatedGenerators, err := o.createGenerators(properties, genContext, o.createRelatedGenerator)
-	if err != nil {
-		errs = append(errs, err)
-	}
+	relatedGenerators := o.createGenerators(properties, genContext, o.createRelatedGenerator)
 
 	// Remove properties from our runtime
 	o.removeByPackage(properties, GenRuntimeReference)
@@ -92,26 +86,17 @@ func (o ObjectSerializationTestCase) AsFuncs(name TypeName, genContext *CodeGene
 		errs = append(errs, errors.Errorf("No property generators for %v", name))
 	} else {
 		result = append(result,
-			o.createTestRunner(),
-			o.createTestMethod())
-
-		addMethod := func(decl ast.Decl, err error) {
-			if err != nil {
-				errs = append(errs, err)
-			} else {
-				result = append(result, decl)
-			}
-		}
-
-		addMethod(o.createGeneratorDeclaration(genContext))
-		addMethod(o.createGeneratorMethod(genContext, len(simpleGenerators) > 0, len(relatedGenerators) > 0))
+			o.createTestRunner(genContext),
+			o.createTestMethod(genContext),
+			o.createGeneratorDeclaration(genContext),
+			o.createGeneratorMethod(genContext, len(simpleGenerators) > 0, len(relatedGenerators) > 0))
 
 		if len(simpleGenerators) > 0 {
-			addMethod(o.createGeneratorsFactoryMethod(o.idOfIndependentGeneratorsFactoryMethod(), simpleGenerators, genContext))
+			result = append(result, o.createGeneratorsFactoryMethod(o.idOfIndependentGeneratorsFactoryMethod(), simpleGenerators, genContext))
 		}
 
 		if len(relatedGenerators) > 0 {
-			addMethod(o.createGeneratorsFactoryMethod(o.idOfRelatedGeneratorsFactoryMethod(), relatedGenerators, genContext))
+			result = append(result, o.createGeneratorsFactoryMethod(o.idOfRelatedGeneratorsFactoryMethod(), relatedGenerators, genContext))
 		}
 	}
 
@@ -147,11 +132,15 @@ func (o ObjectSerializationTestCase) RequiredImports() *PackageImportSet {
 	result.AddImportOfReference(DiffReference)
 	result.AddImportOfReference(PrettyReference)
 
+	// Merge references required for properties
 	for _, prop := range o.objectType.Properties() {
 		for _, ref := range prop.PropertyType().RequiredPackageReferences().AsSlice() {
 			result.AddImportOfReference(ref)
 		}
 	}
+
+	// We're not currently creating generators for types in this package, so leave it out
+	result.Remove(NewPackageImport(GenRuntimeReference))
 
 	return result
 }
@@ -162,26 +151,31 @@ func (o ObjectSerializationTestCase) Equals(_ TestCase) bool {
 }
 
 // createTestRunner generates the AST for the test runner itself
-func (o ObjectSerializationTestCase) createTestRunner() ast.Decl {
+func (o ObjectSerializationTestCase) createTestRunner(codegenContext *CodeGenerationContext) ast.Decl {
 
 	const (
-		parameters = "parameters"
-		properties = "properties"
-		property   = "property"
-		testingRun = "testingRun"
+		parametersLocal  = "parameters"
+		propertiesLocal  = "properties"
+		propertyMethod   = "Property"
+		testingRunMethod = "TestingRun"
 	)
+
+	gopterPackage := codegenContext.MustGetImportedPackageName(GopterReference)
+	propPackage := codegenContext.MustGetImportedPackageName(GopterPropReference)
+	testingPackage := codegenContext.MustGetImportedPackageName(TestingReference)
 
 	t := ast.NewIdent("t")
 
 	// parameters := gopter.DefaultTestParameters()
 	defineParameters := astbuilder.SimpleAssignment(
-		ast.NewIdent(parameters),
+		ast.NewIdent(parametersLocal),
 		token.DEFINE,
-		astbuilder.CallQualifiedFunc("gopter", "DefaultTestParameters"))
+		astbuilder.CallQualifiedFunc(gopterPackage, "DefaultTestParameters"))
 
+	// parameters.MaxSize = 10
 	configureMaxSize := astbuilder.SimpleAssignment(
 		&ast.SelectorExpr{
-			X:   ast.NewIdent(parameters),
+			X:   ast.NewIdent(parametersLocal),
 			Sel: ast.NewIdent("MaxSize"),
 		},
 		token.ASSIGN,
@@ -189,32 +183,33 @@ func (o ObjectSerializationTestCase) createTestRunner() ast.Decl {
 
 	// properties := gopter.NewProperties(parameters)
 	defineProperties := astbuilder.SimpleAssignment(
-		ast.NewIdent(properties),
+		ast.NewIdent(propertiesLocal),
 		token.DEFINE,
-		astbuilder.CallQualifiedFunc("gopter", "NewProperties", ast.NewIdent(parameters)))
+		astbuilder.CallQualifiedFunc(gopterPackage, "NewProperties", ast.NewIdent(parametersLocal)))
 
-	// partial expression: name of the test
+	// partial expression: description of the test
 	testName := astbuilder.StringLiteralf("Round trip of %v via JSON returns original", o.Subject())
 
 	// partial expression: prop.ForAll(RunTestForX, XGenerator())
 	propForAll := astbuilder.CallQualifiedFunc(
-		"prop",
+		propPackage,
 		"ForAll",
 		ast.NewIdent(o.idOfTestMethod()),
 		astbuilder.CallFunc(o.idOfGeneratorMethod(o.subject)))
 
 	// properties.Property("...", prop.ForAll(RunTestForX, XGenerator())
 	defineTestCase := astbuilder.InvokeQualifiedFunc(
-		properties,
-		property,
+		propertiesLocal,
+		propertyMethod,
 		testName,
 		propForAll)
 
 	// properties.TestingRun(t)
-	runTests := astbuilder.InvokeQualifiedFunc(properties, testingRun, t)
+	runTests := astbuilder.InvokeQualifiedFunc(propertiesLocal, testingRunMethod, t)
 
 	// Define our function
 	fn := astbuilder.NewTestFuncDetails(
+		testingPackage,
 		o.testName,
 		defineParameters,
 		configureMaxSize,
@@ -226,7 +221,7 @@ func (o ObjectSerializationTestCase) createTestRunner() ast.Decl {
 }
 
 // createTestMethod generates the AST for a method to run a single test of JSON serialization
-func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
+func (o ObjectSerializationTestCase) createTestMethod(codegenContext *CodeGenerationContext) ast.Decl {
 	const (
 		binId        = "bin"
 		actualId     = "actual"
@@ -238,11 +233,17 @@ func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 		errId        = "err"
 	)
 
+	jsonPackage := codegenContext.MustGetImportedPackageName(JsonReference)
+	cmpPackage := codegenContext.MustGetImportedPackageName(CmpReference)
+	cmpoptsPackage := codegenContext.MustGetImportedPackageName(CmpOptsReference)
+	prettyPackage := codegenContext.MustGetImportedPackageName(PrettyReference)
+	diffPackage := codegenContext.MustGetImportedPackageName(DiffReference)
+
 	// bin, err := json.Marshal(subject)
 	serialize := astbuilder.SimpleAssignmentWithErr(
 		ast.NewIdent(binId),
 		token.DEFINE,
-		astbuilder.CallQualifiedFunc("json", "Marshal", ast.NewIdent(subjectId)))
+		astbuilder.CallQualifiedFunc(jsonPackage, "Marshal", ast.NewIdent(subjectId)))
 
 	// if err != nil { return err.Error() }
 	serializeFailed := astbuilder.ReturnIfNotNil(
@@ -256,7 +257,7 @@ func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 	deserialize := astbuilder.SimpleAssignment(
 		ast.NewIdent("err"),
 		token.ASSIGN,
-		astbuilder.CallQualifiedFunc("json", "Unmarshal",
+		astbuilder.CallQualifiedFunc(jsonPackage, "Unmarshal",
 			ast.NewIdent(binId),
 			&ast.UnaryExpr{
 				Op: token.AND,
@@ -269,11 +270,11 @@ func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 		astbuilder.CallQualifiedFunc("err", "Error"))
 
 	// match := cmp.Equal(subject, actual, cmpopts.EquateEmpty())
-	equateEmpty := astbuilder.CallQualifiedFunc("cmpopts", "EquateEmpty")
+	equateEmpty := astbuilder.CallQualifiedFunc(cmpoptsPackage, "EquateEmpty")
 	compare := astbuilder.SimpleAssignment(
 		ast.NewIdent(matchId),
 		token.DEFINE,
-		astbuilder.CallQualifiedFunc("cmp", "Equal",
+		astbuilder.CallQualifiedFunc(cmpPackage, "Equal",
 			ast.NewIdent(subjectId),
 			ast.NewIdent(actualId),
 			equateEmpty))
@@ -289,15 +290,15 @@ func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 				astbuilder.SimpleAssignment(
 					ast.NewIdent(actualFmtId),
 					token.DEFINE,
-					astbuilder.CallQualifiedFunc("pretty", "Sprint", ast.NewIdent(actualId))),
+					astbuilder.CallQualifiedFunc(prettyPackage, "Sprint", ast.NewIdent(actualId))),
 				astbuilder.SimpleAssignment(
 					ast.NewIdent(subjectFmtId),
 					token.DEFINE,
-					astbuilder.CallQualifiedFunc("pretty", "Sprint", ast.NewIdent(subjectId))),
+					astbuilder.CallQualifiedFunc(prettyPackage, "Sprint", ast.NewIdent(subjectId))),
 				astbuilder.SimpleAssignment(
 					ast.NewIdent(resultId),
 					token.DEFINE,
-					astbuilder.CallQualifiedFunc("diff", "Diff", ast.NewIdent(subjectFmtId), ast.NewIdent(actualFmtId))),
+					astbuilder.CallQualifiedFunc(diffPackage, "Diff", ast.NewIdent(subjectFmtId), ast.NewIdent(actualFmtId))),
 				astbuilder.Returns(ast.NewIdent(resultId)),
 			},
 		},
@@ -333,37 +334,27 @@ func (o ObjectSerializationTestCase) createTestMethod() ast.Decl {
 	return fn.DefineFunc()
 }
 
-func (o ObjectSerializationTestCase) createGeneratorDeclaration(genContext *CodeGenerationContext) (ast.Decl, error) {
+func (o ObjectSerializationTestCase) createGeneratorDeclaration(genContext *CodeGenerationContext) ast.Decl {
 	comment := fmt.Sprintf(
 		"Generator of %v instances for property testing - lazily instantiated by %v()",
 		o.Subject(),
 		o.idOfGeneratorMethod(o.subject))
 
-	gopterPackage, err := genContext.GetImportedPackageName(GopterReference)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to generate generator declaration")
-	}
+	gopterPackage := genContext.MustGetImportedPackageName(GopterReference)
 
 	decl := astbuilder.VariableDeclaration(
 		o.idOfSubjectGeneratorGlobal(),
 		astbuilder.QualifiedTypeName(gopterPackage, "Gen"),
 		comment)
 
-	return decl, nil
+	return decl
 }
 
 // createGeneratorMethod generates the AST for a method used to populate our generator cache variable on demand
-func (o ObjectSerializationTestCase) createGeneratorMethod(ctx *CodeGenerationContext, haveSimpleGenerators bool, haveRelatedGenerators bool) (ast.Decl, error) {
+func (o ObjectSerializationTestCase) createGeneratorMethod(ctx *CodeGenerationContext, haveSimpleGenerators bool, haveRelatedGenerators bool) ast.Decl {
 
-	gopterPackage, err := ctx.GetImportedPackageName(GopterReference)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error looking up import name for %s", GopterReference)
-	}
-
-	genPackage, err := ctx.GetImportedPackageName(GopterGenReference)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error looking up import name for %s", GopterGenReference)
-	}
+	gopterPackage := ctx.MustGetImportedPackageName(GopterReference)
+	genPackage := ctx.MustGetImportedPackageName(GopterGenReference)
 
 	fn := &astbuilder.FuncDetails{
 		Name: o.idOfGeneratorMethod(o.subject),
@@ -455,22 +446,14 @@ func (o ObjectSerializationTestCase) createGeneratorMethod(ctx *CodeGenerationCo
 	normalReturn := astbuilder.Returns(ast.NewIdent(o.idOfSubjectGeneratorGlobal()))
 	fn.AddStatements(normalReturn)
 
-	return fn.DefineFunc(), nil
+	return fn.DefineFunc()
 }
 
 // createGeneratorsFactoryMethod generates the AST for a method creating gopter generators
 func (o ObjectSerializationTestCase) createGeneratorsFactoryMethod(
-	methodName string, generators []ast.Stmt, ctx *CodeGenerationContext) (ast.Decl, error) {
+	methodName string, generators []ast.Stmt, ctx *CodeGenerationContext) ast.Decl {
 
-	if len(generators) == 0 {
-		// No simple properties, don't generate a method
-		return nil, nil
-	}
-
-	gopterPackage, err := ctx.GetImportedPackageName(GopterReference)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error looking up import name %s for factory generation", GopterReference)
-	}
+	gopterPackage := ctx.MustGetImportedPackageName(GopterReference)
 
 	mapType := &ast.MapType{
 		Key:   ast.NewIdent("string"),
@@ -485,7 +468,7 @@ func (o ObjectSerializationTestCase) createGeneratorsFactoryMethod(
 	fn.AddComments("is a factory method for creating gopter generators")
 	fn.AddParameter("gens", mapType)
 
-	return fn.DefineFunc(), nil
+	return fn.DefineFunc()
 }
 
 // createGenerators creates AST fragments for gopter generators to create values for properties
@@ -495,20 +478,27 @@ func (o ObjectSerializationTestCase) createGeneratorsFactoryMethod(
 func (o ObjectSerializationTestCase) createGenerators(
 	properties map[PropertyName]*PropertyDefinition,
 	genContext *CodeGenerationContext,
-	factory func(name string, propertyType Type, genContext *CodeGenerationContext) (ast.Expr, error)) ([]ast.Stmt, error) {
+	factory func(name string, propertyType Type, genContext *CodeGenerationContext) ast.Expr) []ast.Stmt {
 
 	gensIdent := ast.NewIdent("gens")
 
 	var handled []PropertyName
 	var result []ast.Stmt
 
+	// Sort Properties into alphabetical order to ensure we always generate the same code
+	var toGenerate []PropertyName
+	for name := range properties {
+		toGenerate = append(toGenerate, name)
+	}
+	sort.Slice(toGenerate, func(i, j int) bool {
+		return toGenerate[i] < toGenerate[j]
+	})
+
 	// Iterate over all properties, creating generators where possible
-	var errs []error
-	for name, prop := range properties {
-		g, err := factory(string(name), prop.PropertyType(), genContext)
-		if err != nil {
-			errs = append(errs, err)
-		} else if g != nil {
+	for _, name := range toGenerate {
+		prop := properties[name]
+		g := factory(string(name), prop.PropertyType(), genContext)
+		if g != nil {
 			insert := astbuilder.InsertMap(
 				gensIdent,
 				&ast.BasicLit{
@@ -526,30 +516,27 @@ func (o ObjectSerializationTestCase) createGenerators(
 		delete(properties, name)
 	}
 
-	return result, kerrors.NewAggregate(errs)
+	return result
 }
 
 // is directly supported by a Gopter generator, returning nil if the property type isn't supported.
 func (o ObjectSerializationTestCase) createIndependentGenerator(
 	name string,
 	propertyType Type,
-	genContext *CodeGenerationContext) (ast.Expr, error) {
+	genContext *CodeGenerationContext) ast.Expr {
 
-	genPackage, err := genContext.GetImportedPackageName(GopterGenReference)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to generate independent generator for %s", name)
-	}
+	genPackage := genContext.MustGetImportedPackageName(GopterGenReference)
 
 	// Handle simple primitive properties
 	switch propertyType {
 	case StringType:
-		return astbuilder.CallQualifiedFunc(genPackage, "AlphaString"), nil
+		return astbuilder.CallQualifiedFunc(genPackage, "AlphaString")
 	case IntType:
-		return astbuilder.CallQualifiedFunc(genPackage, "Int"), nil
+		return astbuilder.CallQualifiedFunc(genPackage, "Int")
 	case FloatType:
-		return astbuilder.CallQualifiedFunc(genPackage, "Float32"), nil
+		return astbuilder.CallQualifiedFunc(genPackage, "Float32")
 	case BoolType:
-		return astbuilder.CallQualifiedFunc(genPackage, "Bool"), nil
+		return astbuilder.CallQualifiedFunc(genPackage, "Bool")
 	}
 
 	switch t := propertyType.(type) {
@@ -559,57 +546,42 @@ func (o ObjectSerializationTestCase) createIndependentGenerator(
 		if ok {
 			return o.createIndependentGenerator(def.Name().name, def.theType, genContext)
 		}
-		return nil, nil
+		return nil
 
 	case *EnumType:
 		return o.createEnumGenerator(name, genPackage, t)
 
 	case *OptionalType:
-		g, err := o.createIndependentGenerator(name, t.Element(), genContext)
-		if err != nil {
-			return nil, err
-		} else if g != nil {
-			return astbuilder.CallQualifiedFunc(genPackage, "PtrOf", g), nil
+		g := o.createIndependentGenerator(name, t.Element(), genContext)
+		if g != nil {
+			return astbuilder.CallQualifiedFunc(genPackage, "PtrOf", g)
 		}
 
 	case *ArrayType:
-		g, err := o.createIndependentGenerator(name, t.Element(), genContext)
-		if err != nil {
-			return nil, err
-		} else if g != nil {
-			return astbuilder.CallQualifiedFunc(genPackage, "SliceOf", g), nil
+		g := o.createIndependentGenerator(name, t.Element(), genContext)
+		if g != nil {
+			return astbuilder.CallQualifiedFunc(genPackage, "SliceOf", g)
 		}
 
 	case *MapType:
-		keyGen, err := o.createIndependentGenerator(name, t.KeyType(), genContext)
-		if err != nil {
-			return nil, err
-		}
-
-		valueGen, err := o.createIndependentGenerator(name, t.ValueType(), genContext)
-		if err != nil {
-			return nil, err
-		}
-
+		keyGen := o.createIndependentGenerator(name, t.KeyType(), genContext)
+		valueGen := o.createIndependentGenerator(name, t.ValueType(), genContext)
 		if keyGen != nil && valueGen != nil {
-			return astbuilder.CallQualifiedFunc(genPackage, "MapOf", keyGen, valueGen), nil
+			return astbuilder.CallQualifiedFunc(genPackage, "MapOf", keyGen, valueGen)
 		}
 	}
 
 	// Not a simple property we can handle here
-	return nil, nil
+	return nil
 }
 
 // defined within the current package, returning nil if the property type isn't supported.
 func (o ObjectSerializationTestCase) createRelatedGenerator(
 	name string,
 	propertyType Type,
-	genContext *CodeGenerationContext) (ast.Expr, error) {
+	genContext *CodeGenerationContext) ast.Expr {
 
-	genPackageName, err := genContext.GetImportedPackageName(GopterGenReference)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to generate related generator for %s", name)
-	}
+	genPackageName := genContext.MustGetImportedPackageName(GopterGenReference)
 
 	switch t := propertyType.(type) {
 	case TypeName:
@@ -618,56 +590,40 @@ func (o ObjectSerializationTestCase) createRelatedGenerator(
 			// This is a type we're defining, so we can create a generator for it
 			if t.PackageReference.Equals(genContext.CurrentPackage()) {
 				// create a generator for a property referencing a type in this package
-				return astbuilder.CallFunc(o.idOfGeneratorMethod(t)), nil
+				return astbuilder.CallFunc(o.idOfGeneratorMethod(t))
 			}
 
-			importName, err := genContext.GetImportedPackageName(t.PackageReference)
-			if err != nil {
-				return nil, err
-			}
-
-			return astbuilder.CallQualifiedFunc(importName, o.idOfGeneratorMethod(t)), nil
+			importName := genContext.MustGetImportedPackageName(t.PackageReference)
+			return astbuilder.CallQualifiedFunc(importName, o.idOfGeneratorMethod(t))
 		}
 
 		//TODO: Should we invoke a generator for stuff from our runtime package?
 
-		return nil, nil
+		return nil
 
 	case *OptionalType:
-		g, err := o.createRelatedGenerator(name, t.Element(), genContext)
-		if err != nil {
-			return nil, err
-		} else if g != nil {
-			return astbuilder.CallQualifiedFunc(genPackageName, "PtrOf", g), nil
+		g := o.createRelatedGenerator(name, t.Element(), genContext)
+		if g != nil {
+			return astbuilder.CallQualifiedFunc(genPackageName, "PtrOf", g)
 		}
 
 	case *ArrayType:
-		g, err := o.createRelatedGenerator(name, t.Element(), genContext)
-		if err != nil {
-			return nil, err
-		} else if g != nil {
-			return astbuilder.CallQualifiedFunc(genPackageName, "SliceOf", g), nil
+		g := o.createRelatedGenerator(name, t.Element(), genContext)
+		if g != nil {
+			return astbuilder.CallQualifiedFunc(genPackageName, "SliceOf", g)
 		}
 
 	case *MapType:
 		// We only support primitive types as keys
-		keyGen, err := o.createIndependentGenerator(name, t.KeyType(), genContext)
-		if err != nil {
-			return nil, err
-		}
-
-		valueGen, err := o.createRelatedGenerator(name, t.ValueType(), genContext)
-		if err != nil {
-			return nil, err
-		}
-
+		keyGen := o.createIndependentGenerator(name, t.KeyType(), genContext)
+		valueGen := o.createRelatedGenerator(name, t.ValueType(), genContext)
 		if keyGen != nil && valueGen != nil {
-			return astbuilder.CallQualifiedFunc(genPackageName, "MapOf", keyGen, valueGen), nil
+			return astbuilder.CallQualifiedFunc(genPackageName, "MapOf", keyGen, valueGen)
 		}
 	}
 
 	// Not a property we can handle here
-	return nil, nil
+	return nil
 }
 
 func (o *ObjectSerializationTestCase) removeByPackage(
@@ -739,12 +695,12 @@ func (o ObjectSerializationTestCase) Subject() *ast.Ident {
 	return ast.NewIdent(o.subject.name)
 }
 
-func (o ObjectSerializationTestCase) createEnumGenerator(enumName string, genPackageName string, enum *EnumType) (ast.Expr, error) {
+func (o ObjectSerializationTestCase) createEnumGenerator(enumName string, genPackageName string, enum *EnumType) ast.Expr {
 	var values []ast.Expr
 	for _, o := range enum.Options() {
 		id := GetEnumValueId(enumName, o)
 		values = append(values, ast.NewIdent(id))
 	}
 
-	return astbuilder.CallQualifiedFunc(genPackageName, "OneConstOf", values...), nil
+	return astbuilder.CallQualifiedFunc(genPackageName, "OneConstOf", values...)
 }
