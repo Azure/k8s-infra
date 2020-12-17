@@ -6,6 +6,7 @@
 package astmodel
 
 import (
+	"bufio"
 	"go/token"
 	"io"
 	"os"
@@ -160,42 +161,30 @@ func (file *FileDefinition) generateImports() *PackageImportSet {
 
 func (file *FileDefinition) generateImportSpecs(imports *PackageImportSet) []ast.Spec {
 	var importSpecs []ast.Spec
-	for _, requiredImport := range imports.AsSortedSlice(file.orderImports) {
+	for _, requiredImport := range imports.AsSortedSlice() {
 		importSpecs = append(importSpecs, requiredImport.AsImportSpec())
 	}
 
 	return importSpecs
 }
 
-func (file *FileDefinition) orderImports(i PackageImport, j PackageImport) bool {
-	if i.HasExplicitName() && j.HasExplicitName() {
-		return i.name < j.name
-	}
-
-	if i.HasExplicitName() {
-		return true
-	}
-
-	if j.HasExplicitName() {
-		return false
-	}
-
-	return i.packageReference.String() < j.packageReference.String()
-}
-
 // AsAst generates an AST node representing this file
 func (file *FileDefinition) AsAst() *ast.File {
 
+	// Create context from imports
+	codeGenContext := NewCodeGenerationContext(file.packageReference, file.generateImports(), file.generatedPackages)
+
+	// Create all definitions:
+	var definitions []ast.Decl
+	for _, s := range file.definitions {
+		definitions = append(definitions, s.AsDeclarations(codeGenContext)...)
+	}
+
 	var decls []ast.Decl
 
-	// Determine imports
-	packageReferences := file.generateImports()
-
-	// Create context from imports
-	codeGenContext := NewCodeGenerationContext(file.packageReference, packageReferences, file.generatedPackages)
-
 	// Create import header if needed
-	if packageReferences.Length() > 0 {
+	usedImports := codeGenContext.UsedPackageImports()
+	if usedImports.Length() > 0 {
 		decls = append(decls, &ast.GenDecl{
 			Decs: ast.GenDeclDecorations{
 				NodeDecs: ast.NodeDecs{
@@ -203,14 +192,12 @@ func (file *FileDefinition) AsAst() *ast.File {
 				},
 			},
 			Tok:   token.IMPORT,
-			Specs: file.generateImportSpecs(packageReferences),
+			Specs: file.generateImportSpecs(usedImports),
 		})
 	}
 
-	// Emit all definitions:
-	for _, s := range file.definitions {
-		decls = append(decls, s.AsDeclarations(codeGenContext)...)
-	}
+	// Add generated definitions
+	decls = append(decls, definitions...)
 
 	// Emit registration for each resource:
 	var exprs []ast.Expr
@@ -274,7 +261,11 @@ func (file *FileDefinition) AsAst() *ast.File {
 // SaveToWriter writes the file to the specifier io.Writer
 func (file FileDefinition) SaveToWriter(dst io.Writer) error {
 	content := file.AsAst()
-	err := decorator.Fprint(dst, content)
+
+	buf := bufio.NewWriter(dst)
+	defer buf.Flush()
+
+	err := decorator.Fprint(buf, content)
 	return err
 }
 

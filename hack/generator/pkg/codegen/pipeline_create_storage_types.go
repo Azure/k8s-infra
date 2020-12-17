@@ -29,7 +29,7 @@ func createStorageTypes() PipelineStage {
 			for _, d := range types {
 				d := d
 
-				if types.IsArmDefinition(&d) {
+				if astmodel.ArmFlag.IsOn(d.Type()) {
 					// Skip ARM definitions, we don't need to create storage variants of those
 					continue
 				}
@@ -72,7 +72,7 @@ func makeStorageTypesVisitor(types astmodel.Types) astmodel.TypeVisitor {
 	result.VisitTypeName = factory.visitTypeName
 	result.VisitObjectType = factory.visitObjectType
 	result.VisitResourceType = factory.visitResourceType
-	result.VisitArmType = factory.visitArmType
+	result.VisitFlaggedType = factory.visitFlaggedType
 
 	factory.visitor = result
 	factory.propertyConversions = []propertyConversion{
@@ -209,12 +209,16 @@ func (factory *StorageTypeFactory) convertPropertiesForStorage(
 	return p, nil
 }
 
-func (factory *StorageTypeFactory) visitArmType(
-	_ *astmodel.TypeVisitor,
-	armType *astmodel.ArmType,
-	_ interface{}) (astmodel.Type, error) {
-	// We don't want to do anything with ARM types
-	return armType, nil
+func (factory *StorageTypeFactory) visitFlaggedType(
+	tv *astmodel.TypeVisitor,
+	flaggedType *astmodel.FlaggedType,
+	ctx interface{}) (astmodel.Type, error) {
+	if flaggedType.HasFlag(astmodel.ArmFlag) {
+		// We don't want to do anything with ARM types
+		return flaggedType, nil
+	}
+
+	return astmodel.IdentityVisitOfFlaggedType(tv, flaggedType, ctx)
 }
 
 func descriptionForStorageVariant(definition astmodel.TypeDefinition) []string {
