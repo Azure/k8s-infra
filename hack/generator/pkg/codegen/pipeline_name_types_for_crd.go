@@ -90,6 +90,30 @@ func nameInnerTypes(
 		return namedType.Name(), nil
 	}
 
+	visitor.VisitFlaggedType = func(this *astmodel.TypeVisitor, it *astmodel.FlaggedType, ctx interface{}) (astmodel.Type, error) {
+		// Because we're returning type names here, we need to look up the name returned by visit and wrap that with the correct flags
+		nameHint := ctx.(string)
+
+		name, err := this.Visit(it.Element(), nameHint)
+		if err != nil {
+			return nil, err
+		}
+
+		// There are no words for how much I want LINQ right here
+		var found astmodel.TypeDefinition
+		for i, item := range resultTypes {
+			if item.Name().Equals(name) {
+				found = item
+				resultTypes[i] = resultTypes[len(resultTypes)-1]
+				resultTypes = resultTypes[:len(resultTypes)-1]
+				break
+			}
+		}
+
+		resultTypes = append(resultTypes, found.WithType(it.WithElement(found.Type())))
+		return name, nil
+	}
+
 	visitor.VisitObjectType = func(this *astmodel.TypeVisitor, it *astmodel.ObjectType, ctx interface{}) (astmodel.Type, error) {
 		nameHint := ctx.(string)
 

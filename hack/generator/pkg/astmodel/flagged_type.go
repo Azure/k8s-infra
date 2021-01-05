@@ -82,6 +82,16 @@ func (ft *FlaggedType) WithoutFlag(flag TypeFlag) Type {
 	}
 }
 
+// WithElement returns the flagged type with the same flags but a different element
+func (ft *FlaggedType) WithElement(t Type) *FlaggedType {
+	var flags []TypeFlag
+	for f := range ft.flags {
+		flags = append(flags, f)
+	}
+
+	return NewFlaggedType(t, flags...)
+}
+
 // RequiredPackageReferences returns a set of packages imports required by this type
 func (ft *FlaggedType) RequiredPackageReferences() *PackageReferenceSet {
 	return ft.element.RequiredPackageReferences()
