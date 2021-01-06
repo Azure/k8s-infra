@@ -193,25 +193,13 @@ func NewTestCodeGenerator(testName string, path string, t *testing.T, testConfig
 		t.Fatalf("could not create code generator: %v", err)
 	}
 
-	// Snip out the bits of the code generator we know we need to override
-	var pipeline []PipelineStage
-	for _, stage := range codegen.pipeline {
-		if stage.HasId("removeAliases") && testConfig.InjectEmbeddedStruct {
-			// TODO: We should support a better way to inject new pieces of a pipeline, but for
-			// TODO: now this is fine
-			// Add embedded struct injection after removeTypeAliases
-			pipeline = append(pipeline, stage)
-			pipeline = append(pipeline, injectEmbeddedStructType())
-		} else {
-			pipeline = append(pipeline, stage)
-		}
-	}
-
-	codegen.pipeline = pipeline
-
 	codegen.RemoveStages("deleteGenerated", "rogueCheck", "createStorage", "reportTypesAndVersions")
 	codegen.ReplaceStage("loadSchema", loadTestSchemaIntoTypes(idFactory, cfg, testSchemaLoader))
 	codegen.ReplaceStage("exportPackages", exportPackagesTestPipelineStage)
+
+	if testConfig.InjectEmbeddedStruct {
+		codegen.InjectStageAfter("removeAliases", injectEmbeddedStructType())
+	}
 
 	if !testConfig.HasArmResources {
 		codegen.RemoveStages("createArmTypes")

@@ -54,14 +54,39 @@ func (generator *CodeGenerator) ReplaceStage(existingStage string, stage Pipelin
 	}
 }
 
-func (generator *CodeGenerator) HasStage(id string) bool {
-	for _, s := range generator.pipeline {
-		if s.HasId(id) {
-			return true
+// Inject a new stage immediately after the first occurence of an existing stage
+func (generator *CodeGenerator) InjectStageAfter(existingStage string, stage PipelineStage) {
+	injected := false
+
+	for i, s := range generator.pipeline {
+		if s.HasId(existingStage) {
+			var p []PipelineStage
+			p = append(p, generator.pipeline[:i+1]...)
+			p = append(p, stage)
+			p = append(p, generator.pipeline[i+1:]...)
+			generator.pipeline = p
+			injected = true
+			break
 		}
 	}
 
-	return false
+	if !injected {
+		panic(fmt.Sprintf("Expected to inject stage %s but %s wasn't found", stage.id, existingStage))
+	}
+}
+
+func (generator *CodeGenerator) HasStage(id string) bool {
+	return generator.IndexOfStage(id) != -1
+}
+
+func (generator *CodeGenerator) IndexOfStage(id string) int {
+	for i, s := range generator.pipeline {
+		if s.HasId(id) {
+			return i
+		}
+	}
+
+	return -1
 }
 
 /*
@@ -155,6 +180,44 @@ func TestReplaceStage_PanicsForUnknownStage(t *testing.T) {
 
 	g.Expect(func() {
 		gen.ReplaceStage("bang", zooStage)
+	},
+	).To(Panic())
+}
+
+/*
+ * InjectStageAfterTests
+ */
+
+func TestInjectStageAfter_InjectsSpecifiedStage(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	gen := &CodeGenerator{
+		pipeline: []PipelineStage{
+			fooStage,
+			barStage,
+			bazStage,
+		},
+	}
+
+	gen.InjectStageAfter("foo", zooStage)
+	g.Expect(gen.pipeline).To(HaveLen(4))
+	g.Expect(gen.IndexOfStage("foo")).To(Equal(0))
+	g.Expect(gen.IndexOfStage("zoo")).To(Equal(1))
+}
+
+func TestInjectStageAfter_PanicsForUnknownStage(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	gen := &CodeGenerator{
+		pipeline: []PipelineStage{
+			fooStage,
+			barStage,
+			bazStage,
+		},
+	}
+
+	g.Expect(func() {
+		gen.InjectStageAfter("bang", zooStage)
 	},
 	).To(Panic())
 }
