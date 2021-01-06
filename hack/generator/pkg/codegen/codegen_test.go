@@ -144,7 +144,7 @@ func NewTestCodeGenerator(testName string, path string, t *testing.T, testConfig
 		})
 
 	exportPackagesTestPipelineStage := MakePipelineStage(
-		"exportPackages",
+		"exportTestPackages",
 		"Export packages for test",
 		func(ctx context.Context, defs astmodel.Types) (astmodel.Types, error) {
 			if len(defs) == 0 {
@@ -196,20 +196,12 @@ func NewTestCodeGenerator(testName string, path string, t *testing.T, testConfig
 	// Snip out the bits of the code generator we know we need to override
 	var pipeline []PipelineStage
 	for _, stage := range codegen.pipeline {
-		if stage.HasId("loadSchema") {
-			pipeline = append(pipeline, loadTestSchemaIntoTypes(idFactory, cfg, testSchemaLoader))
-		} else if stage.HasId("exportPackages") {
-			pipeline = append(pipeline, exportPackagesTestPipelineStage)
-		} else if stage.HasId("removeAliases") && testConfig.InjectEmbeddedStruct {
+		if stage.HasId("removeAliases") && testConfig.InjectEmbeddedStruct {
 			// TODO: We should support a better way to inject new pieces of a pipeline, but for
 			// TODO: now this is fine
 			// Add embedded struct injection after removeTypeAliases
 			pipeline = append(pipeline, stage)
 			pipeline = append(pipeline, injectEmbeddedStructType())
-		} else if stage.HasId("stripUnreferenced") && !testConfig.HasArmResources {
-			pipeline = append(pipeline, stripUnusedTypesPipelineStage)
-		} else if stage.HasId("createArmTypes") && !testConfig.HasArmResources {
-			continue
 		} else {
 			pipeline = append(pipeline, stage)
 		}
@@ -218,6 +210,13 @@ func NewTestCodeGenerator(testName string, path string, t *testing.T, testConfig
 	codegen.pipeline = pipeline
 
 	codegen.RemoveStages("deleteGenerated", "rogueCheck", "createStorage", "reportTypesAndVersions")
+	codegen.ReplaceStage("loadSchema", loadTestSchemaIntoTypes(idFactory, cfg, testSchemaLoader))
+	codegen.ReplaceStage("exportPackages", exportPackagesTestPipelineStage)
+
+	if !testConfig.HasArmResources {
+		codegen.RemoveStages("createArmTypes")
+		codegen.ReplaceStage("stripUnreferenced", stripUnusedTypesPipelineStage)
+	}
 
 	return codegen, nil
 }
@@ -229,7 +228,7 @@ func loadTestSchemaIntoTypes(
 	source := configuration.SchemaURL
 
 	return MakePipelineStage(
-		"loadSchema",
+		"loadTestSchema",
 		"Load and walk schema (test)",
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 			klog.V(0).Infof("Loading JSON schema %q", source)

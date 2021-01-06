@@ -38,16 +38,49 @@ func (generator *CodeGenerator) RemoveStages(stageIds ...string) {
 	generator.pipeline = pipeline
 }
 
+// Replace all uses of an existing stage with another one
+// Will panic if the existing stage is not found
+func (generator *CodeGenerator) ReplaceStage(existingStage string, stage PipelineStage) {
+	replaced := false
+	for i, s := range generator.pipeline {
+		if s.HasId(existingStage) {
+			generator.pipeline[i] = stage
+			replaced = true
+		}
+	}
+
+	if !replaced {
+		panic(fmt.Sprintf("Expected to replace stage %s but it wasn't found", existingStage))
+	}
+}
+
+func (generator *CodeGenerator) HasStage(id string) bool {
+	for _, s := range generator.pipeline {
+		if s.HasId(id) {
+			return true
+		}
+	}
+
+	return false
+}
+
+/*
+ * Shared test data
+ */
+
+var (
+	fooStage = MakeFakePipelineStage("foo")
+	barStage = MakeFakePipelineStage("bar")
+	bazStage = MakeFakePipelineStage("baz")
+	zooStage = MakeFakePipelineStage("zoo")
+)
+
 /*
  * RemoveStagesTests
  */
 
 func TestRemoveStages_RemovesSpecifiedStages(t *testing.T) {
 	g := NewGomegaWithT(t)
-
-	fooStage := MakeFakePipelineStage("foo", CoreStage)
-	barStage := MakeFakePipelineStage("bar", CoreStage)
-	bazStage := MakeFakePipelineStage("baz", CoreStage)
 
 	gen := &CodeGenerator{
 		pipeline: []PipelineStage{
@@ -64,10 +97,6 @@ func TestRemoveStages_RemovesSpecifiedStages(t *testing.T) {
 
 func TestRemoveStages_PanicsForUnknownStage(t *testing.T) {
 	g := NewGomegaWithT(t)
-
-	fooStage := MakeFakePipelineStage("foo", CoreStage)
-	barStage := MakeFakePipelineStage("bar", CoreStage)
-	bazStage := MakeFakePipelineStage("baz", CoreStage)
 
 	gen := &CodeGenerator{
 		pipeline: []PipelineStage{
@@ -90,4 +119,42 @@ func MakeFakePipelineStage(id string) PipelineStage {
 		id, "Stage "+id, func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 			return types, nil
 		})
+}
+
+/*
+ * ReplaceStageTests
+ */
+
+func TestReplaceStage_ReplacesSpecifiedStage(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	gen := &CodeGenerator{
+		pipeline: []PipelineStage{
+			fooStage,
+			barStage,
+			bazStage,
+		},
+	}
+
+	gen.ReplaceStage("foo", zooStage)
+	g.Expect(gen.pipeline).To(HaveLen(3))
+	g.Expect(gen.HasStage("foo")).To(BeFalse())
+	g.Expect(gen.HasStage("zoo")).To(BeTrue())
+}
+
+func TestReplaceStage_PanicsForUnknownStage(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	gen := &CodeGenerator{
+		pipeline: []PipelineStage{
+			fooStage,
+			barStage,
+			bazStage,
+		},
+	}
+
+	g.Expect(func() {
+		gen.ReplaceStage("bang", zooStage)
+	},
+	).To(Panic())
 }
