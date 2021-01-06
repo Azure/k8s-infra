@@ -30,23 +30,45 @@ func NewArmCodeGeneratorFromConfigFile(configurationFile string) (*CodeGenerator
 	return NewArmCodeGeneratorFromConfig(configuration, astmodel.NewIdentifierFactory())
 }
 
-// NewArmCodeGeneratorFromConfig produces a new Generator with the given configuration
+// NewArmCodeGeneratorFromConfig produces a new Generator for Arm with the given configuration
 func NewArmCodeGeneratorFromConfig(configuration *config.Configuration, idFactory astmodel.IdentifierFactory) (*CodeGenerator, error) {
-	var pipeline []PipelineStage
-	pipeline = append(pipeline, loadSchemaIntoTypes(idFactory, configuration, defaultSchemaLoader))
-	pipeline = append(pipeline, corePipelineStages(idFactory, configuration)...)
-	pipeline = append(pipeline, deleteGeneratedCode(configuration.OutputPath), exportPackages(configuration.OutputPath))
+	return NewTargetedCodeGeneratorFromConfig(configuration, idFactory, ArmTarget)
+}
 
+// NewCodeGeneratorFromConfig produces a new Generator for Arm with the given configuration
+func NewTargetedCodeGeneratorFromConfig(configuration *config.Configuration, idFactory astmodel.IdentifierFactory, target PipelineTarget) (*CodeGenerator, error) {
+
+	result, err := NewCodeGeneratorFromConfig(configuration, idFactory)
+	if err != nil {
+		return nil, errors.Wrapf(err, "creating pipeline targeting %v", target)
+	}
+
+	var stages []PipelineStage
+	for _, s := range result.pipeline {
+		if !s.IsTargetted() || s.IsUsedFor(target) {
+			stages = append(stages, s)
+		}
+	}
+
+	result.pipeline = stages
+
+	return result, nil
+}
+
+func NewCodeGeneratorFromConfig(configuration *config.Configuration, idFactory astmodel.IdentifierFactory) (*CodeGenerator, error) {
 	result := &CodeGenerator{
 		configuration: configuration,
-		pipeline:      pipeline,
+		pipeline:      createAllPipelineStages(idFactory, configuration),
 	}
 
 	return result, nil
 }
 
-func corePipelineStages(idFactory astmodel.IdentifierFactory, configuration *config.Configuration) []PipelineStage {
+func createAllPipelineStages(idFactory astmodel.IdentifierFactory, configuration *config.Configuration) []PipelineStage {
 	return []PipelineStage{
+
+		loadSchemaIntoTypes(idFactory, configuration, defaultSchemaLoader),
+
 		// Import status info from Swagger:
 		augmentResourcesWithStatus(idFactory, configuration),
 
@@ -97,6 +119,9 @@ func corePipelineStages(idFactory astmodel.IdentifierFactory, configuration *con
 		// Safety checks at the end:
 		ensureDefinitionsDoNotUseAnyTypes(),
 		checkForMissingStatusInformation(),
+
+		deleteGeneratedCode(configuration.OutputPath),
+		exportPackages(configuration.OutputPath),
 	}
 }
 
