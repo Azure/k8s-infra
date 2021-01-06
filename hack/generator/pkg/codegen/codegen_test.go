@@ -198,11 +198,6 @@ func NewTestCodeGenerator(testName string, path string, t *testing.T, testConfig
 	for _, stage := range codegen.pipeline {
 		if stage.HasId("loadSchema") {
 			pipeline = append(pipeline, loadTestSchemaIntoTypes(idFactory, cfg, testSchemaLoader))
-		} else if stage.HasId("deleteGenerated") ||
-			stage.HasId("rogueCheck") ||
-			stage.HasId("createStorage") ||
-			stage.HasId("reportTypesAndVersions") {
-			continue // Skip this
 		} else if stage.HasId("exportPackages") {
 			pipeline = append(pipeline, exportPackagesTestPipelineStage)
 		} else if stage.HasId("removeAliases") && testConfig.InjectEmbeddedStruct {
@@ -221,6 +216,8 @@ func NewTestCodeGenerator(testName string, path string, t *testing.T, testConfig
 	}
 
 	codegen.pipeline = pipeline
+
+	codegen.RemoveStages("deleteGenerated", "rogueCheck", "createStorage", "reportTypesAndVersions")
 
 	return codegen, nil
 }
