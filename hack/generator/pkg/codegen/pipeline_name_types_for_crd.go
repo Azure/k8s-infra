@@ -99,6 +99,10 @@ func nameInnerTypes(
 			return nil, err
 		}
 
+		// The above visit of ObjectType will have mutated resultTypes to include a mapping of the type name
+		// to the object type. Because we need to preserve flag types, we must find the ObjectType and re-wrap
+		// it in the flags it had before. Note that we cannot just bypass the ObjectType visit as it may make mutations
+		// to the Object (to name the types of its properties) which we also need to preserve.
 		// There are no words for how much I want LINQ right here
 		var found astmodel.TypeDefinition
 		for i, item := range resultTypes {
