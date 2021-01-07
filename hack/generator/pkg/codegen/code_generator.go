@@ -67,7 +67,7 @@ func corePipelineStages(idFactory astmodel.IdentifierFactory, configuration *con
 		applyPropertyRewrites(configuration),
 
 		// Figure out ARM resource owners:
-		determineResourceOwnership(),
+		determineResourceOwnership().UsedFor(ArmTarget),
 
 		// Strip out redundant type aliases:
 		removeTypeAliases(),
@@ -86,8 +86,8 @@ func corePipelineStages(idFactory astmodel.IdentifierFactory, configuration *con
 		replaceAnyTypeWithJSON(),
 		reportOnTypesAndVersions(configuration),
 
-		createArmTypesAndCleanKubernetesTypes(idFactory),
-		applyKubernetesResourceInterface(idFactory),
+		createArmTypesAndCleanKubernetesTypes(idFactory).UsedFor(ArmTarget),
+		applyKubernetesResourceInterface(idFactory).UsedFor(ArmTarget),
 		createStorageTypes(),
 		simplifyDefinitions(),
 		injectJsonSerializationTests(idFactory),
