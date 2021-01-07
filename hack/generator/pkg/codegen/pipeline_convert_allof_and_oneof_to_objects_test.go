@@ -308,7 +308,7 @@ func TestOneOfResourceSpec(t *testing.T) {
 	g.Expect(err).To(BeNil())
 
 	result := synth.oneOfObject(oneOf, names)
-	result, err = astmodel.TypeAsObjectType(result)
+	result, err = astmodel.TypeOrFlaggedTypeAsObjectType(result)
 	g.Expect(err).To(BeNil())
 	result = astmodel.NewObjectType().WithProperties(result.(*astmodel.ObjectType).Properties()...)
 	g.Expect(result).To(Equal(expected))

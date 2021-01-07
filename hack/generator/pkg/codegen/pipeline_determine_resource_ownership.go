@@ -161,9 +161,10 @@ func extractChildResourceTypeNames(resourcesPropertyTypeDef astmodel.TypeDefinit
 	// This type should be ResourceType, or ObjectType if modelling a OneOf/AllOf
 	_, isResource := resourcesPropertyTypeDef.Type().(*astmodel.ResourceType)
 
-	resourcesPropertyTypeAsObject, err := astmodel.TypeAsObjectType(resourcesPropertyTypeDef.Type())
+	resourcesPropertyTypeAsObject, err := astmodel.TypeOrFlaggedTypeAsObjectType(resourcesPropertyTypeDef.Type())
 	if !isResource && err != nil {
-		return nil, errors.Errorf(
+		return nil, errors.Wrapf(
+			err,
 			"Resources property type %s was not of type *astmodel.ResourceType and didn't wrap *astmodel.ObjectType, instead %T",
 			resourcesPropertyTypeDef.Name(),
 			resourcesPropertyTypeDef.Type())
