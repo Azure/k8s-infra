@@ -40,3 +40,25 @@ func MakePipelineStage(
 func (stage *PipelineStage) HasId(id string) bool {
 	return stage.id == id
 }
+
+// UsedFor specifies that this stage should be used for only the specified targets
+func (stage PipelineStage) UsedFor(targets ...PipelineTarget) PipelineStage {
+	stage.targets = targets
+	return stage
+}
+
+// IsTargetted returns true if this stage should only be used for specific targets
+func (stage *PipelineStage) IsTargetted() bool {
+	return len(stage.targets) > 0
+}
+
+// IsUsedFor returns true if this stage should be used for the specified target
+func (stage *PipelineStage) IsUsedFor(target PipelineTarget) bool {
+	for _, t := range stage.targets {
+		if t == target {
+			return true
+		}
+	}
+
+	return false
+}
