@@ -35,8 +35,10 @@ func NewArmCodeGeneratorFromConfig(configuration *config.Configuration, idFactor
 	return NewTargetedCodeGeneratorFromConfig(configuration, idFactory, ArmTarget)
 }
 
-// NewCodeGeneratorFromConfig produces a new Generator for Arm with the given configuration
-func NewTargetedCodeGeneratorFromConfig(configuration *config.Configuration, idFactory astmodel.IdentifierFactory, target PipelineTarget) (*CodeGenerator, error) {
+// NewTargetedCodeGeneratorFromConfig produces a new code generator with the given configuration and
+// only the stages appropriate for the specfied target.
+func NewTargetedCodeGeneratorFromConfig(
+	configuration *config.Configuration, idFactory astmodel.IdentifierFactory, target PipelineTarget) (*CodeGenerator, error) {
 
 	result, err := NewCodeGeneratorFromConfig(configuration, idFactory)
 	if err != nil {
@@ -55,6 +57,7 @@ func NewTargetedCodeGeneratorFromConfig(configuration *config.Configuration, idF
 	return result, nil
 }
 
+// NewCodeGeneratorFromConfig produces a new code generator with the given configuration all available stages
 func NewCodeGeneratorFromConfig(configuration *config.Configuration, idFactory astmodel.IdentifierFactory) (*CodeGenerator, error) {
 	result := &CodeGenerator{
 		configuration: configuration,
