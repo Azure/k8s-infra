@@ -7,6 +7,7 @@ package codegen
 
 import (
 	"context"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/config"
@@ -54,6 +55,11 @@ func NewTargetedCodeGeneratorFromConfig(
 	}
 
 	result.pipeline = stages
+
+	err = result.verifyPipeline()
+	if err != nil {
+		return nil, err
+	}
 
 	return result, nil
 }
@@ -159,4 +165,21 @@ func (generator *CodeGenerator) Generate(ctx context.Context) error {
 	klog.Info("Finished")
 
 	return nil
+}
+
+func (generator *CodeGenerator) verifyPipeline() error {
+	var errs []error
+
+	stagesSeen := make(map[string]struct{})
+	for _, stage := range generator.pipeline {
+		for _, prereq := range stage.prerequisites {
+			if _, ok := stagesSeen[prereq]; !ok {
+				errs = append(errs, errors.Errorf("prerequisite '%s' of stage '%s' not satisfied.", prereq, stage.id))
+			}
+		}
+
+		stagesSeen[stage.id] = struct{}{}
+	}
+
+	return kerrors.NewAggregate(errs)
 }
