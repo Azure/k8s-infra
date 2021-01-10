@@ -45,9 +45,10 @@ func NewTargetedCodeGeneratorFromConfig(
 		return nil, errors.Wrapf(err, "creating pipeline targeting %v", target)
 	}
 
+	// Filter stages to use only those appropriate for our target
 	var stages []PipelineStage
 	for _, s := range result.pipeline {
-		if !s.IsTargetted() || s.IsUsedFor(target) {
+		if s.IsUsedFor(target) {
 			stages = append(stages, s)
 		}
 	}

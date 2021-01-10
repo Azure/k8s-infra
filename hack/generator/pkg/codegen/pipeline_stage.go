@@ -47,15 +47,17 @@ func (stage PipelineStage) UsedFor(targets ...PipelineTarget) PipelineStage {
 	return stage
 }
 
-// IsTargetted returns true if this stage should only be used for specific targets
-func (stage *PipelineStage) IsTargetted() bool {
-	return len(stage.targets) > 0
-}
-
 // IsUsedFor returns true if this stage should be used for the specified target
 func (stage *PipelineStage) IsUsedFor(target PipelineTarget) bool {
+
+	if len(stage.targets) == 0 {
+		// Stages without specific targeting are always used
+		return true
+	}
+
 	for _, t := range stage.targets {
 		if t == target {
+			// Stage should be used for this target
 			return true
 		}
 	}
