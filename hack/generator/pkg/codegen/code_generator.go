@@ -95,8 +95,10 @@ func createAllPipelineStages(idFactory astmodel.IdentifierFactory, configuration
 		nameTypesForCRD(idFactory),
 
 		// Apply property type rewrites from the config file
-		// must come after nameTypesForCRD and convertAllOfAndOneOf so that objects are all expanded
-		applyPropertyRewrites(configuration),
+		// Must come after nameTypesForCRD ('nameTypes)' and convertAllOfAndOneOfToObjects ('allof-anyof-objects') so
+		// that objects are all expanded
+		applyPropertyRewrites(configuration).
+			RequiresPrerequisiteStages("nameTypes", "allof-anyof-objects"),
 
 		// Figure out ARM resource owners:
 		determineResourceOwnership().UsedFor(ArmTarget),
@@ -104,8 +106,10 @@ func createAllPipelineStages(idFactory astmodel.IdentifierFactory, configuration
 		// Strip out redundant type aliases:
 		removeTypeAliases(),
 
-		// De-pluralize resource types:
-		improveResourcePluralization(),
+		// De-pluralize resource types
+		// (Must come after type aliases are resolved)
+		improveResourcePluralization().
+			RequiresPrerequisiteStages("removeAliases"),
 
 		stripUnreferencedTypeDefinitions(),
 
@@ -131,7 +135,9 @@ func createAllPipelineStages(idFactory astmodel.IdentifierFactory, configuration
 		checkForMissingStatusInformation(),
 
 		deleteGeneratedCode(configuration.OutputPath),
-		exportPackages(configuration.OutputPath),
+
+		exportPackages(configuration.OutputPath).
+			RequiresPrerequisiteStages("deleteGenerated"),
 	}
 }
 
