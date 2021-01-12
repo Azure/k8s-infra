@@ -9,6 +9,8 @@ import (
 	"fmt"
 
 	ast "github.com/dave/dst"
+	"github.com/pkg/errors"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
 )
 
@@ -64,7 +66,16 @@ func (errored ErroredType) handleWarningsAndErrors() {
 	}
 
 	if len(errored.errors) > 0 {
-		panic(CodeGenerationPanic{errored.errors})
+		var es []error
+		for _, e := range errored.errors {
+			es = append(es, errors.New(e))
+		}
+
+		if len(es) == 1 {
+			panic(errored.errors[0])
+		} else {
+			panic(kerrors.NewAggregate(es))
+		}
 	}
 }
 

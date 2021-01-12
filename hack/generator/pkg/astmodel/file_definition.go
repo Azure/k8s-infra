@@ -180,12 +180,12 @@ func (file *FileDefinition) AsAst() (result *ast.File, err error) {
 	// Handle panics coming out of call to AsDeclarations below:
 	defer func() {
 		if r := recover(); r != nil {
-			cgp, ok := r.(CodeGenerationPanic)
+			caught, ok := r.(error)
 			if !ok {
 				panic(r)
 			}
 
-			err = cgp.ToError()
+			err = caught
 		}
 	}()
 
