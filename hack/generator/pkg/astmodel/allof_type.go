@@ -104,22 +104,24 @@ func (allOf AllOfType) References() TypeNameSet {
 	return result
 }
 
+var allOfPanicMsg = "AllOfType should have been replaced by generation time by 'convertAllOfAndOneOf' phase"
+
 // AsType always panics; AllOf cannot be represented by the Go AST and must be
 // lowered to an object type
 func (allOf AllOfType) AsType(_ *CodeGenerationContext) ast.Expr {
-	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
+	panic(CreateCodeGenerationPanic(allOfPanicMsg))
 }
 
 // AsDeclarations always panics; AllOf cannot be represented by the Go AST and must be
 // lowered to an object type
 func (allOf AllOfType) AsDeclarations(_ *CodeGenerationContext, _ DeclarationContext) []ast.Decl {
-	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
+	panic(CreateCodeGenerationPanic(allOfPanicMsg))
 }
 
 // RequiredPackageReferences always panics; AllOf cannot be represented by the Go AST and must be
 // lowered to an object type
 func (allOf AllOfType) RequiredPackageReferences() *PackageReferenceSet {
-	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
+	panic(CreateCodeGenerationPanic(allOfPanicMsg))
 }
 
 // Equals returns true if the other Type is a AllOf that contains
