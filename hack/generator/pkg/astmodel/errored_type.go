@@ -20,8 +20,28 @@ type ErroredType struct {
 	warnings []string
 }
 
+func MakeErroredType(t Type, errors []string, warnings []string) ErroredType {
+	return ErroredType{
+		inner:    nil,
+		errors:   errors,
+		warnings: warnings,
+	}.WithType(t) // using WithType ensures warnings and errors get merged if needed
+}
+
+func (e ErroredType) InnerType() Type {
+	return e.inner
+}
+
 func (errored ErroredType) WithType(t Type) ErroredType {
-	errored.inner = t
+	if otherError, ok := t.(ErroredType); ok {
+		// nested errors merge errors & warnings
+		errored.inner = otherError.inner
+		errored.errors = append(errored.errors, otherError.errors...)
+		errored.warnings = append(errored.warnings, otherError.warnings...)
+	} else {
+		errored.inner = t
+	}
+
 	return errored
 }
 
@@ -33,7 +53,7 @@ func (errored ErroredType) Equals(t Type) bool {
 		return false
 	}
 
-	return errored.inner.Equals(other.inner) &&
+	return ((errored.inner == nil && other.inner == nil) || errored.inner.Equals(other.inner)) &&
 		stringSlicesEqual(errored.warnings, other.warnings) &&
 		stringSlicesEqual(errored.errors, other.errors)
 }
@@ -53,11 +73,19 @@ func stringSlicesEqual(l []string, r []string) bool {
 }
 
 func (errored ErroredType) References() TypeNameSet {
-	return errored.inner.References()
+	if errored.inner != nil {
+		return errored.inner.References()
+	}
+
+	return nil
 }
 
 func (errored ErroredType) RequiredPackageReferences() *PackageReferenceSet {
-	return errored.inner.RequiredPackageReferences()
+	if errored.inner != nil {
+		return errored.inner.RequiredPackageReferences()
+	}
+
+	return NewPackageReferenceSet()
 }
 
 func (errored ErroredType) handleWarningsAndErrors() {
@@ -72,7 +100,7 @@ func (errored ErroredType) handleWarningsAndErrors() {
 		}
 
 		if len(es) == 1 {
-			panic(errored.errors[0])
+			panic(es[0])
 		} else {
 			panic(kerrors.NewAggregate(es))
 		}
@@ -81,15 +109,27 @@ func (errored ErroredType) handleWarningsAndErrors() {
 
 func (errored ErroredType) AsDeclarations(cgc *CodeGenerationContext, dc DeclarationContext) []ast.Decl {
 	errored.handleWarningsAndErrors()
-	return errored.inner.AsDeclarations(cgc, dc)
+	if errored.inner != nil {
+		return errored.inner.AsDeclarations(cgc, dc)
+	}
+
+	return nil
 }
 
 func (errored ErroredType) AsType(cgc *CodeGenerationContext) ast.Expr {
 	errored.handleWarningsAndErrors()
-	return errored.inner.AsType(cgc)
+	if errored.inner != nil {
+		return errored.inner.AsType(cgc)
+	}
+
+	return nil
 }
 
 func (errored ErroredType) String() string {
+	if errored.inner == nil {
+		return "(error hole)"
+	}
+
 	has := "warnings"
 	if len(errored.errors) > 0 {
 		has = "errors"
