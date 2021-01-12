@@ -91,7 +91,7 @@ func TestAllOfAsTypePanics(t *testing.T) {
 	x := AllOfType{}
 	g.Expect(func() {
 		x.AsType(&CodeGenerationContext{})
-	}).To(PanicWith(MatchErrorString(expectedAllOfPanic)))
+	}).To(PanicWith(MatchError(expectedAllOfPanic)))
 }
 
 func TestAllOfAsDeclarationsPanics(t *testing.T) {
@@ -100,7 +100,7 @@ func TestAllOfAsDeclarationsPanics(t *testing.T) {
 	x := AllOfType{}
 	g.Expect(func() {
 		x.AsDeclarations(&CodeGenerationContext{}, DeclarationContext{})
-	}).To(PanicWith(MatchErrorString(expectedAllOfPanic)))
+	}).To(PanicWith(MatchError(expectedAllOfPanic)))
 }
 
 func TestAllOfRequiredImportsPanics(t *testing.T) {
@@ -109,5 +109,5 @@ func TestAllOfRequiredImportsPanics(t *testing.T) {
 	x := AllOfType{}
 	g.Expect(func() {
 		x.RequiredPackageReferences()
-	}).To(PanicWith(MatchErrorString(expectedAllOfPanic)))
+	}).To(PanicWith(MatchError(expectedAllOfPanic)))
 }

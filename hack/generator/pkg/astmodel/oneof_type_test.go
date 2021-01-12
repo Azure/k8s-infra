@@ -77,7 +77,7 @@ func TestOneOfAsTypePanics(t *testing.T) {
 	x := OneOfType{}
 	g.Expect(func() {
 		x.AsType(&CodeGenerationContext{})
-	}).To(PanicWith(MatchErrorString(expectedOneOfPanic)))
+	}).To(PanicWith(MatchError(expectedOneOfPanic)))
 }
 
 func TestOneOfAsDeclarationsPanics(t *testing.T) {
@@ -86,7 +86,7 @@ func TestOneOfAsDeclarationsPanics(t *testing.T) {
 	x := OneOfType{}
 	g.Expect(func() {
 		x.AsDeclarations(&CodeGenerationContext{}, DeclarationContext{})
-	}).To(PanicWith(MatchErrorString(expectedOneOfPanic)))
+	}).To(PanicWith(MatchError(expectedOneOfPanic)))
 }
 
 func TestOneOfRequiredImportsPanics(t *testing.T) {
@@ -95,5 +95,5 @@ func TestOneOfRequiredImportsPanics(t *testing.T) {
 	x := OneOfType{}
 	g.Expect(func() {
 		x.RequiredPackageReferences()
-	}).To(PanicWith(MatchErrorString(expectedOneOfPanic)))
+	}).To(PanicWith(MatchError(expectedOneOfPanic)))
 }
