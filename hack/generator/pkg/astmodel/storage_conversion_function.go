@@ -304,6 +304,7 @@ func (fn *StorageConversionFunction) unwrapObject(aType Type) *ObjectType {
 
 var conversionFactories = []StoragePropertyConversionFactory{
 	PrimitivePropertyConversionFactory,
+	OptionalPrimitivePropertyConversionFactory,
 }
 
 func createPropertyConversion(source *PropertyDefinition, destination *PropertyDefinition) StoragePropertyConversion {
@@ -346,5 +347,94 @@ func PrimitivePropertyConversionFactory(source *PropertyDefinition, destination 
 	}
 }
 
-	return nil
+func OptionalPrimitivePropertyConversionFactory(source *PropertyDefinition, destination *PropertyDefinition) StoragePropertyConversion {
+	sourceOptional := IsOptionalType(source.propertyType)
+	destinationOptional := IsOptionalType(destination.propertyType)
+	if !sourceOptional && !destinationOptional {
+		// Neither side is optional, we don't handle it
+		return nil
+	}
+
+	sourceType := AsPrimitiveType(source.propertyType)
+	destinationType := AsPrimitiveType(source.propertyType)
+	if sourceType == nil || !sourceType.Equals(destinationType) {
+		return nil
+	}
+
+	// Both properties have the same underlying primitive type, but one or other or both is optional
+	return func(sourceVariable string, destinationVariable string, _ *CodeGenerationContext) []ast.Stmt {
+		if sourceOptional == destinationOptional {
+			// Can just copy a pointer to a primitive value
+			assign := astbuilder.SimpleAssignment(
+				astbuilder.QualifiedTypeName(destinationVariable, string(destination.propertyName)),
+				token.ASSIGN,
+				astbuilder.QualifiedTypeName(sourceVariable, string(source.propertyName)))
+			return []ast.Stmt{assign}
+		}
+
+		if destinationOptional {
+			// Need a pointer to the primitive value as the source is not optional
+			assign := astbuilder.SimpleAssignment(
+				astbuilder.QualifiedTypeName(destinationVariable, string(destination.propertyName)),
+				token.ASSIGN,
+				astbuilder.AddrOf(
+					astbuilder.QualifiedTypeName(sourceVariable, string(source.propertyName))))
+			return []ast.Stmt{assign}
+		}
+
+		if sourceOptional {
+			// Need to check for null and only assign if we have a value
+			cond := &ast.BinaryExpr{
+				X:  astbuilder.QualifiedTypeName(sourceVariable, string(source.propertyName)),
+				Op: token.NEQ,
+				Y:  ast.NewIdent("nil"),
+			}
+			assignValue := astbuilder.SimpleAssignment(
+				astbuilder.QualifiedTypeName(destinationVariable, string(destination.propertyName)),
+				token.ASSIGN,
+				astbuilder.Dereference(
+					astbuilder.QualifiedTypeName(sourceVariable, string(source.propertyName))))
+			assignZero := astbuilder.SimpleAssignment(
+				astbuilder.QualifiedTypeName(destinationVariable, string(destination.propertyName)),
+				token.ASSIGN,
+				&ast.BasicLit{
+					Value: zeroValue(sourceType),
+				})
+			stmt := &ast.IfStmt{
+				Cond: cond,
+				Body: &ast.BlockStmt{
+					List: []ast.Stmt{
+						assignValue,
+					},
+				},
+				Else: &ast.BlockStmt{
+					List: []ast.Stmt{
+						assignZero,
+					},
+				},
+			}
+			return []ast.Stmt{stmt}
+		}
+
+		panic("Should never get to the end of OptionalPrimitivePropertyConversionFactory")
+	}
+}
+
+func zeroValue(p *PrimitiveType) string {
+	switch p {
+	case StringType:
+		return "\"\""
+	case IntType:
+		return "0"
+	case FloatType:
+		return "0"
+	case UInt32Type:
+		return "0"
+	case UInt64Type:
+		return "0"
+	case BoolType:
+		return "false"
+	}
+
+	return "##DOESNOTCOMPUTE##"
 }

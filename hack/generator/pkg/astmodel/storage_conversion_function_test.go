@@ -16,9 +16,17 @@ type StorageConversionPropertyTestCase struct {
 func CreateStorageConversionFunctionTestCases() []StorageConversionPropertyTestCase {
 	requiredStringProperty := NewPropertyDefinition("name", "required-string", StringType)
 	optionalStringProperty := NewPropertyDefinition("name", "optional-string", NewOptionalType(StringType))
+	requiredIntProperty := NewPropertyDefinition("age", "required-int", IntType)
+	optionalIntProperty := NewPropertyDefinition("age", "optional-int", NewOptionalType(IntType))
 
 	return []StorageConversionPropertyTestCase{
 		{"SetStringFromString", requiredStringProperty, requiredStringProperty},
+		{"SetStringFromOptionalString", requiredStringProperty, optionalStringProperty},
+		{"SetOptionalStringFromString", optionalStringProperty, requiredStringProperty},
+		{"SetOptionalStringFromOptionalString", optionalStringProperty, optionalStringProperty},
+
+		{"SetIntFromInt", requiredIntProperty, requiredIntProperty},
+		{"SetIntFromIntString", requiredIntProperty, optionalIntProperty},
 	}
 }
 
