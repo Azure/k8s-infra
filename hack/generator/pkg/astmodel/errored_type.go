@@ -73,19 +73,19 @@ func stringSlicesEqual(l []string, r []string) bool {
 }
 
 func (errored ErroredType) References() TypeNameSet {
-	if errored.inner != nil {
-		return errored.inner.References()
+	if errored.inner == nil {
+		return nil
 	}
 
-	return nil
+	return errored.inner.References()
 }
 
 func (errored ErroredType) RequiredPackageReferences() *PackageReferenceSet {
-	if errored.inner != nil {
-		return errored.inner.RequiredPackageReferences()
+	if errored.inner == nil {
+		return NewPackageReferenceSet()
 	}
 
-	return NewPackageReferenceSet()
+	return errored.inner.RequiredPackageReferences()
 }
 
 func (errored ErroredType) handleWarningsAndErrors() {
@@ -109,20 +109,20 @@ func (errored ErroredType) handleWarningsAndErrors() {
 
 func (errored ErroredType) AsDeclarations(cgc *CodeGenerationContext, dc DeclarationContext) []ast.Decl {
 	errored.handleWarningsAndErrors()
-	if errored.inner != nil {
-		return errored.inner.AsDeclarations(cgc, dc)
+	if errored.inner == nil {
+		return nil
 	}
 
-	return nil
+	return errored.inner.AsDeclarations(cgc, dc)
 }
 
 func (errored ErroredType) AsType(cgc *CodeGenerationContext) ast.Expr {
 	errored.handleWarningsAndErrors()
-	if errored.inner != nil {
-		return errored.inner.AsType(cgc)
+	if errored.inner == nil {
+		return nil
 	}
 
-	return nil
+	return errored.inner.AsType(cgc)
 }
 
 func (errored ErroredType) String() string {
