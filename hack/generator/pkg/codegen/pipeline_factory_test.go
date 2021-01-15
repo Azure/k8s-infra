@@ -23,7 +23,9 @@ func TestNewArmCodeGeneratorFromConfigCreatesRightPipeline(t *testing.T) {
 
 	idFactory := astmodel.NewIdentifierFactory()
 	configuration := config.NewConfiguration()
-	codegen, err := NewArmCodeGeneratorFromConfig(configuration, idFactory)
+	configuration.Pipeline = config.GenerationPipelineAzure
+
+	codegen, err := NewCodeGeneratorFromConfig(configuration, idFactory)
 	g.Expect(err).To(BeNil())
 
 	result := writePipeline("Expected Pipeline Stages for ARM Code Generation", codegen)

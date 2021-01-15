@@ -128,7 +128,7 @@ func createAtProviderTypeDefs(
 	resource := typeDef.Type().(*astmodel.ResourceType)
 	resourceName := typeDef.Name()
 
-	statusType := resource.StatusType()
+	statusType := astmodel.IgnoringErrors(resource.StatusType())
 	if statusType == nil {
 		return nil, nil // TODO: Some types don't have status yet
 	}

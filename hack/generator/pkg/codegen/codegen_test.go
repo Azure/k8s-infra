@@ -110,7 +110,7 @@ func NewTestCodeGenerator(testName string, path string, t *testing.T, testConfig
 	idFactory := astmodel.NewIdentifierFactory()
 	cfg := config.NewConfiguration()
 
-	codegen, err := NewCodeGeneratorFromConfig(cfg, idFactory)
+	codegen, err := NewTargetedCodeGeneratorFromConfig(cfg, idFactory, ArmTarget)
 	if err != nil {
 		t.Fatalf("could not create code generator: %v", err)
 	}
@@ -127,6 +127,8 @@ func NewTestCodeGenerator(testName string, path string, t *testing.T, testConfig
 		codegen.RemoveStages("createArmTypes")
 		codegen.ReplaceStage("stripUnreferenced", stripUnusedTypesPipelineStage())
 	}
+
+	codegen.RemoveStages()
 
 	return codegen, nil
 }

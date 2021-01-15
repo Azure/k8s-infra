@@ -110,7 +110,10 @@ func lookupOwners(defs astmodel.Types, resourceDef astmodel.TypeDefinition) ([]a
 	}
 
 	owner := *resourceType.Owner()
-	ownerDef := defs[owner]
+	ownerDef, ok := defs[owner]
+	if !ok {
+		return nil, errors.Errorf("couldn't find definition for owner %s", owner)
+	}
 
 	result, err := lookupOwners(defs, ownerDef)
 	if err != nil {

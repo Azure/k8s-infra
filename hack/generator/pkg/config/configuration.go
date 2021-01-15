@@ -8,6 +8,7 @@ package config
 import (
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
@@ -16,14 +17,24 @@ import (
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
 
+type GenerationPipeline string
+
+const (
+	GenerationPipelineAzure      = GenerationPipeline("azure")
+	GenerationPipelineCrossplane = GenerationPipeline("crossplane")
+)
+
 // Configuration is used to control which types get generated
 type Configuration struct {
 	// Base URL for the JSON schema to generate
 	SchemaURL string `yaml:"schemaUrl"`
 	// Information about where to locate status (Swagger) files
 	Status StatusConfiguration `yaml:"status"`
+	// The pipeline that should be used for code generation
+	Pipeline GenerationPipeline `yaml:"pipeline"`
 	// The folder where the code should be generated
 	OutputPath string `yaml:"outputPath"`
+
 	// AnyTypePackages lists packages which we expect to generate
 	// interface{} fields.
 	AnyTypePackages []string `yaml:"anyTypePackages"`
@@ -107,6 +118,21 @@ func (config *Configuration) initialize(configPath string) error {
 	}
 
 	var errs []error
+
+	if config.Pipeline == "" {
+		// Default to the standard Azure pipeline
+		config.Pipeline = GenerationPipelineAzure
+	} else {
+		switch pipeline := strings.ToLower(string(config.Pipeline)); pipeline {
+		case string(GenerationPipelineAzure):
+			config.Pipeline = GenerationPipelineAzure
+		case string(GenerationPipelineCrossplane):
+			config.Pipeline = GenerationPipelineCrossplane
+		default:
+			errs = append(errs, errors.Errorf("unknown pipeline kind %s", config.Pipeline))
+		}
+	}
+
 	for _, filter := range config.ExportFilters {
 		err := filter.Initialize()
 		if err != nil {

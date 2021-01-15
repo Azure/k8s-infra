@@ -79,7 +79,7 @@ func addCrossplaneEmbeddedResourceStatus(idFactory astmodel.IdentifierFactory) P
 
 				if resource, ok := typeDef.Type().(*astmodel.ResourceType); ok {
 
-					if resource.StatusType() == nil {
+					if astmodel.IgnoringErrors(resource.StatusType()) == nil {
 						continue
 					}
 
