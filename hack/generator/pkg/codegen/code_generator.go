@@ -114,7 +114,7 @@ func createAllPipelineStages(idFactory astmodel.IdentifierFactory, configuration
 			RequiresPrerequisiteStages("nameTypes", "allof-anyof-objects"),
 
 		// Figure out resource owners:
-		determineResourceOwnership(),
+		determineResourceOwnership(configuration),
 
 		// Strip out redundant type aliases:
 		removeTypeAliases(),
@@ -153,9 +153,9 @@ func createAllPipelineStages(idFactory astmodel.IdentifierFactory, configuration
 		// Safety checks at the end:
 		ensureDefinitionsDoNotUseAnyTypes(),
 
-		deleteGeneratedCode(configuration.OutputPath),
+		deleteGeneratedCode(configuration.FullOutputPath()),
 
-		exportPackages(configuration.OutputPath).
+		exportPackages(configuration.FullOutputPath()).
 			RequiresPrerequisiteStages("deleteGenerated"),
 	}
 }

@@ -59,8 +59,8 @@ func loadTestConfig(path string) (GoldenTestConfig, error) {
 	return result, nil
 }
 
-func makeTestPackageReference() astmodel.PackageReference {
-	return astmodel.MakeLocalPackageReference("test", "v20200101")
+func makeTestLocalPackageReference(group string, version string) astmodel.LocalPackageReference {
+	return astmodel.MakeLocalPackageReference("github.com/Azure/k8s-infra/hack/generated", group, version)
 }
 
 func injectEmbeddedStructType() PipelineStage {
@@ -76,7 +76,7 @@ func injectEmbeddedStructType() PipelineStage {
 						prop := astmodel.NewPropertyDefinition(
 							"",
 							",inline",
-							astmodel.MakeTypeName(makeTestPackageReference(), "EmbeddedTestType"))
+							astmodel.MakeTypeName(makeTestLocalPackageReference("test", "v20200101"), "EmbeddedTestType"))
 						return objectType.WithEmbeddedProperty(prop)
 					})
 					if err != nil {
@@ -224,7 +224,7 @@ func stripUnusedTypesPipelineStage() PipelineStage {
 			// The golden files always generate a top-level Test type - mark
 			// that as the root.
 			roots := astmodel.NewTypeNameSet(astmodel.MakeTypeName(
-				makeTestPackageReference(),
+				makeTestLocalPackageReference("test", "v20200101"),
 				"Test",
 			))
 			defs, err := StripUnusedDefinitions(roots, defs)
