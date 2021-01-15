@@ -6,10 +6,11 @@
 package astmodel
 
 import (
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
-	"github.com/pkg/errors"
-	"go/ast"
 	"go/token"
+
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
+	ast "github.com/dave/dst"
+	"github.com/pkg/errors"
 )
 
 // TypeDefinition is a name paired with a type
@@ -67,34 +68,60 @@ func (def TypeDefinition) WithName(typeName TypeName) TypeDefinition {
 }
 
 func (def TypeDefinition) AsDeclarations(codeGenerationContext *CodeGenerationContext) []ast.Decl {
-	return def.theType.AsDeclarations(codeGenerationContext, def.name, def.description)
+	declContext := DeclarationContext{
+		Name:        def.name,
+		Description: def.description,
+	}
+
+	return def.theType.AsDeclarations(codeGenerationContext, declContext)
 }
 
 // AsSimpleDeclarations is a helper for types that only require a simple name/alias to be defined
-func AsSimpleDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string, theType Type) []ast.Decl {
-	var docComments *ast.CommentGroup
-	if len(description) > 0 {
-		docComments = &ast.CommentGroup{}
-		astbuilder.AddWrappedComments(&docComments.List, description, 120)
+func AsSimpleDeclarations(
+	codeGenerationContext *CodeGenerationContext,
+	declContext DeclarationContext,
+	theType Type) []ast.Decl {
+
+	var docComments ast.Decorations
+	if len(declContext.Description) > 0 {
+		astbuilder.AddWrappedComments(&docComments, declContext.Description, 120)
 	}
 
-	return []ast.Decl{
-		&ast.GenDecl{
-			Doc: docComments,
-			Tok: token.TYPE,
-			Specs: []ast.Spec{
-				&ast.TypeSpec{
-					Name: ast.NewIdent(name.Name()),
-					Type: theType.AsType(codeGenerationContext),
-				},
+	AddValidationComments(&docComments, declContext.Validations)
+
+	result := &ast.GenDecl{
+		Decs: ast.GenDeclDecorations{
+			NodeDecs: ast.NodeDecs{
+				Start:  docComments,
+				Before: ast.EmptyLine,
+			},
+		},
+		Tok: token.TYPE,
+		Specs: []ast.Spec{
+			&ast.TypeSpec{
+				Name: ast.NewIdent(declContext.Name.Name()),
+				Type: theType.AsType(codeGenerationContext),
 			},
 		},
 	}
+
+	return []ast.Decl{result}
 }
 
 // RequiredImports returns a list of packages required by this type
 func (def TypeDefinition) RequiredPackageReferences() *PackageReferenceSet {
 	return def.theType.RequiredPackageReferences()
+}
+
+func (def TypeDefinition) HasTestCases() bool {
+	switch d := def.theType.(type) {
+	case *ObjectType:
+		return d.HasTestCases()
+	case *ResourceType:
+		return d.HasTestCases()
+	}
+
+	return false
 }
 
 // FileNameHint returns what a file that contains this name (if any) should be called
@@ -106,7 +133,7 @@ func FileNameHint(name TypeName) string {
 // ApplyObjectTransformation applies a specific transformation to the ObjectType contained by this
 // definition, returning a new definition
 // If the definition does not contain an object, an error will be returned
-func (def TypeDefinition) ApplyObjectTransformation(transform func(*ObjectType) (Type, error)) (*TypeDefinition, error) {
+func (def TypeDefinition) ApplyObjectTransformation(transform func(*ObjectType) (Type, error)) (TypeDefinition, error) {
 	// We use a TypeVisitor to allow automatic handling of wrapper types (such as ArmType and StorageType)
 	visited := false
 	visitor := MakeTypeVisitor()
@@ -121,22 +148,22 @@ func (def TypeDefinition) ApplyObjectTransformation(transform func(*ObjectType) 
 
 	newType, err := visitor.Visit(def.theType, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "transformation of %v failed", def.name)
+		return TypeDefinition{}, errors.Wrapf(err, "transformation of %v failed", def.name)
 	}
 
 	if !visited {
-		return nil, errors.Errorf("transformation was not applied to %v (expected object type, found %v)", def.name, def.theType)
+		return TypeDefinition{}, errors.Errorf("transformation was not applied to %v (expected object type, found %v)", def.name, def.theType)
 	}
 
 	result := def.WithType(newType)
-	return &result, nil
+	return result, nil
 }
 
 // ApplyObjectTransformations applies multiple transformations to the ObjectType contained by this
 // definition, returning a new definition.
 // If the definition does not contain an object, an error will be returned
 // The transformations are constrained to return ObjectType results to allow them to be chained together.
-func (def TypeDefinition) ApplyObjectTransformations(transforms ...func(*ObjectType) (*ObjectType, error)) (*TypeDefinition, error) {
+func (def TypeDefinition) ApplyObjectTransformations(transforms ...func(*ObjectType) (*ObjectType, error)) (TypeDefinition, error) {
 	return def.ApplyObjectTransformation(func(objectType *ObjectType) (Type, error) {
 		result := objectType
 		for i, transform := range transforms {

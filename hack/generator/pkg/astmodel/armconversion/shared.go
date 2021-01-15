@@ -7,25 +7,33 @@ package armconversion
 
 import (
 	"fmt"
-	"go/ast"
 	"go/token"
 	"sync"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
+	ast "github.com/dave/dst"
 )
 
 type conversionBuilder struct {
-	receiverIdent              *ast.Ident
+	receiverIdent              string
 	receiverTypeExpr           ast.Expr
-	armTypeIdent               *ast.Ident
+	armTypeIdent               string
 	codeGenerationContext      *astmodel.CodeGenerationContext
 	idFactory                  astmodel.IdentifierFactory
-	isResource                 bool
+	isSpecType                 bool
 	methodName                 string
 	kubeType                   *astmodel.ObjectType
 	armType                    *astmodel.ObjectType
 	propertyConversionHandlers []propertyConversionHandler
 }
+
+type TypeKind int
+
+const (
+	OrdinaryType TypeKind = iota
+	SpecType
+	StatusType
+)
 
 func (builder conversionBuilder) propertyConversionHandler(
 	toProp *astmodel.PropertyDefinition,
@@ -38,7 +46,7 @@ func (builder conversionBuilder) propertyConversionHandler(
 		}
 	}
 
-	panic(fmt.Sprintf("No property found for %s", toProp.PropertyName()))
+	panic(fmt.Sprintf("No property found for %s in method %s\nFrom: %+v\nTo: %+v", toProp.PropertyName(), builder.methodName, *builder.kubeType, *builder.armType))
 }
 
 // deepCopyJSON special cases copying JSON-type fields to call the DeepCopy method.
@@ -49,7 +57,7 @@ func (builder *conversionBuilder) deepCopyJSON(
 	newSource := &ast.UnaryExpr{
 		X: &ast.CallExpr{
 			Fun: &ast.SelectorExpr{
-				X:   params.source,
+				X:   params.Source(),
 				Sel: ast.NewIdent("DeepCopy"),
 			},
 			Args: []ast.Expr{},
@@ -61,7 +69,7 @@ func (builder *conversionBuilder) deepCopyJSON(
 		assignmentHandler = assignmentHandlerAssign
 	}
 	return []ast.Stmt{
-		assignmentHandler(params.destination, newSource),
+		assignmentHandler(params.Destination(), newSource),
 	}
 }
 
@@ -121,15 +129,19 @@ func NewArmTransformerImpl(
 	armTypeName astmodel.TypeName,
 	armType *astmodel.ObjectType,
 	idFactory astmodel.IdentifierFactory,
-	isResource bool) *astmodel.InterfaceImplementation {
+	typeType TypeKind) *astmodel.InterfaceImplementation {
 
-	convertToArmFunc := &ArmConversionFunction{
-		name:        "ConvertToArm",
-		armTypeName: armTypeName,
-		armType:     armType,
-		idFactory:   idFactory,
-		direction:   ConversionDirectionToArm,
-		isResource:  isResource,
+	var convertToArmFunc *ArmConversionFunction
+	if typeType != StatusType {
+		// status type should not have ConvertToARM
+		convertToArmFunc = &ArmConversionFunction{
+			name:        "ConvertToArm",
+			armTypeName: armTypeName,
+			armType:     armType,
+			idFactory:   idFactory,
+			direction:   ConversionDirectionToArm,
+			isSpecType:  typeType == SpecType,
+		}
 	}
 
 	populateFromArmFunc := &ArmConversionFunction{
@@ -138,15 +150,24 @@ func NewArmTransformerImpl(
 		armType:     armType,
 		idFactory:   idFactory,
 		direction:   ConversionDirectionFromArm,
-		isResource:  isResource,
+		isSpecType:  typeType == SpecType,
 	}
 
-	result := astmodel.NewInterfaceImplementation(
-		astmodel.MakeTypeName(astmodel.MakeGenRuntimePackageReference(), "ArmTransformer"),
-		convertToArmFunc,
-		populateFromArmFunc)
+	createEmptyArmValueFunc := CreateEmptyArmValueFunc{idFactory: idFactory, armTypeName: armTypeName}
 
-	return result
+	if convertToArmFunc != nil {
+		return astmodel.NewInterfaceImplementation(
+			astmodel.MakeTypeName(astmodel.GenRuntimeReference, "ArmTransformer"),
+			createEmptyArmValueFunc,
+			convertToArmFunc,
+			populateFromArmFunc)
+	} else {
+		// only convert in one direction with the FromArmConverter interface
+		return astmodel.NewInterfaceImplementation(
+			astmodel.MakeTypeName(astmodel.GenRuntimeReference, "FromArmConverter"),
+			createEmptyArmValueFunc,
+			populateFromArmFunc)
+	}
 }
 
 type complexPropertyConversionParameters struct {
@@ -161,6 +182,14 @@ type complexPropertyConversionParameters struct {
 	// the same, so no conversion between Arm and non-Arm types is
 	// required (although structure copying is).
 	sameTypes bool
+}
+
+func (params complexPropertyConversionParameters) Source() ast.Expr {
+	return ast.Clone(params.source).(ast.Expr)
+}
+
+func (params complexPropertyConversionParameters) Destination() ast.Expr {
+	return ast.Clone(params.destination).(ast.Expr)
 }
 
 func (params complexPropertyConversionParameters) copy() complexPropertyConversionParameters {

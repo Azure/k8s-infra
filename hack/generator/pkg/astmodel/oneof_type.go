@@ -7,9 +7,11 @@ package astmodel
 
 import (
 	"fmt"
-	"go/ast"
 	"sort"
 	"strings"
+
+	ast "github.com/dave/dst"
+	"github.com/pkg/errors"
 )
 
 // OneOfType represents something that can be any
@@ -68,21 +70,23 @@ func (oneOf OneOfType) References() TypeNameSet {
 	return result
 }
 
-// AsType always panics; AllOf cannot be represented by the Go AST and must be
+var oneOfPanicMsg = "OneOfType should have been replaced by generation time by 'convertAllOfAndOneOf' phase"
+
+// AsType always panics; OneOf cannot be represented by the Go AST and must be
 // lowered to an object type
 func (oneOf OneOfType) AsType(_ *CodeGenerationContext) ast.Expr {
-	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
+	panic(errors.New(oneOfPanicMsg))
 }
 
-// AsDeclarations always panics; AllOf cannot be represented by the Go AST and must be
+// AsDeclarations always panics; OneOf cannot be represented by the Go AST and must be
 // lowered to an object type
-func (oneOf OneOfType) AsDeclarations(_ *CodeGenerationContext, _ TypeName, _ []string) []ast.Decl {
-	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
+func (oneOf OneOfType) AsDeclarations(_ *CodeGenerationContext, _ DeclarationContext) []ast.Decl {
+	panic(errors.New(oneOfPanicMsg))
 }
 
 // RequiredPackageReferences returns the union of the required imports of all the oneOf types
 func (oneOf OneOfType) RequiredPackageReferences() *PackageReferenceSet {
-	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
+	panic(errors.New(oneOfPanicMsg))
 }
 
 // Equals returns true if the other Type is a OneOfType that contains

@@ -7,9 +7,10 @@ package astmodel
 
 import (
 	"fmt"
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
-	"go/ast"
 	"go/token"
+
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
+	ast "github.com/dave/dst"
 )
 
 const JSONMarshalFunctionName string = "MarshalJSON"
@@ -53,19 +54,20 @@ func (f *OneOfJSONMarshalFunction) AsFunc(
 	codeGenerationContext *CodeGenerationContext,
 	receiver TypeName) *ast.FuncDecl {
 
+	jsonPackage := codeGenerationContext.MustGetImportedPackageName(JsonReference)
+
 	receiverName := f.idFactory.CreateIdentifier(receiver.name, NotExported)
 
 	var statements []ast.Stmt
 
 	for _, property := range f.oneOfObject.Properties() {
-		fieldSelectorExpr := &ast.SelectorExpr{
-			X:   ast.NewIdent(receiverName),
-			Sel: ast.NewIdent(string(property.propertyName)),
-		}
 
 		ifStatement := ast.IfStmt{
 			Cond: &ast.BinaryExpr{
-				X:  fieldSelectorExpr,
+				X: &ast.SelectorExpr{
+					X:   ast.NewIdent(receiverName),
+					Sel: ast.NewIdent(string(property.propertyName)),
+				},
 				Op: token.NEQ,
 				Y:  ast.NewIdent("nil"),
 			},
@@ -75,11 +77,14 @@ func (f *OneOfJSONMarshalFunction) AsFunc(
 						Results: []ast.Expr{
 							&ast.CallExpr{
 								Fun: &ast.SelectorExpr{
-									X:   ast.NewIdent("json"),
+									X:   ast.NewIdent(jsonPackage),
 									Sel: ast.NewIdent("Marshal"),
 								},
 								Args: []ast.Expr{
-									fieldSelectorExpr,
+									&ast.SelectorExpr{
+										X:   ast.NewIdent(receiverName),
+										Sel: ast.NewIdent(string(property.propertyName)),
+									},
 								},
 							},
 						},
@@ -100,8 +105,8 @@ func (f *OneOfJSONMarshalFunction) AsFunc(
 	statements = append(statements, finalReturnStatement)
 
 	fn := &astbuilder.FuncDetails{
-		Name:          ast.NewIdent(f.Name()),
-		ReceiverIdent: ast.NewIdent(receiverName),
+		Name:          f.Name(),
+		ReceiverIdent: receiverName,
 		ReceiverType:  receiver.AsType(codeGenerationContext),
 		Body:          statements,
 	}

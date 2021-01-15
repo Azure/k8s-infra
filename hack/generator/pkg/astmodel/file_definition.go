@@ -7,16 +7,13 @@ package astmodel
 
 import (
 	"bufio"
-	"bytes"
-	"go/ast"
-	"go/format"
-	"go/parser"
 	"go/token"
 	"io"
 	"os"
 	"sort"
-	"strings"
 
+	ast "github.com/dave/dst"
+	"github.com/dave/dst/decorator"
 	"k8s.io/klog/v2"
 )
 
@@ -135,9 +132,7 @@ func (file *FileDefinition) generateImports() *PackageImportSet {
 	var requiredImports = NewPackageImportSet()
 
 	for _, s := range file.definitions {
-		for _, r := range s.RequiredPackageReferences().AsSlice() {
-			requiredImports.AddImportOfReference(r)
-		}
+		requiredImports.AddImportsOfReferences(s.RequiredPackageReferences().AsSlice()...)
 	}
 
 	// Don't need to import the current package
@@ -147,21 +142,18 @@ func (file *FileDefinition) generateImports() *PackageImportSet {
 	// TODO: Make this configurable
 	requiredImports.ApplyName(MetaV1PackageReference, "metav1")
 
-	// Determine if there are any conflicting imports -- these are imports with the same "name"
-	// but a different package path
-	imports := requiredImports.AsSortedSlice(ByNameInGroups)
-	for _, imp := range imports {
-		for _, otherImp := range imports {
-			if !imp.Equals(otherImp) && imp.PackageName() == otherImp.PackageName() {
-				klog.Warningf(
-					"File %v: import %v (named %v) and import %v (named %v) conflict",
-					file.packageReference,
-					imp.packageReference,
-					imp.PackageName(),
-					otherImp.packageReference,
-					otherImp.PackageName())
-			}
+	// Force local imports to have explicit names based on the service
+	for _, imp := range requiredImports.AsSlice() {
+		if IsLocalPackageReference(imp.packageReference) && !imp.HasExplicitName() {
+			name := requiredImports.ServiceNameForImport(imp)
+			requiredImports.AddImport(imp.WithName(name))
 		}
+	}
+
+	// Resolve any conflicts and report any that couldn't be fixed up automatically
+	err := requiredImports.ResolveConflicts()
+	if err != nil {
+		klog.Errorf("File %s: %v", file.packageReference, err)
 	}
 
 	return requiredImports
@@ -169,7 +161,7 @@ func (file *FileDefinition) generateImports() *PackageImportSet {
 
 func (file *FileDefinition) generateImportSpecs(imports *PackageImportSet) []ast.Spec {
 	var importSpecs []ast.Spec
-	for _, requiredImport := range imports.AsSlice() {
+	for _, requiredImport := range imports.AsSortedSlice() {
 		importSpecs = append(importSpecs, requiredImport.AsImportSpec())
 	}
 
@@ -177,25 +169,48 @@ func (file *FileDefinition) generateImportSpecs(imports *PackageImportSet) []ast
 }
 
 // AsAst generates an AST node representing this file
-func (file *FileDefinition) AsAst() ast.Node {
+func (file *FileDefinition) AsAst() (result *ast.File, err error) {
+
+	// Create context from imports
+	codeGenContext := NewCodeGenerationContext(file.packageReference, file.generateImports(), file.generatedPackages)
+
+	// Create all definitions:
+	var definitions []ast.Decl
+
+	// Handle panics coming out of call to AsDeclarations below:
+	defer func() {
+		if r := recover(); r != nil {
+			caught, ok := r.(error)
+			if !ok {
+				panic(r)
+			}
+
+			err = caught
+		}
+	}()
+
+	for _, s := range file.definitions {
+		definitions = append(definitions, s.AsDeclarations(codeGenContext)...)
+	}
 
 	var decls []ast.Decl
 
-	// Determine imports
-	packageReferences := file.generateImports()
-
-	// Create context from imports
-	codeGenContext := NewCodeGenerationContext(file.packageReference, packageReferences, file.generatedPackages)
-
 	// Create import header if needed
-	if packageReferences.Length() > 0 {
-		decls = append(decls, &ast.GenDecl{Tok: token.IMPORT, Specs: file.generateImportSpecs(packageReferences)})
+	usedImports := codeGenContext.UsedPackageImports()
+	if usedImports.Length() > 0 {
+		decls = append(decls, &ast.GenDecl{
+			Decs: ast.GenDeclDecorations{
+				NodeDecs: ast.NodeDecs{
+					After: ast.EmptyLine,
+				},
+			},
+			Tok:   token.IMPORT,
+			Specs: file.generateImportSpecs(usedImports),
+		})
 	}
 
-	// Emit all definitions:
-	for _, s := range file.definitions {
-		decls = append(decls, s.AsDeclarations(codeGenContext)...)
-	}
+	// Add generated definitions
+	decls = append(decls, definitions...)
 
 	// Emit registration for each resource:
 	var exprs []ast.Expr
@@ -219,6 +234,11 @@ func (file *FileDefinition) AsAst() ast.Node {
 				Body: &ast.BlockStmt{
 					List: []ast.Stmt{
 						&ast.ExprStmt{
+							Decs: ast.ExprStmtDecorations{
+								NodeDecs: ast.NodeDecs{
+									Before: ast.NewLine,
+								},
+							},
 							X: &ast.CallExpr{
 								Fun:  ast.NewIdent("SchemeBuilder.Register"), // HACK
 								Args: exprs,
@@ -229,66 +249,40 @@ func (file *FileDefinition) AsAst() ast.Node {
 			})
 	}
 
-	header, headerLen := createComments(
-		"Copyright (c) Microsoft Corporation.",
-		"Licensed under the MIT license.",
-		CodeGenerationComment)
+	var header []string
+	header = append(header, CodeGenerationComments...)
+	header = append(header,
+		"// Copyright (c) Microsoft Corporation.",
+		"// Licensed under the MIT license.")
 
 	packageName := file.packageReference.PackageName()
 
-	// We set Package (the offset of the package keyword) so that it follows the header comments
-	result := &ast.File{
-		Doc: &ast.CommentGroup{
-			List: header,
+	result = &ast.File{
+		Decs: ast.FileDecorations{
+			NodeDecs: ast.NodeDecs{
+				Start: header,
+				After: ast.EmptyLine,
+			},
 		},
-		Name:    ast.NewIdent(packageName),
-		Decls:   decls,
-		Package: token.Pos(headerLen),
+		Name:  ast.NewIdent(packageName),
+		Decls: decls,
 	}
 
-	return result
-}
-
-// createComments converts a series of strings into a series of comments,
-// returning both the comments and their text length
-func createComments(lines ...string) ([]*ast.Comment, int) {
-	var result []*ast.Comment
-	length := 0
-	for _, l := range lines {
-		line := &ast.Comment{Text: "// " + l + "\n"}
-		length += len(line.Text)
-		result = append(result, line)
-	}
-
-	return result, length
+	return
 }
 
 // SaveToWriter writes the file to the specifier io.Writer
-func (file FileDefinition) SaveToWriter(filename string, dst io.Writer) error {
-	original := file.AsAst()
-
-	// Write generated source into a memory buffer
-	fset := token.NewFileSet()
-	fset.AddFile(filename, 1, 102400)
-
-	var unformattedBuffer bytes.Buffer
-	err := format.Node(&unformattedBuffer, fset, original)
+func (file FileDefinition) SaveToWriter(dst io.Writer) error {
+	content, err := file.AsAst()
 	if err != nil {
 		return err
 	}
 
-	// This is a nasty technique with only one redeeming characteristic: It works
-	reformattedBuffer := file.addBlankLinesBeforeComments(unformattedBuffer)
+	buf := bufio.NewWriter(dst)
+	defer buf.Flush()
 
-	// Read the source from the memory buffer (has the effect similar to 'go fmt')
-	var cleanAst ast.Node
-	cleanAst, err = parser.ParseFile(fset, filename, &reformattedBuffer, parser.ParseComments)
-	if err != nil {
-		klog.Errorf("Failed to reformat code (%s); keeping code as is.", err)
-		cleanAst = original
-	}
-
-	return format.Node(dst, fset, cleanAst)
+	err = decorator.Fprint(buf, content)
+	return err
 }
 
 // SaveToFile writes this generated file to disk
@@ -299,39 +293,23 @@ func (file FileDefinition) SaveToFile(filePath string) error {
 		return err
 	}
 
-	defer f.Close()
+	defer func() {
+		f.Close()
 
-	return file.SaveToWriter(filePath, f)
-}
-
-// addBlankLinesBeforeComments reads the source in the passed buffer and injects a blank line just
-// before each '//' style comment so that the comments are nicely spaced out in the generated code.
-func (file FileDefinition) addBlankLinesBeforeComments(buffer bytes.Buffer) bytes.Buffer {
-	// Read all the lines from the buffer
-	var lines []string
-	reader := bufio.NewReader(&buffer)
-	scanner := bufio.NewScanner(reader)
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-
-	isComment := func(s string) bool {
-		return strings.HasPrefix(strings.TrimSpace(s), "//")
-	}
-
-	var result bytes.Buffer
-	lastLineWasComment := false
-	for _, l := range lines {
-		// Add blank line prior to each comment block
-		if !lastLineWasComment && isComment(l) {
-			result.WriteString("\n")
+		// if we are panicking, the file will be in a broken
+		// state, so remove it
+		if r := recover(); r != nil {
+			os.Remove(filePath)
+			panic(r)
 		}
+	}()
 
-		result.WriteString(l)
-		result.WriteString("\n")
-
-		lastLineWasComment = isComment(l)
+	err = file.SaveToWriter(f)
+	if err != nil {
+		// cleanup in case of errors
+		f.Close()
+		os.Remove(filePath)
 	}
 
-	return result
+	return err
 }

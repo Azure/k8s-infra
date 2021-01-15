@@ -7,23 +7,24 @@ package astbuilder
 
 import (
 	"fmt"
-	"go/ast"
 	"strings"
+
+	ast "github.com/dave/dst"
 )
 
 type FuncDetails struct {
-	ReceiverIdent *ast.Ident
+	ReceiverIdent string
 	ReceiverType  ast.Expr
-	Name          *ast.Ident
+	Name          string
 	Comments      []string
 	Params        []*ast.Field
 	Returns       []*ast.Field
 	Body          []ast.Stmt
 }
 
-// NewTestFuncDetails() returns a FuncDetails for a test method
+// NewTestFuncDetails returns a FuncDetails for a test method
 // Tests require a particular signature, so this makes it simpler to create test functions
-func NewTestFuncDetails(testName string, body ...ast.Stmt) *FuncDetails {
+func NewTestFuncDetails(testingPackage string, testName string, body ...ast.Stmt) *FuncDetails {
 
 	// Ensure the method name starts with `Test` as required
 	var name string
@@ -34,14 +35,14 @@ func NewTestFuncDetails(testName string, body ...ast.Stmt) *FuncDetails {
 	}
 
 	result := &FuncDetails{
-		Name: ast.NewIdent(name),
+		Name: name,
 		Body: body,
 	}
 
 	result.AddParameter("t",
 		&ast.StarExpr{
 			X: &ast.SelectorExpr{
-				X:   ast.NewIdent("testing"),
+				X:   ast.NewIdent(testingPackage),
 				Sel: ast.NewIdent("T"),
 			}},
 	)
@@ -57,7 +58,7 @@ func NewTestFuncDetails(testName string, body ...ast.Stmt) *FuncDetails {
 func (fn *FuncDetails) DefineFunc() *ast.FuncDecl {
 
 	// Safety check that we are making something valid
-	if (fn.ReceiverIdent == nil) != (fn.ReceiverType == nil) {
+	if (fn.ReceiverIdent == "") != (fn.ReceiverType == nil) {
 		reason := fmt.Sprintf(
 			"ReceiverIdent and ReceiverType must both be specified, or both omitted. ReceiverIdent: %q, ReceiverType: %q",
 			fn.ReceiverIdent,
@@ -74,16 +75,20 @@ func (fn *FuncDetails) DefineFunc() *ast.FuncDecl {
 		}
 	}
 
-	var comment []*ast.Comment
+	var comment ast.Decorations
 	if len(fn.Comments) > 0 {
 		fn.Comments[0] = fmt.Sprintf("// %s %s", fn.Name, fn.Comments[0])
 		AddComments(&comment, fn.Comments)
 	}
 
 	result := &ast.FuncDecl{
-		Name: fn.Name,
-		Doc: &ast.CommentGroup{
-			List: comment,
+		Name: ast.NewIdent(fn.Name),
+		Decs: ast.FuncDeclDecorations{
+			NodeDecs: ast.NodeDecs{
+				Before: ast.EmptyLine,
+				After:  ast.EmptyLine,
+				Start:  comment,
+			},
 		},
 		Type: &ast.FuncType{
 			Params: &ast.FieldList{
@@ -98,12 +103,12 @@ func (fn *FuncDetails) DefineFunc() *ast.FuncDecl {
 		},
 	}
 
-	if fn.ReceiverIdent != nil {
+	if fn.ReceiverIdent != "" {
 		// We have a receiver, so include it
 
 		field := &ast.Field{
 			Names: []*ast.Ident{
-				fn.ReceiverIdent,
+				ast.NewIdent(fn.ReceiverIdent),
 			},
 			Type: fn.ReceiverType,
 		}
@@ -142,7 +147,7 @@ func (fn *FuncDetails) AddReturns(types ...string) {
 	}
 }
 
-// AddComments() adds multiple comments to the function declaration
+// AddComments adds multiple comments to the function declaration
 func (fn *FuncDetails) AddComments(comment ...string) {
 	fn.Comments = append(fn.Comments, comment...)
 }

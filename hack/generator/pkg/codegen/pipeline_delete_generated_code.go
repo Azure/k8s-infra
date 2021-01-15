@@ -39,7 +39,7 @@ func deleteGeneratedCode(outputFolder string) PipelineStage {
 
 func deleteGeneratedCodeFromFolder(ctx context.Context, outputFolder string) error {
 	// We use doublestar here rather than filepath.Glob because filepath.Glob doesn't support **
-	globPattern := path.Join(outputFolder, "**", "*", "*"+astmodel.CodeGeneratedFileSuffix)
+	globPattern := path.Join(outputFolder, "**", "*", "*"+astmodel.CodeGeneratedFileSuffix+"*.go")
 
 	files, err := doublestar.Glob(globPattern)
 	if err != nil {
@@ -98,8 +98,10 @@ func isFileGenerated(filename string) (bool, error) {
 			return false, err
 		}
 
-		if strings.Contains(line, astmodel.CodeGenerationComment) {
-			return true, nil
+		for _, codeGenComment := range astmodel.CodeGenerationComments {
+			if strings.Contains(line, codeGenComment) {
+				return true, nil
+			}
 		}
 	}
 

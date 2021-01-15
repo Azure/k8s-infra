@@ -66,8 +66,9 @@ func CollectArmSpecAndStatusDefinitions(definitions Types) TypeNameSet {
 			}
 			armSpecAndStatus.Add(armSpecName)
 
-			if resourceType.status != nil {
-				armStatusName, err := findArmType(resourceType.status)
+			statusType := IgnoringErrors(resourceType.status)
+			if statusType != nil {
+				armStatusName, err := findArmType(statusType)
 				if err != nil {
 					continue
 					// This should never happen because every type should have a matching ARM type

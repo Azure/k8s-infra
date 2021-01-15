@@ -7,7 +7,8 @@ package astmodel
 
 import (
 	"fmt"
-	"go/ast"
+
+	ast "github.com/dave/dst"
 )
 
 // OptionalType is used for items that may or may not be present
@@ -47,8 +48,8 @@ func (optional *OptionalType) Element() Type {
 // assert we implemented Type correctly
 var _ Type = (*OptionalType)(nil)
 
-func (optional *OptionalType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
-	return AsSimpleDeclarations(codeGenerationContext, name, description, optional)
+func (optional *OptionalType) AsDeclarations(codeGenerationContext *CodeGenerationContext, declContext DeclarationContext) []ast.Decl {
+	return AsSimpleDeclarations(codeGenerationContext, declContext, optional)
 }
 
 // AsType renders the Go abstract syntax tree for an optional type

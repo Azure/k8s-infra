@@ -80,7 +80,7 @@ func (h ResourceHierarchy) FullAzureName() string {
 	}
 
 	for _, res := range resources {
-		azureNames = append(azureNames, getAzureName(res))
+		azureNames = append(azureNames, res.AzureName())
 	}
 
 	return strings.Join(azureNames, "/")
@@ -196,18 +196,8 @@ func (r *Resolver) findGVK(owner *genruntime.ResourceReference) (schema.GroupVer
 
 	// TODO: We should do this on process launch probably since we can check based on the AllKnownTypes() collection
 	if !found {
-		return ownerGvk, errors.Errorf("couldn't find registered scheme for owner %+v", owner)
+		return ownerGvk, errors.Errorf("couldn't find owner %+v in scheme", owner)
 	}
 
 	return ownerGvk, nil
-}
-
-// TODO: Remove this when we have proper AzureName defaulting on the way in
-// getAzureName returns the specified AzureName, or else the name of the Kubernetes resource
-func getAzureName(r genruntime.MetaObject) string {
-	if r.AzureName() == "" {
-		return r.GetName()
-	}
-
-	return r.AzureName()
 }

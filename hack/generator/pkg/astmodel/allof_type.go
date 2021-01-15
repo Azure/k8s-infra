@@ -7,10 +7,11 @@ package astmodel
 
 import (
 	"fmt"
-	"go/ast"
 	"sort"
 	"strings"
 
+	ast "github.com/dave/dst"
+	"github.com/pkg/errors"
 	"k8s.io/klog/v2"
 )
 
@@ -104,22 +105,24 @@ func (allOf AllOfType) References() TypeNameSet {
 	return result
 }
 
+var allOfPanicMsg = "AllOfType should have been replaced by generation time by 'convertAllOfAndOneOf' phase"
+
 // AsType always panics; AllOf cannot be represented by the Go AST and must be
 // lowered to an object type
 func (allOf AllOfType) AsType(_ *CodeGenerationContext) ast.Expr {
-	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
+	panic(errors.New(allOfPanicMsg))
 }
 
 // AsDeclarations always panics; AllOf cannot be represented by the Go AST and must be
 // lowered to an object type
-func (allOf AllOfType) AsDeclarations(_ *CodeGenerationContext, _ TypeName, _ []string) []ast.Decl {
-	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
+func (allOf AllOfType) AsDeclarations(_ *CodeGenerationContext, _ DeclarationContext) []ast.Decl {
+	panic(errors.New(allOfPanicMsg))
 }
 
 // RequiredPackageReferences always panics; AllOf cannot be represented by the Go AST and must be
 // lowered to an object type
 func (allOf AllOfType) RequiredPackageReferences() *PackageReferenceSet {
-	panic("should have been replaced by generation time by 'convertAllOfAndOneOf' phase")
+	panic(errors.New(allOfPanicMsg))
 }
 
 // Equals returns true if the other Type is a AllOf that contains

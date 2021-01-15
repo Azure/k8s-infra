@@ -7,8 +7,9 @@ package armconversion
 
 import (
 	"fmt"
+
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
-	"go/ast"
+	ast "github.com/dave/dst"
 )
 
 type ConversionDirection string
@@ -26,7 +27,7 @@ type ArmConversionFunction struct {
 	armType     *astmodel.ObjectType
 	idFactory   astmodel.IdentifierFactory
 	direction   ConversionDirection
-	isResource  bool
+	isSpecType  bool
 }
 
 var _ astmodel.Function = &ArmConversionFunction{}
@@ -44,7 +45,7 @@ func (c *ArmConversionFunction) RequiredPackageReferences() *astmodel.PackageRef
 	// We need these because we're going to be constructing/casting to the types
 	// of the properties in the ARM object, so we need to import those.
 	result := astmodel.NewPackageReferenceSet(
-		astmodel.MakeGenRuntimePackageReference(),
+		astmodel.GenRuntimeReference,
 		astmodel.MakeExternalPackageReference("fmt"))
 	result.Merge(c.armType.RequiredPackageReferences())
 	return result
@@ -77,6 +78,7 @@ func (c *ArmConversionFunction) asConvertToArmFunc(
 		codeGenerationContext,
 		receiver,
 		methodName)
+
 	return builder.functionDeclaration()
 }
 

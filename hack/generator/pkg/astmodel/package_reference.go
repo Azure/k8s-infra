@@ -14,7 +14,7 @@ const (
 var MetaV1PackageReference = MakeExternalPackageReference("k8s.io/apimachinery/pkg/apis/meta/v1")
 
 type PackageReference interface {
-	// IsLocalPackage returns a valud indicating whether this is a local package
+	// AsLocalPackage attempts conversion to a LocalPackageReference
 	AsLocalPackage() (LocalPackageReference, bool)
 	// Package returns the package name of this reference
 	PackageName() string
@@ -24,9 +24,4 @@ type PackageReference interface {
 	Equals(ref PackageReference) bool
 	// String returns the string representation of the package reference
 	String() string
-}
-
-// MakeGenRuntimePackageReference creates a new package reference for the genruntime package
-func MakeGenRuntimePackageReference() PackageReference {
-	return MakeExternalPackageReference(genRuntimePathPrefix)
 }

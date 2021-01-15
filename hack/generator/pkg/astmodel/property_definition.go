@@ -7,10 +7,11 @@ package astmodel
 
 import (
 	"fmt"
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
-	"go/ast"
 	"sort"
 	"strings"
+
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
+	ast "github.com/dave/dst"
 )
 
 // PropertyName is a semantic type
@@ -21,9 +22,11 @@ type PropertyDefinition struct {
 	propertyName PropertyName
 	propertyType Type
 	description  string
-	validations  []Validation
+	isRequired   bool
 	tags         map[string][]string
 }
+
+var _ fmt.Stringer = &PropertyDefinition{}
 
 // NewPropertyDefinition is a factory method for creating a new PropertyDefinition
 // name is the name for the new property (mandatory)
@@ -48,6 +51,13 @@ func (property *PropertyDefinition) PropertyName() PropertyName {
 // PropertyType returns the data type of the property
 func (property *PropertyDefinition) PropertyType() Type {
 	return property.propertyType
+}
+
+// SetRequired sets if the property is required or not
+func (property *PropertyDefinition) SetRequired(required bool) *PropertyDefinition {
+	result := *property
+	result.isRequired = required
+	return &result
 }
 
 // WithDescription returns a new PropertyDefinition with the specified description
@@ -76,20 +86,6 @@ func (property *PropertyDefinition) WithType(newType Type) *PropertyDefinition {
 // HasName returns true if the property has the given name
 func (property *PropertyDefinition) HasName(name PropertyName) bool {
 	return property.propertyName == name
-}
-
-// WithValidation adds the given validation to the property's set of validations
-func (property *PropertyDefinition) WithValidation(validation Validation) *PropertyDefinition {
-	result := property.copy()
-	result.validations = append(result.validations, validation)
-	return result
-}
-
-// WithoutValidation removes all validations from the field
-func (property *PropertyDefinition) WithoutValidation() *PropertyDefinition {
-	result := property.copy()
-	result.validations = nil
-	return result
 }
 
 // WithTag adds the given tag to the field
@@ -168,7 +164,7 @@ func (property *PropertyDefinition) withoutJsonOmitEmpty() *PropertyDefinition {
 
 // MakeRequired returns a new PropertyDefinition that is marked as required
 func (property *PropertyDefinition) MakeRequired() *PropertyDefinition {
-	if !property.hasOptionalType() && property.HasRequiredValidation() && !property.hasJsonOmitEmpty() {
+	if !property.hasOptionalType() && property.IsRequired() && !property.hasJsonOmitEmpty() {
 		return property
 	}
 	result := property.copy()
@@ -179,10 +175,7 @@ func (property *PropertyDefinition) MakeRequired() *PropertyDefinition {
 		result.propertyType = ot.BaseType()
 	}
 
-	if !property.HasRequiredValidation() {
-		result = result.WithValidation(ValidateRequired())
-	}
-
+	result.isRequired = true
 	result = result.withoutJsonOmitEmpty()
 
 	return result
@@ -190,7 +183,7 @@ func (property *PropertyDefinition) MakeRequired() *PropertyDefinition {
 
 // MakeOptional returns a new PropertyDefinition that has an optional value
 func (property *PropertyDefinition) MakeOptional() *PropertyDefinition {
-	if isTypeOptional(property.propertyType) && !property.HasRequiredValidation() && property.hasJsonOmitEmpty() {
+	if isTypeOptional(property.propertyType) && !property.IsRequired() && property.hasJsonOmitEmpty() {
 		// No change required
 		return property
 	}
@@ -205,34 +198,16 @@ func (property *PropertyDefinition) MakeOptional() *PropertyDefinition {
 		result.propertyType = NewOptionalType(result.propertyType)
 	}
 
-	if property.HasRequiredValidation() {
-		// Need to remove the Required validation
-		var validations []Validation
-		for _, v := range result.validations {
-			if !v.HasName(RequiredValidationName) {
-				validations = append(validations, v)
-			}
-		}
-
-		result.validations = validations
-	}
-
+	result.isRequired = false
 	result = result.withJsonOmitEmpty()
 
 	return result
 }
 
-// HasRequiredValidation returns true if the property has validation specifying that it is required;
+// IsRequired returns true if the property is required;
 // returns false otherwise.
-func (property *PropertyDefinition) HasRequiredValidation() bool {
-	required := ValidateRequired()
-	for _, v := range property.validations {
-		if v == required {
-			return true
-		}
-	}
-
-	return false
+func (property *PropertyDefinition) IsRequired() bool {
+	return property.isRequired
 }
 
 // hasOptionalType returns true if the type of this property is an optional reference to a value
@@ -270,23 +245,40 @@ func (property *PropertyDefinition) AsField(codeGenerationContext *CodeGeneratio
 		names = []*ast.Ident{ast.NewIdent(string(property.propertyName))}
 	}
 
-	// We don't use StringLiteral() for the tag as it adds extra quotes
-	result := &ast.Field{
-		Doc:   &ast.CommentGroup{},
-		Names: names,
-		Type:  property.PropertyType().AsType(codeGenerationContext),
-		Tag:   astbuilder.TextLiteralf("`%s`", tags),
+	var doc ast.Decorations
+	if property.IsRequired() {
+		AddValidationComments(&doc, []KubeBuilderValidation{ValidateRequired()})
 	}
 
-	// generate validation comments:
-	for _, validation := range property.validations {
-		// these are not doc comments but they must go here to be emitted before the property
-		astbuilder.AddComment(&result.Doc.List, GenerateKubebuilderComment(validation))
+	// if we have validations, unwrap them
+	propType := property.propertyType
+	if validated, ok := propType.(ValidatedType); ok {
+		propType = validated.ElementType()
+		AddValidationComments(&doc, validated.Validations().ToKubeBuilderValidations())
+	}
+
+	before := ast.NewLine
+	if len(doc) > 0 {
+		before = ast.EmptyLine
+	}
+
+	// We don't use StringLiteral() for the tag as it adds extra quotes
+	result := &ast.Field{
+		Decs: ast.FieldDecorations{
+			NodeDecs: ast.NodeDecs{
+				Start:  doc,
+				Before: before,
+			},
+		},
+		Names: names,
+		Type:  propType.AsType(codeGenerationContext),
+		Tag:   astbuilder.TextLiteralf("`%s`", tags),
 	}
 
 	// generate comment:
 	if property.description != "" {
-		astbuilder.AddWrappedComment(&result.Doc.List, fmt.Sprintf("%s: %s", property.propertyName, property.description), 80)
+		result.Decs.Before = ast.EmptyLine
+		astbuilder.AddWrappedComment(&result.Decs.Start, fmt.Sprintf("%s: %s", property.propertyName, property.description), 80)
 	}
 
 	return result
@@ -315,26 +307,12 @@ func (property *PropertyDefinition) tagsEqual(f *PropertyDefinition) bool {
 	return true
 }
 
-func (property *PropertyDefinition) validationsEqual(f *PropertyDefinition) bool {
-	if len(property.validations) != len(f.validations) {
-		return false
-	}
-
-	for i := 0; i < len(property.validations); i++ {
-		if !property.validations[i].Equals(f.validations[i]) {
-			return false
-		}
-	}
-
-	return true
-}
-
 // Equals tests to see if the specified PropertyDefinition specifies the same property
 func (property *PropertyDefinition) Equals(f *PropertyDefinition) bool {
 	return property == f || (property.propertyName == f.propertyName &&
 		property.propertyType.Equals(f.propertyType) &&
 		property.tagsEqual(f) &&
-		property.validationsEqual(f) &&
+		property.isRequired == f.isRequired &&
 		property.description == f.description)
 }
 
@@ -347,8 +325,9 @@ func (property *PropertyDefinition) copy() *PropertyDefinition {
 		result.tags[key] = append([]string(nil), value...)
 	}
 
-	result.validations = nil
-	result.validations = append([]Validation(nil), property.validations...)
-
 	return &result
+}
+
+func (property *PropertyDefinition) String() string {
+	return fmt.Sprintf("%s: %s %s", property.propertyName, property.propertyType, property.renderedTags())
 }

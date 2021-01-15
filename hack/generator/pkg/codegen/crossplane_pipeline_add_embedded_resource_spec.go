@@ -47,7 +47,7 @@ func addCrossplaneEmbeddedResourceSpec(idFactory astmodel.IdentifierFactory) Pip
 					}
 
 					result.Add(typeDef)
-					result.Add(*updatedDef)
+					result.Add(updatedDef)
 				}
 			}
 
@@ -98,7 +98,7 @@ func addCrossplaneEmbeddedResourceStatus(idFactory astmodel.IdentifierFactory) P
 					}
 
 					result.Add(typeDef)
-					result.Add(*updatedDef)
+					result.Add(updatedDef)
 				}
 			}
 

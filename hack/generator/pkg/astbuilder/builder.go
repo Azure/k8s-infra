@@ -6,8 +6,9 @@
 package astbuilder
 
 import (
-	"go/ast"
 	"go/token"
+
+	ast "github.com/dave/dst"
 )
 
 // CheckErrorAndReturn checks if the err is non-nil, and if it is returns. For example:
@@ -35,36 +36,60 @@ func CheckErrorAndReturn(otherReturns ...ast.Expr) ast.Stmt {
 	}
 }
 
-// NewQualifiedStruct creates a new assignment statement where a struct is constructed and stored in a variable of the given name.
+// NewVariableQualified creates a new declaration statement where a variable is declared
+// with its default value.
+//
 // For example:
+//     var <varName> <packageRef>.<structName>
+//
+// Note that it does *not* do:
 //     <varName> := <packageRef>.<structName>{}
-func NewQualifiedStruct(varName *ast.Ident, qualifier *ast.Ident, structName *ast.Ident) ast.Stmt {
-	return SimpleAssignment(
-		varName,
-		token.DEFINE,
-		&ast.CompositeLit{
-			Type: &ast.SelectorExpr{
-				X:   qualifier,
-				Sel: structName,
+//
+// …as that does not work for enum types.
+func NewVariableQualified(varName string, qualifier string, structName string) ast.Stmt {
+	return &ast.DeclStmt{
+		Decl: &ast.GenDecl{
+			Tok: token.VAR,
+			Specs: []ast.Spec{
+				&ast.TypeSpec{
+					Name: ast.NewIdent(varName),
+					Type: &ast.SelectorExpr{
+						X:   ast.NewIdent(qualifier),
+						Sel: ast.NewIdent(structName),
+					},
+				},
 			},
-		})
+		},
+	}
 }
 
-// NewStruct creates a new assignment statement where a struct is constructed and stored in a variable of the given name.
+// NewVariable creates a new declaration statement where a variable is declared
+// with its default value.
+//
 // For example:
+//     var <varName> <structName>
+//
+// Note that it does *not* do:
 //     <varName> := <structName>{}
-func NewStruct(varName *ast.Ident, structName *ast.Ident) ast.Stmt {
-	return SimpleAssignment(
-		varName,
-		token.DEFINE,
-		&ast.CompositeLit{
-			Type: structName,
-		})
+//
+// …as that does not work for enum types.
+func NewVariable(varName string, structName string) ast.Stmt {
+	return &ast.DeclStmt{
+		Decl: &ast.GenDecl{
+			Tok: token.VAR,
+			Specs: []ast.Spec{
+				&ast.TypeSpec{
+					Name: ast.NewIdent(varName),
+					Type: ast.NewIdent(structName),
+				},
+			},
+		},
+	}
 }
 
 // LocalVariableDeclaration performs a local variable declaration for use within a method like:
 // 	var <ident> <typ>
-func LocalVariableDeclaration(ident *ast.Ident, typ ast.Expr, comment string) ast.Stmt {
+func LocalVariableDeclaration(ident string, typ ast.Expr, comment string) ast.Stmt {
 	return &ast.DeclStmt{
 		Decl: VariableDeclaration(ident, typ, comment),
 	}
@@ -74,21 +99,20 @@ func LocalVariableDeclaration(ident *ast.Ident, typ ast.Expr, comment string) as
 //  // <comment>
 // 	var <ident> <typ>
 // For a LocalVariable within a method, use LocalVariableDeclaration() to create an ast.Stmt instead
-func VariableDeclaration(ident *ast.Ident, typ ast.Expr, comment string) *ast.GenDecl {
+func VariableDeclaration(ident string, typ ast.Expr, comment string) *ast.GenDecl {
 	decl := &ast.GenDecl{
 		Tok: token.VAR,
 		Specs: []ast.Spec{
 			&ast.ValueSpec{
 				Names: []*ast.Ident{
-					ident,
+					ast.NewIdent(ident),
 				},
 				Type: typ,
 			},
 		},
-		Doc: &ast.CommentGroup{},
 	}
 
-	AddWrappedComment(&decl.Doc.List, comment, 80)
+	AddWrappedComment(&decl.Decs.Start, comment, 80)
 
 	return decl
 }
@@ -97,9 +121,9 @@ func VariableDeclaration(ident *ast.Ident, typ ast.Expr, comment string) *ast.Ge
 //     <lhs> = append(<lhs>, <rhs>)
 func AppendList(lhs ast.Expr, rhs ast.Expr) ast.Stmt {
 	return SimpleAssignment(
-		lhs,
+		ast.Clone(lhs).(ast.Expr),
 		token.ASSIGN,
-		CallFuncByName("append", lhs, rhs))
+		CallFunc("append", ast.Clone(lhs).(ast.Expr), ast.Clone(rhs).(ast.Expr)))
 }
 
 // InsertMap returns an assignment statement for inserting an item into a map, like:
@@ -107,11 +131,11 @@ func AppendList(lhs ast.Expr, rhs ast.Expr) ast.Stmt {
 func InsertMap(m ast.Expr, key ast.Expr, rhs ast.Expr) *ast.AssignStmt {
 	return SimpleAssignment(
 		&ast.IndexExpr{
-			X:     m,
-			Index: key,
+			X:     ast.Clone(m).(ast.Expr),
+			Index: ast.Clone(key).(ast.Expr),
 		},
 		token.ASSIGN,
-		rhs)
+		ast.Clone(rhs).(ast.Expr))
 }
 
 // MakeMap returns the call expression for making a map, like:
@@ -121,8 +145,8 @@ func MakeMap(key ast.Expr, value ast.Expr) *ast.CallExpr {
 		Fun: ast.NewIdent("make"),
 		Args: []ast.Expr{
 			&ast.MapType{
-				Key:   key,
-				Value: value,
+				Key:   ast.Clone(key).(ast.Expr),
+				Value: ast.Clone(value).(ast.Expr),
 			},
 		},
 	}
@@ -219,13 +243,13 @@ func ReturnIfExpr(cond ast.Expr, returns ...ast.Expr) *ast.IfStmt {
 
 // FormatError produces a call to fmt.Errorf with the given format string and args
 //	fmt.Errorf(<formatString>, <args>)
-func FormatError(formatString string, args ...ast.Expr) ast.Expr {
+func FormatError(fmtPackage string, formatString string, args ...ast.Expr) ast.Expr {
 	var callArgs []ast.Expr
 	callArgs = append(
 		callArgs,
 		StringLiteral(formatString))
 	callArgs = append(callArgs, args...)
-	return CallQualifiedFuncByName("fmt", "Errorf", callArgs...)
+	return CallQualifiedFunc(fmtPackage, "Errorf", callArgs...)
 }
 
 // AddrOf returns a statement that gets the address of the provided expression.
@@ -237,8 +261,25 @@ func AddrOf(exp ast.Expr) *ast.UnaryExpr {
 	}
 }
 
+// Returns creates a return statement with one or more expressions, of the form
+//    return <expr>
+// or return <expr>, <expr>, ...
 func Returns(returns ...ast.Expr) ast.Stmt {
 	return &ast.ReturnStmt{
+		Decs: ast.ReturnStmtDecorations{
+			NodeDecs: ast.NodeDecs{
+				Before: ast.NewLine,
+			},
+		},
 		Results: returns,
+	}
+}
+
+// QualifiedTypeName generates a reference to a type within an imported package
+// of the form <pkg>.<name>
+func QualifiedTypeName(pkg string, name string) *ast.SelectorExpr {
+	return &ast.SelectorExpr{
+		X:   ast.NewIdent(pkg),
+		Sel: ast.NewIdent(name),
 	}
 }

@@ -14,6 +14,15 @@ var (
 	simpleTestRef PackageReference = MakeExternalPackageReference("simple")
 	pathTestRef   PackageReference = MakeExternalPackageReference("package/path")
 
+	// Important for these two package references to have the same version so that they conflict
+	emailTestRef   PackageReference = MakeExternalPackageReference("microsoft.email/v20180801")
+	networkTestRef PackageReference = MakeExternalPackageReference("microsoft.network/v20180801")
+
+	// Important for these two package references to have the same version as each other,
+	// AND each service name must conflict with the references above
+	emailTestAltRef   PackageReference = MakeExternalPackageReference("microsoft.email/v20200801")
+	networkTestAltRef PackageReference = MakeExternalPackageReference("microsoft.network/v20200801")
+
 	simpleTestImport         = NewPackageImport(simpleTestRef)
 	pathTestImport           = NewPackageImport(pathTestRef)
 	simpleTestImportWithName = simpleTestImport.WithName("simple")
@@ -72,19 +81,40 @@ func TestAddImport_WhenAddingUnnamedImportAndNamedExists_PrefersNamedImport(t *t
  * AddImportOfReference() tests
  */
 
-func TestAddReference_WhenReferenceMissing_IncreasesSizeOfSet(t *testing.T) {
+func TestAddImportOfReference_WhenReferenceMissing_IncreasesSizeOfSet(t *testing.T) {
 	g := NewGomegaWithT(t)
 	set := NewPackageImportSet()
 	set.AddImportOfReference(simpleTestRef)
 	g.Expect(set.imports).To(HaveLen(1))
 }
 
-func TestAddImport_WhenReferencePresent_LeavesSetSameSize(t *testing.T) {
+func TestAddImportOfReference_WhenReferencePresent_LeavesSetSameSize(t *testing.T) {
 	g := NewGomegaWithT(t)
 	set := NewPackageImportSet()
 	set.AddImportOfReference(simpleTestRef)
 	set.AddImportOfReference(simpleTestRef)
 	g.Expect(set.imports).To(HaveLen(1))
+}
+
+/*
+ * AddImportsOfReferences() Tests
+ */
+
+func TestAddImportsOfReferences_WhenAddingMultipleReferences_AddsExpectedReferences(t *testing.T) {
+	g := NewGomegaWithT(t)
+	set := NewPackageImportSet()
+	set.AddImportsOfReferences(simpleTestRef, pathTestRef)
+	g.Expect(set.imports).To(HaveLen(2))
+}
+
+func TestAddImportsOfReferences_WhenAddingReferencesAlreadyPresent_LeavesSetSameSize(t *testing.T) {
+	g := NewGomegaWithT(t)
+	set := NewPackageImportSet()
+	set.AddImportOfReference(simpleTestRef)
+	set.AddImportOfReference(pathTestRef)
+	size := len(set.imports)
+	set.AddImportsOfReferences(simpleTestRef, pathTestRef)
+	g.Expect(set.imports).To(HaveLen(size))
 }
 
 /*
@@ -211,6 +241,182 @@ func TestByNameInGroups_AppliesExpectedOrdering(t *testing.T) {
 			t.Parallel()
 			g := NewGomegaWithT(t)
 			less := ByNameInGroups(c.left, c.right)
+			g.Expect(less).To(Equal(c.less))
+		})
+	}
+}
+
+/*
+ * Resolve Conflict Tests
+ */
+
+func TestPackageImportSet_ResolveConflicts_GivenExplicitlyNamedConflicts_ReturnsErrors(t *testing.T) {
+	g := NewGomegaWithT(t)
+	importA := NewPackageImport(emailTestRef).WithName("collide")
+	importB := NewPackageImport(networkTestRef).WithName("collide")
+
+	set := NewPackageImportSet()
+	set.AddImport(importA)
+	set.AddImport(importB)
+
+	err := set.ResolveConflicts()
+	g.Expect(err).NotTo(BeNil())
+}
+
+func TestPackageImportSet_ResolveConflicts_GivenImplicityNamedConflicts_AssignsExpectedNames(t *testing.T) {
+
+	createSet := func(refs ...PackageReference) *PackageImportSet {
+		result := NewPackageImportSet()
+		for _, ref := range refs {
+			result.AddImportOfReference(ref)
+		}
+
+		return result
+	}
+
+	cases := []struct {
+		name         string
+		set          *PackageImportSet
+		testRef      PackageReference
+		expectedName string
+	}{
+		{
+			"Import conflicts with simple resolution (i)",
+			createSet(emailTestRef, networkTestRef),
+			emailTestRef,
+			"email",
+		},
+		{
+			"Import conflicts with simple resolution (ii)",
+			createSet(emailTestRef, networkTestRef),
+			networkTestRef,
+			"network",
+		},
+		{
+			"Import conflicts with versioned resolution (i)",
+			createSet(emailTestRef, networkTestRef, emailTestAltRef, networkTestAltRef),
+			emailTestRef,
+			"emailv20180801",
+		},
+		{
+			"Import conflicts with versioned resolution (ii)",
+			createSet(emailTestRef, networkTestRef, emailTestAltRef, networkTestAltRef),
+			networkTestRef,
+			"networkv20180801"},
+		{
+			"Import conflicts with versioned resolution (iii)",
+			createSet(emailTestRef, networkTestRef, emailTestAltRef, networkTestAltRef),
+			emailTestAltRef,
+			"emailv20200801",
+		},
+		{
+			"Import conflicts with versioned resolution (iv)",
+			createSet(emailTestRef, networkTestRef, emailTestAltRef, networkTestAltRef),
+			networkTestAltRef,
+			"networkv20200801",
+		},
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			g := NewGomegaWithT(t)
+
+			err := c.set.ResolveConflicts()
+			g.Expect(err).To(BeNil())
+
+			imp, ok := c.set.ImportFor(c.testRef)
+			g.Expect(ok).To(BeTrue())
+			g.Expect(imp.name).To(Equal(c.expectedName))
+		})
+	}
+}
+
+/*
+ * ServiceNameForImport() tests
+ */
+
+func TestPackageImportSet_ServiceNameForImport_GivenImport_ReturnsExpectedName(t *testing.T) {
+	cases := []struct {
+		name     string
+		ref      PackageReference
+		expected string
+	}{
+		{
+			"Batch",
+			MakeExternalPackageReference("github.com/Azure/k8s-infra/hack/generated/apis/microsoft.batch/v201700401"),
+			"batch",
+		},
+		{
+			"Storage",
+			MakeExternalPackageReference("github.com/Azure/k8s-infra/hack/generated/apis/microsoft.storage/v20200101"),
+			"storage",
+		},
+		{
+			"StorSimple",
+			MakeExternalPackageReference("github.com/Azure/k8s-infra/hack/generated/apis/microsoft.storsimple.1200/v20161001"),
+			"storsimple1200",
+		},
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			g := NewGomegaWithT(t)
+			imp := NewPackageImport(c.ref)
+			set := NewPackageImportSet()
+			name := set.ServiceNameForImport(imp)
+			g.Expect(name).To(Equal(c.expected))
+		})
+	}
+}
+
+/*
+ * orderImports() tests
+ */
+
+func Test_PackageSet_OrderImports(t *testing.T) {
+
+	alphaRef := MakeExternalPackageReference("alpha")
+	betaRef := MakeExternalPackageReference("beta")
+
+	alphaImport := NewPackageImport(alphaRef)
+	betaImport := NewPackageImport(betaRef)
+
+	alphaImportWithName := alphaImport.WithName("alpha")
+	betaImportWithName := betaImport.WithName("beta")
+
+	cases := []struct {
+		name  string
+		left  PackageImport
+		right PackageImport
+		less  bool
+	}{
+		{"Anonymous imports are alphabetical (i)", alphaImport, betaImport, true},
+		{"Anonymous imports are alphabetical (ii)", betaImport, alphaImport, false},
+		{"Named imports are alphabetical (i)", alphaImportWithName, betaImportWithName, true},
+		{"Named imports are alphabetical (ii)", betaImportWithName, alphaImportWithName, false},
+		{"Named imports come before anonymous (i)", alphaImportWithName, alphaImport, true},
+		{"Named imports come before anonymous (ii)", betaImportWithName, alphaImport, true},
+		{"Named imports come before anonymous (iii)", alphaImportWithName, betaImport, true},
+		{"Named imports come before anonymous (iv)", betaImportWithName, betaImport, true},
+		{"Anonymous imports come after named (i)", alphaImport, alphaImportWithName, false},
+		{"Anonymous imports come after named (ii)", alphaImport, betaImportWithName, false},
+		{"Anonymous imports come after named (iii)", betaImport, alphaImportWithName, false},
+		{"Anonymous imports come after named (iv)", betaImport, betaImportWithName, false},
+	}
+
+	var set PackageImportSet
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			g := NewGomegaWithT(t)
+
+			less := set.orderImports(c.left, c.right)
 			g.Expect(less).To(Equal(c.less))
 		})
 	}

@@ -78,7 +78,7 @@ func addCrossplaneOwnerProperties(idFactory astmodel.IdentifierFactory) Pipeline
 						if err != nil {
 							return nil, errors.Wrapf(err, "adding ownership properties to spec")
 						}
-						specDef = *updatedDef
+						specDef = updatedDef
 					}
 					result.Add(typeDef)
 					result.Add(specDef)

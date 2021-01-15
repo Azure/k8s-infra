@@ -7,12 +7,13 @@ package codegen
 
 import (
 	"context"
+
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/pkg/errors"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
-// nameTypesForCRD - for CRDs all inner enums and objects must be named, so we do it here
+// nameTypesForCRD - for CRDs all inner enums and objects and validated types must be named, so we do it here
 func nameTypesForCRD(idFactory astmodel.IdentifierFactory) PipelineStage {
 
 	return MakePipelineStage(
@@ -74,6 +75,49 @@ func nameInnerTypes(
 		return namedEnum.Name(), nil
 	}
 
+	visitor.VisitValidatedType = func(this *astmodel.TypeVisitor, v astmodel.ValidatedType, ctx interface{}) (astmodel.Type, error) {
+		// a validated type anywhere except directly under a property
+		// must be named so that we can put the validations on it
+		nameHint := ctx.(string)
+		newElementType, err := this.Visit(v.ElementType(), nameHint+"_Validated")
+		if err != nil {
+			return nil, err
+		}
+
+		name := astmodel.MakeTypeName(def.Name().PackageReference, nameHint)
+		namedType := astmodel.MakeTypeDefinition(name, v.WithType(newElementType))
+		resultTypes = append(resultTypes, namedType)
+		return namedType.Name(), nil
+	}
+
+	visitor.VisitFlaggedType = func(this *astmodel.TypeVisitor, it *astmodel.FlaggedType, ctx interface{}) (astmodel.Type, error) {
+		// Because we're returning type names here, we need to look up the name returned by visit and wrap that with the correct flags
+		nameHint := ctx.(string)
+
+		name, err := this.Visit(it.Element(), nameHint)
+		if err != nil {
+			return nil, err
+		}
+
+		// The above visit of ObjectType will have mutated resultTypes to include a mapping of the type name
+		// to the object type. Because we need to preserve flag types, we must find the ObjectType and re-wrap
+		// it in the flags it had before. Note that we cannot just bypass the ObjectType visit as it may make mutations
+		// to the Object (to name the types of its properties) which we also need to preserve.
+		// There are no words for how much I want LINQ right here
+		var found astmodel.TypeDefinition
+		for i, item := range resultTypes {
+			if item.Name().Equals(name) {
+				found = item
+				resultTypes[i] = resultTypes[len(resultTypes)-1]
+				resultTypes = resultTypes[:len(resultTypes)-1]
+				break
+			}
+		}
+
+		resultTypes = append(resultTypes, found.WithType(it.WithElement(found.Type())))
+		return name, nil
+	}
+
 	visitor.VisitObjectType = func(this *astmodel.TypeVisitor, it *astmodel.ObjectType, ctx interface{}) (astmodel.Type, error) {
 		nameHint := ctx.(string)
 
@@ -81,11 +125,24 @@ func nameInnerTypes(
 		var props []*astmodel.PropertyDefinition
 		// first map the inner types:
 		for _, prop := range it.Properties() {
-			newPropType, err := this.Visit(prop.PropertyType(), nameHint+"_"+string(prop.PropertyName()))
-			if err != nil {
-				errs = append(errs, err)
+			propType := prop.PropertyType()
+			nameHint := nameHint + "_" + string(prop.PropertyName())
+			if validated, ok := propType.(astmodel.ValidatedType); ok {
+				// handle validated types in properties specially,
+				// they don't need to be named, so skip directly to element type
+				newElementType, err := this.Visit(validated.ElementType(), nameHint)
+				if err != nil {
+					errs = append(errs, err)
+				} else {
+					props = append(props, prop.WithType(validated.WithType(newElementType)))
+				}
 			} else {
-				props = append(props, prop.WithType(newPropType))
+				newPropType, err := this.Visit(propType, nameHint)
+				if err != nil {
+					errs = append(errs, err)
+				} else {
+					props = append(props, prop.WithType(newPropType))
+				}
 			}
 		}
 

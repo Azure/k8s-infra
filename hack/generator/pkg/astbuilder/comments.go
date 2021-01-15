@@ -6,12 +6,15 @@
 package astbuilder
 
 import (
-	"go/ast"
 	"regexp"
 	"strings"
+
+	ast "github.com/dave/dst"
 )
 
-func AddWrappedComments(commentList *[]*ast.Comment, comments []string, width int) {
+// AddWrappedComments adds comments to the specified list, wrapping text to the specified width as
+// it goes. Respects any existing line breaks specified by \n or <br>
+func AddWrappedComments(commentList *ast.Decorations, comments []string, width int) {
 	for _, comment := range comments {
 		// Skip empty comments
 		if comment == "" {
@@ -22,13 +25,16 @@ func AddWrappedComments(commentList *[]*ast.Comment, comments []string, width in
 	}
 }
 
-func AddWrappedComment(commentList *[]*ast.Comment, comment string, width int) {
+// AddWrappedComment adds a single comment to the specified list, wrapping text to the specified
+// width as it goes. Respects any existing line breaks specified by \n or <br>
+func AddWrappedComment(commentList *ast.Decorations, comment string, width int) {
 	for _, c := range formatComment(comment, width) {
 		AddComment(commentList, c)
 	}
 }
 
-func AddComments(commentList *[]*ast.Comment, comments []string) {
+// AddComments adds preformatted comments to the specified list
+func AddComments(commentList *ast.Decorations, comments []string) {
 	for _, comment := range comments {
 		// Skip empty comments
 		if comment == "" {
@@ -39,20 +45,15 @@ func AddComments(commentList *[]*ast.Comment, comments []string) {
 	}
 }
 
-func AddComment(commentList *[]*ast.Comment, comment string) {
+// AddComment adds a single comment line to the specified list
+func AddComment(commentList *ast.Decorations, comment string) {
 	line := comment
 
 	if !strings.HasPrefix(line, "//") {
 		line = "//" + line
 	}
 
-	if *commentList == nil {
-		line = "\n" + line
-	}
-
-	*commentList = append(*commentList, &ast.Comment{
-		Text: line,
-	})
+	commentList.Append(line)
 }
 
 // formatComment splits the supplied comment string up ready for use as a documentation comment
@@ -77,6 +78,8 @@ func formatComment(comment string, width int) []string {
 
 var brRegex = regexp.MustCompile("<br[^/>]*/?>")
 
+// docCommentWrap applies word wrapping to the specified width to the slice of strings, returning
+// a new slice
 func docCommentWrap(lines []string, width int) []string {
 	var result []string
 	for _, l := range lines {
@@ -86,6 +89,7 @@ func docCommentWrap(lines []string, width int) []string {
 	return result
 }
 
+// wordWrap applies word wrapping to the specified string, returning a slice containing the lines.
 func wordWrap(text string, width int) []string {
 	var result []string
 
@@ -125,10 +129,10 @@ func findBreakPoint(line string, start int, width int) int {
 }
 
 // CommentLength returns the text length of the comments, including EoLN characters
-func CommentLength(comments []*ast.Comment) int {
+func CommentLength(comments ast.Decorations) int {
 	length := 0
 	for _, l := range comments {
-		length += len(l.Text) + 1 // length including EoLN
+		length += len(l) + 1 // length including EoLN
 	}
 
 	return length

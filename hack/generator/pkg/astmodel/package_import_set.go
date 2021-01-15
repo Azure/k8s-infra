@@ -5,7 +5,12 @@
 
 package astmodel
 
-import "sort"
+import (
+	"github.com/pkg/errors"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	"sort"
+	"strings"
+)
 
 // PackageImportSet represents a set of distinct PackageImport references
 type PackageImportSet struct {
@@ -34,6 +39,14 @@ func (set *PackageImportSet) AddImport(packageImport PackageImport) {
 // Adding a reference already in the set is fine.
 func (set *PackageImportSet) AddImportOfReference(ref PackageReference) {
 	set.AddImport(NewPackageImport(ref))
+}
+
+// AddImportsOfReferences ensures this set includes an import of all the specified references
+// Adding a reference already in the set is fine.
+func (set *PackageImportSet) AddImportsOfReferences(refs ...PackageReference) {
+	for _, ref := range refs {
+		set.AddImport(NewPackageImport(ref))
+	}
 }
 
 // Merge ensures that all imports specified in other are included
@@ -78,12 +91,11 @@ func (set *PackageImportSet) AsSlice() []PackageImport {
 }
 
 // AsSortedSlice() return a sorted slice containing all the imports
-// less specifies how to order the imports
-func (set *PackageImportSet) AsSortedSlice(less func(i PackageImport, j PackageImport) bool) []PackageImport {
+func (set *PackageImportSet) AsSortedSlice() []PackageImport {
 	result := set.AsSlice()
 
 	sort.Slice(result, func(i int, j int) bool {
-		return less(result[i], result[j])
+		return set.orderImports(result[i], result[j])
 	})
 
 	return result
@@ -106,6 +118,90 @@ func (set *PackageImportSet) ApplyName(ref PackageReference, name string) {
 		// Modifying the map directly to bypass any rules enforced by AddImport()
 		set.imports[ref] = NewPackageImport(ref).WithName(name)
 	}
+}
+
+// ResolveConflicts() attempts to resolve any import conflicts and returns an error if any cannot
+// be resolved
+func (set *PackageImportSet) ResolveConflicts() error {
+	remappedImports := make(map[PackageReference]PackageImport)
+
+	// Try to resolve any conflicts by renaming imports where they occur
+	// For our first pass, we use a simple naming scheme based on the service type (e.g. email,
+	// service, batch)
+	set.foreachConflict(func(imp PackageImport) PackageImport {
+		name := set.ServiceNameForImport(imp)
+		if imp.HasExplicitName() && imp.name != name {
+			// Don't change any custom names that have already been set
+			return imp
+		}
+
+		remappedImports[imp.packageReference] = imp
+		return imp.WithName(name)
+	})
+
+	// For any remaining conflicts, use a more complex naming scheme that includes the service
+	// version (e.g. emailv20180801, servicev20150501, batchv20170401)
+	set.foreachConflict(func(imp PackageImport) PackageImport {
+		// Only rename imports we already renamed above
+		if _, ok := remappedImports[imp.packageReference]; ok {
+			name := set.versionedNameForImport(imp)
+			return imp.WithName(name)
+		}
+
+		return imp
+	})
+
+	// If any conflicts remain, generate errors so we know about it
+	var errs []error
+	set.foreachConflict(func(imp PackageImport) PackageImport {
+		err := errors.Errorf(
+			"import '%s' of '%s' conflicts with other import(s) of the same name",
+			imp.name,
+			imp.packageReference.PackagePath())
+		errs = append(errs, err)
+		return imp
+	})
+
+	if len(errs) > 0 {
+		return kerrors.NewAggregate(errs)
+	}
+
+	return nil
+}
+
+// foreachConflict() applies the provided action to each conflict
+// Used to resolve conflicts and to log details of any remaining ones.
+func (set *PackageImportSet) foreachConflict(action func(packageImport PackageImport) PackageImport) {
+	for _, imports := range set.findConflictingImports() {
+		// For each import, apply the action and use the modified import
+		for _, imp := range imports {
+			set.imports[imp.packageReference] = action(imp)
+		}
+	}
+}
+
+// createMapByPackageName() creates a map where all imports are indexed by their package name
+// If there are multiple packages with the same package name, they'll end up indexed together
+func (set *PackageImportSet) createMapByPackageName() map[string][]PackageImport {
+	result := make(map[string][]PackageImport)
+	for _, imp := range set.imports {
+		name := imp.PackageName()
+		result[name] = append(result[name], imp)
+	}
+
+	return result
+}
+
+// findConflictingImports() finds all the imports that conflict because they have the same name
+func (set *PackageImportSet) findConflictingImports() map[string][]PackageImport {
+	result := make(map[string][]PackageImport)
+	for n, s := range set.createMapByPackageName() {
+		if len(s) > 1 {
+			result[n] = s
+		}
+	}
+
+	return result
 }
 
 // ByNameInGroups() orders PackageImport instances by name,
@@ -134,4 +230,44 @@ func ByNameInGroups(left PackageImport, right PackageImport) bool {
 
 	// Explicit names are the same, both local or both external
 	return left.packageReference.String() < right.packageReference.String()
+}
+
+// Extract a name for the service for use to disambiguate imports
+// E.g. for microsoft.batch/v201700401, extract "batch"
+//      for microsoft.storage/v20200101 extract "storage"
+//      for microsoft.storsimple.1200 extract "storsimple1200" and so on
+func (set *PackageImportSet) ServiceNameForImport(imp PackageImport) string {
+	pathBits := strings.Split(imp.packageReference.PackagePath(), "/")
+	index := len(pathBits) - 1
+	if index > 0 {
+		index--
+	}
+
+	nameBits := strings.Split(pathBits[index], ".")
+	result := strings.Join(nameBits[1:], "")
+	return result
+}
+
+// Create a versioned name based on the service for use to disambiguate imports
+// E.g. for microsoft.batch/v201700401, extract "batchv201700401"
+//      for microsoft.storage/v20200101 extract "storagev20200101" and so on
+func (set *PackageImportSet) versionedNameForImport(imp PackageImport) string {
+	service := set.ServiceNameForImport(imp)
+	return service + imp.packageReference.PackageName()
+}
+
+func (set *PackageImportSet) orderImports(i PackageImport, j PackageImport) bool {
+	if i.HasExplicitName() && j.HasExplicitName() {
+		return i.name < j.name
+	}
+
+	if i.HasExplicitName() {
+		return true
+	}
+
+	if j.HasExplicitName() {
+		return false
+	}
+
+	return i.packageReference.String() < j.packageReference.String()
 }

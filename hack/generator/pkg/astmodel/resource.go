@@ -7,13 +7,11 @@ package astmodel
 
 import (
 	"fmt"
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
-	"go/ast"
 	"go/token"
 
+	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
+	ast "github.com/dave/dst"
 	"k8s.io/klog/v2"
-
-	"github.com/pkg/errors"
 )
 
 // ResourceType represents a Kubernetes CRD resource which has both
@@ -23,6 +21,7 @@ type ResourceType struct {
 	status           Type
 	isStorageVersion bool
 	owner            *TypeName
+	testcases        map[string]TestCase
 	InterfaceImplementer
 }
 
@@ -31,6 +30,7 @@ func NewResourceType(specType Type, statusType Type) *ResourceType {
 	result := &ResourceType{
 		isStorageVersion:     false,
 		owner:                nil,
+		testcases:            make(map[string]TestCase),
 		InterfaceImplementer: MakeInterfaceImplementer(),
 	}
 
@@ -106,24 +106,11 @@ func NewAzureResourceType(specType Type, statusType Type, typeName TypeName) *Re
 		apiVersionProperty = apiVersionProperty.MakeRequired()
 		objectType = objectType.WithProperty(apiVersionProperty)
 
-		// If the name is not a string, force it to be -- there are a good number
-		// of resources which define name as an enum with a limited set of values.
-		// That is actually incorrect because it forbids nested naming from being used
-		// (i.e. myresource/mysubresource/enumvalue) and that's the style of naming
-		// that we're always using because we deploy each resource standalone.
-		if !nameProperty.PropertyType().Equals(StringType) {
-			klog.V(4).Infof(
-				"Forcing resource %s name property with type %T to be string instead",
-				typeName,
-				nameProperty.PropertyType())
-			nameProperty = nameProperty.WithType(StringType)
-			objectType = objectType.WithProperty(nameProperty)
-		}
-
 		if isTypeOptional {
 			typeProperty = typeProperty.MakeRequired()
 			objectType = objectType.WithProperty(typeProperty)
 		}
+
 		specType = objectType
 	}
 
@@ -152,9 +139,9 @@ func (resource *ResourceType) WithSpec(specType Type) *ResourceType {
 		return resource.WithSpec(specResource.SpecType())
 	}
 
-	result := *resource
+	result := resource.copy()
 	result.spec = specType
-	return &result
+	return result
 }
 
 // WithStatus returns a new resource that has the specified status type
@@ -166,17 +153,33 @@ func (resource *ResourceType) WithStatus(statusType Type) *ResourceType {
 		return resource.WithStatus(specResource.StatusType())
 	}
 
-	result := *resource
+	result := resource.copy()
 	result.status = statusType
+	return result
+}
+
+func (resource *ResourceType) WithoutInterface(name TypeName) *ResourceType {
+	if !resource.InterfaceImplementer.HasInterface(name) {
+		return resource
+	}
+
+	result := *resource
+	result.InterfaceImplementer = result.InterfaceImplementer.WithoutInterface(name)
 	return &result
 }
 
 // WithInterface creates a new Resource with a function (method) attached to it
 func (resource *ResourceType) WithInterface(iface *InterfaceImplementation) *ResourceType {
-	// Create a copy of objectType to preserve immutability
-	result := *resource
+	result := resource.copy()
 	result.InterfaceImplementer = result.InterfaceImplementer.WithInterface(iface)
-	return &result
+	return result
+}
+
+// WithTestCase creates a new Resource that's a copy with an additional test case included
+func (resource *ResourceType) WithTestCase(testcase TestCase) *ResourceType {
+	result := resource.copy()
+	result.testcases[testcase.Name()] = testcase
+	return result
 }
 
 // AsType converts the ResourceType to go AST Expr
@@ -187,17 +190,38 @@ func (resource *ResourceType) AsType(_ *CodeGenerationContext) ast.Expr {
 // Equals returns true if the other type is also a ResourceType and has Equal fields
 func (resource *ResourceType) Equals(other Type) bool {
 	if resource == other {
+		// Same reference
 		return true
 	}
 
-	if otherResource, ok := other.(*ResourceType); ok {
-		return TypeEquals(resource.spec, otherResource.spec) &&
-			TypeEquals(resource.status, otherResource.status) &&
-			resource.isStorageVersion == otherResource.isStorageVersion &&
-			resource.InterfaceImplementer.Equals(otherResource.InterfaceImplementer)
+	otherResource, ok := other.(*ResourceType)
+	if !ok {
+		return false
 	}
 
-	return false
+	// Do cheap tests earlier
+	if resource.isStorageVersion != otherResource.isStorageVersion ||
+		len(resource.testcases) != len(otherResource.testcases) ||
+		!TypeEquals(resource.spec, otherResource.spec) ||
+		!TypeEquals(resource.status, otherResource.status) ||
+		!resource.InterfaceImplementer.Equals(otherResource.InterfaceImplementer) {
+		return false
+	}
+
+	for name, testcase := range otherResource.testcases {
+		ourCase, ok := resource.testcases[name]
+		if !ok {
+			// Didn't find the func, not equal
+			return false
+		}
+
+		if !ourCase.Equals(testcase) {
+			// Different testcase, even though same name; not-equal
+			return false
+		}
+	}
+
+	return true
 }
 
 // References returns the types referenced by Status or Spec parts of the resource
@@ -219,16 +243,16 @@ func (resource *ResourceType) Owner() *TypeName {
 
 // MarkAsStorageVersion marks the resource as the Kubebuilder storage version
 func (resource *ResourceType) MarkAsStorageVersion() *ResourceType {
-	result := *resource
+	result := resource.copy()
 	result.isStorageVersion = true
-	return &result
+	return result
 }
 
 // WithOwner updates the owner of the resource and returns a copy of the resource
 func (resource *ResourceType) WithOwner(owner *TypeName) *ResourceType {
-	result := *resource
+	result := resource.copy()
 	result.owner = owner
-	return &result
+	return result
 }
 
 // RequiredPackageReferences returns a list of packages required by this
@@ -247,12 +271,8 @@ func (resource *ResourceType) RequiredPackageReferences() *PackageReferenceSet {
 }
 
 // AsDeclarations converts the resource type to a set of go declarations
-func (resource *ResourceType) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
-
-	packageName, err := codeGenerationContext.GetImportedPackageName(MetaV1PackageReference)
-	if err != nil {
-		panic(errors.Wrapf(err, "resource resource for %s failed to import package", name))
-	}
+func (resource *ResourceType) AsDeclarations(codeGenerationContext *CodeGenerationContext, declContext DeclarationContext) []ast.Decl {
+	packageName := codeGenerationContext.MustGetImportedPackageName(MetaV1PackageReference)
 
 	typeMetaField := defineField("", ast.NewIdent(fmt.Sprintf("%s.TypeMeta", packageName)), "`json:\",inline\"`")
 	objectMetaField := defineField("", ast.NewIdent(fmt.Sprintf("%s.ObjectMeta", packageName)), "`json:\"metadata,omitempty\"`")
@@ -271,18 +291,21 @@ func (resource *ResourceType) AsDeclarations(codeGenerationContext *CodeGenerati
 	}
 
 	if resource.status != nil {
-		fields = append(fields, defineField("Status", resource.status.AsType(codeGenerationContext), "`json:\"status,omitempty\"`"))
+		statusType := resource.status.AsType(codeGenerationContext)
+		// ErroredTypes can be present as status but might not generate an actual status type
+		if statusType != nil {
+			fields = append(fields, defineField("Status", statusType, "`json:\"status,omitempty\"`"))
+		}
 	}
 
-	resourceIdentifier := ast.NewIdent(name.Name())
 	resourceTypeSpec := &ast.TypeSpec{
-		Name: resourceIdentifier,
+		Name: ast.NewIdent(declContext.Name.Name()),
 		Type: &ast.StructType{
 			Fields: &ast.FieldList{List: fields},
 		},
 	}
 
-	var comments []*ast.Comment
+	var comments ast.Decorations
 
 	astbuilder.AddComment(&comments, "// +kubebuilder:object:root=true")
 	if resource.status != nil {
@@ -293,19 +316,25 @@ func (resource *ResourceType) AsDeclarations(codeGenerationContext *CodeGenerati
 		astbuilder.AddComment(&comments, "// +kubebuilder:storageversion")
 	}
 
-	astbuilder.AddWrappedComments(&comments, description, 200)
+	astbuilder.AddWrappedComments(&comments, declContext.Description, 200)
+	AddValidationComments(&comments, declContext.Validations)
 
-	var declarations []ast.Decl
 	resourceDeclaration := &ast.GenDecl{
 		Tok:   token.TYPE,
 		Specs: []ast.Spec{resourceTypeSpec},
-		Doc:   &ast.CommentGroup{List: comments},
+		Decs: ast.GenDeclDecorations{
+			NodeDecs: ast.NodeDecs{
+				Before: ast.EmptyLine,
+				After:  ast.EmptyLine,
+				Start:  comments,
+			},
+		},
 	}
 
+	var declarations []ast.Decl
 	declarations = append(declarations, resourceDeclaration)
-	declarations = append(declarations, resource.InterfaceImplementer.AsDeclarations(codeGenerationContext, name, nil)...)
-
-	declarations = append(declarations, resource.resourceListTypeDecls(codeGenerationContext, name, description)...)
+	declarations = append(declarations, resource.InterfaceImplementer.AsDeclarations(codeGenerationContext, declContext.Name, nil)...)
+	declarations = append(declarations, resource.resourceListTypeDecls(codeGenerationContext, declContext.Name, declContext.Description)...)
 
 	return declarations
 }
@@ -323,10 +352,7 @@ func (resource *ResourceType) resourceListTypeDecls(
 
 	typeName := resource.makeResourceListTypeName(resourceTypeName)
 
-	packageName, err := codeGenerationContext.GetImportedPackageName(MetaV1PackageReference)
-	if err != nil {
-		panic(errors.Wrapf(err, "resource list resource for %s failed to import package", typeName))
-	}
+	packageName := codeGenerationContext.MustGetImportedPackageName(MetaV1PackageReference)
 
 	typeMetaField := defineField("", ast.NewIdent(fmt.Sprintf("%s.TypeMeta", packageName)), "`json:\",inline\"`")
 	objectMetaField := defineField("", ast.NewIdent(fmt.Sprintf("%s.ListMeta", packageName)), "`json:\"metadata,omitempty\"`")
@@ -340,20 +366,16 @@ func (resource *ResourceType) resourceListTypeDecls(
 		defineField("Items", items.AsType(codeGenerationContext), "`json:\"items\"`"),
 	}
 
-	resourceIdentifier := ast.NewIdent(typeName.Name())
 	resourceTypeSpec := &ast.TypeSpec{
-		Name: resourceIdentifier,
+		Name: ast.NewIdent(typeName.Name()),
 		Type: &ast.StructType{
 			Fields: &ast.FieldList{List: fields},
 		},
 	}
 
-	comments :=
-		[]*ast.Comment{
-			{
-				Text: "// +kubebuilder:object:root=true\n",
-			},
-		}
+	var comments ast.Decorations = []string{
+		"// +kubebuilder:object:root=true\n",
+	}
 
 	astbuilder.AddWrappedComments(&comments, description, 200)
 
@@ -361,7 +383,7 @@ func (resource *ResourceType) resourceListTypeDecls(
 		&ast.GenDecl{
 			Tok:   token.TYPE,
 			Specs: []ast.Spec{resourceTypeSpec},
-			Doc:   &ast.CommentGroup{List: comments},
+			Decs:  ast.GenDeclDecorations{NodeDecs: ast.NodeDecs{Start: comments}},
 		},
 	}
 }
@@ -378,4 +400,25 @@ func (resource *ResourceType) SchemeTypes(name TypeName) []TypeName {
 // String implements fmt.Stringer
 func (*ResourceType) String() string {
 	return "(resource)"
+}
+
+func (resource *ResourceType) copy() *ResourceType {
+	result := &ResourceType{
+		spec:                 resource.spec,
+		status:               resource.status,
+		isStorageVersion:     resource.isStorageVersion,
+		owner:                resource.owner,
+		testcases:            make(map[string]TestCase),
+		InterfaceImplementer: resource.InterfaceImplementer.copy(),
+	}
+
+	for key, value := range resource.testcases {
+		result.testcases[key] = value
+	}
+
+	return result
+}
+
+func (resource *ResourceType) HasTestCases() bool {
+	return len(resource.testcases) > 0
 }

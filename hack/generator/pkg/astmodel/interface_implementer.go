@@ -6,9 +6,10 @@
 package astmodel
 
 import (
-	"go/ast"
 	"go/token"
 	"sort"
+
+	ast "github.com/dave/dst"
 )
 
 type InterfaceImplementer struct {
@@ -18,6 +19,17 @@ type InterfaceImplementer struct {
 // MakeInterfaceImplementer returns an interface implementer
 func MakeInterfaceImplementer() InterfaceImplementer {
 	return InterfaceImplementer{}
+}
+
+func (i InterfaceImplementer) HasInterface(name TypeName) bool {
+	_, ok := i.interfaces[name]
+	return ok
+}
+
+func (i InterfaceImplementer) WithoutInterface(name TypeName) InterfaceImplementer {
+	result := i.copy()
+	delete(result.interfaces, name)
+	return result
 }
 
 // WithInterface creates a new ObjectType with a function (method) attached to it
@@ -116,8 +128,20 @@ func (i InterfaceImplementer) generateInterfaceImplAssertion(
 		panic(err)
 	}
 
+	var doc ast.Decorations
+	if iface.annotation != "" {
+		doc.Append("// " + iface.annotation)
+		doc.Append("\n")
+	}
+
 	typeAssertion := &ast.GenDecl{
 		Tok: token.VAR,
+		Decs: ast.GenDeclDecorations{
+			NodeDecs: ast.NodeDecs{
+				Before: ast.EmptyLine,
+				Start:  doc,
+			},
+		},
 		Specs: []ast.Spec{
 			&ast.ValueSpec{
 				Type: &ast.SelectorExpr{

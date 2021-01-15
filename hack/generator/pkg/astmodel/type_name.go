@@ -7,8 +7,9 @@ package astmodel
 
 import (
 	"fmt"
-	"go/ast"
+	"strings"
 
+	ast "github.com/dave/dst"
 	"github.com/gobuffalo/flect"
 )
 
@@ -39,8 +40,8 @@ func (typeName TypeName) Name() string {
 // it is simply a reference to the name.
 var _ Type = TypeName{}
 
-func (typeName TypeName) AsDeclarations(codeGenerationContext *CodeGenerationContext, name TypeName, description []string) []ast.Decl {
-	return AsSimpleDeclarations(codeGenerationContext, name, description, typeName)
+func (typeName TypeName) AsDeclarations(codeGenerationContext *CodeGenerationContext, declContext DeclarationContext) []ast.Decl {
+	return AsSimpleDeclarations(codeGenerationContext, declContext, typeName)
 }
 
 // AsType implements Type for TypeName
@@ -89,7 +90,24 @@ func (typeName TypeName) String() string {
 	return fmt.Sprintf("%s/%s", typeName.PackageReference, typeName.name)
 }
 
+var typeNameSingulars map[string]string = map[string]string{
+	"Services": "Service",
+	"services": "service",
+	"Redis":    "Redis",
+	"redis":    "redis",
+}
+
 // Singular returns a typename with the name singularized
 func (typeName TypeName) Singular() TypeName {
+	// work around bug in flect: https://github.com/Azure/k8s-infra/issues/319
+	name := typeName.name
+	for plural, single := range typeNameSingulars {
+
+		if strings.HasSuffix(name, plural) {
+			n := name[0:len(name)-len(plural)] + single
+			return MakeTypeName(typeName.PackageReference, n)
+		}
+	}
+
 	return MakeTypeName(typeName.PackageReference, flect.Singularize(typeName.name))
 }

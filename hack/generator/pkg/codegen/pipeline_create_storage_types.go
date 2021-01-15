@@ -8,6 +8,7 @@ package codegen
 import (
 	"context"
 	"fmt"
+
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 )
@@ -16,10 +17,10 @@ import (
 // Storage versions are created for *all* API versions to allow users of older versions of the operator to easily
 // upgrade. This is of course a bit odd for the first release, but defining the approach from day one is useful.
 func createStorageTypes() PipelineStage {
-	return PipelineStage{
-		id:          "createStorage",
-		description: "Create storage versions of CRD types",
-		Action: func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
+	return MakePipelineStage(
+		"createStorage",
+		"Create storage versions of CRD types",
+		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 
 			storageTypes := make(astmodel.Types)
 			visitor := makeStorageTypesVisitor(types)
@@ -28,7 +29,7 @@ func createStorageTypes() PipelineStage {
 			for _, d := range types {
 				d := d
 
-				if types.IsArmDefinition(&d) {
+				if astmodel.ArmFlag.IsOn(d.Type()) {
 					// Skip ARM definitions, we don't need to create storage variants of those
 					continue
 				}
@@ -56,8 +57,7 @@ func createStorageTypes() PipelineStage {
 			types.AddTypes(storageTypes)
 
 			return types, nil
-		},
-	}
+		})
 }
 
 // makeStorageTypesVisitor returns a TypeVisitor to do the creation of dedicated storage types
@@ -67,9 +67,11 @@ func makeStorageTypesVisitor(types astmodel.Types) astmodel.TypeVisitor {
 	}
 
 	result := astmodel.MakeTypeVisitor()
+	result.VisitValidatedType = factory.visitValidatedType
 	result.VisitTypeName = factory.visitTypeName
 	result.VisitObjectType = factory.visitObjectType
-	result.VisitArmType = factory.visitArmType
+	result.VisitResourceType = factory.visitResourceType
+	result.VisitFlaggedType = factory.visitFlaggedType
 
 	factory.visitor = result
 	factory.propertyConversions = []propertyConversion{
@@ -90,6 +92,12 @@ type StorageTypeFactory struct {
 // the property suitable for use on a storage type. Conversions return nil if they decline to
 // convert, deferring the conversion to another.
 type propertyConversion = func(property *astmodel.PropertyDefinition, ctx StorageTypesVisitorContext) (*astmodel.PropertyDefinition, error)
+
+func (factory *StorageTypeFactory) visitValidatedType(this *astmodel.TypeVisitor, v astmodel.ValidatedType, ctx interface{}) (astmodel.Type, error) {
+	// strip all type validations from storage types,
+	// act as if they do not exist
+	return this.Visit(v.ElementType(), ctx)
+}
 
 func (factory *StorageTypeFactory) visitTypeName(_ *astmodel.TypeVisitor, name astmodel.TypeName, ctx interface{}) (astmodel.Type, error) {
 	visitorContext := ctx.(StorageTypesVisitorContext)
@@ -116,6 +124,15 @@ func (factory *StorageTypeFactory) visitTypeName(_ *astmodel.TypeVisitor, name a
 	return visitedName, nil
 }
 
+func (factory *StorageTypeFactory) visitResourceType(
+	this *astmodel.TypeVisitor,
+	resource *astmodel.ResourceType,
+	ctx interface{}) (astmodel.Type, error) {
+
+	// storage resource types do not need defaulter interface, they have no webhooks
+	return resource.WithoutInterface(astmodel.DefaulterInterfaceName), nil
+}
+
 func (factory *StorageTypeFactory) visitObjectType(
 	_ *astmodel.TypeVisitor,
 	object *astmodel.ObjectType,
@@ -140,7 +157,7 @@ func (factory *StorageTypeFactory) visitObjectType(
 	}
 
 	objectType := astmodel.NewObjectType().WithProperties(properties...)
-	return astmodel.NewStorageType(*objectType), nil
+	return astmodel.StorageFlag.ApplyTo(objectType), nil
 }
 
 // makeStorageProperty applies a conversion to make a variant of the property for use when
@@ -186,18 +203,21 @@ func (factory *StorageTypeFactory) convertPropertiesForStorage(
 
 	p := prop.WithType(propertyType).
 		MakeOptional().
-		WithoutValidation().
 		WithDescription("")
 
 	return p, nil
 }
 
-func (factory *StorageTypeFactory) visitArmType(
-	_ *astmodel.TypeVisitor,
-	armType *astmodel.ArmType,
-	_ interface{}) (astmodel.Type, error) {
-	// We don't want to do anything with ARM types
-	return armType, nil
+func (factory *StorageTypeFactory) visitFlaggedType(
+	tv *astmodel.TypeVisitor,
+	flaggedType *astmodel.FlaggedType,
+	ctx interface{}) (astmodel.Type, error) {
+	if flaggedType.HasFlag(astmodel.ArmFlag) {
+		// We don't want to do anything with ARM types
+		return flaggedType, nil
+	}
+
+	return astmodel.IdentityVisitOfFlaggedType(tv, flaggedType, ctx)
 }
 
 func descriptionForStorageVariant(definition astmodel.TypeDefinition) []string {
