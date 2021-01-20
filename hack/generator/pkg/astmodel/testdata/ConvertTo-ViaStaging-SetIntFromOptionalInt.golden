@@ -18,6 +18,6 @@ func (subject Subject) ConvertTo(destination *Staging) error {
 	// age
 	staging.age = &subject.age
 
-	// use staging to populate destination
+	// use staging to populate
 	staging.ConvertTo(destination)
 }

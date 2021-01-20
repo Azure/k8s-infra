@@ -15,7 +15,7 @@ func (subject Subject) ConvertFrom(source *Staging) error {
 	// staging is our intermediate type for conversion
 	var staging Staging
 
-	// populate staging from source
+	// first populate staging
 	staging.ConvertFrom(source)
 
 	// age

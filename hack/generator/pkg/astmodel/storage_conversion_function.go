@@ -8,14 +8,21 @@ package astmodel
 import (
 	"fmt"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
-	ast "github.com/dave/dst"
-	"go/token"
+	"github.com/dave/dst"
 	"sort"
 )
 
-type StoragePropertyConversion func(sourceVariable string, destinationVariable string, ctx *CodeGenerationContext) []ast.Stmt
+// StoragePropertyConversion generates the AST for a given conversion.
+// source is a factory function that returns an expression for the source of the conversion.
+// destination is a factory function that returns an expression for the destination of the conversion.
+// The parameters source and destination are funcs because AST fragments can't be reused, and in
+// some cases we need to reference source and destination multiple times in a single fragment.
+type StoragePropertyConversion func(source func() dst.Expr, destination func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt
 
-type StoragePropertyConversionFactory func(source *PropertyDefinition, destination *PropertyDefinition) StoragePropertyConversion
+// StoragePropertyConversionFactory is a factory func that creates a StoragePropertyConversion for later use.
+// source is the PropertyDefinition for the origin which will be read.
+// destination is the PropertyDefinition for the target which will be written.
+type StoragePropertyConversionFactory func(sourceType Type, destinationType *PropertyDefinition) StoragePropertyConversion
 
 // Represents a function that performs conversions for storage versions
 type StorageConversionFunction struct {
@@ -108,21 +115,28 @@ func (fn *StorageConversionFunction) Equals(f Function) bool {
 	return false
 }
 
-func (fn *StorageConversionFunction) AsFunc(ctx *CodeGenerationContext, receiver TypeName) *ast.FuncDecl {
+func (fn *StorageConversionFunction) AsFunc(ctx *CodeGenerationContext, receiver TypeName) *dst.FuncDecl {
 
 	parameterName := fn.parameterName()
+	parameterIdent := func() dst.Expr {
+		return dst.NewIdent(fn.parameterName())
+	}
+
 	receiverName := fn.receiverName(receiver)
+	receiverIdent := func() dst.Expr {
+		return dst.NewIdent(receiverName)
+	}
 
 	funcDetails := &astbuilder.FuncDetails{
 		ReceiverIdent: receiverName,
 		ReceiverType:  receiver.AsType(ctx),
 		Name:          fn.Name(),
-		Body:          fn.generateBody(receiverName, parameterName, ctx),
+		Body:          fn.generateBody(receiverIdent, parameterIdent, ctx),
 	}
 
 	funcDetails.AddParameter(
 		parameterName,
-		&ast.StarExpr{
+		&dst.StarExpr{
 			X: fn.staging.name.AsType(ctx)})
 	funcDetails.AddReturns("error")
 
@@ -130,40 +144,40 @@ func (fn *StorageConversionFunction) AsFunc(ctx *CodeGenerationContext, receiver
 }
 
 // generateBody returns all of the statements required for the conversion function
-// receiverName is the name of our receiver type, used to qualify field access
-// parameterName is the name of the parameter passed to the function, also used for field access
+// receiver a function returning the name of our receiver type, used to qualify field access
+// parameter a function returning the name of the parameter passed to the function, also used for field access
 // ctx is our code generation context, passed to allow resolving of identifiers in other packages
-func (fn *StorageConversionFunction) generateBody(receiverName string, parameterName string, ctx *CodeGenerationContext) []ast.Stmt {
+func (fn *StorageConversionFunction) generateBody(receiver func() dst.Expr, parameter func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 
 	if fn.parameter.Equals(fn.staging.name) {
 		// Last step of conversion, directly to the parameter type we've been given
 		if fn.conversionDirection == ConvertFrom {
-			return fn.generateDirectConversionFrom(receiverName, parameterName, ctx)
+			return fn.generateDirectConversionFrom(receiver, parameter, ctx)
 		} else {
 			// fn.conversionType == ConvertTo
-			return fn.generateDirectConversionTo(receiverName, parameterName, ctx)
+			return fn.generateDirectConversionTo(receiver, parameter, ctx)
 		}
 	}
 
 	// Intermediate step of conversion, not working directly with the parameter type we've been given
 	if fn.conversionDirection == ConvertFrom {
-		return fn.generateIndirectConversionFrom(receiverName, parameterName, ctx)
+		return fn.generateIndirectConversionFrom(receiver, parameter, ctx)
 	} else {
 		// fn.conversionType == ConvertTo
-		return fn.generateIndirectConversionTo(receiverName, parameterName, ctx)
+		return fn.generateIndirectConversionTo(receiver, parameter, ctx)
 	}
 }
 
 // generateDirectConversionFrom returns the method body required to directly copy information from
 // the parameter instance onto our receiver
-func (fn *StorageConversionFunction) generateDirectConversionFrom(receiverName string, parameterName string, ctx *CodeGenerationContext) []ast.Stmt {
-	return fn.generateAssignments(parameterName, receiverName, ctx)
+func (fn *StorageConversionFunction) generateDirectConversionFrom(receiver func() dst.Expr, parameter func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return fn.generateAssignments(parameter, receiver, ctx)
 }
 
 // generateDirectConversionTo returns the method body required to directly copy information from
 // our receiver onto the parameter instance
-func (fn *StorageConversionFunction) generateDirectConversionTo(receiverName string, parameterName string, ctx *CodeGenerationContext) []ast.Stmt {
-	return fn.generateAssignments(receiverName, parameterName, ctx)
+func (fn *StorageConversionFunction) generateDirectConversionTo(receiver func() dst.Expr, parameter func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return fn.generateAssignments(receiver, parameter, ctx)
 }
 
 // generateIndirectConversionFrom returns the method body required to populate our receiver when
@@ -174,19 +188,24 @@ func (fn *StorageConversionFunction) generateDirectConversionTo(receiverName str
 // staging.ConvertFrom(parameter)
 // [copy values from staging]
 //
-func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiverName string, parameterName string, ctx *CodeGenerationContext) []ast.Stmt {
+func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiver func() dst.Expr, parameter func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 	staging := astbuilder.LocalVariableDeclaration(
-		"staging", ast.NewIdent(fn.staging.name.name), "// staging is our intermediate type for conversion")
-	staging.Decorations().Before = ast.NewLine
+		"staging", dst.NewIdent(fn.staging.name.name), "// staging is our intermediate type for conversion")
+	staging.Decorations().Before = dst.NewLine
 
 	convertFrom := astbuilder.InvokeQualifiedFunc(
-		"staging", fn.name, ast.NewIdent(parameterName))
-	convertFrom.Decorations().Before = ast.EmptyLine
-	convertFrom.Decorations().Start.Append("// populate staging from " + parameterName)
+		"staging", fn.name, parameter())
+	convertFrom.Decorations().Before = dst.EmptyLine
+	convertFrom.Decorations().Start.Append("// first populate staging")
 
-	assignments := fn.generateAssignments("staging", receiverName, ctx)
+	assignments := fn.generateAssignments(
+		func() dst.Expr {
+			return dst.NewIdent("staging")
+		},
+		receiver,
+		ctx)
 
-	var result []ast.Stmt
+	var result []dst.Stmt
 	result = append(result, staging)
 	result = append(result, convertFrom)
 	result = append(result, assignments...)
@@ -201,27 +220,32 @@ func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiverName
 // [copy values to staging]
 // staging.ConvertTo(parameter)
 //
-func (fn *StorageConversionFunction) generateIndirectConversionTo(receiverName string, parameterName string, ctx *CodeGenerationContext) []ast.Stmt {
+func (fn *StorageConversionFunction) generateIndirectConversionTo(receiver func() dst.Expr, parameter func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 	staging := astbuilder.LocalVariableDeclaration(
-		"staging", ast.NewIdent(fn.staging.name.name), "// staging is our intermediate type for conversion")
-	staging.Decorations().Before = ast.NewLine
+		"staging", dst.NewIdent(fn.staging.name.name), "// staging is our intermediate type for conversion")
+	staging.Decorations().Before = dst.NewLine
 
 	convertTo := astbuilder.InvokeQualifiedFunc(
-		"staging", fn.name, ast.NewIdent(parameterName))
-	convertTo.Decorations().Before = ast.EmptyLine
-	convertTo.Decorations().Start.Append("// use staging to populate " + parameterName)
+		"staging", fn.name, parameter())
+	convertTo.Decorations().Before = dst.EmptyLine
+	convertTo.Decorations().Start.Append("// use staging to populate")
 
-	assignments := fn.generateAssignments(receiverName, "staging", ctx)
+	assignments := fn.generateAssignments(
+		receiver,
+		func() dst.Expr {
+			return dst.NewIdent("staging")
+		},
+		ctx)
 
-	var result []ast.Stmt
+	var result []dst.Stmt
 	result = append(result, staging)
 	result = append(result, assignments...)
 	result = append(result, convertTo)
 	return result
 }
 
-func (fn *StorageConversionFunction) generateAssignments(source string, destination string, ctx *CodeGenerationContext) []ast.Stmt {
-	var result []ast.Stmt
+func (fn *StorageConversionFunction) generateAssignments(source func() dst.Expr, destination func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	var result []dst.Stmt
 
 	// Find all the properties for which we have a conversion
 	var properties []string
@@ -241,7 +265,7 @@ func (fn *StorageConversionFunction) generateAssignments(source string, destinat
 		if len(block) > 0 {
 			//TODO: Tidy
 			firstStatement := block[0]
-			firstStatement.Decorations().Before = ast.EmptyLine
+			firstStatement.Decorations().Before = dst.EmptyLine
 			firstStatement.Decorations().Start.Append("// " + prop)
 			result = append(result, block...)
 		}
@@ -266,9 +290,10 @@ func (fn *StorageConversionFunction) parameterName() string {
 	panic(fmt.Sprintf("Unexpected conversion conversionType %v", fn.conversionDirection))
 }
 
-func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) {
-	receiverObject := fn.unwrapObject(receiver.Type())
-	otherObject := fn.unwrapObject(fn.staging.Type())
+func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) []error {
+	receiverObject := AsObjectType(receiver.Type())
+	otherObject := AsObjectType(fn.staging.Type())
+	var errs []error
 
 	for _, receiverProperty := range receiverObject.Properties() {
 		otherProperty, ok := otherObject.Property(receiverProperty.propertyName)
@@ -319,27 +344,27 @@ func createPropertyConversion(source *PropertyDefinition, destination *PropertyD
 }
 
 // PrimitivePropertyConversionFactory generates a conversion for identical primitive types
-func PrimitivePropertyConversionFactory(source *PropertyDefinition, destination *PropertyDefinition) StoragePropertyConversion {
-	if IsOptionalType(source.propertyType) || IsOptionalType(destination.propertyType) {
+func PrimitivePropertyConversionFactory(sourceProperty *PropertyDefinition, destinationProperty *PropertyDefinition) StoragePropertyConversion {
+	if IsOptionalType(sourceProperty.propertyType) || IsOptionalType(destinationProperty.propertyType) {
 		// We don't handle optional types here
 		return nil
 	}
 
-	sourceType := AsPrimitiveType(source.propertyType)
-	destinationType := AsPrimitiveType(source.propertyType)
+	sourceType := AsPrimitiveType(sourceProperty.propertyType)
+	destinationType := AsPrimitiveType(sourceProperty.propertyType)
 	if sourceType == nil || !sourceType.Equals(destinationType) {
 		return nil
 	}
 
 	// Both properties have the same underlying primitive type, generate a simple assignment
-	return func(sourceVariable string, destinationVariable string, _ *CodeGenerationContext) []ast.Stmt {
+	return func(source func() ast.Expr, destination func() ast.Expr, ctx *CodeGenerationContext) []ast.Stmt {
 		left := &ast.SelectorExpr{
-			X:   ast.NewIdent(destinationVariable),
-			Sel: ast.NewIdent(string(destination.propertyName)),
+			X:   destination(),
+			Sel: ast.NewIdent(string(destinationProperty.propertyName)),
 		}
 		right := &ast.SelectorExpr{
-			X:   ast.NewIdent(sourceVariable),
-			Sel: ast.NewIdent(string(source.propertyName)),
+			X:   source(),
+			Sel: ast.NewIdent(string(sourceProperty.propertyName)),
 		}
 		return []ast.Stmt{
 			astbuilder.SimpleAssignment(left, token.ASSIGN, right),
@@ -362,40 +387,40 @@ func OptionalPrimitivePropertyConversionFactory(source *PropertyDefinition, dest
 	}
 
 	// Both properties have the same underlying primitive type, but one or other or both is optional
-	return func(sourceVariable string, destinationVariable string, _ *CodeGenerationContext) []ast.Stmt {
+	return func(sourceVariable func() ast.Expr, destinationVariable func() ast.Expr, ctx *CodeGenerationContext) []ast.Stmt {
 		if sourceOptional == destinationOptional {
 			// Can just copy a pointer to a primitive value
 			assign := astbuilder.SimpleAssignment(
-				astbuilder.QualifiedTypeName(destinationVariable, string(destination.propertyName)),
+				astbuilder.Selector(destinationVariable(), string(destination.propertyName)),
 				token.ASSIGN,
-				astbuilder.QualifiedTypeName(sourceVariable, string(source.propertyName)))
+				astbuilder.Selector(sourceVariable(), string(source.propertyName)))
 			return []ast.Stmt{assign}
 		}
 
 		if destinationOptional {
 			// Need a pointer to the primitive value as the source is not optional
 			assign := astbuilder.SimpleAssignment(
-				astbuilder.QualifiedTypeName(destinationVariable, string(destination.propertyName)),
+				astbuilder.Selector(destinationVariable(), string(destination.propertyName)),
 				token.ASSIGN,
 				astbuilder.AddrOf(
-					astbuilder.QualifiedTypeName(sourceVariable, string(source.propertyName))))
+					astbuilder.Selector(sourceVariable(), string(source.propertyName))))
 			return []ast.Stmt{assign}
 		}
 
 		if sourceOptional {
 			// Need to check for null and only assign if we have a value
 			cond := &ast.BinaryExpr{
-				X:  astbuilder.QualifiedTypeName(sourceVariable, string(source.propertyName)),
+				X:  astbuilder.Selector(sourceVariable(), string(source.propertyName)),
 				Op: token.NEQ,
 				Y:  ast.NewIdent("nil"),
 			}
 			assignValue := astbuilder.SimpleAssignment(
-				astbuilder.QualifiedTypeName(destinationVariable, string(destination.propertyName)),
+				astbuilder.Selector(destinationVariable(), string(destination.propertyName)),
 				token.ASSIGN,
 				astbuilder.Dereference(
-					astbuilder.QualifiedTypeName(sourceVariable, string(source.propertyName))))
+					astbuilder.Selector(sourceVariable(), string(source.propertyName))))
 			assignZero := astbuilder.SimpleAssignment(
-				astbuilder.QualifiedTypeName(destinationVariable, string(destination.propertyName)),
+				astbuilder.Selector(destinationVariable(), string(destination.propertyName)),
 				token.ASSIGN,
 				&ast.BasicLit{
 					Value: zeroValue(sourceType),

@@ -22,6 +22,6 @@ func (subject Subject) ConvertTo(destination *Staging) error {
 		staging.name = ""
 	}
 
-	// use staging to populate destination
+	// use staging to populate
 	staging.ConvertTo(destination)
 }
