@@ -57,7 +57,7 @@ func NewStorageConversionFromFunction(
 	source TypeName,
 	staging TypeDefinition,
 	idFactory IdentifierFactory,
-) *StorageConversionFunction {
+) (*StorageConversionFunction, []error) {
 	result := &StorageConversionFunction{
 		name:                "ConvertFrom",
 		parameter:           source,
@@ -67,8 +67,8 @@ func NewStorageConversionFromFunction(
 		conversions:         make(map[string]StoragePropertyConversion),
 	}
 
-	result.createConversions(receiver)
-	return result
+	errs := result.createConversions(receiver)
+	return result, errs
 }
 
 func NewStorageConversionToFunction(
@@ -76,7 +76,7 @@ func NewStorageConversionToFunction(
 	destination TypeName,
 	staging TypeDefinition,
 	idFactory IdentifierFactory,
-) *StorageConversionFunction {
+) (*StorageConversionFunction, []error) {
 	result := &StorageConversionFunction{
 		name:                "ConvertTo",
 		parameter:           destination,
@@ -86,8 +86,8 @@ func NewStorageConversionToFunction(
 		conversions:         make(map[string]StoragePropertyConversion),
 	}
 
-	result.createConversions(receiver)
-	return result
+	errs := result.createConversions(receiver)
+	return result, errs
 }
 
 func (fn *StorageConversionFunction) Name() string {
@@ -300,15 +300,26 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 		//TODO: Handle renames
 		if ok {
 			var conv StoragePropertyConversion
+			var err error
 			if fn.conversionDirection == ConvertFrom {
-				conv = createPropertyConversion(otherProperty, receiverProperty)
+				conv, err = createPropertyConversion(otherProperty, receiverProperty)
 			} else {
-				conv = createPropertyConversion(receiverProperty, otherProperty)
+				conv, err = createPropertyConversion(receiverProperty, otherProperty)
 			}
 
-			fn.conversions[string(receiverProperty.propertyName)] = conv
+			if conv != nil {
+				// A conversion was created, keep it for later
+				fn.conversions[string(receiverProperty.propertyName)] = conv
+			}
+
+			if err != nil {
+				// An error was returned; this can happen even if a conversion was created as well.
+				errs = append(errs, err)
+			}
 		}
 	}
+
+	return errs
 }
 
 func (fn *StorageConversionFunction) unwrapObject(aType Type) *ObjectType {
@@ -332,15 +343,22 @@ var conversionFactories = []StoragePropertyConversionFactory{
 	OptionalPrimitivePropertyConversionFactory,
 }
 
-func createPropertyConversion(source *PropertyDefinition, destination *PropertyDefinition) StoragePropertyConversion {
+func createPropertyConversion(source *PropertyDefinition, destination *PropertyDefinition) (StoragePropertyConversion, error) {
 	for _, f := range conversionFactories {
 		result := f(source, destination)
 		if result != nil {
-			return result
+			return result, nil
 		}
 	}
 
-	return nil
+	err := fmt.Errorf(
+		"no converstion found to assign %s (%v) from %s (%v)",
+		destination.propertyName,
+		destination.propertyType,
+		source.propertyName,
+		source.propertyType)
+
+	return nil, err
 }
 
 // PrimitivePropertyConversionFactory generates a conversion for identical primitive types

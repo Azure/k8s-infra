@@ -5,6 +5,8 @@ import (
 	"github.com/sebdah/goldie/v2"
 	"strings"
 	"testing"
+
+	. "github.com/onsi/gomega"
 )
 
 type StorageConversionPropertyTestCase struct {
@@ -71,6 +73,7 @@ func TestStorageConversionFunction_AsFuncForIndirectConvertTo(t *testing.T) {
 }
 
 func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase, direction StorageConversionDirection, direct bool, t *testing.T) {
+	gm := NewGomegaWithT(t)
 
 	idFactory := NewIdentifierFactory()
 	ref := MakeLocalPackageReference("Verification", "vVersion")
@@ -92,11 +95,14 @@ func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase
 	}
 
 	var fn *StorageConversionFunction
+	var errs []error
 	if direction == ConvertFrom {
-		fn = NewStorageConversionFromFunction(subjectDefinition, hubTypeName, stagingDefinition, idFactory)
+		fn, errs = NewStorageConversionFromFunction(subjectDefinition, hubTypeName, stagingDefinition, idFactory)
 	} else {
-		fn = NewStorageConversionToFunction(subjectDefinition, hubTypeName, stagingDefinition, idFactory)
+		fn, errs = NewStorageConversionToFunction(subjectDefinition, hubTypeName, stagingDefinition, idFactory)
 	}
+
+	gm.Expect(errs).To(BeEmpty())
 
 	subjectDefinition = subjectDefinition.WithType(subjectType.WithFunction(fn))
 
