@@ -117,41 +117,6 @@ func VariableDeclaration(ident string, typ dst.Expr, comment string) *dst.GenDec
 	return decl
 }
 
-// AppendList returns a statement for a list append, like:
-//     <lhs> = append(<lhs>, <rhs>)
-func AppendList(lhs dst.Expr, rhs dst.Expr) dst.Stmt {
-	return SimpleAssignment(
-		dst.Clone(lhs).(dst.Expr),
-		token.ASSIGN,
-		CallFunc("append", dst.Clone(lhs).(dst.Expr), dst.Clone(rhs).(dst.Expr)))
-}
-
-// InsertMap returns an assignment statement for inserting an item into a map, like:
-// 	<m>[<key>] = <rhs>
-func InsertMap(m dst.Expr, key dst.Expr, rhs dst.Expr) *dst.AssignStmt {
-	return SimpleAssignment(
-		&dst.IndexExpr{
-			X:     dst.Clone(m).(dst.Expr),
-			Index: dst.Clone(key).(dst.Expr),
-		},
-		token.ASSIGN,
-		dst.Clone(rhs).(dst.Expr))
-}
-
-// MakeMap returns the call expression for making a map, like:
-// 	make(map[<key>]<value>)
-func MakeMap(key dst.Expr, value dst.Expr) *dst.CallExpr {
-	return &dst.CallExpr{
-		Fun: dst.NewIdent("make"),
-		Args: []dst.Expr{
-			&dst.MapType{
-				Key:   dst.Clone(key).(dst.Expr),
-				Value: dst.Clone(value).(dst.Expr),
-			},
-		},
-	}
-}
-
 // TypeAssert returns an assignment statement with a type assertion
 // 	<lhs>, ok := <rhs>.(<type>)
 func TypeAssert(lhs dst.Expr, rhs dst.Expr, typ dst.Expr) *dst.AssignStmt {
@@ -262,8 +227,8 @@ func AddrOf(exp dst.Expr) *dst.UnaryExpr {
 }
 
 // Dereference returns a statement that dereferences the pointer returned by the provided expression
-func Dereference(exp ast.Expr) *ast.UnaryExpr {
-	return &ast.UnaryExpr{
+func Dereference(exp dst.Expr) *dst.UnaryExpr {
+	return &dst.UnaryExpr{
 		Op: token.MUL,
 		X:  exp,
 	}
@@ -292,9 +257,9 @@ func QualifiedTypeName(pkg string, name string) *dst.SelectorExpr {
 	}
 }
 
-func Selector(expr ast.Expr, name string) *ast.SelectorExpr {
-	return &ast.SelectorExpr{
+func Selector(expr dst.Expr, name string) *dst.SelectorExpr {
+	return &dst.SelectorExpr{
 		X:   expr,
-		Sel: ast.NewIdent(name),
+		Sel: dst.NewIdent(name),
 	}
 }
