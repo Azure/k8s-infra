@@ -4,15 +4,19 @@
 package vVersion
 
 type Staging struct {
-	OptionalString *string `json:"optional-string"`
+	scores []*int `json:"array-optional-int"`
 }
 
 type Subject struct {
-	OptionalString *string `json:"optional-string"`
+	scores []int `json:"array-required-int"`
 }
 
 func (subject Subject) ConvertTo(destination *Staging) error {
 
-	// OptionalString
-	destination.OptionalString = subject.OptionalString
+	// scores
+	temp := make([]*int, len(subject.scores))
+	for index, item := range subject.scores {
+		temp[index] = &item
+	}
+	destination.scores = temp
 }

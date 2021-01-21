@@ -6,6 +6,7 @@ import (
 	"github.com/dave/dst"
 	"github.com/pkg/errors"
 	"go/token"
+	"strings"
 )
 
 // createPropertyConversion tries to create a property conversion between the two provided properties, using all of the
@@ -32,7 +33,7 @@ func createPropertyConversion(sourceProperty *PropertyDefinition, destinationPro
 			return astbuilder.Selector(destination(), string(destinationProperty.PropertyName()))
 		}
 
-		return conversion(reader, writer)
+		return conversion(reader, writer, ctx)
 	}, nil
 }
 
@@ -41,19 +42,24 @@ func createPropertyConversion(sourceProperty *PropertyDefinition, destinationPro
 // destination is a factory function that returns an expression to write the converted value
 // The parameters source and destination are funcs because AST fragments can't be reused, and in
 // some cases we need to reference source and destination multiple times in a single fragment.
-type StorageTypeConversion func(reader func() dst.Expr, writer func() dst.Expr) []dst.Stmt
+type StorageTypeConversion func(reader func() dst.Expr, readerNamingHint string, writer func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt
 
 // StorageTypeConversionFactory represents factory methods that can be used to create StorageTypeConversions
 // for a specific pair of types
 // sourceType is the type of the value that will be read
 // destinationType is the type of the value that will be written
-type StorageTypeConversionFactory func(sourceType Type, destinationType Type) StorageTypeConversion
+type StorageTypeConversionFactory func(sourceType Type, sourceNamingHint string, destinationType Type, destinationNamingHint string) StorageTypeConversion
 
 // A list of all known type conversion factory methods
-var typeConversionFactories = []StorageTypeConversionFactory{
-	assignPrimitiveTypeFromPrimitiveType,
-	assignOptionalPrimitiveTypeFromPrimitiveType,
-	assignPrimitiveTypeFromOptionalPrimitiveType,
+var typeConversionFactories []StorageTypeConversionFactory
+
+func init() {
+	typeConversionFactories = []StorageTypeConversionFactory{
+		assignPrimitiveTypeFromPrimitiveType,
+		assignOptionalPrimitiveTypeFromPrimitiveType,
+		assignPrimitiveTypeFromOptionalPrimitiveType,
+		assignArrayFromArray,
+	}
 }
 
 // createTypeConversion tries to create a type conversion between the two provided types, using
@@ -91,7 +97,7 @@ func assignPrimitiveTypeFromPrimitiveType(sourceType Type, destinationType Type)
 		return nil
 	}
 
-	return func(reader func() dst.Expr, writer func() dst.Expr) []dst.Stmt {
+	return func(reader func() dst.Expr, writer func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		return []dst.Stmt{
 			astbuilder.SimpleAssignment(writer(), token.ASSIGN, reader()),
 		}
@@ -115,7 +121,7 @@ func assignOptionalPrimitiveTypeFromPrimitiveType(sourceType Type, destinationTy
 		return nil
 	}
 
-	return func(reader func() dst.Expr, writer func() dst.Expr) []dst.Stmt {
+	return func(reader func() dst.Expr, writer func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		return []dst.Stmt{
 			astbuilder.SimpleAssignment(writer(), token.ASSIGN, astbuilder.AddrOf(reader())),
 		}
@@ -124,6 +130,7 @@ func assignOptionalPrimitiveTypeFromPrimitiveType(sourceType Type, destinationTy
 
 // assignPrimitiveTypeFromOptionalPrimitiveType will generate a direct assignment if both types
 // have the same underlying primitive type and have the same optionality
+//
 // if <source> != nil {
 //    <destination> = *<source>
 // } else {
@@ -143,7 +150,7 @@ func assignPrimitiveTypeFromOptionalPrimitiveType(sourceType Type, destinationTy
 		return nil
 	}
 
-	return func(reader func() dst.Expr, writer func() dst.Expr) []dst.Stmt {
+	return func(reader func() dst.Expr, writer func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		// Need to check for null and only assign if we have a value
 		cond := &dst.BinaryExpr{
 			X:  reader(),
@@ -178,6 +185,67 @@ func assignPrimitiveTypeFromOptionalPrimitiveType(sourceType Type, destinationTy
 		}
 
 		return []dst.Stmt{stmt}
+	}
+}
+
+// assignArrayFromArray will generate a code fragment to populate an array, assuming the
+// underlying types of the two arrays are compatible
+//
+// var <arr> []<type>
+// for _, <value> := range <reader> {
+//     arr := append(arr, <value>)
+// }
+// <writer> = <arr>
+func assignArrayFromArray(sourceType Type, destinationType Type) StorageTypeConversion {
+	st := AsArrayType(sourceType)
+	dt := AsArrayType(destinationType)
+
+	if st == nil || dt == nil {
+		// One or other type is not an array
+		return nil
+	}
+
+	conversion, _ := createTypeConversion(st.element, dt.element)
+	if conversion == nil {
+		// No conversion between the elements of the array
+		return nil
+	}
+
+	return func(reader func() dst.Expr, writer func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+		declaration := astbuilder.SimpleAssignment(
+			dst.NewIdent("temp"),
+			token.DEFINE,
+			astbuilder.MakeList(dt.AsType(ctx), astbuilder.CallFunc("len", reader())))
+
+		body := conversion(
+			func() dst.Expr {
+				return dst.NewIdent(createLocal())
+			},
+			func() dst.Expr {
+				return &dst.IndexExpr{
+					X:     dst.NewIdent("temp"),
+					Index: dst.NewIdent("index"),
+				}
+			},
+			ctx,
+		)
+
+		assign := astbuilder.SimpleAssignment(
+			writer(),
+			token.ASSIGN,
+			dst.NewIdent("temp"))
+
+		loop := astbuilder.IterateOverListWithIndex(
+			"index",
+			"item",
+			reader(),
+			body...)
+
+		return []dst.Stmt{
+			declaration,
+			loop,
+			assign,
+		}
 	}
 }
 

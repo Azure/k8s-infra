@@ -21,6 +21,9 @@ func CreateStorageConversionFunctionTestCases() []StorageConversionPropertyTestC
 	requiredIntProperty := NewPropertyDefinition("age", "required-int", IntType)
 	optionalIntProperty := NewPropertyDefinition("age", "optional-int", NewOptionalType(IntType))
 
+	arrayOfRequiredIntProperty := NewPropertyDefinition("scores", "array-required-int", NewArrayType(IntType))
+	arrayOfOptionalIntProperty := NewPropertyDefinition("scores", "array-optional-int", NewArrayType(NewOptionalType(IntType)))
+
 	return []StorageConversionPropertyTestCase{
 		{"SetStringFromString", requiredStringProperty, requiredStringProperty},
 		{"SetStringFromOptionalString", requiredStringProperty, optionalStringProperty},
@@ -28,7 +31,11 @@ func CreateStorageConversionFunctionTestCases() []StorageConversionPropertyTestC
 		{"SetOptionalStringFromOptionalString", optionalStringProperty, optionalStringProperty},
 
 		{"SetIntFromInt", requiredIntProperty, requiredIntProperty},
-		{"SetIntFromIntString", requiredIntProperty, optionalIntProperty},
+		{"SetIntFromOptionalInt", requiredIntProperty, optionalIntProperty},
+
+		{"SetArrayOfRequiredFromArrayOfRequired", arrayOfRequiredIntProperty, arrayOfRequiredIntProperty},
+		{"SetArrayOfRequiredFromArrayOfOptional", arrayOfRequiredIntProperty, arrayOfOptionalIntProperty},
+		{"SetArrayOfOptionalFromArrayOfRequired", arrayOfOptionalIntProperty, arrayOfRequiredIntProperty},
 	}
 }
 
