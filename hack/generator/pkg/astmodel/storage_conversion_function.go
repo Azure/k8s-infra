@@ -19,11 +19,6 @@ import (
 // some cases we need to reference source and destination multiple times in a single fragment.
 type StoragePropertyConversion func(source func() dst.Expr, destination func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt
 
-// StoragePropertyConversionFactory is a factory func that creates a StoragePropertyConversion for later use.
-// source is the PropertyDefinition for the origin which will be read.
-// destination is the PropertyDefinition for the target which will be written.
-type StoragePropertyConversionFactory func(sourceType Type, destinationType *PropertyDefinition) StoragePropertyConversion
-
 // Represents a function that performs conversions for storage versions
 type StorageConversionFunction struct {
 	// Name of this conversion function
