@@ -13,11 +13,9 @@ import (
 )
 
 // StoragePropertyConversion generates the AST for a given conversion.
-// source is a factory function that returns an expression for the source of the conversion.
-// destination is a factory function that returns an expression for the destination of the conversion.
-// The parameters source and destination are funcs because AST fragments can't be reused, and in
-// some cases we need to reference source and destination multiple times in a single fragment.
-type StoragePropertyConversion func(source func() dst.Expr, destination func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt
+// source is an expression for the source value that will be read.
+// destination is an expression the target value that will be written.
+type StoragePropertyConversion func(source dst.Expr, destination dst.Expr, ctx *CodeGenerationContext) []dst.Stmt
 
 // Represents a function that performs conversions for storage versions
 type StorageConversionFunction struct {
@@ -113,14 +111,10 @@ func (fn *StorageConversionFunction) Equals(f Function) bool {
 func (fn *StorageConversionFunction) AsFunc(ctx *CodeGenerationContext, receiver TypeName) *dst.FuncDecl {
 
 	parameterName := fn.parameterName()
-	parameterIdent := func() dst.Expr {
-		return dst.NewIdent(fn.parameterName())
-	}
+	parameterIdent := dst.NewIdent(fn.parameterName())
 
 	receiverName := fn.receiverName(receiver)
-	receiverIdent := func() dst.Expr {
-		return dst.NewIdent(receiverName)
-	}
+	receiverIdent := dst.NewIdent(receiverName)
 
 	funcDetails := &astbuilder.FuncDetails{
 		ReceiverIdent: receiverName,
@@ -139,10 +133,10 @@ func (fn *StorageConversionFunction) AsFunc(ctx *CodeGenerationContext, receiver
 }
 
 // generateBody returns all of the statements required for the conversion function
-// receiver a function returning the name of our receiver type, used to qualify field access
-// parameter a function returning the name of the parameter passed to the function, also used for field access
+// receiver is an expression for access our receiver type, used to qualify field access
+// parameter is an expression for access to our parameter passed to the function, also used for field access
 // ctx is our code generation context, passed to allow resolving of identifiers in other packages
-func (fn *StorageConversionFunction) generateBody(receiver func() dst.Expr, parameter func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+func (fn *StorageConversionFunction) generateBody(receiver dst.Expr, parameter dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 
 	if fn.parameter.Equals(fn.staging.name) {
 		// Last step of conversion, directly to the parameter type we've been given
@@ -165,13 +159,13 @@ func (fn *StorageConversionFunction) generateBody(receiver func() dst.Expr, para
 
 // generateDirectConversionFrom returns the method body required to directly copy information from
 // the parameter instance onto our receiver
-func (fn *StorageConversionFunction) generateDirectConversionFrom(receiver func() dst.Expr, parameter func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+func (fn *StorageConversionFunction) generateDirectConversionFrom(receiver dst.Expr, parameter dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 	return fn.generateAssignments(parameter, receiver, ctx)
 }
 
 // generateDirectConversionTo returns the method body required to directly copy information from
 // our receiver onto the parameter instance
-func (fn *StorageConversionFunction) generateDirectConversionTo(receiver func() dst.Expr, parameter func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+func (fn *StorageConversionFunction) generateDirectConversionTo(receiver dst.Expr, parameter dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 	return fn.generateAssignments(receiver, parameter, ctx)
 }
 
@@ -183,20 +177,18 @@ func (fn *StorageConversionFunction) generateDirectConversionTo(receiver func() 
 // staging.ConvertFrom(parameter)
 // [copy values from staging]
 //
-func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiver func() dst.Expr, parameter func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiver dst.Expr, parameter dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 	staging := astbuilder.LocalVariableDeclaration(
 		"staging", dst.NewIdent(fn.staging.name.name), "// staging is our intermediate type for conversion")
 	staging.Decorations().Before = dst.NewLine
 
 	convertFrom := astbuilder.InvokeQualifiedFunc(
-		"staging", fn.name, parameter())
+		"staging", fn.name, parameter)
 	convertFrom.Decorations().Before = dst.EmptyLine
 	convertFrom.Decorations().Start.Append("// first populate staging")
 
 	assignments := fn.generateAssignments(
-		func() dst.Expr {
-			return dst.NewIdent("staging")
-		},
+		dst.NewIdent("staging"),
 		receiver,
 		ctx)
 
@@ -215,21 +207,19 @@ func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiver fun
 // [copy values to staging]
 // staging.ConvertTo(parameter)
 //
-func (fn *StorageConversionFunction) generateIndirectConversionTo(receiver func() dst.Expr, parameter func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+func (fn *StorageConversionFunction) generateIndirectConversionTo(receiver dst.Expr, parameter dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 	staging := astbuilder.LocalVariableDeclaration(
 		"staging", dst.NewIdent(fn.staging.name.name), "// staging is our intermediate type for conversion")
 	staging.Decorations().Before = dst.NewLine
 
 	convertTo := astbuilder.InvokeQualifiedFunc(
-		"staging", fn.name, parameter())
+		"staging", fn.name, parameter)
 	convertTo.Decorations().Before = dst.EmptyLine
 	convertTo.Decorations().Start.Append("// use staging to populate")
 
 	assignments := fn.generateAssignments(
 		receiver,
-		func() dst.Expr {
-			return dst.NewIdent("staging")
-		},
+		dst.NewIdent("staging"),
 		ctx)
 
 	var result []dst.Stmt
@@ -239,7 +229,7 @@ func (fn *StorageConversionFunction) generateIndirectConversionTo(receiver func(
 	return result
 }
 
-func (fn *StorageConversionFunction) generateAssignments(source func() dst.Expr, destination func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+func (fn *StorageConversionFunction) generateAssignments(source dst.Expr, destination dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 	var result []dst.Stmt
 
 	// Find all the properties for which we have a conversion

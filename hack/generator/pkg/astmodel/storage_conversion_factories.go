@@ -23,26 +23,21 @@ func createPropertyConversion(sourceProperty *PropertyDefinition, destinationPro
 			sourceProperty.propertyName)
 	}
 
-	return func(source func() dst.Expr, destination func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return func(source dst.Expr, destination dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 
-		var reader = func() dst.Expr {
-			return astbuilder.Selector(source(), string(sourceProperty.PropertyName()))
-		}
-
-		var writer = func() dst.Expr {
-			return astbuilder.Selector(destination(), string(destinationProperty.PropertyName()))
-		}
+		var reader = astbuilder.Selector(source, string(sourceProperty.PropertyName()))
+		var writer = astbuilder.Selector(destination, string(destinationProperty.PropertyName()))
 
 		return conversion(reader, writer, ctx)
 	}, nil
 }
 
 // StorageTypeConversion generates the AST for a given conversion.
-// source is a factory function that returns an expression to read the original value
-// destination is a factory function that returns an expression to write the converted value
+// source is an expression to read the original value
+// destination is an expression to write the converted value
 // The parameters source and destination are funcs because AST fragments can't be reused, and in
 // some cases we need to reference source and destination multiple times in a single fragment.
-type StorageTypeConversion func(reader func() dst.Expr, readerNamingHint string, writer func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt
+type StorageTypeConversion func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt
 
 // StorageTypeConversionFactory represents factory methods that can be used to create StorageTypeConversions
 // for a specific pair of types
@@ -97,9 +92,9 @@ func assignPrimitiveTypeFromPrimitiveType(sourceType Type, destinationType Type)
 		return nil
 	}
 
-	return func(reader func() dst.Expr, writer func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		return []dst.Stmt{
-			astbuilder.SimpleAssignment(writer(), token.ASSIGN, reader()),
+			astbuilder.SimpleAssignment(writer, token.ASSIGN, reader),
 		}
 	}
 }
@@ -121,9 +116,9 @@ func assignOptionalPrimitiveTypeFromPrimitiveType(sourceType Type, destinationTy
 		return nil
 	}
 
-	return func(reader func() dst.Expr, writer func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		return []dst.Stmt{
-			astbuilder.SimpleAssignment(writer(), token.ASSIGN, astbuilder.AddrOf(reader())),
+			astbuilder.SimpleAssignment(writer, token.ASSIGN, astbuilder.AddrOf(reader)),
 		}
 	}
 }
@@ -150,7 +145,7 @@ func assignPrimitiveTypeFromOptionalPrimitiveType(sourceType Type, destinationTy
 		return nil
 	}
 
-	return func(reader func() dst.Expr, writer func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		// Need to check for null and only assign if we have a value
 		cond := &dst.BinaryExpr{
 			X:  reader(),
@@ -158,13 +153,10 @@ func assignPrimitiveTypeFromOptionalPrimitiveType(sourceType Type, destinationTy
 			Y:  dst.NewIdent("nil"),
 		}
 
-		assignValue := astbuilder.SimpleAssignment(
-			writer(),
-			token.ASSIGN,
-			astbuilder.Dereference(reader()))
+		assignValue := astbuilder.SimpleAssignment(writer, token.ASSIGN, astbuilder.Dereference(reader))
 
 		assignZero := astbuilder.SimpleAssignment(
-			writer(),
+			writer,
 			token.ASSIGN,
 			&dst.BasicLit{
 				Value: zeroValue(st),
@@ -211,35 +203,24 @@ func assignArrayFromArray(sourceType Type, destinationType Type) StorageTypeConv
 		return nil
 	}
 
-	return func(reader func() dst.Expr, writer func() dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		declaration := astbuilder.SimpleAssignment(
 			dst.NewIdent("temp"),
 			token.DEFINE,
-			astbuilder.MakeList(dt.AsType(ctx), astbuilder.CallFunc("len", reader())))
+			astbuilder.MakeList(dt.AsType(ctx), astbuilder.CallFunc("len", reader)))
 
 		body := conversion(
-			func() dst.Expr {
-				return dst.NewIdent(createLocal())
-			},
-			func() dst.Expr {
-				return &dst.IndexExpr{
-					X:     dst.NewIdent("temp"),
-					Index: dst.NewIdent("index"),
-				}
+			dst.NewIdent("item"),
+			&dst.IndexExpr{
+				X:     dst.NewIdent("temp"),
+				Index: dst.NewIdent("index"),
 			},
 			ctx,
 		)
 
-		assign := astbuilder.SimpleAssignment(
-			writer(),
-			token.ASSIGN,
-			dst.NewIdent("temp"))
+		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, dst.NewIdent("temp"))
 
-		loop := astbuilder.IterateOverListWithIndex(
-			"index",
-			"item",
-			reader(),
-			body...)
+		loop := astbuilder.IterateOverListWithIndex("index", "item", reader, body...)
 
 		return []dst.Stmt{
 			declaration,
