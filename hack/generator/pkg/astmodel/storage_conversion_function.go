@@ -280,6 +280,11 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 	otherObject := AsObjectType(fn.staging.Type())
 	var errs []error
 
+	knownLocals := make(map[string]struct{})
+
+	// Flag receiver name as used
+	knownLocals[fn.receiverName(receiver.name)] = struct{}{}
+
 	for _, receiverProperty := range receiverObject.Properties() {
 		otherProperty, ok := otherObject.Property(receiverProperty.propertyName)
 		//TODO: Handle renames
@@ -287,9 +292,9 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 			var conv StoragePropertyConversion
 			var err error
 			if fn.conversionDirection == ConvertFrom {
-				conv, err = createPropertyConversion(otherProperty, receiverProperty)
+				conv, err = createPropertyConversion(otherProperty, receiverProperty, knownLocals)
 			} else {
-				conv, err = createPropertyConversion(receiverProperty, otherProperty)
+				conv, err = createPropertyConversion(receiverProperty, otherProperty, knownLocals)
 			}
 
 			if conv != nil {

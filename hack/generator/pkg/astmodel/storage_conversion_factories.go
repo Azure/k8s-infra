@@ -6,14 +6,21 @@ import (
 	"github.com/dave/dst"
 	"github.com/pkg/errors"
 	"go/token"
-	"strings"
 )
 
 // createPropertyConversion tries to create a property conversion between the two provided properties, using all of the
 // available conversion functions in priority order to do so.
-func createPropertyConversion(sourceProperty *PropertyDefinition, destinationProperty *PropertyDefinition) (StoragePropertyConversion, error) {
+func createPropertyConversion(
+	sourceProperty *PropertyDefinition,
+	destinationProperty *PropertyDefinition,
+	knownLocals map[string]struct{}) (StoragePropertyConversion, error) {
 
-	conversion, err := createTypeConversion(sourceProperty.propertyType, destinationProperty.propertyType)
+	sourceEndpoint := NewStorageConversionEndpoint(
+		sourceProperty.propertyType, string(sourceProperty.propertyName), knownLocals)
+	destinationEndpoint := NewStorageConversionEndpoint(
+		destinationProperty.propertyType, string(destinationProperty.propertyName), knownLocals)
+
+	conversion, err := createTypeConversion(sourceEndpoint, destinationEndpoint)
 
 	if err != nil {
 		return nil, errors.Wrapf(
@@ -41,9 +48,9 @@ type StorageTypeConversion func(reader dst.Expr, writer dst.Expr, ctx *CodeGener
 
 // StorageTypeConversionFactory represents factory methods that can be used to create StorageTypeConversions
 // for a specific pair of types
-// sourceType is the type of the value that will be read
-// destinationType is the type of the value that will be written
-type StorageTypeConversionFactory func(sourceType Type, sourceNamingHint string, destinationType Type, destinationNamingHint string) StorageTypeConversion
+// source is the endpoint that will be read
+// destination is the endpoint that will be written
+type StorageTypeConversionFactory func(source *StorageConversionEndpoint, destination *StorageConversionEndpoint) StorageTypeConversion
 
 // A list of all known type conversion factory methods
 var typeConversionFactories []StorageTypeConversionFactory
@@ -59,9 +66,11 @@ func init() {
 
 // createTypeConversion tries to create a type conversion between the two provided types, using
 // all of the available type conversion functions in priority order to do so.
-func createTypeConversion(sourceType Type, destinationType Type) (StorageTypeConversion, error) {
+func createTypeConversion(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint) (StorageTypeConversion, error) {
 	for _, f := range typeConversionFactories {
-		result := f(sourceType, destinationType)
+		result := f(sourceEndpoint, destinationEndpoint)
 		if result != nil {
 			return result, nil
 		}
@@ -69,8 +78,8 @@ func createTypeConversion(sourceType Type, destinationType Type) (StorageTypeCon
 
 	err := fmt.Errorf(
 		"no conversion found to assign %s from %s",
-		destinationType,
-		sourceType)
+		destinationEndpoint.name,
+		sourceEndpoint.name)
 
 	return nil, err
 }
@@ -78,16 +87,18 @@ func createTypeConversion(sourceType Type, destinationType Type) (StorageTypeCon
 // assignPrimitiveTypeFromPrimitiveType will generate a direct assignment if both types have the
 // same underlying primitive type and have the same optionality
 // <destination> = <source>
-func assignPrimitiveTypeFromPrimitiveType(sourceType Type, destinationType Type) StorageTypeConversion {
-	st := AsPrimitiveType(sourceType)
-	dt := AsPrimitiveType(destinationType)
+func assignPrimitiveTypeFromPrimitiveType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
+	st := AsPrimitiveType(sourceEndpoint.Type())
+	dt := AsPrimitiveType(destinationEndpoint.theType)
 
 	if st == nil || dt == nil || !st.Equals(dt) {
 		// Either or both sides are not primitive types, or not the same primitive type
 		return nil
 	}
 
-	if IsOptionalType(sourceType) != isTypeOptional(destinationType) {
+	if IsOptionalType(sourceEndpoint.Type()) != isTypeOptional(destinationEndpoint.Type()) {
 		// Different optionality, handled elsewhere
 		return nil
 	}
@@ -102,16 +113,18 @@ func assignPrimitiveTypeFromPrimitiveType(sourceType Type, destinationType Type)
 // assignOptionalPrimitiveTypeFromPrimitiveType will generate a direct assignment if both types
 // have the same underlying primitive type and have the same optionality
 // <destination> = &<source>
-func assignOptionalPrimitiveTypeFromPrimitiveType(sourceType Type, destinationType Type) StorageTypeConversion {
-	st := AsPrimitiveType(sourceType)
-	dt := AsPrimitiveType(destinationType)
+func assignOptionalPrimitiveTypeFromPrimitiveType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
+	st := AsPrimitiveType(sourceEndpoint.Type())
+	dt := AsPrimitiveType(destinationEndpoint.Type())
 
 	if st == nil || dt == nil || !st.Equals(dt) {
 		// Either or both sides are not primitive types, or not the same primitive type
 		return nil
 	}
 
-	if IsOptionalType(sourceType) || !IsOptionalType(destinationType) {
+	if IsOptionalType(sourceEndpoint.Type()) || !IsOptionalType(destinationEndpoint.Type()) {
 		// Different optionality than we handle here
 		return nil
 	}
@@ -131,27 +144,25 @@ func assignOptionalPrimitiveTypeFromPrimitiveType(sourceType Type, destinationTy
 // } else {
 //    <destination> = <zero>
 // }
-func assignPrimitiveTypeFromOptionalPrimitiveType(sourceType Type, destinationType Type) StorageTypeConversion {
-	st := AsPrimitiveType(sourceType)
-	dt := AsPrimitiveType(destinationType)
+func assignPrimitiveTypeFromOptionalPrimitiveType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
+	st := AsPrimitiveType(sourceEndpoint.Type())
+	dt := AsPrimitiveType(destinationEndpoint.Type())
 
 	if st == nil || dt == nil || !st.Equals(dt) {
 		// Either or both sides are not primitive types, or not the same primitive type
 		return nil
 	}
 
-	if !IsOptionalType(sourceType) || IsOptionalType(destinationType) {
+	if !IsOptionalType(sourceEndpoint.Type()) || IsOptionalType(destinationEndpoint.Type()) {
 		// Different optionality than we handle here
 		return nil
 	}
 
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		// Need to check for null and only assign if we have a value
-		cond := &dst.BinaryExpr{
-			X:  reader(),
-			Op: token.NEQ,
-			Y:  dst.NewIdent("nil"),
-		}
+		cond := astbuilder.NotEqual(reader, dst.NewIdent("nil"))
 
 		assignValue := astbuilder.SimpleAssignment(writer, token.ASSIGN, astbuilder.Dereference(reader))
 
@@ -188,16 +199,21 @@ func assignPrimitiveTypeFromOptionalPrimitiveType(sourceType Type, destinationTy
 //     arr := append(arr, <value>)
 // }
 // <writer> = <arr>
-func assignArrayFromArray(sourceType Type, destinationType Type) StorageTypeConversion {
-	st := AsArrayType(sourceType)
-	dt := AsArrayType(destinationType)
+func assignArrayFromArray(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
+	st := AsArrayType(sourceEndpoint.Type())
+	dt := AsArrayType(destinationEndpoint.Type())
 
 	if st == nil || dt == nil {
 		// One or other type is not an array
 		return nil
 	}
 
-	conversion, _ := createTypeConversion(st.element, dt.element)
+	srcEp := sourceEndpoint.WithType(st.element)
+	dstEp := destinationEndpoint.WithType(dt.element)
+	conversion, _ := createTypeConversion(srcEp, dstEp)
+
 	if conversion == nil {
 		// No conversion between the elements of the array
 		return nil
