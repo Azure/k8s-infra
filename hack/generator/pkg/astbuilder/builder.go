@@ -17,7 +17,7 @@ import (
 //	}
 func CheckErrorAndReturn(otherReturns ...dst.Expr) dst.Stmt {
 
-	returnValues := append([]dst.Expr{}, otherReturns...)
+	returnValues := append([]dst.Expr{}, cloneExprSlice(otherReturns)...)
 	returnValues = append(returnValues, dst.NewIdent("err"))
 
 	return &dst.IfStmt{
@@ -107,7 +107,7 @@ func VariableDeclaration(ident string, typ dst.Expr, comment string) *dst.GenDec
 				Names: []*dst.Ident{
 					dst.NewIdent(ident),
 				},
-				Type: typ,
+				Type: dst.Clone(typ).(dst.Expr),
 			},
 		},
 	}
@@ -123,14 +123,14 @@ func TypeAssert(lhs dst.Expr, rhs dst.Expr, typ dst.Expr) *dst.AssignStmt {
 
 	return &dst.AssignStmt{
 		Lhs: []dst.Expr{
-			lhs,
+			dst.Clone(lhs).(dst.Expr),
 			dst.NewIdent("ok"),
 		},
 		Tok: token.DEFINE,
 		Rhs: []dst.Expr{
 			&dst.TypeAssertExpr{
-				X:    rhs,
-				Type: typ,
+				X:    dst.Clone(rhs).(dst.Expr),
+				Type: dst.Clone(typ).(dst.Expr),
 			},
 		},
 	}
@@ -164,7 +164,7 @@ func ReturnIfNotOk(returns ...dst.Expr) *dst.IfStmt {
 func ReturnIfNil(toCheck dst.Expr, returns ...dst.Expr) dst.Stmt {
 	return ReturnIfExpr(
 		&dst.BinaryExpr{
-			X:  toCheck,
+			X:  dst.Clone(toCheck).(dst.Expr),
 			Op: token.EQL,
 			Y:  dst.NewIdent("nil"),
 		},
@@ -178,7 +178,7 @@ func ReturnIfNil(toCheck dst.Expr, returns ...dst.Expr) dst.Stmt {
 func ReturnIfNotNil(toCheck dst.Expr, returns ...dst.Expr) dst.Stmt {
 	return ReturnIfExpr(
 		&dst.BinaryExpr{
-			X:  toCheck,
+			X:  dst.Clone(toCheck).(dst.Expr),
 			Op: token.NEQ,
 			Y:  dst.NewIdent("nil"),
 		},
@@ -199,7 +199,7 @@ func ReturnIfExpr(cond dst.Expr, returns ...dst.Expr) *dst.IfStmt {
 		Body: &dst.BlockStmt{
 			List: []dst.Stmt{
 				&dst.ReturnStmt{
-					Results: returns,
+					Results: cloneExprSlice(returns),
 				},
 			},
 		},
@@ -222,7 +222,7 @@ func FormatError(fmtPackage string, formatString string, args ...dst.Expr) dst.E
 func AddrOf(exp dst.Expr) *dst.UnaryExpr {
 	return &dst.UnaryExpr{
 		Op: token.AND,
-		X:  exp,
+		X:  dst.Clone(exp).(dst.Expr),
 	}
 }
 
@@ -230,7 +230,7 @@ func AddrOf(exp dst.Expr) *dst.UnaryExpr {
 func Dereference(exp dst.Expr) *dst.UnaryExpr {
 	return &dst.UnaryExpr{
 		Op: token.MUL,
-		X:  exp,
+		X:  dst.Clone(exp).(dst.Expr),
 	}
 }
 
@@ -244,7 +244,7 @@ func Returns(returns ...dst.Expr) dst.Stmt {
 				Before: dst.NewLine,
 			},
 		},
-		Results: returns,
+		Results: cloneExprSlice(returns),
 	}
 }
 
@@ -259,7 +259,25 @@ func QualifiedTypeName(pkg string, name string) *dst.SelectorExpr {
 
 func Selector(expr dst.Expr, name string) *dst.SelectorExpr {
 	return &dst.SelectorExpr{
-		X:   expr,
+		X:   dst.Clone(expr).(dst.Expr),
 		Sel: dst.NewIdent(name),
 	}
+}
+
+func cloneExprSlice(exprs []dst.Expr) []dst.Expr {
+	var result []dst.Expr
+	for _, exp := range exprs {
+		result = append(result, dst.Clone(exp).(dst.Expr))
+	}
+
+	return result
+}
+
+func cloneStmtSlice(stmts []dst.Stmt) []dst.Stmt {
+	var result []dst.Stmt
+	for _, st := range stmts {
+		result = append(result, dst.Clone(st).(dst.Stmt))
+	}
+
+	return result
 }

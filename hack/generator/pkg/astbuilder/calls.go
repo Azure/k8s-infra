@@ -15,7 +15,7 @@ import (
 func CallFunc(funcName string, arguments ...dst.Expr) dst.Expr {
 	return &dst.CallExpr{
 		Fun:  dst.NewIdent(funcName),
-		Args: arguments,
+		Args: cloneExprSlice(arguments),
 	}
 }
 
@@ -28,7 +28,7 @@ func CallQualifiedFunc(qualifier string, funcName string, arguments ...dst.Expr)
 			X:   dst.NewIdent(qualifier),
 			Sel: dst.NewIdent(funcName),
 		},
-		Args: arguments,
+		Args: cloneExprSlice(arguments),
 	}
 }
 

@@ -45,7 +45,7 @@ func IterateOverListWithIndex(index string, item string, list dst.Expr, statemen
 		Tok:   token.DEFINE,
 		X:     list,
 		Body: &dst.BlockStmt{
-			List: statements,
+			List: cloneStmtSlice(statements),
 		},
 	}
 }
