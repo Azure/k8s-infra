@@ -16,11 +16,11 @@ func (subject Subject) ConvertTo(destination *Staging) error {
 	var staging Staging
 
 	// scores
-	temp := make([]*int, len(subject.scores))
-	for index, item := range subject.scores {
-		temp[index] = &item
+	scoresList := make([]*int, len(subject.scores))
+	for index, score := range subject.scores {
+		scoresList[index] = &score
 	}
-	staging.scores = temp
+	staging.scores = scoresList
 
 	// use staging to populate
 	staging.ConvertTo(destination)

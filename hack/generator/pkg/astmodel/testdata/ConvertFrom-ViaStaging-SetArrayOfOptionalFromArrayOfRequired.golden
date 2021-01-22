@@ -19,9 +19,9 @@ func (subject Subject) ConvertFrom(source *Staging) error {
 	subjectTemp.ConvertFrom(source)
 
 	// scores
-	temp := make([]*int, len(subjectTemp.scores))
-	for index, item := range subjectTemp.scores {
-		temp[index] = &item
+	scoresList := make([]*int, len(subjectTemp.scores))
+	for index, score := range subjectTemp.scores {
+		scoresList[index] = &score
 	}
-	subject.scores = temp
+	subject.scores = scoresList
 }

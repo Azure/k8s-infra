@@ -14,9 +14,9 @@ type Subject struct {
 func (subject Subject) ConvertTo(destination *Staging) error {
 
 	// scores
-	temp := make([]int, len(subject.scores))
-	for index, item := range subject.scores {
-		temp[index] = item
+	scoresList := make([]int, len(subject.scores))
+	for index, score := range subject.scores {
+		scoresList[index] = score
 	}
-	destination.scores = temp
+	destination.scores = scoresList
 }

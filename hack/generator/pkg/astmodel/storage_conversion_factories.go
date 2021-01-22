@@ -219,24 +219,27 @@ func assignArrayFromArray(
 		return nil
 	}
 
+	itemId := sourceEndpoint.CreateSingularLocal()
+	tempId := sourceEndpoint.CreatePluralLocal("List")
+
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		declaration := astbuilder.SimpleAssignment(
-			dst.NewIdent("temp"),
+			tempId,
 			token.DEFINE,
 			astbuilder.MakeList(dt.AsType(ctx), astbuilder.CallFunc("len", reader)))
 
 		body := conversion(
-			dst.NewIdent("item"),
+			itemId,
 			&dst.IndexExpr{
-				X:     dst.NewIdent("temp"),
+				X:     tempId,
 				Index: dst.NewIdent("index"),
 			},
 			ctx,
 		)
 
-		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, dst.NewIdent("temp"))
+		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, tempId)
 
-		loop := astbuilder.IterateOverListWithIndex("index", "item", reader, body...)
+		loop := astbuilder.IterateOverListWithIndex("index", itemId.Name, reader, body...)
 
 		return []dst.Stmt{
 			declaration,

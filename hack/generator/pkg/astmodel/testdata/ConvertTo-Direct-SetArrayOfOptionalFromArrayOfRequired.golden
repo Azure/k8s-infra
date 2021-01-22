@@ -14,13 +14,13 @@ type Subject struct {
 func (subject Subject) ConvertTo(destination *Staging) error {
 
 	// scores
-	temp := make([]int, len(subject.scores))
-	for index, item := range subject.scores {
-		if item != nil {
-			temp[index] = *item
+	scoresList := make([]int, len(subject.scores))
+	for index, score := range subject.scores {
+		if score != nil {
+			scoresList[index] = *score
 		} else {
-			temp[index] = 0
+			scoresList[index] = 0
 		}
 	}
-	destination.scores = temp
+	destination.scores = scoresList
 }
