@@ -13,14 +13,14 @@ type Subject struct {
 
 func (subject Subject) ConvertFrom(source *Staging) error {
 	// staging is our intermediate type for conversion
-	var staging Staging
+	var subjectTemp Staging
 
 	// first populate staging
-	staging.ConvertFrom(source)
+	subjectTemp.ConvertFrom(source)
 
 	// scores
-	temp := make([]int, len(staging.scores))
-	for index, item := range staging.scores {
+	temp := make([]int, len(subjectTemp.scores))
+	for index, item := range subjectTemp.scores {
 		temp[index] = item
 	}
 	subject.scores = temp

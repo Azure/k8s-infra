@@ -185,8 +185,11 @@ func (fn *StorageConversionFunction) generateDirectConversionTo(receiver string,
 // [copy values from staging]
 //
 func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiver string, parameter string, ctx *CodeGenerationContext) []dst.Stmt {
+
+	local := fn.knownLocals.createLocal(receiver + "Temp")
+
 	staging := astbuilder.LocalVariableDeclaration(
-		"staging", dst.NewIdent(fn.staging.name.name), "// staging is our intermediate type for conversion")
+		local, dst.NewIdent(fn.staging.name.name), "// staging is our intermediate type for conversion")
 	staging.Decorations().Before = dst.NewLine
 
 	convertFrom := astbuilder.InvokeQualifiedFunc(

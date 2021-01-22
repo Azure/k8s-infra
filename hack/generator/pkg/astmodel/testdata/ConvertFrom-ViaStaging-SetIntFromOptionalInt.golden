@@ -13,14 +13,14 @@ type Subject struct {
 
 func (subject Subject) ConvertFrom(source *Staging) error {
 	// staging is our intermediate type for conversion
-	var staging Staging
+	var subjectTemp Staging
 
 	// first populate staging
-	staging.ConvertFrom(source)
+	subjectTemp.ConvertFrom(source)
 
 	// age
-	if staging.age != nil {
-		subject.age = *staging.age
+	if subjectTemp.age != nil {
+		subject.age = *subjectTemp.age
 	} else {
 		subject.age = 0
 	}
