@@ -24,6 +24,9 @@ func CreateStorageConversionFunctionTestCases() []StorageConversionPropertyTestC
 	arrayOfRequiredIntProperty := NewPropertyDefinition("scores", "array-required-int", NewArrayType(IntType))
 	arrayOfOptionalIntProperty := NewPropertyDefinition("scores", "array-optional-int", NewArrayType(NewOptionalType(IntType)))
 
+	mapOfRequiredIntsProperty := NewPropertyDefinition("ratings", "map-string-required-int", NewMapType(StringType, IntType))
+	mapOfOptionalIntsProperty := NewPropertyDefinition("ratings", "map-string-required-int", NewMapType(StringType, NewOptionalType(IntType)))
+
 	return []StorageConversionPropertyTestCase{
 		{"SetStringFromString", requiredStringProperty, requiredStringProperty},
 		{"SetStringFromOptionalString", requiredStringProperty, optionalStringProperty},
@@ -36,6 +39,10 @@ func CreateStorageConversionFunctionTestCases() []StorageConversionPropertyTestC
 		{"SetArrayOfRequiredFromArrayOfRequired", arrayOfRequiredIntProperty, arrayOfRequiredIntProperty},
 		{"SetArrayOfRequiredFromArrayOfOptional", arrayOfRequiredIntProperty, arrayOfOptionalIntProperty},
 		{"SetArrayOfOptionalFromArrayOfRequired", arrayOfOptionalIntProperty, arrayOfRequiredIntProperty},
+
+		{"SetMapOfRequiredFromMapOfRequired", mapOfRequiredIntsProperty, mapOfRequiredIntsProperty},
+		{"SetMapOfRequiredFromMapOfOptional", mapOfRequiredIntsProperty, mapOfOptionalIntsProperty},
+		{"SetMapOfOptionalFromMapOfRequired", mapOfOptionalIntsProperty, mapOfRequiredIntsProperty},
 	}
 }
 
@@ -89,10 +96,10 @@ func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase
 		WithProperty(c.receiverProperty)
 
 	subjectDefinition := MakeTypeDefinition(
-		MakeTypeName(ref, "Subject"),
+		MakeTypeName(ref, "Person"),
 		subjectType)
 
-	stagingTypeName := MakeTypeName(ref, "Staging")
+	stagingTypeName := MakeTypeName(ref, "Party")
 	stagingType := NewObjectType().WithProperty(c.otherProperty)
 	stagingDefinition := MakeTypeDefinition(stagingTypeName, stagingType)
 

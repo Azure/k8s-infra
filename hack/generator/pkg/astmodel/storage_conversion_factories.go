@@ -61,6 +61,7 @@ func init() {
 		assignOptionalPrimitiveTypeFromPrimitiveType,
 		assignPrimitiveTypeFromOptionalPrimitiveType,
 		assignArrayFromArray,
+		assignMapFromMap,
 	}
 }
 
@@ -240,6 +241,69 @@ func assignArrayFromArray(
 		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, tempId)
 
 		loop := astbuilder.IterateOverListWithIndex("index", itemId.Name, reader, body...)
+
+		return []dst.Stmt{
+			declaration,
+			loop,
+			assign,
+		}
+	}
+}
+
+// assignMapFromMap will generate a code fragment to populate an array, assuming the
+// underlying types of the two arrays are compatible
+//
+// var <map> map[<key>]<type>
+// for key, <item> := range <reader> {
+//     <map>[<key>] := <item>
+// }
+// <writer> = <map>
+func assignMapFromMap(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
+	st := AsMapType(sourceEndpoint.Type())
+	dt := AsMapType(destinationEndpoint.Type())
+
+	if st == nil || dt == nil {
+		// One or other type is not a map
+		return nil
+	}
+
+	if !st.key.Equals(dt.key) {
+		// Keys are different types
+		return nil
+	}
+
+	srcEp := sourceEndpoint.WithType(st.value)
+	dstEp := destinationEndpoint.WithType(dt.value)
+	conversion, _ := createTypeConversion(srcEp, dstEp)
+
+	if conversion == nil {
+		// No conversion between the elements of the map
+		return nil
+	}
+
+	itemId := sourceEndpoint.CreateSingularLocal()
+	tempId := sourceEndpoint.CreatePluralLocal("Map")
+
+	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+		declaration := astbuilder.SimpleAssignment(
+			tempId,
+			token.DEFINE,
+			astbuilder.MakeMap(dt.key.AsType(ctx), dt.value.AsType(ctx)))
+
+		body := conversion(
+			itemId,
+			&dst.IndexExpr{
+				X:     tempId,
+				Index: dst.NewIdent("key"),
+			},
+			ctx,
+		)
+
+		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, tempId)
+
+		loop := astbuilder.IterateOverMapWithValue("key", itemId.Name, reader, body...)
 
 		return []dst.Stmt{
 			declaration,
