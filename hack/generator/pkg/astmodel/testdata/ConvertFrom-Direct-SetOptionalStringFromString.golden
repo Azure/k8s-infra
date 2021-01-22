@@ -3,16 +3,16 @@
 // Licensed under the MIT license.
 package vVersion
 
-type Staging struct {
+type Party struct {
 	name string `json:"required-string"`
 }
 
-type Subject struct {
+type Person struct {
 	name *string `json:"optional-string"`
 }
 
-func (subject Subject) ConvertFrom(source *Staging) error {
+func (person Person) ConvertFrom(source *Party) error {
 
 	// name
-	subject.name = &source.name
+	person.name = &source.name
 }

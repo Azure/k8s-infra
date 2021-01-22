@@ -3,29 +3,29 @@
 // Licensed under the MIT license.
 package vVersion
 
-type Staging struct {
+type Party struct {
 	scores []*int `json:"array-optional-int"`
 }
 
-type Subject struct {
+type Person struct {
 	scores []int `json:"array-required-int"`
 }
 
-func (subject Subject) ConvertFrom(source *Staging) error {
+func (person Person) ConvertFrom(source *Party) error {
 	// staging is our intermediate type for conversion
-	var subjectTemp Staging
+	var personTemp Party
 
 	// first populate staging
-	subjectTemp.ConvertFrom(source)
+	personTemp.ConvertFrom(source)
 
 	// scores
-	scoresList := make([]int, len(subjectTemp.scores))
-	for index, score := range subjectTemp.scores {
+	scoresList := make([]int, len(personTemp.scores))
+	for index, score := range personTemp.scores {
 		if score != nil {
 			scoresList[index] = *score
 		} else {
 			scoresList[index] = 0
 		}
 	}
-	subject.scores = scoresList
+	person.scores = scoresList
 }

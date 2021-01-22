@@ -3,16 +3,16 @@
 // Licensed under the MIT license.
 package vVersion
 
-type Staging struct {
+type Party struct {
 	age int `json:"required-int"`
 }
 
-type Subject struct {
+type Person struct {
 	age int `json:"required-int"`
 }
 
-func (subject Subject) ConvertFrom(source *Staging) error {
+func (person Person) ConvertFrom(source *Party) error {
 
 	// age
-	subject.age = source.age
+	person.age = source.age
 }

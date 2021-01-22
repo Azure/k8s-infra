@@ -3,20 +3,20 @@
 // Licensed under the MIT license.
 package vVersion
 
-type Staging struct {
+type Party struct {
 	name *string `json:"optional-string"`
 }
 
-type Subject struct {
+type Person struct {
 	name *string `json:"optional-string"`
 }
 
-func (subject Subject) ConvertTo(destination *Staging) error {
+func (person Person) ConvertTo(destination *Party) error {
 	// staging is our intermediate type for conversion
-	var staging Staging
+	var staging Party
 
 	// name
-	staging.name = subject.name
+	staging.name = person.name
 
 	// use staging to populate
 	staging.ConvertTo(destination)
