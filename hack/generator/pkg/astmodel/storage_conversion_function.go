@@ -31,6 +31,8 @@ type StorageConversionFunction struct {
 	idFactory IdentifierFactory
 	// Which conversionType of conversion are we generating?
 	conversionDirection StorageConversionDirection
+	// A cached set of local identifiers that have already been used, to avoid conflicts
+	knownLocals KnownLocalsSet
 }
 
 // Direction of conversion we're implementing with this function
@@ -58,6 +60,7 @@ func NewStorageConversionFromFunction(
 		idFactory:           idFactory,
 		conversionDirection: ConvertFrom,
 		conversions:         make(map[string]StoragePropertyConversion),
+		knownLocals:         make(KnownLocalsSet),
 	}
 
 	errs := result.createConversions(receiver)
@@ -77,6 +80,7 @@ func NewStorageConversionToFunction(
 		idFactory:           idFactory,
 		conversionDirection: ConvertTo,
 		conversions:         make(map[string]StoragePropertyConversion),
+		knownLocals:         make(map[string]struct{}),
 	}
 
 	errs := result.createConversions(receiver)
@@ -283,10 +287,8 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 	otherObject := AsObjectType(fn.staging.Type())
 	var errs []error
 
-	knownLocals := make(map[string]struct{})
-
 	// Flag receiver name as used
-	knownLocals[fn.receiverName(receiver.name)] = struct{}{}
+	fn.knownLocals.Add(receiver.name.name)
 
 	for _, receiverProperty := range receiverObject.Properties() {
 		otherProperty, ok := otherObject.Property(receiverProperty.propertyName)
@@ -295,9 +297,9 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 			var conv StoragePropertyConversion
 			var err error
 			if fn.conversionDirection == ConvertFrom {
-				conv, err = createPropertyConversion(otherProperty, receiverProperty, knownLocals)
+				conv, err = createPropertyConversion(otherProperty, receiverProperty, fn.knownLocals)
 			} else {
-				conv, err = createPropertyConversion(receiverProperty, otherProperty, knownLocals)
+				conv, err = createPropertyConversion(receiverProperty, otherProperty, fn.knownLocals)
 			}
 
 			if conv != nil {
