@@ -111,16 +111,13 @@ func (fn *StorageConversionFunction) Equals(f Function) bool {
 func (fn *StorageConversionFunction) AsFunc(ctx *CodeGenerationContext, receiver TypeName) *dst.FuncDecl {
 
 	parameterName := fn.parameterName()
-	parameterIdent := dst.NewIdent(fn.parameterName())
-
 	receiverName := fn.receiverName(receiver)
-	receiverIdent := dst.NewIdent(receiverName)
 
 	funcDetails := &astbuilder.FuncDetails{
 		ReceiverIdent: receiverName,
 		ReceiverType:  receiver.AsType(ctx),
 		Name:          fn.Name(),
-		Body:          fn.generateBody(receiverIdent, parameterIdent, ctx),
+		Body:          fn.generateBody(receiverName, parameterName, ctx),
 	}
 
 	funcDetails.AddParameter(
@@ -136,7 +133,7 @@ func (fn *StorageConversionFunction) AsFunc(ctx *CodeGenerationContext, receiver
 // receiver is an expression for access our receiver type, used to qualify field access
 // parameter is an expression for access to our parameter passed to the function, also used for field access
 // ctx is our code generation context, passed to allow resolving of identifiers in other packages
-func (fn *StorageConversionFunction) generateBody(receiver dst.Expr, parameter dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+func (fn *StorageConversionFunction) generateBody(receiver string, parameter string, ctx *CodeGenerationContext) []dst.Stmt {
 
 	if fn.parameter.Equals(fn.staging.name) {
 		// Last step of conversion, directly to the parameter type we've been given
@@ -159,14 +156,20 @@ func (fn *StorageConversionFunction) generateBody(receiver dst.Expr, parameter d
 
 // generateDirectConversionFrom returns the method body required to directly copy information from
 // the parameter instance onto our receiver
-func (fn *StorageConversionFunction) generateDirectConversionFrom(receiver dst.Expr, parameter dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
-	return fn.generateAssignments(parameter, receiver, ctx)
+func (fn *StorageConversionFunction) generateDirectConversionFrom(receiver string, parameter string, ctx *CodeGenerationContext) []dst.Stmt {
+	receiverIdent := dst.NewIdent(receiver)
+	parameterIdent := dst.NewIdent(parameter)
+
+	return fn.generateAssignments(parameterIdent, receiverIdent, ctx)
 }
 
 // generateDirectConversionTo returns the method body required to directly copy information from
 // our receiver onto the parameter instance
-func (fn *StorageConversionFunction) generateDirectConversionTo(receiver dst.Expr, parameter dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
-	return fn.generateAssignments(receiver, parameter, ctx)
+func (fn *StorageConversionFunction) generateDirectConversionTo(receiver string, parameter string, ctx *CodeGenerationContext) []dst.Stmt {
+	receiverIdent := dst.NewIdent(receiver)
+	parameterIdent := dst.NewIdent(parameter)
+
+	return fn.generateAssignments(receiverIdent, parameterIdent, ctx)
 }
 
 // generateIndirectConversionFrom returns the method body required to populate our receiver when
@@ -177,19 +180,19 @@ func (fn *StorageConversionFunction) generateDirectConversionTo(receiver dst.Exp
 // staging.ConvertFrom(parameter)
 // [copy values from staging]
 //
-func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiver dst.Expr, parameter dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiver string, parameter string, ctx *CodeGenerationContext) []dst.Stmt {
 	staging := astbuilder.LocalVariableDeclaration(
 		"staging", dst.NewIdent(fn.staging.name.name), "// staging is our intermediate type for conversion")
 	staging.Decorations().Before = dst.NewLine
 
 	convertFrom := astbuilder.InvokeQualifiedFunc(
-		"staging", fn.name, parameter)
+		local, fn.name, dst.NewIdent(parameter))
 	convertFrom.Decorations().Before = dst.EmptyLine
 	convertFrom.Decorations().Start.Append("// first populate staging")
 
 	assignments := fn.generateAssignments(
-		dst.NewIdent("staging"),
-		receiver,
+		dst.NewIdent(local),
+		dst.NewIdent(receiver),
 		ctx)
 
 	var result []dst.Stmt
@@ -207,18 +210,18 @@ func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiver dst
 // [copy values to staging]
 // staging.ConvertTo(parameter)
 //
-func (fn *StorageConversionFunction) generateIndirectConversionTo(receiver dst.Expr, parameter dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+func (fn *StorageConversionFunction) generateIndirectConversionTo(receiver string, parameter string, ctx *CodeGenerationContext) []dst.Stmt {
 	staging := astbuilder.LocalVariableDeclaration(
 		"staging", dst.NewIdent(fn.staging.name.name), "// staging is our intermediate type for conversion")
 	staging.Decorations().Before = dst.NewLine
 
 	convertTo := astbuilder.InvokeQualifiedFunc(
-		"staging", fn.name, parameter)
+		"staging", fn.name, dst.NewIdent(parameter))
 	convertTo.Decorations().Before = dst.EmptyLine
 	convertTo.Decorations().Start.Append("// use staging to populate")
 
 	assignments := fn.generateAssignments(
-		receiver,
+		dst.NewIdent(receiver),
 		dst.NewIdent("staging"),
 		ctx)
 
