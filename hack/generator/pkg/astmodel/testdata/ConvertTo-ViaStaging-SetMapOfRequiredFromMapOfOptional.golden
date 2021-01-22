@@ -20,6 +20,7 @@ func (person Person) ConvertTo(destination *Party) error {
 	for key, rating := range person.ratings {
 		ratingsMap[key] = &rating
 	}
+
 	staging.ratings = ratingsMap
 
 	// use staging to populate

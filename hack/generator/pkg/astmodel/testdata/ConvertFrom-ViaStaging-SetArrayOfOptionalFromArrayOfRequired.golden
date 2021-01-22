@@ -23,5 +23,6 @@ func (person Person) ConvertFrom(source *Party) error {
 	for index, score := range personTemp.scores {
 		scoresList[index] = &score
 	}
+
 	person.scores = scoresList
 }

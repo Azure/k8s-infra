@@ -20,6 +20,7 @@ func (person Person) ConvertTo(destination *Party) error {
 	for index, score := range person.scores {
 		scoresList[index] = score
 	}
+
 	staging.scores = scoresList
 
 	// use staging to populate

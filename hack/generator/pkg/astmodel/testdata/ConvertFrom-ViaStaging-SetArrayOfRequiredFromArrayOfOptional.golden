@@ -27,5 +27,6 @@ func (person Person) ConvertFrom(source *Party) error {
 			scoresList[index] = 0
 		}
 	}
+
 	person.scores = scoresList
 }

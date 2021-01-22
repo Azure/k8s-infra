@@ -241,6 +241,7 @@ func assignArrayFromArray(
 		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, tempId)
 
 		loop := astbuilder.IterateOverListWithIndex("index", itemId.Name, reader, body...)
+		loop.Decs.After = dst.EmptyLine
 
 		return []dst.Stmt{
 			declaration,
@@ -304,6 +305,7 @@ func assignMapFromMap(
 		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, tempId)
 
 		loop := astbuilder.IterateOverMapWithValue("key", itemId.Name, reader, body...)
+		loop.Decs.After = dst.EmptyLine
 
 		return []dst.Stmt{
 			declaration,

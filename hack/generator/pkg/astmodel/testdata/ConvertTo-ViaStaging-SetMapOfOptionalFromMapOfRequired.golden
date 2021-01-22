@@ -24,6 +24,7 @@ func (person Person) ConvertTo(destination *Party) error {
 			ratingsMap[key] = 0
 		}
 	}
+
 	staging.ratings = ratingsMap
 
 	// use staging to populate

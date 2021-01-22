@@ -23,5 +23,6 @@ func (person Person) ConvertFrom(source *Party) error {
 	for key, rating := range personTemp.ratings {
 		ratingsMap[key] = rating
 	}
+
 	person.ratings = ratingsMap
 }

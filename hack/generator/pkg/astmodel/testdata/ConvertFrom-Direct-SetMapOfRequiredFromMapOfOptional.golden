@@ -22,5 +22,6 @@ func (person Person) ConvertFrom(source *Party) error {
 			ratingsMap[key] = 0
 		}
 	}
+
 	person.ratings = ratingsMap
 }

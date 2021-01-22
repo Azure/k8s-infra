@@ -22,5 +22,6 @@ func (person Person) ConvertTo(destination *Party) error {
 			scoresList[index] = 0
 		}
 	}
+
 	destination.scores = scoresList
 }

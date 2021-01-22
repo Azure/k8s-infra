@@ -24,6 +24,7 @@ func (person Person) ConvertTo(destination *Party) error {
 			scoresList[index] = 0
 		}
 	}
+
 	staging.scores = scoresList
 
 	// use staging to populate

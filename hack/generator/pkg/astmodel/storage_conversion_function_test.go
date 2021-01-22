@@ -27,6 +27,14 @@ func CreateStorageConversionFunctionTestCases() []StorageConversionPropertyTestC
 	mapOfRequiredIntsProperty := NewPropertyDefinition("ratings", "map-string-required-int", NewMapType(StringType, IntType))
 	mapOfOptionalIntsProperty := NewPropertyDefinition("ratings", "map-string-required-int", NewMapType(StringType, NewOptionalType(IntType)))
 
+	nastyProperty := NewPropertyDefinition(
+		"nasty",
+		"my-oh-my",
+		NewMapType(
+			StringType,
+			NewArrayType(
+				NewMapType(StringType, BoolType))))
+
 	return []StorageConversionPropertyTestCase{
 		{"SetStringFromString", requiredStringProperty, requiredStringProperty},
 		{"SetStringFromOptionalString", requiredStringProperty, optionalStringProperty},
@@ -43,6 +51,8 @@ func CreateStorageConversionFunctionTestCases() []StorageConversionPropertyTestC
 		{"SetMapOfRequiredFromMapOfRequired", mapOfRequiredIntsProperty, mapOfRequiredIntsProperty},
 		{"SetMapOfRequiredFromMapOfOptional", mapOfRequiredIntsProperty, mapOfOptionalIntsProperty},
 		{"SetMapOfOptionalFromMapOfRequired", mapOfOptionalIntsProperty, mapOfRequiredIntsProperty},
+
+		{"NastyTest", nastyProperty, nastyProperty},
 	}
 }
 

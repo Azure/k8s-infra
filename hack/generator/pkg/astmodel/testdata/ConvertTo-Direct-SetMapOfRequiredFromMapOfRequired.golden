@@ -18,5 +18,6 @@ func (person Person) ConvertTo(destination *Party) error {
 	for key, rating := range person.ratings {
 		ratingsMap[key] = rating
 	}
+
 	destination.ratings = ratingsMap
 }
