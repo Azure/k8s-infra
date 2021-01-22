@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -110,30 +111,29 @@ func (c *Client) PutDeployment(ctx context.Context, deployment *Deployment) erro
 	return nil
 }
 
-func (c *Client) GetResource(ctx context.Context, resourceID string, resource interface{}) error {
+func (c *Client) GetResource(ctx context.Context, resourceID string, resource interface{}) (error, time.Duration) {
 
 	preparer := autorest.CreatePreparer(
 		autorest.AsContentType("application/json"))
 
 	req, err := c.newRequest(ctx, http.MethodGet, resourceID)
 	if err != nil {
-		return err
+		return err, 0
 	}
 
 	req, err = preparer.Prepare(req)
 	if err != nil {
 		tab.For(ctx).Error(err)
-		return err
+		return err, 0
 	}
 
 	// The linter below doesn't realize that the response is closed in the course of
 	// the autorest.Respond call below, suppressing the false positive.
 	// nolint:bodyclose
 	resp, err := c.Send(req)
-
 	if err != nil {
 		tab.For(ctx).Error(err)
-		return err
+		return err, 0
 	}
 
 	err = autorest.Respond(
@@ -141,29 +141,42 @@ func (c *Client) GetResource(ctx context.Context, resourceID string, resource in
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(resource),
 		autorest.ByClosing())
+
+	retryAfter := getRetryAfter(resp)
+
 	if err != nil {
 		tab.For(ctx).Error(err)
-		return err
+		return err, retryAfter
 	}
 
-	return nil
+	return nil, retryAfter
+}
+
+func getRetryAfter(resp *http.Response) time.Duration {
+	if retryAfterStr := resp.Header.Get("Retry-After"); retryAfterStr != "" {
+		if retryAfterVal, parseErr := strconv.ParseInt(retryAfterStr, 10, 64); parseErr == nil {
+			return time.Duration(retryAfterVal) * time.Second
+		}
+	}
+
+	return 0
 }
 
 // DeleteResource will make an HTTP DELETE call to the resourceId and attempt to fill the resource with the response.
 // If the body of the response is empty, the resource will be nil.
-func (c *Client) DeleteResource(ctx context.Context, resourceID string, resource interface{}) error {
+func (c *Client) DeleteResource(ctx context.Context, resourceID string, resource interface{}) (error, time.Duration) {
 	preparer := autorest.CreatePreparer(
 		autorest.AsContentType("application/json"))
 
 	req, err := c.newRequest(ctx, http.MethodDelete, resourceID)
 	if err != nil {
-		return err
+		return err, 0
 	}
 
 	req, err = preparer.Prepare(req)
 	if err != nil {
 		tab.For(ctx).Error(err)
-		return err
+		return err, 0
 	}
 
 	// The linter below doesn't realize that the response is closed in the course of
@@ -173,7 +186,7 @@ func (c *Client) DeleteResource(ctx context.Context, resourceID string, resource
 
 	if err != nil {
 		tab.For(ctx).Error(err)
-		return err
+		return err, 0
 	}
 
 	err = autorest.Respond(
@@ -182,17 +195,19 @@ func (c *Client) DeleteResource(ctx context.Context, resourceID string, resource
 		autorest.ByUnmarshallingJSON(resource),
 		autorest.ByClosing())
 
+	retryAfter := getRetryAfter(resp)
+
 	if err != nil {
 		if IsNotFound(err) {
 			// you asked it to be gone, well, it is.
-			return nil
+			return nil, 0 /* no need to retry */
 		}
 
 		tab.For(ctx).Error(err)
-		return err
+		return err, retryAfter
 	}
 
-	return nil
+	return nil, retryAfter
 }
 
 func (c *Client) newRequest(ctx context.Context, method string, entityPath string) (*http.Request, error) {
