@@ -293,7 +293,7 @@ func TestOneOfResourceSpec(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	r := astmodel.NewResourceType(astmodel.StringType, astmodel.IntType)
-	oneOf := astmodel.MakeOneOfType(astmodel.BoolType, r).(astmodel.OneOfType)
+	oneOf := astmodel.MakeOneOfType(astmodel.BoolType, r).(*astmodel.OneOfType)
 
 	synth.specOrStatus = chooseSpec
 

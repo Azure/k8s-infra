@@ -89,7 +89,6 @@ func MakeAllOfType(types ...Type) Type {
 	return &AllOfType{uniqueTypes}
 }
 
-
 // Types returns what types the AllOf can be.
 // Exposed as ReadonlyTypeSet so caller can't break invariants.
 func (allOf *AllOfType) Types() ReadonlyTypeSet {

@@ -28,7 +28,7 @@ func MakeErroredType(t Type, errors []string, warnings []string) *ErroredType {
 		errors:   errors,
 		warnings: warnings,
 	}
-	
+
 	return result.WithType(t) // using WithType ensures warnings and errors get merged if needed
 }
 
@@ -48,7 +48,6 @@ func (errored *ErroredType) WithType(t Type) *ErroredType {
 
 	return errored
 }
-
 
 func (errored *ErroredType) Equals(t Type) bool {
 	other, ok := t.(*ErroredType)
