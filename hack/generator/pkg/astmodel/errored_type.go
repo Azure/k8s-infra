@@ -20,20 +20,24 @@ type ErroredType struct {
 	warnings []string
 }
 
-func MakeErroredType(t Type, errors []string, warnings []string) ErroredType {
-	return ErroredType{
+var _ Type = &ErroredType{}
+
+func MakeErroredType(t Type, errors []string, warnings []string) *ErroredType {
+	result := &ErroredType{
 		inner:    nil,
 		errors:   errors,
 		warnings: warnings,
-	}.WithType(t) // using WithType ensures warnings and errors get merged if needed
+	}
+	
+	return result.WithType(t) // using WithType ensures warnings and errors get merged if needed
 }
 
-func (e ErroredType) InnerType() Type {
+func (e *ErroredType) InnerType() Type {
 	return e.inner
 }
 
-func (errored ErroredType) WithType(t Type) ErroredType {
-	if otherError, ok := t.(ErroredType); ok {
+func (errored *ErroredType) WithType(t Type) *ErroredType {
+	if otherError, ok := t.(*ErroredType); ok {
 		// nested errors merge errors & warnings
 		errored.inner = otherError.inner
 		errored.errors = append(errored.errors, otherError.errors...)
@@ -45,12 +49,15 @@ func (errored ErroredType) WithType(t Type) ErroredType {
 	return errored
 }
 
-var _ Type = ErroredType{}
 
-func (errored ErroredType) Equals(t Type) bool {
-	other, ok := t.(ErroredType)
+func (errored *ErroredType) Equals(t Type) bool {
+	other, ok := t.(*ErroredType)
 	if !ok {
 		return false
+	}
+
+	if errored == other {
+		return true // short-circuit
 	}
 
 	return ((errored.inner == nil && other.inner == nil) || errored.inner.Equals(other.inner)) &&
@@ -72,7 +79,7 @@ func stringSlicesEqual(l []string, r []string) bool {
 	return true
 }
 
-func (errored ErroredType) References() TypeNameSet {
+func (errored *ErroredType) References() TypeNameSet {
 	if errored.inner == nil {
 		return nil
 	}
@@ -80,7 +87,7 @@ func (errored ErroredType) References() TypeNameSet {
 	return errored.inner.References()
 }
 
-func (errored ErroredType) RequiredPackageReferences() *PackageReferenceSet {
+func (errored *ErroredType) RequiredPackageReferences() *PackageReferenceSet {
 	if errored.inner == nil {
 		return NewPackageReferenceSet()
 	}
@@ -88,7 +95,7 @@ func (errored ErroredType) RequiredPackageReferences() *PackageReferenceSet {
 	return errored.inner.RequiredPackageReferences()
 }
 
-func (errored ErroredType) handleWarningsAndErrors() {
+func (errored *ErroredType) handleWarningsAndErrors() {
 	for _, warning := range errored.warnings {
 		klog.Warning(warning)
 	}
@@ -107,7 +114,7 @@ func (errored ErroredType) handleWarningsAndErrors() {
 	}
 }
 
-func (errored ErroredType) AsDeclarations(cgc *CodeGenerationContext, dc DeclarationContext) []dst.Decl {
+func (errored *ErroredType) AsDeclarations(cgc *CodeGenerationContext, dc DeclarationContext) []dst.Decl {
 	errored.handleWarningsAndErrors()
 	if errored.inner == nil {
 		return nil
@@ -116,7 +123,7 @@ func (errored ErroredType) AsDeclarations(cgc *CodeGenerationContext, dc Declara
 	return errored.inner.AsDeclarations(cgc, dc)
 }
 
-func (errored ErroredType) AsType(cgc *CodeGenerationContext) dst.Expr {
+func (errored *ErroredType) AsType(cgc *CodeGenerationContext) dst.Expr {
 	errored.handleWarningsAndErrors()
 	if errored.inner == nil {
 		return nil
@@ -125,7 +132,7 @@ func (errored ErroredType) AsType(cgc *CodeGenerationContext) dst.Expr {
 	return errored.inner.AsType(cgc)
 }
 
-func (errored ErroredType) String() string {
+func (errored *ErroredType) String() string {
 	if errored.inner == nil {
 		return "(error hole)"
 	}

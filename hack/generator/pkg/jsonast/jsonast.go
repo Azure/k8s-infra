@@ -156,13 +156,13 @@ func (scanner *SchemaScanner) GenerateDefinitionsFromDeploymentTemplate(ctx cont
 		return nil, errors.Errorf("expected 'resources' property to be an array")
 	}
 
-	resourcesOneOf, ok := resourcesArray.Element().(astmodel.OneOfType)
+	resourcesOneOf, ok := resourcesArray.Element().(*astmodel.OneOfType)
 	if !ok {
 		return nil, errors.Errorf("expected 'resources' property to be an array containing oneOf")
 	}
 
 	err = resourcesOneOf.Types().ForEachError(func(oneType astmodel.Type, _ int) error {
-		allOf, ok := oneType.(astmodel.AllOfType)
+		allOf, ok := oneType.(*astmodel.AllOfType)
 		if !ok {
 			return errors.Errorf("unexpected resource shape: not an allOf")
 		}
