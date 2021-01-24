@@ -35,7 +35,16 @@ type IdentifierFactory interface {
 type identifierFactory struct {
 	renames       map[string]string
 	reservedWords map[string]string
+
+	idCache idCache
 }
+
+type idCacheKey struct {
+	name       string
+	visibility Visibility
+}
+
+type idCache map[idCacheKey]string
 
 // assert the implementation exists
 var _ IdentifierFactory = (*identifierFactory)(nil)
@@ -45,11 +54,24 @@ func NewIdentifierFactory() IdentifierFactory {
 	return &identifierFactory{
 		renames:       createRenames(),
 		reservedWords: createReservedWords(),
+		idCache:       make(idCache),
 	}
 }
 
 // CreateIdentifier returns a valid Go public identifier
 func (factory *identifierFactory) CreateIdentifier(name string, visibility Visibility) string {
+	cacheKey := idCacheKey{name, visibility}
+	if cached, ok := factory.idCache[cacheKey]; ok {
+		return cached
+	}
+
+	result := factory.createIdentifierUncached(name, visibility)
+	factory.idCache[cacheKey] = result
+	return result
+}
+
+func (factory *identifierFactory) createIdentifierUncached(name string, visibility Visibility) string {
+
 	if identifier, ok := factory.renames[name]; ok {
 		// Just lowercase the first character according to visibility
 		r := []rune(identifier)
@@ -58,6 +80,7 @@ func (factory *identifierFactory) CreateIdentifier(name string, visibility Visib
 		} else {
 			r[0] = unicode.ToUpper(r[0])
 		}
+
 		return string(r)
 	}
 
