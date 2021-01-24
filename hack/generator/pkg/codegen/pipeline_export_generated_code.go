@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
@@ -87,33 +88,58 @@ func writeFiles(ctx context.Context, packages map[astmodel.PackageReference]*ast
 	globalProgress := newProgressMeter()
 	groupProgress := newProgressMeter()
 
+	var wg sync.WaitGroup
+
+	wgDone := make(chan bool)
+	errs := make(chan error)
+
 	for _, pkg := range pkgs {
-		if ctx.Err() != nil { // check for cancellation
-			return ctx.Err()
-		}
-
-		// create directory if not already there
-		outputDir := filepath.Join(outputPath, pkg.GroupName, pkg.PackageName)
-		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-			klog.V(5).Infof("Creating directory %q\n", outputDir)
-			err = os.MkdirAll(outputDir, 0700)
-			if err != nil {
-				klog.Fatalf("Unable to create directory %q", outputDir)
+		pkg := pkg
+		wg.Add(1)
+		go func() {
+			if ctx.Err() != nil { // check for cancellation
+				wg.Done()
+				return
 			}
-		}
 
-		count, err := pkg.EmitDefinitions(outputDir, packages)
-		if err != nil {
-			return errors.Wrapf(err, "error writing definitions into %q", outputDir)
-		}
+			// create directory if not already there
+			outputDir := filepath.Join(outputPath, pkg.GroupName, pkg.PackageName)
+			if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+				klog.V(5).Infof("Creating directory %q\n", outputDir)
+				err = os.MkdirAll(outputDir, 0700)
+				if err != nil {
+					klog.Fatalf("Unable to create directory %q", outputDir)
+				}
+			}
 
-		globalProgress.LogProgress("", pkg.DefinitionCount(), count)
-		groupProgress.LogProgress(pkg.GroupName, pkg.DefinitionCount(), count)
+			count, err := pkg.EmitDefinitions(outputDir, packages)
+			if err != nil {
+				errs <- errors.Wrapf(err, "error writing definitions into %q", outputDir)
+			} else {
+				globalProgress.LogProgress("", pkg.DefinitionCount(), count)
+				groupProgress.LogProgress(pkg.GroupName, pkg.DefinitionCount(), count)
+			}
+
+			wg.Done()
+		}()
 	}
 
-	globalProgress.Log()
+	go func() {
+		// need to do this in its own go task or we can deadlock as
+		// errs is not unbounded, so we need to read from it
+		wg.Wait()
+		close(wgDone)
+	}()
 
-	return nil
+	select {
+	case err := <-errs:
+		return err
+	case <-wgDone:
+		globalProgress.mutex.Lock()
+		defer globalProgress.mutex.Unlock()
+		globalProgress.Log()
+		return nil
+	}
 }
 
 func newProgressMeter() *progressMeter {
@@ -128,6 +154,8 @@ type progressMeter struct {
 	definitions int
 	files       int
 	resetAt     time.Time
+
+	mutex sync.Mutex
 }
 
 // Log() writes a log message for our progress to this point
@@ -151,6 +179,9 @@ func (export *progressMeter) Log() {
 
 // LogProgress() accumulates totals until a new label is supplied, when it will write a log message
 func (export *progressMeter) LogProgress(label string, definitions int, files int) {
+	export.mutex.Lock()
+	defer export.mutex.Unlock()
+
 	if export.label != label {
 		// New group, output our current totals and reset
 		export.Log()
