@@ -8,6 +8,7 @@ package astmodel
 import (
 	"regexp"
 	"strings"
+	"sync"
 	"unicode"
 )
 
@@ -37,6 +38,7 @@ type identifierFactory struct {
 	reservedWords map[string]string
 
 	idCache idCache
+	rwLock  sync.RWMutex
 }
 
 type idCacheKey struct {
@@ -61,12 +63,17 @@ func NewIdentifierFactory() IdentifierFactory {
 // CreateIdentifier returns a valid Go public identifier
 func (factory *identifierFactory) CreateIdentifier(name string, visibility Visibility) string {
 	cacheKey := idCacheKey{name, visibility}
-	if cached, ok := factory.idCache[cacheKey]; ok {
+	factory.rwLock.RLock()
+	cached, ok := factory.idCache[cacheKey]
+	factory.rwLock.RUnlock()
+	if ok {
 		return cached
 	}
 
 	result := factory.createIdentifierUncached(name, visibility)
+	factory.rwLock.Lock()
 	factory.idCache[cacheKey] = result
+	factory.rwLock.Unlock()
 	return result
 }
 
