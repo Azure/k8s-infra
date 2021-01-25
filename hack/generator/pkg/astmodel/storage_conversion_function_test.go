@@ -56,47 +56,27 @@ func CreateStorageConversionFunctionTestCases() []StorageConversionPropertyTestC
 	}
 }
 
-func TestStorageConversionFunction_AsFuncForDirectConvertFrom(t *testing.T) {
+func TestStorageConversionFunction_AsFuncForDirectConversions(t *testing.T) {
 	for _, c := range CreateStorageConversionFunctionTestCases() {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
-			RunTestStorageConversionFunction_AsFunc(c, ConvertFrom, true, t)
+			RunTestStorageConversionFunction_AsFunc(c, true, t)
 		})
 	}
 }
 
-func TestStorageConversionFunction_AsFuncForDirectConvertTo(t *testing.T) {
+func TestStorageConversionFunction_AsFuncForIndirectConversions(t *testing.T) {
 	for _, c := range CreateStorageConversionFunctionTestCases() {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
-			RunTestStorageConversionFunction_AsFunc(c, ConvertTo, true, t)
+			RunTestStorageConversionFunction_AsFunc(c, false, t)
 		})
 	}
 }
 
-func TestStorageConversionFunction_AsFuncForIndirectConvertFrom(t *testing.T) {
-	for _, c := range CreateStorageConversionFunctionTestCases() {
-		c := c
-		t.Run(c.name, func(t *testing.T) {
-			t.Parallel()
-			RunTestStorageConversionFunction_AsFunc(c, ConvertFrom, false, t)
-		})
-	}
-}
-
-func TestStorageConversionFunction_AsFuncForIndirectConvertTo(t *testing.T) {
-	for _, c := range CreateStorageConversionFunctionTestCases() {
-		c := c
-		t.Run(c.name, func(t *testing.T) {
-			t.Parallel()
-			RunTestStorageConversionFunction_AsFunc(c, ConvertTo, false, t)
-		})
-	}
-}
-
-func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase, direction StorageConversionDirection, direct bool, t *testing.T) {
+func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase, direct bool, t *testing.T) {
 	gm := NewGomegaWithT(t)
 
 	idFactory := NewIdentifierFactory()
@@ -118,17 +98,13 @@ func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase
 		hubTypeName = MakeTypeName(ref, "Hub")
 	}
 
-	var fn *StorageConversionFunction
-	var errs []error
-	if direction == ConvertFrom {
-		fn, errs = NewStorageConversionFromFunction(subjectDefinition, hubTypeName, stagingDefinition, idFactory)
-	} else {
-		fn, errs = NewStorageConversionToFunction(subjectDefinition, hubTypeName, stagingDefinition, idFactory)
-	}
-
+	convertFrom, errs := NewStorageConversionFromFunction(subjectDefinition, hubTypeName, stagingDefinition, idFactory)
 	gm.Expect(errs).To(BeEmpty())
 
-	subjectDefinition = subjectDefinition.WithType(subjectType.WithFunction(fn))
+	convertTo, errs := NewStorageConversionToFunction(subjectDefinition, hubTypeName, stagingDefinition, idFactory)
+	gm.Expect(errs).To(BeEmpty())
+
+	subjectDefinition = subjectDefinition.WithType(subjectType.WithFunction(convertFrom).WithFunction(convertTo))
 
 	defs := []TypeDefinition{subjectDefinition, stagingDefinition}
 	packages := make(map[PackageReference]*PackageDefinition)
@@ -152,13 +128,13 @@ func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase
 	}
 
 	var testName strings.Builder
-	testName.WriteString(fn.name)
-	if direct {
-		testName.WriteString("-Direct-")
-	} else {
-		testName.WriteString("-ViaStaging-")
-	}
 	testName.WriteString(c.name)
+
+	if direct {
+		testName.WriteString("-Direct")
+	} else {
+		testName.WriteString("-ViaStaging")
+	}
 
 	g.Assert(t, testName.String(), buf.Bytes())
 }
