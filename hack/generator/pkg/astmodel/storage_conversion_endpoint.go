@@ -10,13 +10,13 @@ import (
 
 type KnownLocalsSet map[string]struct{}
 
-// StorageConversionEndpoint represents either a source or a destination for a storage conversion
+// StorageConversionEndpoint represents either a source or a destination field for a storage conversion
 type StorageConversionEndpoint struct {
 	// theType is the Type of the value accessible via this endpoint
 	theType Type
 	// name is the name of the underlying property, used to generate useful local identifiers
 	name string
-	// knownLocals is a shared map of locals that have already been created, to prevent duplicates
+	// knownLocals is a shared map of locals that have already been created within a given function, to prevent duplicates
 	knownLocals KnownLocalsSet
 }
 
@@ -58,16 +58,19 @@ func (endpoint *StorageConversionEndpoint) WithType(theType Type) *StorageConver
 }
 
 // createLocal creates a new unique local with the specified suffix
+// Has to be deterministic, so we use an incrementing number to make them unique
 func (locals KnownLocalsSet) createLocal(nameHint string) string {
-	name := locals.toPrivate(nameHint)
-	id := name
-	_, found := locals[id]
-
+	baseName := locals.toPrivate(nameHint)
+	id := baseName
 	index := 0
-	for found {
+	for {
+		_, found := locals[id]
+		if !found {
+			break
+		}
+
 		index++
-		id = name + strconv.Itoa(index)
-		_, found = locals[id]
+		id = baseName + strconv.Itoa(index)
 	}
 
 	locals[id] = struct{}{}
@@ -75,11 +78,13 @@ func (locals KnownLocalsSet) createLocal(nameHint string) string {
 	return id
 }
 
+// Add allows identifiers that have already been used to be registered, avoiding duplicates
 func (locals KnownLocalsSet) Add(local string) {
 	name := locals.toPrivate(local)
 	locals[name] = struct{}{}
 }
 
+// toPrivate converts a Go identifier into a private form
 func (locals KnownLocalsSet) toPrivate(s string) string {
 	// Just lowercase the first character
 	r := []rune(s)

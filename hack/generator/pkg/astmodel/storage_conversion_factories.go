@@ -25,7 +25,7 @@ func createPropertyConversion(
 	if err != nil {
 		return nil, errors.Wrapf(
 			err,
-			"trying to assign %s from %s",
+			"trying to assign %q from %q",
 			destinationProperty.propertyName,
 			sourceProperty.propertyName)
 	}
@@ -87,6 +87,7 @@ func createTypeConversion(
 
 // assignPrimitiveTypeFromPrimitiveType will generate a direct assignment if both types have the
 // same underlying primitive type and have the same optionality
+//
 // <destination> = <source>
 func assignPrimitiveTypeFromPrimitiveType(
 	sourceEndpoint *StorageConversionEndpoint,
@@ -113,6 +114,7 @@ func assignPrimitiveTypeFromPrimitiveType(
 
 // assignOptionalPrimitiveTypeFromPrimitiveType will generate a direct assignment if both types
 // have the same underlying primitive type and have the same optionality
+//
 // <destination> = &<source>
 func assignOptionalPrimitiveTypeFromPrimitiveType(
 	sourceEndpoint *StorageConversionEndpoint,
