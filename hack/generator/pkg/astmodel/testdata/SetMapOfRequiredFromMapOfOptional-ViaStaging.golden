@@ -12,10 +12,10 @@ type Person struct {
 }
 
 func (person Person) ConvertFrom(source *Party) error {
-	// staging is our intermediate type for conversion
+	// personTemp is our intermediate for conversion
 	var personTemp Party
 
-	// first populate staging
+	// Populate personTemp from source
 	personTemp.ConvertFrom(source)
 
 	// ratings
@@ -32,8 +32,8 @@ func (person Person) ConvertFrom(source *Party) error {
 }
 
 func (person Person) ConvertTo(destination *Party) error {
-	// staging is our intermediate type for conversion
-	var staging Party
+	// personTemp is our intermediate for conversion
+	var personTemp Party
 
 	// ratings
 	ratingsMap := make(map[string]*int)
@@ -41,8 +41,8 @@ func (person Person) ConvertTo(destination *Party) error {
 		ratingsMap[key] = &rating
 	}
 
-	staging.ratings = ratingsMap
+	personTemp.ratings = ratingsMap
 
-	// use staging to populate
-	staging.ConvertTo(destination)
+	// Populate destination from personTemp
+	personTemp.ConvertTo(destination)
 }

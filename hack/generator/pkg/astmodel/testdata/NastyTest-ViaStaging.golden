@@ -12,10 +12,10 @@ type Person struct {
 }
 
 func (person Person) ConvertFrom(source *Party) error {
-	// staging is our intermediate type for conversion
+	// personTemp is our intermediate for conversion
 	var personTemp Party
 
-	// first populate staging
+	// Populate personTemp from source
 	personTemp.ConvertFrom(source)
 
 	// nasty
@@ -38,8 +38,8 @@ func (person Person) ConvertFrom(source *Party) error {
 }
 
 func (person Person) ConvertTo(destination *Party) error {
-	// staging is our intermediate type for conversion
-	var staging Party
+	// personTemp is our intermediate for conversion
+	var personTemp Party
 
 	// nasty
 	nastyMap1 := make(map[string][]map[string]bool)
@@ -57,8 +57,8 @@ func (person Person) ConvertTo(destination *Party) error {
 		nastyMap1[key] = nastyList
 	}
 
-	staging.nasty = nastyMap1
+	personTemp.nasty = nastyMap1
 
-	// use staging to populate
-	staging.ConvertTo(destination)
+	// Populate destination from personTemp
+	personTemp.ConvertTo(destination)
 }

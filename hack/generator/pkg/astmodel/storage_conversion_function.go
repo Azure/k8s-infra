@@ -188,14 +188,17 @@ func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiver str
 
 	local := fn.knownLocals.createLocal(receiver + "Temp")
 
-	staging := astbuilder.LocalVariableDeclaration(
-		local, dst.NewIdent(fn.staging.name.name), "// staging is our intermediate type for conversion")
-	staging.Decorations().Before = dst.NewLine
+	localDeclaration := astbuilder.LocalVariableDeclaration(
+		local,
+		dst.NewIdent(fn.staging.name.name),
+		fmt.Sprintf("// %s is our intermediate for conversion", local))
+	localDeclaration.Decorations().Before = dst.NewLine
 
-	convertFrom := astbuilder.InvokeQualifiedFunc(
+	callConvertFrom := astbuilder.InvokeQualifiedFunc(
 		local, fn.name, dst.NewIdent(parameter))
-	convertFrom.Decorations().Before = dst.EmptyLine
-	convertFrom.Decorations().Start.Append("// first populate staging")
+	callConvertFrom.Decorations().Before = dst.EmptyLine
+	callConvertFrom.Decorations().Start.Append(
+		fmt.Sprintf("// Populate %s from %s", local, parameter))
 
 	assignments := fn.generateAssignments(
 		dst.NewIdent(local),
@@ -203,8 +206,8 @@ func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiver str
 		ctx)
 
 	var result []dst.Stmt
-	result = append(result, staging)
-	result = append(result, convertFrom)
+	result = append(result, localDeclaration)
+	result = append(result, callConvertFrom)
 	result = append(result, assignments...)
 	return result
 }
@@ -218,24 +221,29 @@ func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiver str
 // staging.ConvertTo(parameter)
 //
 func (fn *StorageConversionFunction) generateIndirectConversionTo(receiver string, parameter string, ctx *CodeGenerationContext) []dst.Stmt {
-	staging := astbuilder.LocalVariableDeclaration(
-		"staging", dst.NewIdent(fn.staging.name.name), "// staging is our intermediate type for conversion")
-	staging.Decorations().Before = dst.NewLine
+	local := fn.knownLocals.createLocal(receiver + "Temp")
 
-	convertTo := astbuilder.InvokeQualifiedFunc(
-		"staging", fn.name, dst.NewIdent(parameter))
-	convertTo.Decorations().Before = dst.EmptyLine
-	convertTo.Decorations().Start.Append("// use staging to populate")
+	localDeclaration := astbuilder.LocalVariableDeclaration(
+		local,
+		dst.NewIdent(fn.staging.name.name),
+		fmt.Sprintf("// %s is our intermediate for conversion", local))
+	localDeclaration.Decorations().Before = dst.NewLine
+
+	callConvertTo := astbuilder.InvokeQualifiedFunc(
+		local, fn.name, dst.NewIdent(parameter))
+	callConvertTo.Decorations().Before = dst.EmptyLine
+	callConvertTo.Decorations().Start.Append(
+		fmt.Sprintf("// Populate %s from %s", parameter, local))
 
 	assignments := fn.generateAssignments(
 		dst.NewIdent(receiver),
-		dst.NewIdent("staging"),
+		dst.NewIdent(local),
 		ctx)
 
 	var result []dst.Stmt
-	result = append(result, staging)
+	result = append(result, localDeclaration)
 	result = append(result, assignments...)
-	result = append(result, convertTo)
+	result = append(result, callConvertTo)
 	return result
 }
 
