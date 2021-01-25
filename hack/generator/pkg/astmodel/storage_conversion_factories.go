@@ -220,10 +220,10 @@ func assignArrayFromArray(
 		return nil
 	}
 
-	itemId := sourceEndpoint.CreateSingularLocal()
-	tempId := sourceEndpoint.CreatePluralLocal("List")
-
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+		itemId := sourceEndpoint.CreateSingularLocal()
+		tempId := sourceEndpoint.CreatePluralLocal("List")
+
 		declaration := astbuilder.SimpleAssignment(
 			tempId,
 			token.DEFINE,
@@ -284,10 +284,10 @@ func assignMapFromMap(
 		return nil
 	}
 
-	itemId := sourceEndpoint.CreateSingularLocal()
-	tempId := sourceEndpoint.CreatePluralLocal("Map")
-
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+		itemId := sourceEndpoint.CreateSingularLocal()
+		tempId := sourceEndpoint.CreatePluralLocal("Map")
+
 		declaration := astbuilder.SimpleAssignment(
 			tempId,
 			token.DEFINE,

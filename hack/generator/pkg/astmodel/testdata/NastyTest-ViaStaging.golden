@@ -19,22 +19,22 @@ func (person Person) ConvertFrom(source *Party) error {
 	personTemp.ConvertFrom(source)
 
 	// nasty
-	nastyMap1 := make(map[string][]map[string]bool)
-	for key, nasty2 := range personTemp.nasty {
-		nastyList := make([]map[string]bool, len(nasty2))
-		for index, nasty1 := range nasty2 {
-			nastyMap := make(map[string]bool)
-			for key, nasty := range nasty1 {
-				nastyMap[key] = nasty
+	nastyMap := make(map[string][]map[string]bool)
+	for key, nasty := range personTemp.nasty {
+		nastyList := make([]map[string]bool, len(nasty))
+		for index, nasty1 := range nasty {
+			nastyMap1 := make(map[string]bool)
+			for key, nasty2 := range nasty1 {
+				nastyMap1[key] = nasty2
 			}
 
-			nastyList[index] = nastyMap
+			nastyList[index] = nastyMap1
 		}
 
-		nastyMap1[key] = nastyList
+		nastyMap[key] = nastyList
 	}
 
-	person.nasty = nastyMap1
+	person.nasty = nastyMap
 }
 
 func (person Person) ConvertTo(destination *Party) error {
@@ -42,22 +42,22 @@ func (person Person) ConvertTo(destination *Party) error {
 	var personTemp Party
 
 	// nasty
-	nastyMap1 := make(map[string][]map[string]bool)
-	for key, nasty2 := range person.nasty {
-		nastyList := make([]map[string]bool, len(nasty2))
-		for index, nasty1 := range nasty2 {
-			nastyMap := make(map[string]bool)
-			for key, nasty := range nasty1 {
-				nastyMap[key] = nasty
+	nastyMap := make(map[string][]map[string]bool)
+	for key, nasty := range person.nasty {
+		nastyList := make([]map[string]bool, len(nasty))
+		for index, nasty1 := range nasty {
+			nastyMap1 := make(map[string]bool)
+			for key, nasty2 := range nasty1 {
+				nastyMap1[key] = nasty2
 			}
 
-			nastyList[index] = nastyMap
+			nastyList[index] = nastyMap1
 		}
 
-		nastyMap1[key] = nastyList
+		nastyMap[key] = nastyList
 	}
 
-	personTemp.nasty = nastyMap1
+	personTemp.nasty = nastyMap
 
 	// Populate destination from personTemp
 	personTemp.ConvertTo(destination)
