@@ -42,9 +42,8 @@ func createResourceGroup() *resources.ResourceGroup {
 func createDummyResource() *batch.BatchAccount {
 	return &batch.BatchAccount{
 		Spec: batch.BatchAccounts_Spec{
-			ApiVersion: "apiVersion",
-			AzureName:  "azureName",
-			Location:   "westus",
+			AzureName: "azureName",
+			Location:  "westus",
 			Owner: genruntime.KnownResourceReference{
 				Name: "myrg",
 			},
