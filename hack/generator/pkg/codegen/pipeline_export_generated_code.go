@@ -16,6 +16,7 @@ import (
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/pkg/errors"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
 )
 
@@ -90,56 +91,73 @@ func writeFiles(ctx context.Context, packages map[astmodel.PackageReference]*ast
 
 	var wg sync.WaitGroup
 
-	wgDone := make(chan bool)
-	errs := make(chan error)
+	pkgQueue := make(chan *astmodel.PackageDefinition, 100)
+	errs := make(chan error, 10) // we will buffer up to 10 errors and ignore any leftovers
 
-	for _, pkg := range pkgs {
-		pkg := pkg
+	// write outputs with 8 workers
+	for c := 0; c < 8; c++ {
 		wg.Add(1)
 		go func() {
-			if ctx.Err() != nil { // check for cancellation
-				wg.Done()
-				return
-			}
+			defer wg.Done()
+			for pkg := range pkgQueue {
+				if ctx.Err() != nil { // check for cancellation
+					return
+				}
 
-			// create directory if not already there
-			outputDir := filepath.Join(outputPath, pkg.GroupName, pkg.PackageName)
-			if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-				klog.V(5).Infof("Creating directory %q\n", outputDir)
-				err = os.MkdirAll(outputDir, 0700)
+				// create directory if not already there
+				outputDir := filepath.Join(outputPath, pkg.GroupName, pkg.PackageName)
+				if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+					klog.V(5).Infof("Creating directory %q\n", outputDir)
+					err = os.MkdirAll(outputDir, 0700)
+					if err != nil {
+						select { // try to write to errs, ignore if buffer full
+						case errs <- errors.Wrapf(err, "unable to create directory %q", outputDir):
+						default:
+						}
+						return
+					}
+				}
+
+				count, err := pkg.EmitDefinitions(outputDir, packages)
 				if err != nil {
-					klog.Fatalf("Unable to create directory %q", outputDir)
+					select { // try to write to errs, ignore if buffer full
+					case errs <- errors.Wrapf(err, "error writing definitions into %q", outputDir):
+					default:
+					}
+					return
+				} else {
+					globalProgress.LogProgress("", pkg.DefinitionCount(), count)
+					groupProgress.LogProgress(pkg.GroupName, pkg.DefinitionCount(), count)
 				}
 			}
-
-			count, err := pkg.EmitDefinitions(outputDir, packages)
-			if err != nil {
-				errs <- errors.Wrapf(err, "error writing definitions into %q", outputDir)
-			} else {
-				globalProgress.LogProgress("", pkg.DefinitionCount(), count)
-				groupProgress.LogProgress(pkg.GroupName, pkg.DefinitionCount(), count)
-			}
-
-			wg.Done()
 		}()
 	}
 
-	go func() {
-		// need to do this in its own go task or we can deadlock as
-		// errs is not unbounded, so we need to read from it
-		wg.Wait()
-		close(wgDone)
-	}()
-
-	select {
-	case err := <-errs:
-		return err
-	case <-wgDone:
-		globalProgress.mutex.Lock()
-		defer globalProgress.mutex.Unlock()
-		globalProgress.Log()
-		return nil
+	// send to workers
+	// and wait for them to finish
+	for _, pkg := range pkgs {
+		pkgQueue <- pkg
 	}
+	close(pkgQueue)
+	wg.Wait()
+
+	// collect all errors, if any
+	close(errs)
+	var totalErrs []error
+	for err := range errs {
+		totalErrs = append(totalErrs, err)
+	}
+
+	err := kerrors.NewAggregate(totalErrs)
+	if err != nil {
+		return err
+	}
+
+	// log anything leftover
+	globalProgress.mutex.Lock()
+	defer globalProgress.mutex.Unlock()
+	globalProgress.Log()
+	return nil
 }
 
 func newProgressMeter() *progressMeter {
