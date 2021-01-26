@@ -261,6 +261,14 @@ func AddrOf(exp dst.Expr) *dst.UnaryExpr {
 	}
 }
 
+// Dereference returns a statement that dereferences the pointer returned by the provided expression
+func Dereference(exp ast.Expr) *ast.UnaryExpr {
+	return &ast.UnaryExpr{
+		Op: token.MUL,
+		X:  exp,
+	}
+}
+
 // Returns creates a return statement with one or more expressions, of the form
 //    return <expr>
 // or return <expr>, <expr>, ...
