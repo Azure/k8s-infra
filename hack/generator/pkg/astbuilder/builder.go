@@ -264,6 +264,14 @@ func Selector(expr dst.Expr, name string) *dst.SelectorExpr {
 	}
 }
 
+func NotEqual(lhs dst.Expr, rhs dst.Expr) *dst.BinaryExpr {
+	return &dst.BinaryExpr{
+		X:  dst.Clone(lhs).(dst.Expr),
+		Op: token.NEQ,
+		Y:  dst.Clone(rhs).(dst.Expr),
+	}
+}
+
 func cloneExprSlice(exprs []dst.Expr) []dst.Expr {
 	var result []dst.Expr
 	for _, exp := range exprs {
