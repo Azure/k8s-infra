@@ -20,11 +20,11 @@ func (person Person) ConvertFrom(source *Party) error {
 
 	// scores
 	scoresList := make([]int, len(personTemp.scores))
-	for index, score := range personTemp.scores {
+	for scoreIndex, score := range personTemp.scores {
 		if score != nil {
-			scoresList[index] = *score
+			scoresList[scoreIndex] = *score
 		} else {
-			scoresList[index] = 0
+			scoresList[scoreIndex] = 0
 		}
 	}
 
@@ -37,8 +37,8 @@ func (person Person) ConvertTo(destination *Party) error {
 
 	// scores
 	scoresList := make([]*int, len(person.scores))
-	for index, score := range person.scores {
-		scoresList[index] = &score
+	for scoreIndex, score := range person.scores {
+		scoresList[scoreIndex] = &score
 	}
 
 	personTemp.scores = scoresList

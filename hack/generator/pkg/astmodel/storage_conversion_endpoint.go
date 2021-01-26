@@ -1,7 +1,6 @@
 package astmodel
 
 import (
-	"github.com/dave/dst"
 	"github.com/gobuffalo/flect"
 	"strconv"
 	"strings"
@@ -36,17 +35,16 @@ func (endpoint *StorageConversionEndpoint) Type() Type {
 
 // Create an identifier for a local variable that represents a single item
 // Each call will return a unique identifier
-func (endpoint *StorageConversionEndpoint) CreateSingularLocal() *dst.Ident {
+func (endpoint *StorageConversionEndpoint) CreateSingularLocal() string {
 	singular := flect.Singularize(endpoint.name)
-	id := endpoint.knownLocals.createLocal(singular)
-	return dst.NewIdent(id)
+	return endpoint.knownLocals.createLocal(singular)
 }
 
 // CreatePluralLocal creates an identifier for a local variable that represents multiple items
 // Each call will return a unique identifier
-func (endpoint *StorageConversionEndpoint) CreatePluralLocal(suffix string) *dst.Ident {
-	id := endpoint.knownLocals.createLocal(endpoint.name + suffix)
-	return dst.NewIdent(id)
+func (endpoint *StorageConversionEndpoint) CreatePluralLocal(suffix string) string {
+	plural := flect.Pluralize(endpoint.name)
+	return endpoint.knownLocals.createLocal(plural + suffix)
 }
 
 // WithType creates a new endpoint with a different type

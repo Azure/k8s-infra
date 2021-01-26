@@ -20,11 +20,11 @@ func (person Person) ConvertFrom(source *Party) error {
 
 	// ratings
 	ratingsMap := make(map[string]int)
-	for key, rating := range personTemp.ratings {
+	for ratingKey, rating := range personTemp.ratings {
 		if rating != nil {
-			ratingsMap[key] = *rating
+			ratingsMap[ratingKey] = *rating
 		} else {
-			ratingsMap[key] = 0
+			ratingsMap[ratingKey] = 0
 		}
 	}
 
@@ -37,8 +37,8 @@ func (person Person) ConvertTo(destination *Party) error {
 
 	// ratings
 	ratingsMap := make(map[string]*int)
-	for key, rating := range person.ratings {
-		ratingsMap[key] = &rating
+	for ratingKey, rating := range person.ratings {
+		ratingsMap[ratingKey] = &rating
 	}
 
 	personTemp.ratings = ratingsMap

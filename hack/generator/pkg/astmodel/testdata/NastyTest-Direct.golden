@@ -14,41 +14,41 @@ type Person struct {
 func (person Person) ConvertFrom(source *Party) error {
 
 	// nasty
-	nastyMap := make(map[string][]map[string]bool)
-	for key, nasty := range source.nasty {
-		nastyList := make([]map[string]bool, len(nasty))
-		for index, nasty1 := range nasty {
-			nastyMap1 := make(map[string]bool)
-			for key, nasty2 := range nasty1 {
-				nastyMap1[key] = nasty2
+	nastiesMap := make(map[string][]map[string]bool)
+	for nastyKey, nasty := range source.nasty {
+		nastiesList := make([]map[string]bool, len(nasty))
+		for nasty1Index, nasty1 := range nasty {
+			nastiesMap1 := make(map[string]bool)
+			for nasty2Key, nasty2 := range nasty1 {
+				nastiesMap1[nasty2Key] = nasty2
 			}
 
-			nastyList[index] = nastyMap1
+			nastiesList[nasty1Index] = nastiesMap1
 		}
 
-		nastyMap[key] = nastyList
+		nastiesMap[nastyKey] = nastiesList
 	}
 
-	person.nasty = nastyMap
+	person.nasty = nastiesMap
 }
 
 func (person Person) ConvertTo(destination *Party) error {
 
 	// nasty
-	nastyMap := make(map[string][]map[string]bool)
-	for key, nasty := range person.nasty {
-		nastyList := make([]map[string]bool, len(nasty))
-		for index, nasty1 := range nasty {
-			nastyMap1 := make(map[string]bool)
-			for key, nasty2 := range nasty1 {
-				nastyMap1[key] = nasty2
+	nastiesMap := make(map[string][]map[string]bool)
+	for nastyKey, nasty := range person.nasty {
+		nastiesList := make([]map[string]bool, len(nasty))
+		for nasty1Index, nasty1 := range nasty {
+			nastiesMap1 := make(map[string]bool)
+			for nasty2Key, nasty2 := range nasty1 {
+				nastiesMap1[nasty2Key] = nasty2
 			}
 
-			nastyList[index] = nastyMap1
+			nastiesList[nasty1Index] = nastiesMap1
 		}
 
-		nastyMap[key] = nastyList
+		nastiesMap[nastyKey] = nastiesList
 	}
 
-	destination.nasty = nastyMap
+	destination.nasty = nastiesMap
 }

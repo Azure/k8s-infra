@@ -20,8 +20,8 @@ func (person Person) ConvertFrom(source *Party) error {
 
 	// scores
 	scoresList := make([]int, len(personTemp.scores))
-	for index, score := range personTemp.scores {
-		scoresList[index] = score
+	for scoreIndex, score := range personTemp.scores {
+		scoresList[scoreIndex] = score
 	}
 
 	person.scores = scoresList
@@ -33,8 +33,8 @@ func (person Person) ConvertTo(destination *Party) error {
 
 	// scores
 	scoresList := make([]int, len(person.scores))
-	for index, score := range person.scores {
-		scoresList[index] = score
+	for scoreIndex, score := range person.scores {
+		scoresList[scoreIndex] = score
 	}
 
 	personTemp.scores = scoresList

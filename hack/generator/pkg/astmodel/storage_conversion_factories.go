@@ -224,25 +224,26 @@ func assignArrayFromArray(
 
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		itemId := sourceEndpoint.CreateSingularLocal()
+		indexId := itemId + "Index"
 		tempId := sourceEndpoint.CreatePluralLocal("List")
 
 		declaration := astbuilder.SimpleAssignment(
-			tempId,
+			dst.NewIdent(tempId),
 			token.DEFINE,
 			astbuilder.MakeList(dt.AsType(ctx), astbuilder.CallFunc("len", reader)))
 
 		body := conversion(
-			itemId,
+			dst.NewIdent(itemId),
 			&dst.IndexExpr{
-				X:     tempId,
-				Index: dst.NewIdent("index"),
+				X:     dst.NewIdent(tempId),
+				Index: dst.NewIdent(indexId),
 			},
 			ctx,
 		)
 
-		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, tempId)
+		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, dst.NewIdent(tempId))
 
-		loop := astbuilder.IterateOverListWithIndex("index", itemId.Name, reader, body...)
+		loop := astbuilder.IterateOverListWithIndex(indexId, itemId, reader, body...)
 		loop.Decs.After = dst.EmptyLine
 
 		return []dst.Stmt{
@@ -288,25 +289,26 @@ func assignMapFromMap(
 
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		itemId := sourceEndpoint.CreateSingularLocal()
+		keyId := itemId + "Key"
 		tempId := sourceEndpoint.CreatePluralLocal("Map")
 
 		declaration := astbuilder.SimpleAssignment(
-			tempId,
+			dst.NewIdent(tempId),
 			token.DEFINE,
 			astbuilder.MakeMap(dt.key.AsType(ctx), dt.value.AsType(ctx)))
 
 		body := conversion(
-			itemId,
+			dst.NewIdent(itemId),
 			&dst.IndexExpr{
-				X:     tempId,
-				Index: dst.NewIdent("key"),
+				X:     dst.NewIdent(tempId),
+				Index: dst.NewIdent(keyId),
 			},
 			ctx,
 		)
 
-		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, tempId)
+		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, dst.NewIdent(tempId))
 
-		loop := astbuilder.IterateOverMapWithValue("key", itemId.Name, reader, body...)
+		loop := astbuilder.IterateOverMapWithValue(keyId, itemId, reader, body...)
 		loop.Decs.After = dst.EmptyLine
 
 		return []dst.Stmt{
