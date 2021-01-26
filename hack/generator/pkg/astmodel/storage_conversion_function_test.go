@@ -16,16 +16,16 @@ type StorageConversionPropertyTestCase struct {
 }
 
 func CreateStorageConversionFunctionTestCases() []StorageConversionPropertyTestCase {
-	requiredStringProperty := NewPropertyDefinition("name", "required-string", StringType)
-	optionalStringProperty := NewPropertyDefinition("name", "optional-string", NewOptionalType(StringType))
-	requiredIntProperty := NewPropertyDefinition("age", "required-int", IntType)
-	optionalIntProperty := NewPropertyDefinition("age", "optional-int", NewOptionalType(IntType))
+	requiredStringProperty := NewPropertyDefinition("name", "name", StringType)
+	optionalStringProperty := NewPropertyDefinition("name", "name", NewOptionalType(StringType))
+	requiredIntProperty := NewPropertyDefinition("age", "age", IntType)
+	optionalIntProperty := NewPropertyDefinition("age", "age", NewOptionalType(IntType))
 
-	arrayOfRequiredIntProperty := NewPropertyDefinition("scores", "array-required-int", NewArrayType(IntType))
-	arrayOfOptionalIntProperty := NewPropertyDefinition("scores", "array-optional-int", NewArrayType(NewOptionalType(IntType)))
+	arrayOfRequiredIntProperty := NewPropertyDefinition("scores", "scores", NewArrayType(IntType))
+	arrayOfOptionalIntProperty := NewPropertyDefinition("scores", "scores", NewArrayType(NewOptionalType(IntType)))
 
-	mapOfRequiredIntsProperty := NewPropertyDefinition("ratings", "map-string-required-int", NewMapType(StringType, IntType))
-	mapOfOptionalIntsProperty := NewPropertyDefinition("ratings", "map-string-required-int", NewMapType(StringType, NewOptionalType(IntType)))
+	mapOfRequiredIntsProperty := NewPropertyDefinition("ratings", "ratings", NewMapType(StringType, IntType))
+	mapOfOptionalIntsProperty := NewPropertyDefinition("ratings", "ratings", NewMapType(StringType, NewOptionalType(IntType)))
 
 	nastyProperty := NewPropertyDefinition(
 		"nasty",

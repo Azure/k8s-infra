@@ -9,7 +9,7 @@ import (
 )
 
 type Person struct {
-	name *string `json:"optional-string"`
+	name *string `json:"name"`
 }
 
 func (person Person) ConvertFrom(source *vHub.Person) error {

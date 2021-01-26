@@ -9,7 +9,7 @@ import (
 )
 
 type Person struct {
-	ratings map[string]int `json:"map-string-required-int"`
+	ratings map[string]int `json:"ratings"`
 }
 
 func (person Person) ConvertFrom(source *vHub.Person) error {

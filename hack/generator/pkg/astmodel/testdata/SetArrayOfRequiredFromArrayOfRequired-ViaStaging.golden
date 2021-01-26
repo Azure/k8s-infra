@@ -9,7 +9,7 @@ import (
 )
 
 type Person struct {
-	scores []int `json:"array-required-int"`
+	scores []int `json:"scores"`
 }
 
 func (person Person) ConvertFrom(source *vHub.Person) error {

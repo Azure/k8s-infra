@@ -6,7 +6,7 @@ package vCurrent
 import "github.com/Azure/k8s-infra/hack/generated/_apis/Verification/vNext"
 
 type Person struct {
-	age int `json:"required-int"`
+	age int `json:"age"`
 }
 
 func (person Person) ConvertFrom(source *vNext.Person) error {
