@@ -124,10 +124,17 @@ func (fn *StorageConversionFunction) AsFunc(ctx *CodeGenerationContext, receiver
 		Body:          fn.generateBody(receiverName, parameterName, ctx),
 	}
 
+	parameterPackage := ctx.MustGetImportedPackageName(fn.parameter.PackageReference)
+
 	funcDetails.AddParameter(
 		parameterName,
 		&dst.StarExpr{
-			X: fn.staging.name.AsType(ctx)})
+			X: &dst.SelectorExpr{
+				X:   dst.NewIdent(parameterPackage),
+				Sel: dst.NewIdent(fn.parameter.name),
+			},
+		})
+
 	funcDetails.AddReturns("error")
 
 	return funcDetails.DefineFunc()
@@ -188,9 +195,13 @@ func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiver str
 
 	local := fn.knownLocals.createLocal(receiver + "Temp")
 
+	parameterPackage := ctx.MustGetImportedPackageName(fn.staging.name.PackageReference)
 	localDeclaration := astbuilder.LocalVariableDeclaration(
 		local,
-		dst.NewIdent(fn.staging.name.name),
+		&dst.SelectorExpr{
+			X:   dst.NewIdent(parameterPackage),
+			Sel: dst.NewIdent(fn.staging.name.name),
+		},
 		fmt.Sprintf("// %s is our intermediate for conversion", local))
 	localDeclaration.Decorations().Before = dst.NewLine
 
@@ -221,11 +232,16 @@ func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiver str
 // staging.ConvertTo(parameter)
 //
 func (fn *StorageConversionFunction) generateIndirectConversionTo(receiver string, parameter string, ctx *CodeGenerationContext) []dst.Stmt {
+
 	local := fn.knownLocals.createLocal(receiver + "Temp")
 
+	parameterPackage := ctx.MustGetImportedPackageName(fn.staging.name.PackageReference)
 	localDeclaration := astbuilder.LocalVariableDeclaration(
 		local,
-		dst.NewIdent(fn.staging.name.name),
+		&dst.SelectorExpr{
+			X:   dst.NewIdent(parameterPackage),
+			Sel: dst.NewIdent(fn.staging.name.name),
+		},
 		fmt.Sprintf("// %s is our intermediate for conversion", local))
 	localDeclaration.Decorations().Before = dst.NewLine
 

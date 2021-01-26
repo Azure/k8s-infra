@@ -80,22 +80,24 @@ func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase
 	gm := NewGomegaWithT(t)
 
 	idFactory := NewIdentifierFactory()
-	ref := MakeLocalPackageReference("Verification", "vVersion")
+	vCurrent := makeTestLocalPackageReference("Verification", "vCurrent")
+	vNext := makeTestLocalPackageReference("Verification", "vNext")
+	vHub := makeTestLocalPackageReference("Verification", "vHub")
 
 	subjectType := NewObjectType().
 		WithProperty(c.receiverProperty)
 
 	subjectDefinition := MakeTypeDefinition(
-		MakeTypeName(ref, "Person"),
+		MakeTypeName(vCurrent, "Person"),
 		subjectType)
 
-	stagingTypeName := MakeTypeName(ref, "Party")
+	stagingTypeName := MakeTypeName(vNext, "Person")
 	stagingType := NewObjectType().WithProperty(c.otherProperty)
 	stagingDefinition := MakeTypeDefinition(stagingTypeName, stagingType)
 
 	hubTypeName := stagingTypeName
 	if !direct {
-		hubTypeName = MakeTypeName(ref, "Hub")
+		hubTypeName = MakeTypeName(vHub, "Person")
 	}
 
 	convertFrom, errs := NewStorageConversionFromFunction(subjectDefinition, hubTypeName, stagingDefinition, idFactory)
@@ -106,20 +108,19 @@ func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase
 
 	subjectDefinition = subjectDefinition.WithType(subjectType.WithFunction(convertFrom).WithFunction(convertTo))
 
-	defs := []TypeDefinition{subjectDefinition, stagingDefinition}
+	defs := []TypeDefinition{subjectDefinition}
 	packages := make(map[PackageReference]*PackageDefinition)
 
 	g := goldie.New(t)
 
-	packageDefinition := NewPackageDefinition(ref.Group(), ref.PackageName(), "1")
-	for _, def := range defs {
-		packageDefinition.AddDefinition(def)
-	}
-	packages[ref] = packageDefinition
+	packageDefinition := NewPackageDefinition(vCurrent.Group(), vCurrent.PackageName(), "1")
+	packageDefinition.AddDefinition(subjectDefinition)
+
+	packages[vCurrent] = packageDefinition
 
 	// put all definitions in one file, regardless.
 	// the package reference isn't really used here.
-	fileDef := NewFileDefinition(ref, defs, packages)
+	fileDef := NewFileDefinition(vCurrent, defs, packages)
 
 	buf := &bytes.Buffer{}
 	err := fileDef.SaveToWriter(buf)
