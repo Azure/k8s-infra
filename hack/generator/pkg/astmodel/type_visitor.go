@@ -301,6 +301,8 @@ func IdentityVisitOfAllOfType(this *TypeVisitor, it *AllOfType, ctx interface{})
 }
 
 // just checks reference equality of Types
+// this is used to short-circuit when we don't need to make new types,
+// in a fast manner than invoking Equals and walking the whole tree
 func typeSlicesFastEqual(t1 []Type, t2 []Type) bool {
 	if len(t1) != len(t2) {
 		return false
