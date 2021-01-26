@@ -291,3 +291,10 @@ func QualifiedTypeName(pkg string, name string) *dst.SelectorExpr {
 		Sel: dst.NewIdent(name),
 	}
 }
+
+func Selector(expr ast.Expr, name string) *ast.SelectorExpr {
+	return &ast.SelectorExpr{
+		X:   expr,
+		Sel: ast.NewIdent(name),
+	}
+}
