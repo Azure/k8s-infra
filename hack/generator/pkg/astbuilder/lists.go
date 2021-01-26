@@ -5,7 +5,7 @@ import (
 	"go/token"
 )
 
-// MakeSlice returns the call expression for making a slice, like:
+// MakeList returns the call expression for making a slice, like:
 // 	make([]<value>)
 func MakeList(listType dst.Expr, len dst.Expr) *dst.CallExpr {
 	return &dst.CallExpr{
