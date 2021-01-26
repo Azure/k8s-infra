@@ -29,6 +29,7 @@ type TypeVisitor struct {
 	VisitFlaggedType   func(this *TypeVisitor, it *FlaggedType, ctx interface{}) (Type, error)
 	VisitValidatedType func(this *TypeVisitor, it ValidatedType, ctx interface{}) (Type, error)
 	VisitErroredType   func(this *TypeVisitor, it *ErroredType, ctx interface{}) (Type, error)
+	// Note: if you update this, also update genType() in type_test.go
 }
 
 // Visit invokes the appropriate VisitX on TypeVisitor

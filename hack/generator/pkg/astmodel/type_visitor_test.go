@@ -8,6 +8,8 @@ package astmodel
 import (
 	"testing"
 
+	"github.com/leanovate/gopter"
+	"github.com/leanovate/gopter/prop"
 	. "github.com/onsi/gomega"
 )
 
@@ -164,4 +166,29 @@ func TestIdentityVisitorReturnsEqualResult(t *testing.T) {
 			g.Expect(c.subject.Equals(result)).To(BeTrue())
 		})
 	}
+}
+
+func TestTypeVisitorProperties(t *testing.T) {
+	g := gopter.NewProperties(nil)
+
+	v := MakeTypeVisitor()
+
+	g.Property("type visitor returns equal values by default",
+		prop.ForAll(
+			func(input Type) bool {
+				output, _ := v.Visit(input, nil)
+				return output.Equals(input)
+			},
+			genType))
+
+	g.Property("type visitor returns same value by default",
+		// a stricter version of the previous
+		prop.ForAll(
+			func(input Type) bool {
+				output, _ := v.Visit(input, nil)
+				return output == input
+			},
+			genType))
+
+	g.TestingRun(t)
 }

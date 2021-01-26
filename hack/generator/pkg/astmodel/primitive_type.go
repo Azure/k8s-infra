@@ -14,6 +14,8 @@ type PrimitiveType struct {
 	name string
 }
 
+// Note: if you add any more, also edit genPrimitiveType() in type_test.go
+
 // IntType represents a Go integer type
 var IntType = &PrimitiveType{"int"}
 
@@ -34,6 +36,8 @@ var BoolType = &PrimitiveType{"bool"}
 
 // AnyType represents the root Go interface type, permitting any object
 var AnyType = &PrimitiveType{"interface{}"}
+
+// Note: if you add any more, also edit genPrimitiveType() in type_test.go
 
 // assert that we implemented Type correctly
 var _ Type = (*PrimitiveType)(nil)
