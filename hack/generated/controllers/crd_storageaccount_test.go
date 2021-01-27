@@ -71,7 +71,7 @@ func Test_StorageAccount_CRUD(t *testing.T) {
 	g.Eventually(acct).Should(testContext.Match.BeDeleted(ctx))
 
 	// Ensure that the resource group was really deleted in Azure
-	exists, err, _ := testContext.AzureClient.HeadResource(
+	exists, _, err := testContext.AzureClient.HeadResource(
 		ctx,
 		armId,
 		"2019-04-01")

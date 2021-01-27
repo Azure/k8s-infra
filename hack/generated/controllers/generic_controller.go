@@ -308,7 +308,7 @@ func (gr *GenericReconciler) StartDeleteOfResource(
 			return errors.Wrapf(err, "creating empty status for %q", resource.GetId())
 		}
 
-		err, retryAfter = gr.ARMClient.BeginDeleteResource(ctx, resource.GetId(), resource.Spec().GetApiVersion(), emptyStatus)
+		retryAfter, err = gr.ARMClient.BeginDeleteResource(ctx, resource.GetId(), resource.Spec().GetApiVersion(), emptyStatus)
 		if err != nil {
 			return errors.Wrapf(err, "deleting resource %q", resource.Spec().GetType())
 		}
@@ -347,7 +347,7 @@ func (gr *GenericReconciler) MonitorDelete(
 	}
 
 	// already deleting, just check to see if it still exists and if it's gone, remove finalizer
-	found, err, retryAfter := gr.ARMClient.HeadResource(ctx, resource.GetId(), resource.Spec().GetApiVersion())
+	found, retryAfter, err := gr.ARMClient.HeadResource(ctx, resource.GetId(), resource.Spec().GetApiVersion())
 	if err != nil {
 		if retryAfter != 0 {
 			data.log.V(3).Info("Error performing HEAD on resource, will retry", "delaySec", retryAfter/time.Second)
@@ -421,7 +421,7 @@ func (gr *GenericReconciler) MonitorDeployment(ctx context.Context, action Recon
 		return ctrl.Result{}, err
 	}
 
-	deployment, err, retryAfter := gr.ARMClient.GetDeployment(ctx, deployment.Id)
+	deployment, retryAfter, err := gr.ARMClient.GetDeployment(ctx, deployment.Id)
 	if err != nil {
 		if retryAfter != 0 {
 			data.log.V(3).Info("Error performing GET on deployment, will retry", "delaySec", retryAfter/time.Second)
@@ -478,7 +478,7 @@ func (gr *GenericReconciler) MonitorDeployment(ctx context.Context, action Recon
 	retryAfter = time.Duration(0) // ARM can tell us how long to check after issuing DELETE
 	if deployment.IsTerminalProvisioningState() && !data.GetShouldPreserveDeployment() {
 		data.log.Info("Deleting deployment", "ID", deployment.Id)
-		err, retryAfter = gr.ARMClient.DeleteDeployment(ctx, deployment.Id)
+		retryAfter, err = gr.ARMClient.DeleteDeployment(ctx, deployment.Id)
 		if err != nil {
 			return ctrl.Result{}, errors.Wrapf(err, "deleting deployment %q", deployment.Id)
 		}
@@ -576,7 +576,7 @@ func (gr *GenericReconciler) getStatus(ctx context.Context, id string, data *Rec
 	}
 
 	// Get the resource
-	err, retryAfter := gr.ARMClient.GetResource(ctx, id, deployableSpec.Spec().GetApiVersion(), armStatus)
+	retryAfter, err := gr.ARMClient.GetResource(ctx, id, deployableSpec.Spec().GetApiVersion(), armStatus)
 	if data.log.V(4).Enabled() {
 		statusBytes, marshalErr := json.Marshal(armStatus)
 		if marshalErr != nil {

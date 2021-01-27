@@ -111,20 +111,22 @@ func (c *Client) PutDeployment(ctx context.Context, deployment *Deployment) erro
 	return nil
 }
 
-func (c *Client) GetResource(ctx context.Context, resourceID string, resource interface{}) (error, time.Duration) {
+var noDuration time.Duration = 0
+
+func (c *Client) GetResource(ctx context.Context, resourceID string, resource interface{}) (time.Duration, error) {
 
 	preparer := autorest.CreatePreparer(
 		autorest.AsContentType("application/json"))
 
 	req, err := c.newRequest(ctx, http.MethodGet, resourceID)
 	if err != nil {
-		return err, 0
+		return noDuration, err
 	}
 
 	req, err = preparer.Prepare(req)
 	if err != nil {
 		tab.For(ctx).Error(err)
-		return err, 0
+		return noDuration, err
 	}
 
 	// The linter below doesn't realize that the response is closed in the course of
@@ -133,7 +135,7 @@ func (c *Client) GetResource(ctx context.Context, resourceID string, resource in
 	resp, err := c.Send(req)
 	if err != nil {
 		tab.For(ctx).Error(err)
-		return err, 0
+		return noDuration, err
 	}
 
 	err = autorest.Respond(
@@ -146,10 +148,10 @@ func (c *Client) GetResource(ctx context.Context, resourceID string, resource in
 
 	if err != nil {
 		tab.For(ctx).Error(err)
-		return err, retryAfter
+		return retryAfter, err
 	}
 
-	return nil, retryAfter
+	return retryAfter, nil
 }
 
 func getRetryAfter(resp *http.Response) time.Duration {

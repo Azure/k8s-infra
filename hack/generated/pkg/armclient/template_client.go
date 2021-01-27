@@ -24,8 +24,8 @@ import (
 // TODO: Naming?
 type Applier interface {
 	CreateDeployment(ctx context.Context, deployment *Deployment) error
-	DeleteDeployment(ctx context.Context, deploymentId string) (error, time.Duration)
-	GetDeployment(ctx context.Context, deploymentId string) (*Deployment, error, time.Duration)
+	DeleteDeployment(ctx context.Context, deploymentId string) (time.Duration, error)
+	GetDeployment(ctx context.Context, deploymentId string) (*Deployment, time.Duration, error)
 	NewResourceGroupDeployment(resourceGroup string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment
 	NewSubscriptionDeployment(location string, deploymentName string, resourceSpec genruntime.ArmResourceSpec) *Deployment
 
@@ -33,9 +33,9 @@ type Applier interface {
 
 	// TODO: These functions take an empty status and fill it out with the response from Azure (rather than as
 	// TODO: the return type. I don't love that pattern but don't have a better one either.
-	BeginDeleteResource(ctx context.Context, id string, apiVersion string, status genruntime.ArmResourceStatus) (error, time.Duration)
-	GetResource(ctx context.Context, id string, apiVersion string, status genruntime.ArmResourceStatus) (error, time.Duration)
-	HeadResource(ctx context.Context, id string, apiVersion string) (bool, error, time.Duration)
+	BeginDeleteResource(ctx context.Context, id string, apiVersion string, status genruntime.ArmResourceStatus) (time.Duration, error)
+	GetResource(ctx context.Context, id string, apiVersion string, status genruntime.ArmResourceStatus) (time.Duration, error)
+	HeadResource(ctx context.Context, id string, apiVersion string) (bool, time.Duration, error)
 }
 
 type AzureTemplateClient struct {
@@ -200,10 +200,10 @@ func (atc *AzureTemplateClient) GetResource(
 	ctx context.Context,
 	id string,
 	apiVersion string,
-	status genruntime.ArmResourceStatus) (error, time.Duration) {
+	status genruntime.ArmResourceStatus) (time.Duration, error) {
 
 	if id == "" {
-		return errors.Errorf("resource ID cannot be empty"), 0
+		return noDuration, errors.Errorf("resource ID cannot be empty")
 	}
 
 	path := fmt.Sprintf("%s?api-version=%s", id, apiVersion)
@@ -217,25 +217,25 @@ func (atc *AzureTemplateClient) CreateDeployment(ctx context.Context, deployment
 }
 
 // DeleteDeployment deletes a deployment. If the deployment doesn't exist it does not return an error
-func (atc *AzureTemplateClient) DeleteDeployment(ctx context.Context, deploymentId string) (error, time.Duration) {
+func (atc *AzureTemplateClient) DeleteDeployment(ctx context.Context, deploymentId string) (time.Duration, error) {
 	err, retryAfter := atc.RawClient.DeleteResource(ctx, idWithAPIVersion(deploymentId), nil)
 
 	// NotFound is a success
 	if IsNotFound(err) {
-		return nil, retryAfter
+		return retryAfter, nil
 	}
 
-	return err, retryAfter
+	return retryAfter, err
 }
 
-func (atc *AzureTemplateClient) GetDeployment(ctx context.Context, deploymentId string) (*Deployment, error, time.Duration) {
+func (atc *AzureTemplateClient) GetDeployment(ctx context.Context, deploymentId string) (*Deployment, time.Duration, error) {
 	var deployment Deployment
-	err, retryAfter := atc.RawClient.GetResource(ctx, idWithAPIVersion(deploymentId), &deployment)
+	retryAfter, err := atc.RawClient.GetResource(ctx, idWithAPIVersion(deploymentId), &deployment)
 	if err != nil {
-		return nil, err, retryAfter
+		return nil, retryAfter, err
 	}
 
-	return &deployment, nil, retryAfter
+	return &deployment, retryAfter, nil
 }
 
 func createResourceIdTemplate(resourceSpec genruntime.ArmResourceSpec) map[string]Output {
@@ -273,19 +273,19 @@ func (atc *AzureTemplateClient) BeginDeleteResource(
 	ctx context.Context,
 	id string,
 	apiVersion string,
-	status genruntime.ArmResourceStatus) (error, time.Duration) {
+	status genruntime.ArmResourceStatus) (time.Duration, error) {
 
 	if id == "" {
-		return errors.Errorf("resource ID cannot be empty"), 0
+		return noDuration, errors.Errorf("resource ID cannot be empty")
 	}
 
 	path := fmt.Sprintf("%s?api-version=%s", id, apiVersion)
 	err, retryAfter := atc.RawClient.DeleteResource(ctx, path, &status)
 	if err != nil {
-		return errors.Wrapf(err, "failed deleting %s", id), retryAfter
+		return retryAfter, errors.Wrapf(err, "failed deleting %s", id)
 	}
 
-	return nil, retryAfter /* retry-after here indicates how long to wait before polling for progress */
+	return retryAfter, nil /* retry-after here indicates how long to wait before polling for progress */
 }
 
 // HeadResource checks to see if the resource exists
@@ -293,21 +293,21 @@ func (atc *AzureTemplateClient) BeginDeleteResource(
 // Note: this doesn't actually use HTTP HEAD as Azure Resource Manager does not uniformly implement HEAD for all
 // all resources. Also, ARM returns a 400 rather than 405 when requesting HEAD for a resource which the Resource
 // Provider does not implement HEAD. For these reasons, we use an HTTP GET
-func (atc *AzureTemplateClient) HeadResource(ctx context.Context, id string, apiVersion string) (bool, error, time.Duration) {
+func (atc *AzureTemplateClient) HeadResource(ctx context.Context, id string, apiVersion string) (bool, time.Duration, error) {
 	if id == "" {
-		return false, fmt.Errorf("resource ID cannot be empty"), 0
+		return false, noDuration, fmt.Errorf("resource ID cannot be empty")
 	}
 
 	idAndAPIVersion := id + fmt.Sprintf("?api-version=%s", apiVersion)
 	ignored := struct{}{}
-	err, retryAfter := atc.RawClient.GetResource(ctx, idAndAPIVersion, &ignored)
+	retryAfter, err := atc.RawClient.GetResource(ctx, idAndAPIVersion, &ignored)
 	switch {
 	case IsNotFound(err):
-		return false, nil, retryAfter
+		return false, retryAfter, nil
 	case err != nil:
-		return false, err, retryAfter
+		return false, retryAfter, err
 	default:
-		return true, nil, retryAfter
+		return true, retryAfter, nil
 	}
 }
 
