@@ -285,7 +285,7 @@ func (atc *AzureTemplateClient) BeginDeleteResource(
 		return errors.Wrapf(err, "failed deleting %s", id), retryAfter
 	}
 
-	return nil, retryAfter /* retry-after here indicates how long to wait before polling */
+	return nil, retryAfter /* retry-after here indicates how long to wait before polling for progress */
 }
 
 // HeadResource checks to see if the resource exists
