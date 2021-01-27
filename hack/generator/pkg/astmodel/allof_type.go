@@ -29,10 +29,10 @@ type AllOfType struct {
 
 var _ Type = &AllOfType{}
 
-// MakeAllOfType is a smart constructor for AllOfType,
+// BuildAllOfType is a smart constructor for AllOfType,
 // maintaining the invariants. If only one unique type
 // is passed, then the result will be that type, not an AllOf.
-func MakeAllOfType(types ...Type) Type {
+func BuildAllOfType(types ...Type) Type {
 	uniqueTypes := MakeTypeSet()
 	for _, t := range types {
 		if allOf, ok := t.(*AllOfType); ok {
@@ -75,10 +75,10 @@ func MakeAllOfType(types ...Type) Type {
 
 		var ts []Type
 		oneOfs[0].types.ForEach(func(t Type, _ int) {
-			ts = append(ts, MakeAllOfType(append(notOneOfs, t)...))
+			ts = append(ts, BuildAllOfType(append(notOneOfs, t)...))
 		})
 
-		return MakeOneOfType(ts...)
+		return BuildOneOfType(ts...)
 	} else if len(oneOfs) > 1 {
 		// emit a warning if this ever comes up
 		// (it doesn't at the moment)

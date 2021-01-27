@@ -26,10 +26,10 @@ type OneOfType struct {
 
 var _ Type = &OneOfType{}
 
-// MakeOneOfType is a smart constructor for a  OneOfType,
+// BuildOneOfType is a smart constructor for a  OneOfType,
 // maintaining the invariants. If only one unique type
 // is passed, the result will be that type, not a OneOf.
-func MakeOneOfType(types ...Type) Type {
+func BuildOneOfType(types ...Type) Type {
 	uniqueTypes := MakeTypeSet()
 	for _, t := range types {
 		if oneOf, ok := t.(*OneOfType); ok {

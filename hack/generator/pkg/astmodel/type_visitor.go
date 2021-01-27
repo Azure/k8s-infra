@@ -274,7 +274,7 @@ func IdentityVisitOfOneOfType(this *TypeVisitor, it *OneOfType, ctx interface{})
 		return it, nil // short-circuit
 	}
 
-	return MakeOneOfType(newTypes...), nil
+	return BuildOneOfType(newTypes...), nil
 }
 
 func IdentityVisitOfAllOfType(this *TypeVisitor, it *AllOfType, ctx interface{}) (Type, error) {
@@ -297,7 +297,7 @@ func IdentityVisitOfAllOfType(this *TypeVisitor, it *AllOfType, ctx interface{})
 		return it, nil // short-circuit
 	}
 
-	return MakeAllOfType(newTypes...), nil
+	return BuildAllOfType(newTypes...), nil
 }
 
 // just checks reference equality of Types
