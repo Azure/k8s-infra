@@ -95,6 +95,8 @@ func writeFiles(ctx context.Context, packages map[astmodel.PackageReference]*ast
 	errs := make(chan error, 10) // we will buffer up to 10 errors and ignore any leftovers
 
 	// write outputs with 8 workers
+	// this is parallelized mostly due to 'dst' conversion being slow, see: https://github.com/Azure/k8s-infra/pull/376
+	// potentially we could contribute improvements upstream
 	for c := 0; c < 8; c++ {
 		wg.Add(1)
 		go func() {
