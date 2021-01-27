@@ -95,3 +95,48 @@ func TestAsObjectType(t *testing.T) {
 		})
 	}
 }
+
+func TestAsArrayType(t *testing.T) {
+
+	objectType := NewObjectType()
+	arrayType := NewArrayType(StringType)
+	mapType := NewMapType(StringType, StringType)
+	optionalType := NewOptionalType(objectType)
+
+	cases := []struct {
+		name     string
+		subject  Type
+		expected Type
+	}{
+		{"PrimitivesAreNotArrays", StringType, nil},
+		{"ObjectsAreNotArrays", objectType, nil},
+		{"ArraysAreArrays", arrayType, arrayType},
+		{"MapsAreNotArrays", mapType, nil},
+		{"OptionalAreNotArrays", optionalType, nil},
+		{"OptionalContainingArray", NewOptionalType(arrayType), arrayType},
+		{"OptionalNotContainingArray", NewOptionalType(StringType), nil},
+		{"FlaggedContainingArray", OneOfFlag.ApplyTo(arrayType), arrayType},
+		{"FlaggedNotContainingArray", OneOfFlag.ApplyTo(StringType), nil},
+		{"ValidatedContainingArray", MakeValidatedType(arrayType, nil), arrayType},
+		{"ValidatedNotContainingArray", MakeValidatedType(StringType, nil), nil},
+		{"ErroredContainingArray", MakeErroredType(arrayType, nil, nil), arrayType},
+		{"ErroredNotContainingArray", MakeErroredType(StringType, nil, nil), nil},
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			g := NewGomegaWithT(t)
+
+			actual := AsArrayType(c.subject)
+
+			if c.expected == nil {
+				g.Expect(actual).To(BeNil())
+			} else {
+				g.Expect(actual).To(Equal(c.expected))
+			}
+
+		})
+	}
+}

@@ -38,3 +38,16 @@ func AsObjectType(aType Type) *ObjectType {
 
 	return nil
 }
+
+// AsArrayType unwraps any wrappers the provided type and returns either the underlying ArrayType or nil
+func AsArrayType(aType Type) *ArrayType {
+	if arr, ok := aType.(*ArrayType); ok {
+		return arr
+	}
+
+	if wrapper, ok := aType.(MetaType); ok {
+		return AsArrayType(wrapper.Unwrap())
+	}
+
+	return nil
+}
