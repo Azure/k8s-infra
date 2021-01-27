@@ -22,7 +22,7 @@ type ErroredType struct {
 
 var _ Type = &ErroredType{}
 
-func MakeErroredType(t Type, errors []string, warnings []string) *ErroredType {
+func NewErroredType(t Type, errors []string, warnings []string) *ErroredType {
 	result := &ErroredType{
 		inner:    nil,
 		errors:   errors,
