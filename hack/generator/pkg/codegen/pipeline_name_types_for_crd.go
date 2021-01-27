@@ -75,7 +75,7 @@ func nameInnerTypes(
 		return namedEnum.Name(), nil
 	}
 
-	visitor.VisitValidatedType = func(this *astmodel.TypeVisitor, v astmodel.ValidatedType, ctx interface{}) (astmodel.Type, error) {
+	visitor.VisitValidatedType = func(this *astmodel.TypeVisitor, v *astmodel.ValidatedType, ctx interface{}) (astmodel.Type, error) {
 		// a validated type anywhere except directly under a property
 		// must be named so that we can put the validations on it
 		nameHint := ctx.(string)

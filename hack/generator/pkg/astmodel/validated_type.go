@@ -143,8 +143,8 @@ type ValidatedType struct {
 	element     Type
 }
 
-func MakeValidatedType(element Type, validations Validations) ValidatedType {
-	return ValidatedType{element: element, validations: validations}
+func NewValidatedType(element Type, validations Validations) *ValidatedType {
+	return &ValidatedType{element: element, validations: validations}
 }
 
 func (v ValidatedType) ElementType() Type {
@@ -155,12 +155,12 @@ func (v ValidatedType) Validations() Validations {
 	return v.validations
 }
 
-func (v ValidatedType) WithType(newElement Type) ValidatedType {
+func (v ValidatedType) WithType(newElement Type) *ValidatedType {
 	v.element = newElement
-	return v
+	return &v
 }
 
-var _ Type = ValidatedType{}
+var _ Type = &ValidatedType{}
 
 func (v ValidatedType) AsDeclarations(c *CodeGenerationContext, declContext DeclarationContext) []dst.Decl {
 	declContext.Validations = append(declContext.Validations, v.validations.ToKubeBuilderValidations()...)

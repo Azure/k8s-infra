@@ -27,7 +27,7 @@ type TypeVisitor struct {
 	VisitEnumType      func(this *TypeVisitor, it *EnumType, ctx interface{}) (Type, error)
 	VisitResourceType  func(this *TypeVisitor, it *ResourceType, ctx interface{}) (Type, error)
 	VisitFlaggedType   func(this *TypeVisitor, it *FlaggedType, ctx interface{}) (Type, error)
-	VisitValidatedType func(this *TypeVisitor, it ValidatedType, ctx interface{}) (Type, error)
+	VisitValidatedType func(this *TypeVisitor, it *ValidatedType, ctx interface{}) (Type, error)
 	VisitErroredType   func(this *TypeVisitor, it *ErroredType, ctx interface{}) (Type, error)
 }
 
@@ -60,7 +60,7 @@ func (tv *TypeVisitor) Visit(t Type, ctx interface{}) (Type, error) {
 		return tv.VisitResourceType(tv, it, ctx)
 	case *FlaggedType:
 		return tv.VisitFlaggedType(tv, it, ctx)
-	case ValidatedType:
+	case *ValidatedType:
 		return tv.VisitValidatedType(tv, it, ctx)
 	case *ErroredType:
 		return tv.VisitErroredType(tv, it, ctx)
@@ -330,7 +330,7 @@ func IdentityVisitOfFlaggedType(this *TypeVisitor, ft *FlaggedType, ctx interfac
 	return ft.WithElement(nt), nil
 }
 
-func IdentityVisitOfValidatedType(this *TypeVisitor, v ValidatedType, ctx interface{}) (Type, error) {
+func IdentityVisitOfValidatedType(this *TypeVisitor, v *ValidatedType, ctx interface{}) (Type, error) {
 	nt, err := this.Visit(v.element, ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to visit validated type %T", v.element)
