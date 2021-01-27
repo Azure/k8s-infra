@@ -257,6 +257,10 @@ func QualifiedTypeName(pkg string, name string) *dst.SelectorExpr {
 	}
 }
 
+// Selector generates a field reference into an existing expression
+//
+// <expr>.<name>
+//
 func Selector(expr dst.Expr, name string) *dst.SelectorExpr {
 	return &dst.SelectorExpr{
 		X:   dst.Clone(expr).(dst.Expr),
@@ -264,6 +268,10 @@ func Selector(expr dst.Expr, name string) *dst.SelectorExpr {
 	}
 }
 
+// NotEqual generates a != comparison between the two expressions
+//
+// <lhs> != <rhs>
+//
 func NotEqual(lhs dst.Expr, rhs dst.Expr) *dst.BinaryExpr {
 	return &dst.BinaryExpr{
 		X:  dst.Clone(lhs).(dst.Expr),
@@ -272,6 +280,7 @@ func NotEqual(lhs dst.Expr, rhs dst.Expr) *dst.BinaryExpr {
 	}
 }
 
+// cloneExprSlice is a utility method to clone a slice of expressions
 func cloneExprSlice(exprs []dst.Expr) []dst.Expr {
 	var result []dst.Expr
 	for _, exp := range exprs {
@@ -281,6 +290,7 @@ func cloneExprSlice(exprs []dst.Expr) []dst.Expr {
 	return result
 }
 
+// cloneStmtSlice is a utility method to clone a slice of statements
 func cloneStmtSlice(stmts []dst.Stmt) []dst.Stmt {
 	var result []dst.Stmt
 	for _, st := range stmts {

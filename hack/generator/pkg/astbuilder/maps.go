@@ -36,12 +36,19 @@ func InsertMap(m dst.Expr, key dst.Expr, rhs dst.Expr) *dst.AssignStmt {
 		dst.Clone(rhs).(dst.Expr))
 }
 
-func IterateOverMapWithValue(key string, item string, list dst.Expr, statements ...dst.Stmt) *dst.RangeStmt {
+// IterateOverMapWithValue creates a statement to iterate over the content of a map using the
+// specified identifiers for each key and value found.
+//
+// for <key>, <item> := range <mapExpr> {
+//     <statements>
+// }
+//
+func IterateOverMapWithValue(key string, item string, mapExpr dst.Expr, statements ...dst.Stmt) *dst.RangeStmt {
 	return &dst.RangeStmt{
 		Key:   dst.NewIdent(key),
 		Value: dst.NewIdent(item),
 		Tok:   token.DEFINE,
-		X:     list,
+		X:     mapExpr,
 		Body: &dst.BlockStmt{
 			List: cloneStmtSlice(statements),
 		},

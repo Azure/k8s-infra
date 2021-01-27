@@ -31,6 +31,13 @@ func AppendList(lhs dst.Expr, rhs dst.Expr) dst.Stmt {
 		CallFunc("append", dst.Clone(lhs).(dst.Expr), dst.Clone(rhs).(dst.Expr)))
 }
 
+// IterateOverList creates a statement to iterate over the content of a list using the specified
+// identifier for each element in the list
+//
+// for _, <item> := range <list> {
+//     <statements>
+// }
+//
 func IterateOverList(item string, list dst.Expr, statements ...dst.Stmt) *dst.RangeStmt {
 	return &dst.RangeStmt{
 		Key:   dst.NewIdent("_"),
@@ -43,6 +50,13 @@ func IterateOverList(item string, list dst.Expr, statements ...dst.Stmt) *dst.Ra
 	}
 }
 
+// IterateOverListWithIndex creates a statement to iterate over the content of a list using the specified
+// identifiers for each index and element in the list
+//
+// for <index>, <item> := range <list> {
+//     <statements>
+// }
+//
 func IterateOverListWithIndex(index string, item string, list dst.Expr, statements ...dst.Stmt) *dst.RangeStmt {
 	return &dst.RangeStmt{
 		Key:   dst.NewIdent(index),
