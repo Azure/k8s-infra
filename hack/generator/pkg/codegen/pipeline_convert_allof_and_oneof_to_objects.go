@@ -189,7 +189,7 @@ func (s synthesizer) getOneOfName(t astmodel.Type, propIndex int) (propertyNames
 			isGoodName: false, // TODO: This name sucks but what alternative do we have?
 		}, nil
 
-	case astmodel.ValidatedType:
+	case *astmodel.ValidatedType:
 		// pass-through to inner type
 		return s.getOneOfName(concreteType.ElementType(), propIndex)
 
@@ -673,7 +673,7 @@ func (synthesizer) handleEqualTypes(left astmodel.Type, right astmodel.Type) (as
 
 // a validated and non-validated version of the same type become the valiated version
 func (synthesizer) handleValidatedAndNonValidated(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
-	if validated, ok := left.(astmodel.ValidatedType); ok {
+	if validated, ok := left.(*astmodel.ValidatedType); ok {
 		if validated.ElementType().Equals(right) {
 			return left, nil
 		}
