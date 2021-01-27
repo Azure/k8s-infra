@@ -51,3 +51,16 @@ func AsArrayType(aType Type) *ArrayType {
 
 	return nil
 }
+
+// AsMapType unwraps any wrappers around the provided type and returns either the underlying MapType or nil
+func AsMapType(aType Type) *MapType {
+	if mt, ok := aType.(*MapType); ok {
+		return mt
+	}
+
+	if wrapper, ok := aType.(MetaType); ok {
+		return AsMapType(wrapper.Unwrap())
+	}
+
+	return nil
+}
