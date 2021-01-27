@@ -443,7 +443,7 @@ func (gr *GenericReconciler) MonitorDeployment(ctx context.Context, action Recon
 			return ctrl.Result{}, errors.Wrap(err, "getting resource ID from resource")
 		}
 
-		s, statusErr, _ := gr.getStatus(ctx, resourceID, data)
+		s, _, statusErr := gr.getStatus(ctx, resourceID, data)
 		if statusErr != nil {
 			return ctrl.Result{}, errors.Wrap(statusErr, "getting status from ARM")
 		}
@@ -563,16 +563,18 @@ func (gr *GenericReconciler) constructArmResource(ctx context.Context, data *Rec
 	return resource, nil
 }
 
-func (gr *GenericReconciler) getStatus(ctx context.Context, id string, data *ReconcileMetadata) (genruntime.FromArmConverter, error, time.Duration) {
+var zeroDuration time.Duration = 0
+
+func (gr *GenericReconciler) getStatus(ctx context.Context, id string, data *ReconcileMetadata) (genruntime.FromArmConverter, time.Duration, error) {
 	deployableSpec, err := reflecthelpers.ConvertResourceToDeployableResource(ctx, gr.ResourceResolver, data.metaObj)
 	if err != nil {
-		return nil, err, 0
+		return nil, zeroDuration, err
 	}
 
 	// TODO: do we tolerate not exists here?
 	armStatus, err := reflecthelpers.NewEmptyArmResourceStatus(data.metaObj)
 	if err != nil {
-		return nil, errors.Wrapf(err, "constructing ARM status for resource: %q", id), 0
+		return nil, zeroDuration, errors.Wrapf(err, "constructing ARM status for resource: %q", id)
 	}
 
 	// Get the resource
@@ -580,20 +582,20 @@ func (gr *GenericReconciler) getStatus(ctx context.Context, id string, data *Rec
 	if data.log.V(4).Enabled() {
 		statusBytes, marshalErr := json.Marshal(armStatus)
 		if marshalErr != nil {
-			return nil, errors.Wrapf(err, "serializing ARM status to JSON for debugging"), 0
+			return nil, zeroDuration, errors.Wrapf(err, "serializing ARM status to JSON for debugging")
 		}
 
 		data.log.V(4).Info("Got ARM status", "status", string(statusBytes))
 	}
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting resource with ID: %q", id), retryAfter
+		return nil, retryAfter, errors.Wrapf(err, "getting resource with ID: %q", id)
 	}
 
 	// Convert the ARM shape to the Kube shape
 	status, err := reflecthelpers.NewEmptyStatus(data.metaObj)
 	if err != nil {
-		return nil, errors.Wrapf(err, "constructing Kube status object for resource: %q", id), 0
+		return nil, zeroDuration, errors.Wrapf(err, "constructing Kube status object for resource: %q", id)
 	}
 
 	owner := data.metaObj.Owner()
@@ -608,10 +610,10 @@ func (gr *GenericReconciler) getStatus(ctx context.Context, id string, data *Rec
 	// TODO: The owner parameter here should be optional
 	err = status.PopulateFromArm(knownOwner, reflecthelpers.ValueOfPtr(armStatus)) // TODO: PopulateFromArm expects a value... ick
 	if err != nil {
-		return nil, errors.Wrapf(err, "converting ARM status to Kubernetes status"), 0
+		return nil, zeroDuration, errors.Wrapf(err, "converting ARM status to Kubernetes status")
 	}
 
-	return status, nil, 0
+	return status, 0, nil
 }
 
 func (gr *GenericReconciler) resourceSpecToDeployment(ctx context.Context, data *ReconcileMetadata) (*armclient.Deployment, error) {
