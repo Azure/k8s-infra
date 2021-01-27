@@ -203,7 +203,7 @@ func (atc *AzureTemplateClient) GetResource(
 	status genruntime.ArmResourceStatus) (time.Duration, error) {
 
 	if id == "" {
-		return noDuration, errors.Errorf("resource ID cannot be empty")
+		return zeroDuration, errors.Errorf("resource ID cannot be empty")
 	}
 
 	path := fmt.Sprintf("%s?api-version=%s", id, apiVersion)
@@ -276,7 +276,7 @@ func (atc *AzureTemplateClient) BeginDeleteResource(
 	status genruntime.ArmResourceStatus) (time.Duration, error) {
 
 	if id == "" {
-		return noDuration, errors.Errorf("resource ID cannot be empty")
+		return zeroDuration, errors.Errorf("resource ID cannot be empty")
 	}
 
 	path := fmt.Sprintf("%s?api-version=%s", id, apiVersion)
@@ -295,7 +295,7 @@ func (atc *AzureTemplateClient) BeginDeleteResource(
 // Provider does not implement HEAD. For these reasons, we use an HTTP GET
 func (atc *AzureTemplateClient) HeadResource(ctx context.Context, id string, apiVersion string) (bool, time.Duration, error) {
 	if id == "" {
-		return false, noDuration, fmt.Errorf("resource ID cannot be empty")
+		return false, zeroDuration, fmt.Errorf("resource ID cannot be empty")
 	}
 
 	idAndAPIVersion := id + fmt.Sprintf("?api-version=%s", apiVersion)

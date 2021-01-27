@@ -111,7 +111,7 @@ func (c *Client) PutDeployment(ctx context.Context, deployment *Deployment) erro
 	return nil
 }
 
-var noDuration time.Duration = 0
+var zeroDuration time.Duration = 0
 
 func (c *Client) GetResource(ctx context.Context, resourceID string, resource interface{}) (time.Duration, error) {
 
@@ -120,13 +120,13 @@ func (c *Client) GetResource(ctx context.Context, resourceID string, resource in
 
 	req, err := c.newRequest(ctx, http.MethodGet, resourceID)
 	if err != nil {
-		return noDuration, err
+		return zeroDuration, err
 	}
 
 	req, err = preparer.Prepare(req)
 	if err != nil {
 		tab.For(ctx).Error(err)
-		return noDuration, err
+		return zeroDuration, err
 	}
 
 	// The linter below doesn't realize that the response is closed in the course of
@@ -135,7 +135,7 @@ func (c *Client) GetResource(ctx context.Context, resourceID string, resource in
 	resp, err := c.Send(req)
 	if err != nil {
 		tab.For(ctx).Error(err)
-		return noDuration, err
+		return zeroDuration, err
 	}
 
 	err = autorest.Respond(
