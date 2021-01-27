@@ -350,7 +350,7 @@ func (gr *GenericReconciler) MonitorDelete(
 	found, err, retryAfter := gr.ARMClient.HeadResource(ctx, resource.GetId(), resource.Spec().GetApiVersion())
 	if err != nil {
 		if retryAfter != 0 {
-			data.log.V(3).Info("Error performing HEAD on resource, will retry", "delay", retryAfter/time.Second)
+			data.log.V(3).Info("Error performing HEAD on resource, will retry", "delaySec", retryAfter/time.Second)
 			return ctrl.Result{RequeueAfter: retryAfter}, nil
 		}
 
@@ -424,7 +424,7 @@ func (gr *GenericReconciler) MonitorDeployment(ctx context.Context, action Recon
 	deployment, err, retryAfter := gr.ARMClient.GetDeployment(ctx, deployment.Id)
 	if err != nil {
 		if retryAfter != 0 {
-			data.log.V(3).Info("Error performing GET on deployment, will retry", "delay", retryAfter/time.Second)
+			data.log.V(3).Info("Error performing GET on deployment, will retry", "delaySec", retryAfter/time.Second)
 			return ctrl.Result{RequeueAfter: retryAfter}, nil
 		}
 
