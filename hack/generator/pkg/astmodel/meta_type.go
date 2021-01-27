@@ -10,3 +10,17 @@ type MetaType interface {
 	// Unwrap returns the type contained within the wrapper type
 	Unwrap() Type
 }
+
+// AsObjectType unwraps any wrappers around the provided type and returns either the underlying
+// ObjectType or nil
+func AsObjectType(aType Type) *ObjectType {
+	if obj, ok := aType.(*ObjectType); ok {
+		return obj
+	}
+
+	if wrapper, ok := aType.(MetaType); ok {
+		return AsObjectType(wrapper.Unwrap())
+	}
+
+	return nil
+}
