@@ -68,7 +68,6 @@ type GenericReconciler struct {
 	Name                 string
 	GVK                  schema.GroupVersionKind
 	Controller           controller.Controller
-	RequeueDelay         time.Duration
 	CreateDeploymentName func(obj metav1.Object) (string, error)
 }
 
@@ -91,16 +90,10 @@ type Options struct {
 	controller.Options
 
 	// options specific to our controller
-	RequeueDelay         time.Duration
 	CreateDeploymentName func(obj metav1.Object) (string, error)
 }
 
 func (options *Options) setDefaults() {
-	// default requeue delay to 5 seconds
-	if options.RequeueDelay == 0 {
-		options.RequeueDelay = 5 * time.Second
-	}
-
 	// override deployment name generator, if provided
 	if options.CreateDeploymentName == nil {
 		options.CreateDeploymentName = createDeploymentName
@@ -149,7 +142,6 @@ func register(mgr ctrl.Manager, applier armclient.Applier, obj runtime.Object, l
 		Log:                  log.WithName(controllerName),
 		Recorder:             mgr.GetEventRecorderFor(controllerName),
 		GVK:                  gvk,
-		RequeueDelay:         options.RequeueDelay,
 		CreateDeploymentName: options.CreateDeploymentName,
 	}
 
@@ -331,14 +323,11 @@ func (gr *GenericReconciler) StartDeleteOfResource(
 		return ctrl.Result{}, errors.Wrap(err, "patching after delete")
 	}
 
-	// delete has started, check back to seen when the finalizer can be removed
-	requeueDelay := gr.RequeueDelay
-	if retryAfter > requeueDelay {
-		data.log.Info("DELETE started, will check again", "delay", retryAfter/time.Second)
-		requeueDelay = retryAfter
-	}
+	data.log.V(4).Info("Resource deletion started, will check again", "delaySec", retryAfter/time.Second)
 
-	return ctrl.Result{RequeueAfter: requeueDelay}, nil
+	// delete has started, check back to seen when the finalizer can be removed
+	// NB: we need to set Requeue: true in case retryAfter is 0
+	return ctrl.Result{Requeue: true, RequeueAfter: retryAfter}, nil
 }
 
 // MonitorDelete will call Azure to check if the resource still exists. If so, it will requeue, else,
@@ -361,7 +350,7 @@ func (gr *GenericReconciler) MonitorDelete(
 	found, err, retryAfter := gr.ARMClient.HeadResource(ctx, resource.GetId(), resource.Spec().GetApiVersion())
 	if err != nil {
 		if retryAfter != 0 {
-			data.log.Info("Error HEADing resource, will retry", "delay", retryAfter/time.Second)
+			data.log.V(3).Info("Error performing HEAD on resource, will retry", "delay", retryAfter/time.Second)
 			return ctrl.Result{RequeueAfter: retryAfter}, nil
 		}
 
@@ -370,7 +359,7 @@ func (gr *GenericReconciler) MonitorDelete(
 
 	if found {
 		data.log.V(0).Info("Found resource: continuing to wait for deletion...")
-		return ctrl.Result{RequeueAfter: gr.RequeueDelay}, nil
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	err = gr.deleteResourceSucceeded(ctx, data)
@@ -417,10 +406,9 @@ func (gr *GenericReconciler) CreateDeployment(ctx context.Context, action Reconc
 		return ctrl.Result{}, errors.Wrap(client.IgnoreNotFound(err), "patching")
 	}
 
-	result := ctrl.Result{}
-	// TODO: This is going to be common... need a wrapper/helper somehow?
-	if !deployment.IsTerminalProvisioningState() {
-		result = ctrl.Result{RequeueAfter: gr.RequeueDelay}
+	result := ctrl.Result{
+		// need to check again if deployment hasn’t terminated
+		Requeue: !deployment.IsTerminalProvisioningState(),
 	}
 
 	return result, err
@@ -436,7 +424,7 @@ func (gr *GenericReconciler) MonitorDeployment(ctx context.Context, action Recon
 	deployment, err, retryAfter := gr.ARMClient.GetDeployment(ctx, deployment.Id)
 	if err != nil {
 		if retryAfter != 0 {
-			data.log.Info("Error GETting deployment, will retry", "delay", retryAfter/time.Second)
+			data.log.V(3).Info("Error performing GET on deployment, will retry", "delay", retryAfter/time.Second)
 			return ctrl.Result{RequeueAfter: retryAfter}, nil
 		}
 
@@ -518,14 +506,11 @@ func (gr *GenericReconciler) MonitorDeployment(ctx context.Context, action Recon
 		// we are done
 		return ctrl.Result{}, nil
 	}
-	// need to check back; still creating resources or deleting the deployment itself
-	requeueDelay := gr.RequeueDelay
-	if retryAfter > requeueDelay {
-		// use the Retry-After that was returned by Azure when deleting the deployment
-		requeueDelay = retryAfter
-	}
 
-	return ctrl.Result{RequeueAfter: requeueDelay}, err
+	data.log.V(3).Info("Deployment still running, will check again", "delaySec", retryAfter/time.Second)
+	// need to check back; still creating resources or deleting the deployment itself
+	// NB: we need to set Requeue: true in case retryAfter is 0
+	return ctrl.Result{Requeue: true, RequeueAfter: retryAfter}, err
 }
 
 func (gr *GenericReconciler) ManageOwnership(ctx context.Context, action ReconcileAction, data *ReconcileMetadata) (ctrl.Result, error) {
