@@ -185,19 +185,19 @@ func parseHttpDate(s string) (time.Time, error) {
 
 // DeleteResource will make an HTTP DELETE call to the resourceId and attempt to fill the resource with the response.
 // If the body of the response is empty, the resource will be nil.
-func (c *Client) DeleteResource(ctx context.Context, resourceID string, resource interface{}) (error, time.Duration) {
+func (c *Client) DeleteResource(ctx context.Context, resourceID string, resource interface{}) (time.Duration, error) {
 	preparer := autorest.CreatePreparer(
 		autorest.AsContentType("application/json"))
 
 	req, err := c.newRequest(ctx, http.MethodDelete, resourceID)
 	if err != nil {
-		return err, 0
+		return zeroDuration, err
 	}
 
 	req, err = preparer.Prepare(req)
 	if err != nil {
 		tab.For(ctx).Error(err)
-		return err, 0
+		return zeroDuration, err
 	}
 
 	// The linter below doesn't realize that the response is closed in the course of
@@ -207,7 +207,7 @@ func (c *Client) DeleteResource(ctx context.Context, resourceID string, resource
 
 	if err != nil {
 		tab.For(ctx).Error(err)
-		return err, 0
+		return zeroDuration, err
 	}
 
 	err = autorest.Respond(
@@ -221,14 +221,14 @@ func (c *Client) DeleteResource(ctx context.Context, resourceID string, resource
 	if err != nil {
 		if IsNotFound(err) {
 			// you asked it to be gone, well, it is.
-			return nil, 0 /* no need to retry */
+			return zeroDuration, nil /* no need to retry */
 		}
 
 		tab.For(ctx).Error(err)
-		return err, retryAfter
+		return retryAfter, err
 	}
 
-	return nil, retryAfter
+	return retryAfter, nil
 }
 
 func (c *Client) newRequest(ctx context.Context, method string, entityPath string) (*http.Request, error) {

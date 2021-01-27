@@ -218,7 +218,7 @@ func (atc *AzureTemplateClient) CreateDeployment(ctx context.Context, deployment
 
 // DeleteDeployment deletes a deployment. If the deployment doesn't exist it does not return an error
 func (atc *AzureTemplateClient) DeleteDeployment(ctx context.Context, deploymentId string) (time.Duration, error) {
-	err, retryAfter := atc.RawClient.DeleteResource(ctx, idWithAPIVersion(deploymentId), nil)
+	retryAfter, err := atc.RawClient.DeleteResource(ctx, idWithAPIVersion(deploymentId), nil)
 
 	// NotFound is a success
 	if IsNotFound(err) {
@@ -280,7 +280,7 @@ func (atc *AzureTemplateClient) BeginDeleteResource(
 	}
 
 	path := fmt.Sprintf("%s?api-version=%s", id, apiVersion)
-	err, retryAfter := atc.RawClient.DeleteResource(ctx, path, &status)
+	retryAfter, err := atc.RawClient.DeleteResource(ctx, path, &status)
 	if err != nil {
 		return retryAfter, errors.Wrapf(err, "failed deleting %s", id)
 	}

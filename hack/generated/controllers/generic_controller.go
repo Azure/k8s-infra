@@ -613,7 +613,7 @@ func (gr *GenericReconciler) getStatus(ctx context.Context, id string, data *Rec
 		return nil, zeroDuration, errors.Wrapf(err, "converting ARM status to Kubernetes status")
 	}
 
-	return status, 0, nil
+	return status, zeroDuration, nil
 }
 
 func (gr *GenericReconciler) resourceSpecToDeployment(ctx context.Context, data *ReconcileMetadata) (*armclient.Deployment, error) {
