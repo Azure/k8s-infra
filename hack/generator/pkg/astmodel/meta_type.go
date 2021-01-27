@@ -64,3 +64,16 @@ func AsMapType(aType Type) *MapType {
 
 	return nil
 }
+
+// AsOptionalType unwraps any wrappers around the provided type and returns either the underlying OptionalType or nil
+func AsOptionalType(aType Type) *OptionalType {
+	if opt, ok := aType.(*OptionalType); ok {
+		return opt
+	}
+
+	if wrapper, ok := aType.(MetaType); ok {
+		return AsOptionalType(wrapper.Unwrap())
+	}
+
+	return nil
+}
