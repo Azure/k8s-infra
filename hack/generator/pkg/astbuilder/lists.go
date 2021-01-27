@@ -10,8 +10,10 @@ import (
 	"go/token"
 )
 
-// MakeList returns the call expression for making a slice, like:
-// 	make([]<value>)
+// MakeList returns the call expression for making a slice
+//
+// make([]<value>)
+//
 func MakeList(listType dst.Expr, len dst.Expr) *dst.CallExpr {
 	return &dst.CallExpr{
 		Fun: dst.NewIdent("make"),
@@ -22,8 +24,10 @@ func MakeList(listType dst.Expr, len dst.Expr) *dst.CallExpr {
 	}
 }
 
-// AppendList returns a statement for a list append, like:
-//     <lhs> = append(<lhs>, <rhs>)
+// AppendList returns a statement for a list append
+//
+// <lhs> = append(<lhs>, <rhs>)
+//
 func AppendList(lhs dst.Expr, rhs dst.Expr) dst.Stmt {
 	return SimpleAssignment(
 		dst.Clone(lhs).(dst.Expr),

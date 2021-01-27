@@ -11,7 +11,8 @@ import (
 	"github.com/dave/dst"
 )
 
-// CheckErrorAndReturn checks if the err is non-nil, and if it is returns. For example:
+// CheckErrorAndReturn checks if the err is non-nil, and if it is returns.
+//
 // 	if err != nil {
 // 		return <otherReturns...>, err
 //	}
@@ -87,17 +88,21 @@ func NewVariable(varName string, structName string) dst.Stmt {
 	}
 }
 
-// LocalVariableDeclaration performs a local variable declaration for use within a method like:
+// LocalVariableDeclaration performs a local variable declaration for use within a method
+//
 // 	var <ident> <typ>
+//
 func LocalVariableDeclaration(ident string, typ dst.Expr, comment string) dst.Stmt {
 	return &dst.DeclStmt{
 		Decl: VariableDeclaration(ident, typ, comment),
 	}
 }
 
-// VariableDeclaration performs a global variable declaration like:
+// VariableDeclaration performs a global variable declaration
+//
 //  // <comment>
 // 	var <ident> <typ>
+//
 // For a LocalVariable within a method, use LocalVariableDeclaration() to create an ast.Stmt instead
 func VariableDeclaration(ident string, typ dst.Expr, comment string) *dst.GenDecl {
 	decl := &dst.GenDecl{
@@ -118,7 +123,9 @@ func VariableDeclaration(ident string, typ dst.Expr, comment string) *dst.GenDec
 }
 
 // TypeAssert returns an assignment statement with a type assertion
+//
 // 	<lhs>, ok := <rhs>.(<type>)
+//
 func TypeAssert(lhs dst.Expr, rhs dst.Expr, typ dst.Expr) *dst.AssignStmt {
 
 	return &dst.AssignStmt{
@@ -137,17 +144,21 @@ func TypeAssert(lhs dst.Expr, rhs dst.Expr, typ dst.Expr) *dst.AssignStmt {
 }
 
 // ReturnIfOk checks a boolean ok variable and if it is ok returns the specified values
+//
 //	if ok {
 //		return <returns>
 //	}
+//
 func ReturnIfOk(returns ...dst.Expr) *dst.IfStmt {
 	return ReturnIfExpr(dst.NewIdent("ok"), returns...)
 }
 
 // ReturnIfNotOk checks a boolean ok variable and if it is not ok returns the specified values
+//
 //	if !ok {
 //		return <returns>
 //	}
+//
 func ReturnIfNotOk(returns ...dst.Expr) *dst.IfStmt {
 	return ReturnIfExpr(
 		&dst.UnaryExpr{
@@ -157,10 +168,12 @@ func ReturnIfNotOk(returns ...dst.Expr) *dst.IfStmt {
 		returns...)
 }
 
-// ReturnIfNil checks if a variable is nil and if it is returns, like:
+// ReturnIfNil checks if a variable is nil and if it is returns
+//
 // 	if <toCheck> == nil {
 // 		return <returns...>
 //	}
+//
 func ReturnIfNil(toCheck dst.Expr, returns ...dst.Expr) dst.Stmt {
 	return ReturnIfExpr(
 		&dst.BinaryExpr{
@@ -171,10 +184,12 @@ func ReturnIfNil(toCheck dst.Expr, returns ...dst.Expr) dst.Stmt {
 		returns...)
 }
 
-// ReturnIfNotNil checks if a variable is not nil and if it is returns, like:
+// ReturnIfNotNil checks if a variable is not nil and if it is returns
+//
 // 	if <toCheck> != nil {
 // 		return <returns...>
 //	}
+//
 func ReturnIfNotNil(toCheck dst.Expr, returns ...dst.Expr) dst.Stmt {
 	return ReturnIfExpr(
 		&dst.BinaryExpr{
@@ -185,10 +200,12 @@ func ReturnIfNotNil(toCheck dst.Expr, returns ...dst.Expr) dst.Stmt {
 		returns...)
 }
 
-// ReturnIfExpr returns if the expression evaluates as true.
+// ReturnIfExpr returns if the expression evaluates as true
+//
 //	if <cond> {
 // 		return <returns...>
 //	}
+//
 func ReturnIfExpr(cond dst.Expr, returns ...dst.Expr) *dst.IfStmt {
 	if len(returns) == 0 {
 		panic("Expected at least 1 return for ReturnIfOk")
@@ -207,7 +224,9 @@ func ReturnIfExpr(cond dst.Expr, returns ...dst.Expr) *dst.IfStmt {
 }
 
 // FormatError produces a call to fmt.Errorf with the given format string and args
+//
 //	fmt.Errorf(<formatString>, <args>)
+//
 func FormatError(fmtPackage string, formatString string, args ...dst.Expr) dst.Expr {
 	var callArgs []dst.Expr
 	callArgs = append(
@@ -218,25 +237,32 @@ func FormatError(fmtPackage string, formatString string, args ...dst.Expr) dst.E
 }
 
 // AddrOf returns a statement that gets the address of the provided expression.
+//
 //	&<expr>
-func AddrOf(exp dst.Expr) *dst.UnaryExpr {
+//
+func AddrOf(expr dst.Expr) *dst.UnaryExpr {
 	return &dst.UnaryExpr{
 		Op: token.AND,
-		X:  dst.Clone(exp).(dst.Expr),
+		X:  dst.Clone(expr).(dst.Expr),
 	}
 }
 
 // Dereference returns a statement that dereferences the pointer returned by the provided expression
-func Dereference(exp dst.Expr) *dst.UnaryExpr {
+//
+// *<expr>
+//
+func Dereference(expr dst.Expr) *dst.UnaryExpr {
 	return &dst.UnaryExpr{
 		Op: token.MUL,
-		X:  dst.Clone(exp).(dst.Expr),
+		X:  dst.Clone(expr).(dst.Expr),
 	}
 }
 
 // Returns creates a return statement with one or more expressions, of the form
+//
 //    return <expr>
 // or return <expr>, <expr>, ...
+//
 func Returns(returns ...dst.Expr) dst.Stmt {
 	return &dst.ReturnStmt{
 		Decs: dst.ReturnStmtDecorations{
@@ -249,7 +275,9 @@ func Returns(returns ...dst.Expr) dst.Stmt {
 }
 
 // QualifiedTypeName generates a reference to a type within an imported package
-// of the form <pkg>.<name>
+//
+// <pkg>.<name>
+//
 func QualifiedTypeName(pkg string, name string) *dst.SelectorExpr {
 	return &dst.SelectorExpr{
 		X:   dst.NewIdent(pkg),

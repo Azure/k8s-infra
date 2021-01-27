@@ -10,8 +10,10 @@ import (
 	"go/token"
 )
 
-// MakeMap returns the call expression for making a map, like:
+// MakeMap returns the call expression for making a map
+//
 // 	make(map[<key>]<value>)
+//
 func MakeMap(key dst.Expr, value dst.Expr) *dst.CallExpr {
 	return &dst.CallExpr{
 		Fun: dst.NewIdent("make"),
@@ -24,12 +26,14 @@ func MakeMap(key dst.Expr, value dst.Expr) *dst.CallExpr {
 	}
 }
 
-// InsertMap returns an assignment statement for inserting an item into a map, like:
-// 	<m>[<key>] = <rhs>
-func InsertMap(m dst.Expr, key dst.Expr, rhs dst.Expr) *dst.AssignStmt {
+// InsertMap returns an assignment statement for inserting an item into a map
+//
+// 	<mapExpr>[<key>] = <rhs>
+//
+func InsertMap(mapExpr dst.Expr, key dst.Expr, rhs dst.Expr) *dst.AssignStmt {
 	return SimpleAssignment(
 		&dst.IndexExpr{
-			X:     dst.Clone(m).(dst.Expr),
+			X:     dst.Clone(mapExpr).(dst.Expr),
 			Index: dst.Clone(key).(dst.Expr),
 		},
 		token.ASSIGN,
