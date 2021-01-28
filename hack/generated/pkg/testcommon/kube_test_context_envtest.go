@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/Azure/k8s-infra/hack/generated/controllers"
+	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,6 +65,13 @@ func createEnvtestContext(perTestContext PerTestContext) (*KubeBaseTestContext, 
 		return nil, errors.Wrapf(err, "creating controller-runtime manager")
 	}
 
+	var requeueDelay time.Duration // defaults to 5s when zero is passed
+	if perTestContext.AzureClientRecorder.Mode() == recorder.ModeReplaying {
+		log.Print("Minimizing requeue delay")
+		// skip requeue delays when replaying
+		requeueDelay = 100 * time.Millisecond
+	}
+
 	log.Print("Registering custom controllers")
 	errs := controllers.RegisterAll(
 		mgr,
@@ -76,6 +84,7 @@ func createEnvtestContext(perTestContext PerTestContext) (*KubeBaseTestContext, 
 				result := uuid.NewSHA1(uuid.Nil, []byte(perTestContext.TestName+"/"+obj.GetNamespace()+"/"+obj.GetName()))
 				return fmt.Sprintf("k8s_%s", result.String()), nil
 			},
+			RequeueDelay: requeueDelay,
 		})
 
 	if errs != nil {
