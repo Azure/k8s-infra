@@ -9,6 +9,10 @@ vars:
   CONTROLLER_APP: k8sinfra-controller
   CONTROLLER_ROOT: ./hack/generated/
 
+  # the 'api' dir contains generated code so we want to exclude it
+  # for go-fmt the root dir must be excluded (it recurses)
+  GENERATED_DIRS_TO_FMT_CMD: go list -f '{{"{{.Dir}}"}}' ./...  | grep -vE '/_apis(/|$)|/generated$' | tr '\n' ' '
+
 tasks:
   default:
     desc: Perform all fast local pre-commit tasks.
@@ -135,7 +139,7 @@ tasks:
     desc: Ensure all code is correctly formatted.
     dir: "{{.CONTROLLER_ROOT}}"
     cmds: 
-    - gofmt -l -s -w ./...
+    - gofmt -l -s -w $({{.GENERATED_DIRS_TO_FMT_CMD}})
 
   controller:test:
     desc: Run {{.CONTROLLER_APP}} unit tests.
