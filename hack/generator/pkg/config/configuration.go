@@ -53,7 +53,6 @@ type Configuration struct {
 	// after init TypeTransformers is split into property and non-property transformers
 	typeTransformers     []*TypeTransformer
 	propertyTransformers []*TypeTransformer
-	goModulePath         string
 }
 
 func (config *Configuration) LocalPathPrefix() string {
