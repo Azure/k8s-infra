@@ -159,63 +159,6 @@ func createAllPipelineStages(idFactory astmodel.IdentifierFactory, configuration
 	}
 }
 
-//
-//func crossplaneCorePipelineStages(idFactory astmodel.IdentifierFactory, configuration *config.Configuration) []PipelineStage {
-//	return []PipelineStage{
-//		// Import status info from Swagger:
-//		augmentResourcesWithStatus(idFactory, configuration),
-//
-//		// Reduces oneOf/allOf types from schemas to object types:
-//		convertAllOfAndOneOfToObjects(idFactory),
-//
-//		// Flatten out any nested resources created by allOf, etc. we want to do this before naming types or things
-//		// get named with names like Resource_Spec_Spec_Spec:
-//		flattenResources(), stripUnreferencedTypeDefinitions(),
-//
-//		// Name all anonymous object and enum types (required by controller-gen):
-//		nameTypesForCRD(idFactory),
-//
-//		// Apply property type rewrites from the config file
-//		// must come after nameTypesForCRD and convertAllOfAndOneOf so that objects are all expanded
-//		applyPropertyRewrites(configuration),
-//
-//		// Figure out ARM resource owners:
-//		determineResourceOwnership(),
-//
-//		// Strip out redundant type aliases:
-//		removeTypeAliases(),
-//
-//		// De-pluralize resource types:
-//		// improveResourcePluralization(),
-//
-//		stripUnreferencedTypeDefinitions(),
-//
-//		// Apply export filters before generating
-//		// ARM types for resources etc:
-//		applyExportFilters(configuration),
-//		stripUnreferencedTypeDefinitions(),
-//		replaceAnyTypeWithJSON(),
-//
-//		filterOutDefinitionsUsingAnyType(configuration.AnyTypePackages),
-//
-//		// createArmTypesAndCleanKubernetesTypes(idFactory),
-//
-//		addCrossplaneOwnerProperties(idFactory),
-//		addCrossplaneForProvider(idFactory),
-//		addCrossplaneAtProvider(idFactory),
-//		addCrossplaneEmbeddedResourceSpec(idFactory),
-//		addCrossplaneEmbeddedResourceStatus(idFactory),
-//
-//		// applyKubernetesResourceInterface(idFactory),
-//		// createStorageTypes(),
-//		simplifyDefinitions(),
-//
-//		// Safety checks at the end:
-//		ensureDefinitionsDoNotUseAnyTypes(),
-//		checkForMissingStatusInformation(),
-//	}
-//}
-
 // Generate produces the Go code corresponding to the configured JSON schema in the given output folder
 func (generator *CodeGenerator) Generate(ctx context.Context) error {
 	klog.V(1).Infof("Generator version: %v", combinedVersion())
