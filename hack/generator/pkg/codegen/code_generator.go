@@ -22,7 +22,6 @@ type CodeGenerator struct {
 	pipeline      []PipelineStage
 }
 
-
 func translatePipelineToTarget(pipeline config.GenerationPipeline) (PipelineTarget, error) {
 	switch pipeline {
 	case config.GenerationPipelineAzure:
@@ -159,6 +158,7 @@ func createAllPipelineStages(idFactory astmodel.IdentifierFactory, configuration
 			RequiresPrerequisiteStages("deleteGenerated"),
 	}
 }
+
 //
 //func crossplaneCorePipelineStages(idFactory astmodel.IdentifierFactory, configuration *config.Configuration) []PipelineStage {
 //	return []PipelineStage{

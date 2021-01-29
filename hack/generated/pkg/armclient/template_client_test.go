@@ -16,7 +16,7 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	resources "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.resources/v20200601"
+	resources "github.com/Azure/k8s-infra/hack/generated/_apis/microsoft.resources/v20200601"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/testcommon"
 )
@@ -59,7 +59,7 @@ func Test_NewResourceGroupDeployment(t *testing.T) {
 	log.Printf("Created resource: %s\n", id)
 
 	// Delete the RG
-	err = testContext.AzureClient.BeginDeleteResource(ctx, id, typedResourceGroupSpec.ApiVersion, nil)
+	_, err = testContext.AzureClient.BeginDeleteResource(ctx, id, typedResourceGroupSpec.ApiVersion, nil)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	// Ensure that the resource group is deleted

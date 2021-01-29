@@ -12,46 +12,9 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	storage "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.storage/v20190401"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
+	storage "github.com/Azure/k8s-infra/hack/generated/_apis/microsoft.storage/v20190401"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/testcommon"
 )
-
-func Test_ResourceGroup_CRUD(t *testing.T) {
-	t.Parallel()
-
-	g := NewGomegaWithT(t)
-	ctx := context.Background()
-	testContext, err := testContext.ForTest(t)
-	g.Expect(err).ToNot(HaveOccurred())
-
-	// Create a resource group
-	rg := testContext.NewTestResourceGroup()
-	err = testContext.KubeClient.Create(ctx, rg)
-	g.Expect(err).ToNot(HaveOccurred())
-
-	// It should be created in Kubernetes
-	g.Eventually(rg).Should(testContext.Match.BeProvisioned(ctx))
-
-	g.Expect(rg.Status.Location).To(Equal(testContext.AzureRegion))
-	g.Expect(rg.Status.Properties.ProvisioningState).To(Equal(string(armclient.SucceededProvisioningState)))
-	g.Expect(rg.Status.ID).ToNot(BeNil())
-	armId := rg.Status.ID
-
-	// Delete the resource group
-	err = testContext.KubeClient.Delete(ctx, rg)
-	g.Expect(err).ToNot(HaveOccurred())
-	g.Eventually(rg).Should(testContext.Match.BeDeleted(ctx))
-
-	// Ensure that the resource group was really deleted in Azure
-	// TODO: Do we want to just use an SDK here? This process is quite icky as is...
-	exists, err := testContext.AzureClient.HeadResource(
-		ctx,
-		armId,
-		"2020-06-01")
-	g.Expect(err).ToNot(HaveOccurred())
-	g.Expect(exists).To(BeFalse())
-}
 
 func Test_StorageAccount_CRUD(t *testing.T) {
 	t.Parallel()
@@ -72,10 +35,9 @@ func Test_StorageAccount_CRUD(t *testing.T) {
 	acct := &storage.StorageAccount{
 		ObjectMeta: testContext.MakeObjectMetaWithName(namer.GenerateName("stor")),
 		Spec: storage.StorageAccounts_Spec{
-			Location:   testContext.AzureRegion,
-			ApiVersion: "2019-04-01", // TODO [apiversion]: This should be removed from the storage type eventually
-			Owner:      testcommon.AsOwner(rg.ObjectMeta),
-			Kind:       storage.StorageAccountsSpecKindBlobStorage,
+			Location: testContext.AzureRegion,
+			Owner:    testcommon.AsOwner(rg.ObjectMeta),
+			Kind:     storage.StorageAccountsSpecKindBlobStorage,
 			Sku: storage.Sku{
 				Name: storage.SkuNameStandardLRS,
 			},
@@ -108,7 +70,7 @@ func Test_StorageAccount_CRUD(t *testing.T) {
 	g.Eventually(acct).Should(testContext.Match.BeDeleted(ctx))
 
 	// Ensure that the resource group was really deleted in Azure
-	exists, err := testContext.AzureClient.HeadResource(
+	exists, _, err := testContext.AzureClient.HeadResource(
 		ctx,
 		armId,
 		"2019-04-01")
@@ -124,8 +86,7 @@ func StorageAccount_BlobServices_CRUD(t *testing.T, testContext testcommon.KubeP
 	blobService := &storage.StorageAccountsBlobService{
 		ObjectMeta: testContext.MakeObjectMeta("blobservice"),
 		Spec: storage.StorageAccountsBlobServices_Spec{
-			ApiVersion: "2019-04-01", // TODO [apiversion]: to be removed eventually
-			Owner:      testcommon.AsOwner(storageAccount),
+			Owner: testcommon.AsOwner(storageAccount),
 		},
 	}
 
@@ -155,8 +116,7 @@ func StorageAccount_BlobServices_Container_CRUD(t *testing.T, testContext testco
 	blobContainer := &storage.StorageAccountsBlobServicesContainer{
 		ObjectMeta: testContext.MakeObjectMeta("container"),
 		Spec: storage.StorageAccountsBlobServicesContainers_Spec{
-			ApiVersion: "2019-04-01", // TODO [apiversion]: to be removed eventually
-			Owner:      testcommon.AsOwner(blobService),
+			Owner: testcommon.AsOwner(blobService),
 		},
 	}
 

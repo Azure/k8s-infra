@@ -6,12 +6,13 @@
 package astmodel
 
 import (
-	. "github.com/onsi/gomega"
 	"testing"
+
+	. "github.com/onsi/gomega"
 )
 
 func makeTestLocalPackageReference(group string, version string) LocalPackageReference {
-	return MakeLocalPackageReference("github.com/Azure/k8s-infra/hack/generated", group, version)
+	return MakeLocalPackageReference("github.com/Azure/k8s-infra/hack/generated/_apis", group, version)
 }
 
 func TestMakeLocalPackageReference_GivenGroupAndPackage_ReturnsInstanceWithProperties(t *testing.T) {
@@ -51,19 +52,19 @@ func TestLocalPackageReferences_ReturnExpectedProperties(t *testing.T) {
 			"Networking",
 			"microsoft.networking",
 			"v20200901",
-			"github.com/Azure/k8s-infra/hack/generated/apis/microsoft.networking/v20200901",
+			"github.com/Azure/k8s-infra/hack/generated/_apis/microsoft.networking/v20200901",
 		},
 		{
 			"Batch (new)",
 			"microsoft.batch",
 			"v20200901",
-			"github.com/Azure/k8s-infra/hack/generated/apis/microsoft.batch/v20200901",
+			"github.com/Azure/k8s-infra/hack/generated/_apis/microsoft.batch/v20200901",
 		},
 		{
 			"Batch (old)",
 			"microsoft.batch",
 			"v20150101",
-			"github.com/Azure/k8s-infra/hack/generated/apis/microsoft.batch/v20150101",
+			"github.com/Azure/k8s-infra/hack/generated/_apis/microsoft.batch/v20150101",
 		},
 	}
 	for _, c := range cases {

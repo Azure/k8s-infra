@@ -6,8 +6,8 @@
 package config
 
 import (
-	"fmt"
 	"io/ioutil"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -48,6 +48,7 @@ type Configuration struct {
 	TypeFilters []*TypeFilter `yaml:"typeFilters"`
 	// Transformers used to remap types
 	Transformers []*TypeTransformer `yaml:"typeTransformers"`
+	GoModulePath string             // TODO: Since this isn't yaml annotated it can't be set, right?
 
 	// after init TypeTransformers is split into property and non-property transformers
 	typeTransformers     []*TypeTransformer
@@ -56,7 +57,7 @@ type Configuration struct {
 }
 
 func (config *Configuration) LocalPathPrefix() string {
-	return fmt.Sprintf("%s/%s/", config.goModulePath, config.OutputPath)
+	return path.Join(config.GoModulePath, config.OutputPath)
 }
 
 func (config *Configuration) FullOutputPath() string {
@@ -159,7 +160,7 @@ func (config *Configuration) initialize(configPath string) error {
 	if err != nil {
 		errs = append(errs, err)
 	} else {
-		config.goModulePath = modPath
+		config.GoModulePath = modPath
 	}
 
 	for _, filter := range config.ExportFilters {

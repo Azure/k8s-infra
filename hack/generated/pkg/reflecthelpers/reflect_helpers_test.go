@@ -13,13 +13,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	resources "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.resources/v20200601"
+	resources "github.com/Azure/k8s-infra/hack/generated/_apis/microsoft.resources/v20200601"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/armresourceresolver"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
 
 	// TODO: Do we want to use a sample object rather than a code generated one?
-	batch "github.com/Azure/k8s-infra/hack/generated/apis/microsoft.batch/v20170901"
+	batch "github.com/Azure/k8s-infra/hack/generated/_apis/microsoft.batch/v20170901"
 
 	. "github.com/onsi/gomega"
 )
@@ -42,9 +42,8 @@ func createResourceGroup() *resources.ResourceGroup {
 func createDummyResource() *batch.BatchAccount {
 	return &batch.BatchAccount{
 		Spec: batch.BatchAccounts_Spec{
-			ApiVersion: "apiVersion",
-			AzureName:  "azureName",
-			Location:   "westus",
+			AzureName: "azureName",
+			Location:  "westus",
 			Owner: genruntime.KnownResourceReference{
 				Name: "myrg",
 			},
@@ -82,7 +81,7 @@ func Test_ConvertResourceToDeployableResource(t *testing.T) {
 	g.Expect(ok).To(BeTrue())
 	g.Expect("myrg").To(Equal(rgResource.ResourceGroup()))
 	g.Expect("azureName").To(Equal(rgResource.Spec().GetName()))
-	g.Expect("apiVersion").To(Equal(rgResource.Spec().GetApiVersion()))
+	g.Expect("2017-09-01").To(Equal(rgResource.Spec().GetApiVersion()))
 	g.Expect(string(batch.BatchAccountsSpecTypeMicrosoftBatchBatchAccounts)).To(Equal(rgResource.Spec().GetType()))
 
 }

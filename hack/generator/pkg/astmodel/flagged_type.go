@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	ast "github.com/dave/dst"
+	"github.com/dave/dst"
 	"github.com/pkg/errors"
 )
 
@@ -19,6 +19,8 @@ type FlaggedType struct {
 }
 
 var _ Type = &FlaggedType{}
+
+var _ MetaType = &FlaggedType{}
 
 // NewFlaggedType applies flags to an existing type and returns a wrapper
 func NewFlaggedType(t Type, flags ...TypeFlag) *FlaggedType {
@@ -105,13 +107,13 @@ func (ft *FlaggedType) References() TypeNameSet {
 }
 
 // AsType renders as a Go abstract syntax tree for a type
-// (yes this says ast.Expr but that is what the Go 'ast' package uses for types)
-func (ft *FlaggedType) AsType(ctx *CodeGenerationContext) ast.Expr {
+// (yes this says ast.Expr but that is what the Go 'dst' package uses for types)
+func (ft *FlaggedType) AsType(ctx *CodeGenerationContext) dst.Expr {
 	return ft.element.AsType(ctx)
 }
 
 // AsDeclarations renders as a Go abstract syntax tree for a declaration
-func (ft *FlaggedType) AsDeclarations(ctx *CodeGenerationContext, declContext DeclarationContext) []ast.Decl {
+func (ft *FlaggedType) AsDeclarations(ctx *CodeGenerationContext, declContext DeclarationContext) []dst.Decl {
 	return ft.element.AsDeclarations(ctx, declContext)
 }
 
@@ -179,4 +181,9 @@ func TypeOrFlaggedTypeAsObjectType(t Type) (*ObjectType, error) {
 	}
 
 	return nil, errors.Errorf("type %v is not an object or a FlaggedType", t)
+}
+
+// Unwrap returns the type contained within the wrapper type
+func (ft *FlaggedType) Unwrap() Type {
+	return ft.element
 }

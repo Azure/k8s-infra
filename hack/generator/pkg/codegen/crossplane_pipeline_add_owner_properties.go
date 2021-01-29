@@ -39,7 +39,7 @@ func addCrossplaneOwnerProperties(idFactory astmodel.IdentifierFactory) Pipeline
 					}
 
 					// The right-most owner is this type, so remove it
-					owners = owners[0:len(owners)-1]
+					owners = owners[0 : len(owners)-1]
 
 					// This type has no owners so no modification needed
 					if len(owners) == 0 {
@@ -102,11 +102,11 @@ func lookupOwners(defs astmodel.Types, resourceDef astmodel.TypeDefinition) ([]a
 	}
 
 	if resourceType.Owner() == nil {
-		return []astmodel.TypeName {resourceDef.Name()}, nil
+		return []astmodel.TypeName{resourceDef.Name()}, nil
 	}
 
 	if resourceType.Owner().Name() == "ResourceGroup" {
-		return []astmodel.TypeName {*resourceType.Owner(), resourceDef.Name()}, nil
+		return []astmodel.TypeName{*resourceType.Owner(), resourceDef.Name()}, nil
 	}
 
 	owner := *resourceType.Owner()

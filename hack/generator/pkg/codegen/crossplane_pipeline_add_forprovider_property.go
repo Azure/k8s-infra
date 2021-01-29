@@ -103,7 +103,7 @@ func createForProviderTypeDefs(
 
 	// Copy spec into a new Parameters object and track that
 	specNamePrefix := strings.Split(specName.Name(), "_")[0]
-	parametersName := astmodel.MakeTypeName(specName.PackageReference, specNamePrefix + "Parameters")
+	parametersName := astmodel.MakeTypeName(specName.PackageReference, specNamePrefix+"Parameters")
 	parametersDef := astmodel.MakeTypeDefinition(parametersName, specObject)
 	result = append(result, parametersDef)
 
@@ -152,7 +152,7 @@ func createAtProviderTypeDefs(
 
 	// Copy spec into a new Parameters object and track that
 	statusNamePrefix := resourceName.Name()
-	observationName := astmodel.MakeTypeName(statusName.PackageReference, statusNamePrefix + "Observation")
+	observationName := astmodel.MakeTypeName(statusName.PackageReference, statusNamePrefix+"Observation")
 	observationDef := astmodel.MakeTypeDefinition(observationName, statusObject)
 	result = append(result, observationDef)
 

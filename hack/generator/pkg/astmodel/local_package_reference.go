@@ -44,7 +44,7 @@ func (pr LocalPackageReference) PackageName() string {
 
 // PackagePath returns the fully qualified package path
 func (pr LocalPackageReference) PackagePath() string {
-	url := pr.localPathPrefix + pr.group + "/" + pr.version
+	url := pr.localPathPrefix + "/" + pr.group + "/" + pr.version
 	return url
 }
 

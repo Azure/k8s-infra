@@ -309,7 +309,7 @@ func removeValidations(t *astmodel.ObjectType) (*astmodel.ObjectType, error) {
 		p = p.SetRequired(false)
 
 		// remove all validation types by promoting inner type
-		if validated, ok := p.PropertyType().(astmodel.ValidatedType); ok {
+		if validated, ok := p.PropertyType().(*astmodel.ValidatedType); ok {
 			p = p.WithType(validated.ElementType())
 		}
 
@@ -379,8 +379,10 @@ func modifyKubeResourceSpecDefinition(
 		// TODO: https://github.com/kubernetes-sigs/controller-tools/issues/461 is fixed
 
 		// drop Type property
-		// TODO: handle this generically so we automatically insert 1-value enums?
 		t = t.WithoutProperty("Type")
+
+		// drop ApiVersion property
+		t = t.WithoutProperty("ApiVersion")
 
 		nameProp, hasName := t.Property("Name")
 		if !hasName {

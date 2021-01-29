@@ -22,11 +22,11 @@ func determineResourceOwnership(configuration *config.Configuration) PipelineSta
 		"determineResourceOwnership",
 		"Determine ARM resource relationships",
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
-			return determineOwnership(ctx, types, configuration)
+			return determineOwnership(types, configuration)
 		})
 }
 
-func determineOwnership(ctx context.Context, definitions astmodel.Types, configuration *config.Configuration) (astmodel.Types, error) {
+func determineOwnership(definitions astmodel.Types, configuration *config.Configuration) (astmodel.Types, error) {
 
 	updatedDefs := make(astmodel.Types)
 
