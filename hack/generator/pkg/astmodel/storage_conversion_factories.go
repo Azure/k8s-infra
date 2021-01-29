@@ -97,16 +97,21 @@ func createTypeConversion(
 func assignPrimitiveTypeFromPrimitiveType(
 	sourceEndpoint *StorageConversionEndpoint,
 	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
-	st := AsPrimitiveType(sourceEndpoint.Type())
-	dt := AsPrimitiveType(destinationEndpoint.theType)
 
-	if st == nil || dt == nil || !st.Equals(dt) {
-		// Either or both sides are not primitive types, or not the same primitive type
+	srcOpt := AsOptionalType(sourceEndpoint.Type())
+	dstOpt := AsOptionalType(destinationEndpoint.Type())
+
+	if srcOpt != dstOpt {
+		// Different optionality, handled elsewhere
 		return nil
 	}
 
-	if IsOptionalType(sourceEndpoint.Type()) != isTypeOptional(destinationEndpoint.Type()) {
-		// Different optionality, handled elsewhere
+	// Don't start from srcOpt or dstOpt in case they're nil
+	srcPrim := AsPrimitiveType(sourceEndpoint.Type())
+	dstPrim := AsPrimitiveType(destinationEndpoint.Type())
+
+	if srcPrim == nil || dstPrim == nil || !srcPrim.Equals(dstPrim) {
+		// Either or both sides are not primitive types, or not the same primitive type
 		return nil
 	}
 
@@ -124,16 +129,20 @@ func assignPrimitiveTypeFromPrimitiveType(
 func assignOptionalPrimitiveTypeFromPrimitiveType(
 	sourceEndpoint *StorageConversionEndpoint,
 	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
-	st := AsPrimitiveType(sourceEndpoint.Type())
-	dt := AsPrimitiveType(destinationEndpoint.Type())
 
-	if st == nil || dt == nil || !st.Equals(dt) {
-		// Either or both sides are not primitive types, or not the same primitive type
+	srcOpt := AsOptionalType(sourceEndpoint.Type())
+	dstOpt := AsOptionalType(destinationEndpoint.Type())
+
+	if srcOpt != nil || dstOpt == nil {
+		// Require source to be non-optional and destination to be optional
 		return nil
 	}
 
-	if IsOptionalType(sourceEndpoint.Type()) || !IsOptionalType(destinationEndpoint.Type()) {
-		// Different optionality than we handle here
+	srcPrim := AsPrimitiveType(sourceEndpoint.Type())
+	dstPrim := AsPrimitiveType(dstOpt)
+
+	if srcPrim == nil || dstPrim == nil || !srcPrim.Equals(dstPrim) {
+		// Either or both sides are not primitive types, or not the same primitive type
 		return nil
 	}
 
@@ -155,16 +164,20 @@ func assignOptionalPrimitiveTypeFromPrimitiveType(
 func assignPrimitiveTypeFromOptionalPrimitiveType(
 	sourceEndpoint *StorageConversionEndpoint,
 	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
-	st := AsPrimitiveType(sourceEndpoint.Type())
-	dt := AsPrimitiveType(destinationEndpoint.Type())
 
-	if st == nil || dt == nil || !st.Equals(dt) {
-		// Either or both sides are not primitive types, or not the same primitive type
+	srcOpt := AsOptionalType(sourceEndpoint.Type())
+	dstOpt := AsOptionalType(destinationEndpoint.Type())
+
+	if srcOpt == nil || dstOpt != nil {
+		// Require source to be optional and destination to be non-optional
 		return nil
 	}
 
-	if !IsOptionalType(sourceEndpoint.Type()) || IsOptionalType(destinationEndpoint.Type()) {
-		// Different optionality than we handle here
+	srcPrim := AsPrimitiveType(srcOpt)
+	dstPrim := AsPrimitiveType(destinationEndpoint.Type())
+
+	if srcPrim == nil || dstPrim == nil || !srcPrim.Equals(dstPrim) {
+		// Either or both sides are not primitive types, or not the same primitive type
 		return nil
 	}
 
@@ -178,7 +191,7 @@ func assignPrimitiveTypeFromOptionalPrimitiveType(
 			writer,
 			token.ASSIGN,
 			&dst.BasicLit{
-				Value: zeroValue(st),
+				Value: zeroValue(srcPrim),
 			})
 
 		stmt := &dst.IfStmt{
