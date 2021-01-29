@@ -32,10 +32,10 @@ func TestAsPrimitiveType(t *testing.T) {
 		{"OptionalNotContainingPrimitive", NewOptionalType(objectType), nil},
 		{"FlaggedContainingPrimitive", OneOfFlag.ApplyTo(StringType), StringType},
 		{"FlaggedNotContainingPrimitive", OneOfFlag.ApplyTo(objectType), nil},
-		{"ValidatedContainingPrimitive", MakeValidatedType(StringType, nil), StringType},
-		{"ValidatedNotContainingPrimitive", MakeValidatedType(objectType, nil), nil},
-		{"ErroredContainingPrimitive", MakeErroredType(StringType, nil, nil), StringType},
-		{"ErroredNotContainingPrimitive", MakeErroredType(objectType, nil, nil), nil},
+		{"ValidatedContainingPrimitive", NewValidatedType(StringType, nil), StringType},
+		{"ValidatedNotContainingPrimitive", NewValidatedType(objectType, nil), nil},
+		{"ErroredContainingPrimitive", NewErroredType(StringType, nil, nil), StringType},
+		{"ErroredNotContainingPrimitive", NewErroredType(objectType, nil, nil), nil},
 	}
 
 	for _, c := range cases {
@@ -77,10 +77,10 @@ func TestAsObjectType(t *testing.T) {
 		{"OptionalNotContainingObject", NewOptionalType(StringType), nil},
 		{"FlaggedContainingObject", OneOfFlag.ApplyTo(objectType), objectType},
 		{"FlaggedNotContainingObject", OneOfFlag.ApplyTo(StringType), nil},
-		{"ValidatedContainingObject", MakeValidatedType(objectType, nil), objectType},
-		{"ValidatedNotContainingObject", MakeValidatedType(StringType, nil), nil},
-		{"ErroredContainingObject", MakeErroredType(objectType, nil, nil), objectType},
-		{"ErroredNotContainingObject", MakeErroredType(StringType, nil, nil), nil},
+		{"ValidatedContainingObject", NewValidatedType(objectType, nil), objectType},
+		{"ValidatedNotContainingObject", NewValidatedType(StringType, nil), nil},
+		{"ErroredContainingObject", NewErroredType(objectType, nil, nil), objectType},
+		{"ErroredNotContainingObject", NewErroredType(StringType, nil, nil), nil},
 	}
 
 	for _, c := range cases {
@@ -122,10 +122,10 @@ func TestAsArrayType(t *testing.T) {
 		{"OptionalNotContainingArray", NewOptionalType(StringType), nil},
 		{"FlaggedContainingArray", OneOfFlag.ApplyTo(arrayType), arrayType},
 		{"FlaggedNotContainingArray", OneOfFlag.ApplyTo(StringType), nil},
-		{"ValidatedContainingArray", MakeValidatedType(arrayType, nil), arrayType},
-		{"ValidatedNotContainingArray", MakeValidatedType(StringType, nil), nil},
-		{"ErroredContainingArray", MakeErroredType(arrayType, nil, nil), arrayType},
-		{"ErroredNotContainingArray", MakeErroredType(StringType, nil, nil), nil},
+		{"ValidatedContainingArray", NewValidatedType(arrayType, nil), arrayType},
+		{"ValidatedNotContainingArray", NewValidatedType(StringType, nil), nil},
+		{"ErroredContainingArray", NewErroredType(arrayType, nil, nil), arrayType},
+		{"ErroredNotContainingArray", NewErroredType(StringType, nil, nil), nil},
 	}
 
 	for _, c := range cases {
@@ -167,10 +167,10 @@ func TestAsMapType(t *testing.T) {
 		{"OptionalNotContainingMaps", NewOptionalType(StringType), nil},
 		{"FlaggedContainingMaps", OneOfFlag.ApplyTo(mapType), mapType},
 		{"FlaggedNotContainingMaps", OneOfFlag.ApplyTo(StringType), nil},
-		{"ValidatedContainingMaps", MakeValidatedType(mapType, nil), mapType},
-		{"ValidatedNotContainingMaps", MakeValidatedType(StringType, nil), nil},
-		{"ErroredContainingMaps", MakeErroredType(mapType, nil, nil), mapType},
-		{"ErroredNotContainingMaps", MakeErroredType(StringType, nil, nil), nil},
+		{"ValidatedContainingMaps", NewValidatedType(mapType, nil), mapType},
+		{"ValidatedNotContainingMaps", NewValidatedType(StringType, nil), nil},
+		{"ErroredContainingMaps", NewErroredType(mapType, nil, nil), mapType},
+		{"ErroredNotContainingMaps", NewErroredType(StringType, nil, nil), nil},
 	}
 
 	for _, c := range cases {
@@ -210,10 +210,10 @@ func TestAsOptionalType(t *testing.T) {
 		{"OptionalAreOptional", optionalType, optionalType},
 		{"FlaggedContainingOptional", OneOfFlag.ApplyTo(optionalType), optionalType},
 		{"FlaggedNotContainingOptional", OneOfFlag.ApplyTo(StringType), nil},
-		{"ValidatedContainingOptional", MakeValidatedType(optionalType, nil), optionalType},
-		{"ValidatedNotContainingOptional", MakeValidatedType(StringType, nil), nil},
-		{"ErroredContainingOptional", MakeErroredType(optionalType, nil, nil), optionalType},
-		{"ErroredNotContainingOptional", MakeErroredType(StringType, nil, nil), nil},
+		{"ValidatedContainingOptional", NewValidatedType(optionalType, nil), optionalType},
+		{"ValidatedNotContainingOptional", NewValidatedType(StringType, nil), nil},
+		{"ErroredContainingOptional", NewErroredType(optionalType, nil, nil), optionalType},
+		{"ErroredNotContainingOptional", NewErroredType(StringType, nil, nil), nil},
 	}
 
 	for _, c := range cases {
