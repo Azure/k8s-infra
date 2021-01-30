@@ -23,6 +23,8 @@ tasks:
     - task: generator:quick-checks
     - task: controller:generate-crds # required here to prevent it running twice in controller:quick-checks, remove once go-task dedupes dependencies
     - task: controller:quick-checks
+    - task: crossplane:generate-crds
+    - task: crossplane:quick-checks
 
   ci:
     desc: Run all CI checks.
@@ -100,16 +102,6 @@ tasks:
         sh: git rev-parse --short HEAD
       VERSION:
         sh: git rev-list -1 HEAD
-
-  controller:generate-types:
-    desc: Run {{.GENERATOR_APP}} to generate input files for controller-gen for {{.CONTROLLER_APP}}.
-    dir: "{{.GENERATOR_ROOT}}"
-    deps: [generator:build]
-    sources:
-    - ./bin/{{.GENERATOR_APP}}
-    - azure-arm.yaml
-    cmds:
-    - ./bin/{{.GENERATOR_APP}} gen-types azure-arm.yaml
 
   ############### Controller targets ###############
   controller:quick-checks:
@@ -233,6 +225,16 @@ tasks:
     cmds:
     # -race fails at the moment in controller-runtime
     - ENVTEST=1 go test -covermode atomic -coverprofile=coverage-integration-envtest-live.out -coverpkg="./..." -v ./...
+
+  controller:generate-types:
+    desc: Run {{.GENERATOR_APP}} to generate input files for controller-gen for {{.CONTROLLER_APP}}.
+    dir: "{{.GENERATOR_ROOT}}"
+    deps: [generator:build]
+    sources:
+      - ./bin/{{.GENERATOR_APP}}
+      - azure-arm.yaml
+    cmds:
+      - ./bin/{{.GENERATOR_APP}} gen-types azure-arm.yaml
 
   controller:generate-crds:
     desc: Run controller-gen to generate {{.CONTROLLER_APP}} CRD files.
