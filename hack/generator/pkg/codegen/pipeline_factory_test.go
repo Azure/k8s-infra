@@ -38,7 +38,7 @@ func TestNewTestCodeGeneratorCreatesRightPipeline(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	cfg := makeDefaultTestConfig()
-	codegen, err := NewTestCodeGenerator("Sample", "path", t, cfg)
+	codegen, err := NewTestCodeGenerator("Sample", "path", t, cfg, config.GenerationPipelineAzure)
 	g.Expect(err).To(BeNil())
 
 	result := writePipeline("Expected Pipeline Stages for Test Code Generation", codegen)
