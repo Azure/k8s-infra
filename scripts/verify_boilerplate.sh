@@ -34,3 +34,5 @@ if [ -n "$licRes" ]; then
         echo "${licRes}";
         exit 1;
 fi
+
+echo "Done checking copyright headers"
