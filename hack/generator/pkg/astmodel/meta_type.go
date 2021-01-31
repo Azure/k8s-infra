@@ -119,3 +119,16 @@ func AsResourceType(aType Type) (*ResourceType, bool) {
 
 	return nil, false
 }
+
+// AsEnumType unwraps any wrappers around the provided type and returns either the underlying EnumType and true, or nil and false.
+func AsEnumType(aType Type) (*EnumType, bool) {
+	if enm, ok := aType.(*EnumType); ok {
+		return enm, true
+	}
+
+	if wrapper, ok := aType.(MetaType); ok {
+		return AsEnumType(wrapper.Unwrap())
+	}
+
+	return nil
+}
