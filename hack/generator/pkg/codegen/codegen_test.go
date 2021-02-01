@@ -36,7 +36,7 @@ func makeDefaultTestConfig() GoldenTestConfig {
 	return GoldenTestConfig{
 		HasArmResources:      false,
 		InjectEmbeddedStruct: false,
-		Pipelines: []config.GenerationPipeline{config.GenerationPipelineAzure},
+		Pipelines:            []config.GenerationPipeline{config.GenerationPipelineAzure},
 	}
 }
 

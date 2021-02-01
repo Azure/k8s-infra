@@ -27,5 +27,6 @@ simplifyDefinitions                            Flatten definitions by removing w
 jsonTestCases                       azure      Add test cases to verify JSON serialization
 markStorageVersion                             Marking the latest version of each resource as the storage version
 rogueCheck                                     Catch rogue definitions using AnyTypes
+ensureArmTypeExistsForEveryType     azure      Ensure that an ARM type for every top level resource spec/status exists
 deleteGenerated                                Delete generated code from .
 exportPackages                                 Export packages to "."
