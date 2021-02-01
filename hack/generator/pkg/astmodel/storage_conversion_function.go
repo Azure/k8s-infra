@@ -43,6 +43,8 @@ type StorageConversionFunction struct {
 	conversionDirection StorageConversionDirection
 	// knownLocals is a cached set of local identifiers that have already been used, to avoid conflicts
 	knownLocals *KnownLocalsSet
+	// conversionContext is additional information about the context in which this conversion was made
+	conversionContext *StorageConversionContext
 }
 
 // StorageConversionDirection specifies the direction of conversion we're implementing with this function
@@ -64,6 +66,7 @@ func NewStorageConversionFromFunction(
 	sourceHubType TypeDefinition,
 	intermediateType *TypeDefinition,
 	idFactory IdentifierFactory,
+	conversionContext *StorageConversionContext,
 ) (*StorageConversionFunction, error) {
 	result := &StorageConversionFunction{
 		name:                "ConvertFrom",
@@ -73,6 +76,7 @@ func NewStorageConversionFromFunction(
 		conversionDirection: ConvertFrom,
 		conversions:         make(map[string]StoragePropertyConversion),
 		knownLocals:         NewKnownLocalsSet(idFactory),
+		conversionContext:   conversionContext,
 	}
 
 	err := result.createConversions(receiver)
@@ -85,6 +89,7 @@ func NewStorageConversionToFunction(
 	destinationHubType TypeDefinition,
 	intermediateType *TypeDefinition,
 	idFactory IdentifierFactory,
+	conversionContext *StorageConversionContext,
 ) (*StorageConversionFunction, error) {
 	result := &StorageConversionFunction{
 		name:                "ConvertTo",
@@ -94,6 +99,7 @@ func NewStorageConversionToFunction(
 		conversionDirection: ConvertTo,
 		conversions:         make(map[string]StoragePropertyConversion),
 		knownLocals:         NewKnownLocalsSet(idFactory),
+		conversionContext:   conversionContext,
 	}
 
 	err := result.createConversions(receiver)
@@ -409,6 +415,7 @@ func (fn *StorageConversionFunction) generateAssignments(
 // createConversions iterates through the properties on our receiver type, matching them up with
 // our other type and generating conversions where possible
 func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) error {
+
 	receiverObject, ok := AsObjectType(receiver.Type())
 	if !ok {
 		return errors.Errorf("expected TypeDefinition %q to wrap receiver object type, but none found", receiver.name.String())
@@ -474,7 +481,7 @@ func (fn *StorageConversionFunction) createPropertyConversion(
 	destinationEndpoint := NewStorageConversionEndpoint(
 		destinationProperty.propertyType, string(destinationProperty.propertyName), fn.knownLocals)
 
-	conversion, err := createTypeConversion(sourceEndpoint, destinationEndpoint)
+	conversion, err := createTypeConversion(sourceEndpoint, destinationEndpoint, fn.conversionContext)
 
 	if err != nil {
 		return nil, errors.Wrapf(

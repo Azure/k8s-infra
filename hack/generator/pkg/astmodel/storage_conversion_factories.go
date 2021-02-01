@@ -24,7 +24,11 @@ type StorageTypeConversion func(reader dst.Expr, writer dst.Expr, generationCont
 // for a specific pair of types
 // source is the endpoint that will be read
 // destination is the endpoint that will be written
-type StorageTypeConversionFactory func(source *StorageConversionEndpoint, destination *StorageConversionEndpoint) StorageTypeConversion
+// ctx contains additional information that may be needed when creating a conversion
+type StorageTypeConversionFactory func(
+	source *StorageConversionEndpoint,
+	destination *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion
 
 // A list of all known type conversion factory methods
 var typeConversionFactories []StorageTypeConversionFactory
@@ -44,9 +48,10 @@ func init() {
 // all of the available type conversion functions in priority order to do so.
 func createTypeConversion(
 	sourceEndpoint *StorageConversionEndpoint,
-	destinationEndpoint *StorageConversionEndpoint) (StorageTypeConversion, error) {
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) (StorageTypeConversion, error) {
 	for _, f := range typeConversionFactories {
-		result := f(sourceEndpoint, destinationEndpoint)
+		result := f(sourceEndpoint, destinationEndpoint, conversionContext)
 		if result != nil {
 			return result, nil
 		}
@@ -67,7 +72,8 @@ func createTypeConversion(
 //
 func assignPrimitiveTypeFromPrimitiveType(
 	sourceEndpoint *StorageConversionEndpoint,
-	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
+	destinationEndpoint *StorageConversionEndpoint,
+	_ *StorageConversionContext) StorageTypeConversion {
 
 	if _, srcOpt := AsOptionalType(sourceEndpoint.Type()); srcOpt {
 		// Source is optional, which we handle elsewhere
@@ -110,7 +116,8 @@ func assignPrimitiveTypeFromPrimitiveType(
 //
 func assignOptionalPrimitiveTypeFromPrimitiveType(
 	sourceEndpoint *StorageConversionEndpoint,
-	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
+	destinationEndpoint *StorageConversionEndpoint,
+	_ *StorageConversionContext) StorageTypeConversion {
 
 	if _, srcOpt := AsOptionalType(sourceEndpoint.Type()); srcOpt {
 		// Source is optional
@@ -157,7 +164,8 @@ func assignOptionalPrimitiveTypeFromPrimitiveType(
 // }
 func assignPrimitiveTypeFromOptionalPrimitiveType(
 	sourceEndpoint *StorageConversionEndpoint,
-	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
+	destinationEndpoint *StorageConversionEndpoint,
+	_ *StorageConversionContext) StorageTypeConversion {
 
 	if _, srcOpt := AsOptionalType(sourceEndpoint.Type()); !srcOpt {
 		// Source is not optional
@@ -224,7 +232,8 @@ func assignPrimitiveTypeFromOptionalPrimitiveType(
 //
 func assignOptionalPrimitiveTypeFromOptionalPrimitiveType(
 	sourceEndpoint *StorageConversionEndpoint,
-	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
+	destinationEndpoint *StorageConversionEndpoint,
+	_ *StorageConversionContext) StorageTypeConversion {
 
 	if _, srcOpt := AsOptionalType(sourceEndpoint.Type()); !srcOpt {
 		// Source is not optional
@@ -271,7 +280,8 @@ func assignOptionalPrimitiveTypeFromOptionalPrimitiveType(
 //
 func assignArrayFromArray(
 	sourceEndpoint *StorageConversionEndpoint,
-	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion {
 
 	srcArray, srcOk := AsArrayType(sourceEndpoint.Type())
 	if !srcOk {
@@ -287,7 +297,7 @@ func assignArrayFromArray(
 
 	srcEp := sourceEndpoint.WithType(srcArray.element)
 	dstEp := destinationEndpoint.WithType(dstArray.element)
-	conversion, _ := createTypeConversion(srcEp, dstEp)
+	conversion, _ := createTypeConversion(srcEp, dstEp, conversionContext)
 
 	if conversion == nil {
 		// No conversion between the elements of the array, so we can't do the conversion
@@ -337,7 +347,8 @@ func assignArrayFromArray(
 //
 func assignMapFromMap(
 	sourceEndpoint *StorageConversionEndpoint,
-	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion {
 	srcMap, ok := AsMapType(sourceEndpoint.Type())
 	if !ok {
 		// Source is not a map
@@ -357,7 +368,7 @@ func assignMapFromMap(
 
 	srcEp := sourceEndpoint.WithType(srcMap.value)
 	dstEp := destinationEndpoint.WithType(dstMap.value)
-	conversion, _ := createTypeConversion(srcEp, dstEp)
+	conversion, _ := createTypeConversion(srcEp, dstEp, conversionContext)
 
 	if conversion == nil {
 		// No conversion between the elements of the map, so we can't do the conversion

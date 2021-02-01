@@ -107,10 +107,10 @@ func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase
 		intermediateTypeDefinition = &def
 	}
 
-	convertFrom, errs := NewStorageConversionFromFunction(receiverDefinition, hubTypeDefinition, intermediateTypeDefinition, idFactory)
+	convertFrom, errs := NewStorageConversionFromFunction(receiverDefinition, hubTypeDefinition, intermediateTypeDefinition, conversionContext)
 	gm.Expect(errs).To(BeNil())
 
-	convertTo, errs := NewStorageConversionToFunction(receiverDefinition, hubTypeDefinition, intermediateTypeDefinition, idFactory)
+	convertTo, errs := NewStorageConversionToFunction(receiverDefinition, hubTypeDefinition, intermediateTypeDefinition, conversionContext)
 	gm.Expect(errs).To(BeNil())
 
 	receiverDefinition = receiverDefinition.WithType(receiverType.WithFunction(convertFrom).WithFunction(convertTo))
