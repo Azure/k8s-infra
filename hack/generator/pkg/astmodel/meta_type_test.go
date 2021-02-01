@@ -18,6 +18,7 @@ func TestAsPrimitiveType(t *testing.T) {
 	mapType := NewMapType(StringType, StringType)
 	optionalType := NewOptionalType(arrayType)
 	enumType := NewEnumType(StringType, []EnumValue{})
+	nameType := MakeTypeName(makeTestLocalPackageReference("g", "v"), "foo")
 
 	cases := []struct {
 		name     string
@@ -29,6 +30,7 @@ func TestAsPrimitiveType(t *testing.T) {
 		{"ArraysAreNotPrimitives", arrayType, nil},
 		{"MapsAreNotPrimitives", mapType, nil},
 		{"EnumsAreNotPrimitives", enumType, nil},
+		{"NamesAreNotPrimitives", nameType, nil},
 		{"OptionalAreNotPrimitives", optionalType, nil},
 		{"OptionalContainingPrimitive", NewOptionalType(StringType), StringType},
 		{"OptionalNotContainingPrimitive", NewOptionalType(objectType), nil},
@@ -65,6 +67,7 @@ func TestAsObjectType(t *testing.T) {
 	mapType := NewMapType(StringType, StringType)
 	optionalType := NewOptionalType(StringType)
 	enumType := NewEnumType(StringType, []EnumValue{})
+	nameType := MakeTypeName(makeTestLocalPackageReference("g", "v"), "foo")
 
 	cases := []struct {
 		name     string
@@ -76,6 +79,7 @@ func TestAsObjectType(t *testing.T) {
 		{"ArraysAreNotObjects", arrayType, nil},
 		{"MapsAreNotObjects", mapType, nil},
 		{"EnumsAreNotObjects", enumType, nil},
+		{"NamesAreNotObjects", nameType, nil},
 		{"OptionalAreNotObjects", optionalType, nil},
 		{"OptionalContainingObject", NewOptionalType(objectType), objectType},
 		{"OptionalNotContainingObject", NewOptionalType(StringType), nil},
@@ -112,6 +116,7 @@ func TestAsArrayType(t *testing.T) {
 	mapType := NewMapType(StringType, StringType)
 	optionalType := NewOptionalType(objectType)
 	enumType := NewEnumType(StringType, []EnumValue{})
+	nameType := MakeTypeName(makeTestLocalPackageReference("g", "v"), "foo")
 
 	cases := []struct {
 		name     string
@@ -123,6 +128,7 @@ func TestAsArrayType(t *testing.T) {
 		{"ArraysAreArrays", arrayType, arrayType},
 		{"MapsAreNotArrays", mapType, nil},
 		{"EnumsAreNotArrays", enumType, nil},
+		{"NamesAreNotArrays", nameType, nil},
 		{"OptionalAreNotArrays", optionalType, nil},
 		{"OptionalContainingArray", NewOptionalType(arrayType), arrayType},
 		{"OptionalNotContainingArray", NewOptionalType(StringType), nil},
@@ -159,6 +165,7 @@ func TestAsMapType(t *testing.T) {
 	mapType := NewMapType(StringType, StringType)
 	optionalType := NewOptionalType(objectType)
 	enumType := NewEnumType(StringType, []EnumValue{})
+	nameType := MakeTypeName(makeTestLocalPackageReference("g", "v"), "foo")
 
 	cases := []struct {
 		name     string
@@ -170,6 +177,7 @@ func TestAsMapType(t *testing.T) {
 		{"ArraysAreNotMaps", arrayType, nil},
 		{"MapsAreMaps", mapType, mapType},
 		{"EnumsAreNotMaps", enumType, nil},
+		{"NamesAreNotMaps", nameType, nil},
 		{"OptionalAreNotMaps", optionalType, nil},
 		{"OptionalContainingMaps", NewOptionalType(mapType), mapType},
 		{"OptionalNotContainingMaps", NewOptionalType(StringType), nil},
@@ -206,6 +214,7 @@ func TestAsOptionalType(t *testing.T) {
 	mapType := NewMapType(StringType, StringType)
 	optionalType := NewOptionalType(objectType)
 	enumType := NewEnumType(StringType, []EnumValue{})
+	nameType := MakeTypeName(makeTestLocalPackageReference("g", "v"), "foo")
 
 	cases := []struct {
 		name     string
@@ -217,6 +226,7 @@ func TestAsOptionalType(t *testing.T) {
 		{"ArraysAreNotOptional", arrayType, nil},
 		{"MapsAreNotOptional", mapType, nil},
 		{"EnumsAreNotOptional", enumType, nil},
+		{"NamesAreNotOptional", nameType, nil},
 		{"OptionalAreOptional", optionalType, optionalType},
 		{"FlaggedContainingOptional", OneOfFlag.ApplyTo(optionalType), optionalType},
 		{"FlaggedNotContainingOptional", OneOfFlag.ApplyTo(StringType), nil},
@@ -262,6 +272,7 @@ func TestAsEnumType(t *testing.T) {
 		{"ArraysAreNotEnums", arrayType, nil},
 		{"MapsAreNotEnums", mapType, nil},
 		{"EnumsAreEnums", enumType, enumType},
+		{"NamesAreNotEnums", nameType, nil},
 		{"OptionalAreNotEnums", optionalType, nil},
 		{"FlaggedContainingEnums", OneOfFlag.ApplyTo(enumType), enumType},
 		{"FlaggedNotContainingEnums", OneOfFlag.ApplyTo(StringType), nil},
@@ -278,6 +289,54 @@ func TestAsEnumType(t *testing.T) {
 			g := NewGomegaWithT(t)
 
 			actual, ok := AsEnumType(c.subject)
+
+			if c.expected == nil {
+				g.Expect(ok).To(BeFalse())
+			} else {
+				g.Expect(actual).To(Equal(c.expected))
+				g.Expect(ok).To(BeTrue())
+			}
+
+		})
+	}
+}
+
+func TestAsTypeName(t *testing.T) {
+
+	objectType := NewObjectType()
+	arrayType := NewArrayType(StringType)
+	mapType := NewMapType(StringType, StringType)
+	optionalType := NewOptionalType(objectType)
+	enumType := NewEnumType(StringType, []EnumValue{})
+	nameType := MakeTypeName(makeTestLocalPackageReference("g", "v"), "foo")
+
+	cases := []struct {
+		name     string
+		subject  Type
+		expected Type
+	}{
+		{"PrimitivesAreNotNames", StringType, nil},
+		{"ObjectsAreNotNames", objectType, nil},
+		{"ArraysAreNotNames", arrayType, nil},
+		{"MapsAreNotNames", mapType, nil},
+		{"EnumsAreNotNames", enumType, nil},
+		{"NamesAreNames", nameType, nameType},
+		{"OptionalAreNotNames", optionalType, nil},
+		{"FlaggedContainingNames", OneOfFlag.ApplyTo(nameType), nameType},
+		{"FlaggedNotContainingNames", OneOfFlag.ApplyTo(StringType), nil},
+		{"ValidatedContainingNames", NewValidatedType(nameType, nil), nameType},
+		{"ValidatedNotContainingNames", NewValidatedType(StringType, nil), nil},
+		{"ErroredContainingNames", NewErroredType(nameType, nil, nil), nameType},
+		{"ErroredNotContainingNames", NewErroredType(StringType, nil, nil), nil},
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			g := NewGomegaWithT(t)
+
+			actual, ok := AsTypeName(c.subject)
 
 			if c.expected == nil {
 				g.Expect(ok).To(BeFalse())
