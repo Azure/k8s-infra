@@ -118,8 +118,6 @@ func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase
 	defs := []TypeDefinition{receiverDefinition}
 	packages := make(map[PackageReference]*PackageDefinition)
 
-	g := goldie.New(t)
-
 	packageDefinition := NewPackageDefinition(vCurrent.Group(), vCurrent.PackageName(), "1")
 	packageDefinition.AddDefinition(receiverDefinition)
 
@@ -128,14 +126,6 @@ func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase
 	// put all definitions in one file, regardless.
 	// the package reference isn't really used here.
 	fileDef := NewFileDefinition(vCurrent, defs, packages)
-
-	buf := &bytes.Buffer{}
-	fileWriter := NewGoSourceFileWriter(fileDef)
-	err := fileWriter.SaveToWriter(buf)
-	if err != nil {
-		t.Fatalf("could not generate file: %v", err)
-	}
-
 	var testName strings.Builder
 	testName.WriteString(c.name)
 
@@ -145,5 +135,18 @@ func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase
 		testName.WriteString("-ViaStaging")
 	}
 
-	g.Assert(t, testName.String(), buf.Bytes())
+	assertFileGeneratesExpectedCode(t, fileDef, testName.String())
+}
+
+func assertFileGeneratesExpectedCode(t *testing.T, fileDef *FileDefinition, testName string) {
+	g := goldie.New(t)
+
+	buf := &bytes.Buffer{}
+    fileWriter := NewGoSourceFileWriter(fileDef)
+	err := fileWriter.SaveToWriter(buf)
+	if err != nil {
+		t.Fatalf("could not generate file: %v", err)
+	}
+
+	g.Assert(t, testName, buf.Bytes())
 }
