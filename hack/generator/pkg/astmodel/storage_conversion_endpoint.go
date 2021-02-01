@@ -29,7 +29,7 @@ func NewStorageConversionEndpoint(
 	knownLocals *KnownLocalsSet) *StorageConversionEndpoint {
 	return &StorageConversionEndpoint{
 		theType:     theType,
-		name:        strings.ToLower(name),
+		name:        strings.ToLower(string(name)),
 		knownLocals: knownLocals,
 	}
 }
@@ -55,10 +55,11 @@ func (endpoint *StorageConversionEndpoint) CreatePluralLocal(suffix string) stri
 
 // WithType creates a new endpoint with a different type
 func (endpoint *StorageConversionEndpoint) WithType(theType Type) *StorageConversionEndpoint {
-	return NewStorageConversionEndpoint(
-		theType,
-		endpoint.name,
-		endpoint.knownLocals)
+	return &StorageConversionEndpoint{
+		theType:     theType,
+		name:        endpoint.name,
+		knownLocals: endpoint.knownLocals,
+	}
 }
 
 type KnownLocalsSet struct {
