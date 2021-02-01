@@ -48,12 +48,13 @@ func TestAsPrimitiveType(t *testing.T) {
 			t.Parallel()
 			g := NewGomegaWithT(t)
 
-			actual := AsPrimitiveType(c.subject)
+			actual, ok := AsPrimitiveType(c.subject)
 
 			if c.expected == nil {
-				g.Expect(actual).To(BeNil())
+				g.Expect(ok).To(BeFalse())
 			} else {
 				g.Expect(actual).To(Equal(c.expected))
+				g.Expect(ok).To(BeTrue())
 			}
 
 		})
@@ -97,12 +98,13 @@ func TestAsObjectType(t *testing.T) {
 			t.Parallel()
 			g := NewGomegaWithT(t)
 
-			actual := AsObjectType(c.subject)
+			actual, ok := AsObjectType(c.subject)
 
 			if c.expected == nil {
-				g.Expect(actual).To(BeNil())
+				g.Expect(ok).To(BeFalse())
 			} else {
 				g.Expect(actual).To(Equal(c.expected))
+				g.Expect(ok).To(BeTrue())
 			}
 
 		})
@@ -146,12 +148,13 @@ func TestAsArrayType(t *testing.T) {
 			t.Parallel()
 			g := NewGomegaWithT(t)
 
-			actual := AsArrayType(c.subject)
+			actual, ok := AsArrayType(c.subject)
 
 			if c.expected == nil {
-				g.Expect(actual).To(BeNil())
+				g.Expect(ok).To(BeFalse())
 			} else {
 				g.Expect(actual).To(Equal(c.expected))
+				g.Expect(ok).To(BeTrue())
 			}
 
 		})
@@ -195,12 +198,13 @@ func TestAsMapType(t *testing.T) {
 			t.Parallel()
 			g := NewGomegaWithT(t)
 
-			actual := AsMapType(c.subject)
+			actual, ok := AsMapType(c.subject)
 
 			if c.expected == nil {
-				g.Expect(actual).To(BeNil())
+				g.Expect(ok).To(BeFalse())
 			} else {
 				g.Expect(actual).To(Equal(c.expected))
+				g.Expect(ok).To(BeTrue())
 			}
 
 		})
@@ -242,12 +246,13 @@ func TestAsOptionalType(t *testing.T) {
 			t.Parallel()
 			g := NewGomegaWithT(t)
 
-			actual := AsOptionalType(c.subject)
+			actual, ok := AsOptionalType(c.subject)
 
 			if c.expected == nil {
-				g.Expect(actual).To(BeNil())
+				g.Expect(ok).To(BeFalse())
 			} else {
 				g.Expect(actual).To(Equal(c.expected))
+				g.Expect(ok).To(BeTrue())
 			}
 
 		})
@@ -261,6 +266,7 @@ func TestAsEnumType(t *testing.T) {
 	mapType := NewMapType(StringType, StringType)
 	optionalType := NewOptionalType(objectType)
 	enumType := NewEnumType(StringType, []EnumValue{})
+	nameType := MakeTypeName(makeTestLocalPackageReference("g", "v"), "foo")
 
 	cases := []struct {
 		name     string
