@@ -94,6 +94,7 @@ func createTypeConversion(
 // same underlying primitive type and have the same optionality
 //
 // <destination> = <source>
+//
 func assignPrimitiveTypeFromPrimitiveType(
 	sourceEndpoint *StorageConversionEndpoint,
 	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
@@ -215,11 +216,12 @@ func assignPrimitiveTypeFromOptionalPrimitiveType(
 // assignArrayFromArray will generate a code fragment to populate an array, assuming the
 // underlying types of the two arrays are compatible
 //
-// var <arr> []<type>
-// for _, <value> := range <reader> {
-//     arr := append(arr, <value>)
+// <arr> := make([]<type>, len(<reader>))
+// for <index>, <value> := range <reader> {
+//     <arr>[<index>] := <value> // Or other conversion as required
 // }
 // <writer> = <arr>
+//
 func assignArrayFromArray(
 	sourceEndpoint *StorageConversionEndpoint,
 	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
@@ -275,11 +277,12 @@ func assignArrayFromArray(
 // assignMapFromMap will generate a code fragment to populate an array, assuming the
 // underlying types of the two arrays are compatible
 //
-// var <map> map[<key>]<type>
+// <map> := make(map[<key>]<type>)
 // for key, <item> := range <reader> {
 //     <map>[<key>] := <item>
 // }
 // <writer> = <map>
+//
 func assignMapFromMap(
 	sourceEndpoint *StorageConversionEndpoint,
 	destinationEndpoint *StorageConversionEndpoint) StorageTypeConversion {
