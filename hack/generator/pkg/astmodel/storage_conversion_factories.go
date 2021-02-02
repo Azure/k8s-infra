@@ -47,8 +47,6 @@ func createPropertyConversion(
 // StorageTypeConversion generates the AST for a given conversion.
 // source is an expression to read the original value
 // destination is an expression to write the converted value
-// The parameters source and destination are funcs because AST fragments can't be reused, and in
-// some cases we need to reference source and destination multiple times in a single fragment.
 type StorageTypeConversion func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt
 
 // StorageTypeConversionFactory represents factory methods that can be used to create StorageTypeConversions
@@ -124,7 +122,7 @@ func assignPrimitiveTypeFromPrimitiveType(
 }
 
 // assignOptionalPrimitiveTypeFromPrimitiveType will generate a direct assignment if both types
-// have the same underlying primitive type and have the same optionality
+// have the same underlying primitive type and only the destination is optional.
 //
 // <destination> = &<source>
 func assignOptionalPrimitiveTypeFromPrimitiveType(
@@ -155,7 +153,7 @@ func assignOptionalPrimitiveTypeFromPrimitiveType(
 }
 
 // assignPrimitiveTypeFromOptionalPrimitiveType will generate a direct assignment if both types
-// have the same underlying primitive type and have the same optionality
+// have the same underlying primitive type and only the source is optional
 //
 // if <source> != nil {
 //    <destination> = *<source>

@@ -12,12 +12,13 @@ import (
 	"sort"
 )
 
-// StoragePropertyConversion generates the AST for a given conversion.
+// StoragePropertyConversion represents a function that generates the correct AST to convert a single property value
+// Different functions will be used, depending on the types of the properties to be converted.
 // source is an expression for the source value that will be read.
 // destination is an expression the target value that will be written.
 type StoragePropertyConversion func(source dst.Expr, destination dst.Expr, ctx *CodeGenerationContext) []dst.Stmt
 
-// Represents a function that performs conversions for storage versions
+// StorageConversionFunction represents a function that performs conversions for storage versions
 type StorageConversionFunction struct {
 	// Name of this conversion function
 	name string
@@ -25,7 +26,7 @@ type StorageConversionFunction struct {
 	parameter TypeName
 	// Other Type of this conversion stage (if this isn't our parameter type, we'll delegate to this to finish the job)
 	staging TypeDefinition
-	// Map of all property conversions we are going to use
+	// Map of all property conversions we are going to use, keyed by name of the receiver property
 	conversions map[string]StoragePropertyConversion
 	// Reference to our identifier factory
 	idFactory IdentifierFactory
@@ -35,7 +36,7 @@ type StorageConversionFunction struct {
 	knownLocals KnownLocalsSet
 }
 
-// Direction of conversion we're implementing with this function
+// StorageConversionDirection specifies the direction of conversion we're implementing with this function
 type StorageConversionDirection int
 
 const (
@@ -45,8 +46,10 @@ const (
 	ConvertTo = StorageConversionDirection(2)
 )
 
+// Ensure that StorageConversionFunction implements Function
 var _ Function = &StorageConversionFunction{}
 
+// NewStorageConversionFromFunction creates a new StorageConversionFunction to convert from the specified source
 func NewStorageConversionFromFunction(
 	receiver TypeDefinition,
 	source TypeName,
@@ -67,6 +70,7 @@ func NewStorageConversionFromFunction(
 	return result, errs
 }
 
+// NewStorageConversionToFunction creates a new StorageConversionFunction to convert to the specified destination
 func NewStorageConversionToFunction(
 	receiver TypeDefinition,
 	destination TypeName,
@@ -87,20 +91,24 @@ func NewStorageConversionToFunction(
 	return result, errs
 }
 
+// Name returns the name of this function
 func (fn *StorageConversionFunction) Name() string {
 	return fn.name
 }
 
+// RequiredPackageReferences returns the set of package references required by this function
 func (fn *StorageConversionFunction) RequiredPackageReferences() *PackageReferenceSet {
 	return NewPackageReferenceSet(
 		fn.parameter.PackageReference,
 		fn.staging.name.PackageReference)
 }
 
+// References returns the set of types referenced by this function
 func (fn *StorageConversionFunction) References() TypeNameSet {
 	return NewTypeNameSet(fn.parameter, fn.staging.name)
 }
 
+// Equals checks to see if the supplied function is the same as this one
 func (fn *StorageConversionFunction) Equals(f Function) bool {
 	if other, ok := f.(*StorageConversionFunction); ok {
 		// Only check name for now
@@ -112,10 +120,17 @@ func (fn *StorageConversionFunction) Equals(f Function) bool {
 	return false
 }
 
+// AsFunc renders this function as an AST for serialization to a Go source file
 func (fn *StorageConversionFunction) AsFunc(ctx *CodeGenerationContext, receiver TypeName) *dst.FuncDecl {
 
-	parameterName := fn.parameterName()
-	receiverName := fn.receiverName(receiver)
+	parameterName := "other" // safe default
+	if fn.conversionDirection == ConvertTo {
+		parameterName = "destination"
+	} else if fn.conversionDirection == ConvertFrom {
+		parameterName = "source"
+	}
+
+	receiverName := fn.idFactory.CreateIdentifier(receiver.Name(), NotExported)
 
 	funcDetails := &astbuilder.FuncDetails{
 		ReceiverIdent: receiverName,
@@ -263,6 +278,7 @@ func (fn *StorageConversionFunction) generateIndirectConversionTo(receiver strin
 	return result
 }
 
+// generateAssignments generates a sequence of statements to copy information between the two types
 func (fn *StorageConversionFunction) generateAssignments(source dst.Expr, destination dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 	var result []dst.Stmt
 
@@ -293,22 +309,8 @@ func (fn *StorageConversionFunction) generateAssignments(source dst.Expr, destin
 	return result
 }
 
-func (fn *StorageConversionFunction) receiverName(receiver TypeName) string {
-	return fn.idFactory.CreateIdentifier(receiver.Name(), NotExported)
-}
-
-func (fn *StorageConversionFunction) parameterName() string {
-	if fn.conversionDirection == ConvertTo {
-		return "destination"
-	}
-
-	if fn.conversionDirection == ConvertFrom {
-		return "source"
-	}
-
-	panic(fmt.Sprintf("Unexpected conversion conversionType %v", fn.conversionDirection))
-}
-
+// createConversions iterates through the properties on our receiver type, matching them up with
+// our other type and generating conversions where possible
 func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) []error {
 	receiverObject := AsObjectType(receiver.Type())
 	otherObject := AsObjectType(fn.staging.Type())
