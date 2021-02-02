@@ -43,39 +43,6 @@ exportFilters:
     group: deploymenttemplate
     name: '*ResourceBase*'
     because: Not actually a resource, used for inheritance only.
-
-  # AnyType excludes
-#  - action: exclude
-#    version: v20200501
-#    group: microsoft.network
-#    name: 'ApplicationSecurityGroup*'
-#    because: Has AnyType
-#  - action: exclude
-#    version: v20200501
-#    group: microsoft.network
-#    name: 'ApplicationGateway*'
-#    because: Has AnyType
-#  - action: exclude
-#    version: v20200501
-#    group: microsoft.network
-#    name: 'NetworkWatcher*'
-#    because: Has AnyType
-#  - action: exclude
-#    version: v20200501
-#    group: microsoft.network
-#    name: 'DdosProtection*'
-#    because: Has AnyType
-#  - action: exclude
-#    version: v20200501
-#    group: microsoft.network
-#    name: 'ExpressRoute*'
-#    because: Has AnyType
-#  - action: exclude
-#    version: v20200501
-#    group: microsoft.network
-#    name: 'ManagedServiceIdentity*'
-#    because: Has AnyType
-
 #  - action: include
 #    version: v20200501
 #    group: microsoft.network
