@@ -257,7 +257,7 @@ tasks:
     deps: [header-check, crossplane:format-code]
     # Lint is forced to the end because it expects the code is formatted
     cmds:
-      - task: crossplane:lint
+      # - task: crossplane:lint
 
 # TODO: We currently have no tests
 #  crossplane:test:
@@ -278,11 +278,12 @@ tasks:
     cmds:
       - gofmt -l -s -w .
 
-  crossplane:lint:
-    desc: Run {{.CROSSPLANE_APP}} fast lint checks.
-    dir: "{{.CROSSPLANE_ROOT}}"
-    cmds:
-      - golangci-lint run -v
+  # TODO: No non-generated code in this directory at the moment
+  # crossplane:lint:
+  #   desc: Run {{.CROSSPLANE_APP}} fast lint checks.
+  #   dir: "{{.CROSSPLANE_ROOT}}"
+  #   cmds:
+  #     - golangci-lint run -v
 
   crossplane:generate-crds:
     desc: Run controller-gen to generate {{.CROSSPLANE_APP}} CRD files.
