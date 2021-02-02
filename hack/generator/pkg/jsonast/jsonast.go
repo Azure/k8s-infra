@@ -408,7 +408,7 @@ func enumHandler(ctx context.Context, scanner *SchemaScanner, schema Schema) (as
 		values = append(values, astmodel.EnumValue{Identifier: id, Value: v})
 	}
 
-	enumType := astmodel.NewEnumType(baseType, values)
+	enumType := astmodel.NewEnumType(baseType, values...)
 
 	return enumType, nil
 }
