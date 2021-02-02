@@ -30,7 +30,7 @@ type StorageConversionFunction struct {
 	// hubType is the ultimate hub type to which (or from which) we are converting, passed as a
 	// parameter to our function
 	hubType TypeDefinition
-	// intermediateType optionaly identifies a type which is "closer" to the hubType through which
+	// intermediateType optionally identifies a type which is "closer" to the hubType through which
 	// we can achieve our conversion. Will be nil if we are converting to/from the hub type
 	// directly, otherwise we use this as an intermediate form.
 	intermediateType *TypeDefinition
