@@ -231,12 +231,15 @@ func assignArrayFromArray(
 		return nil
 	}
 
+	// Try to create a conversion between the elements of the arrays
+	// We're not interested in the specifics of any error encountered trying to create the
+	// conversion, only whether it succeeds or not.
 	srcEp := sourceEndpoint.WithType(st.element)
 	dstEp := destinationEndpoint.WithType(dt.element)
 	conversion, _ := createTypeConversion(srcEp, dstEp)
 
 	if conversion == nil {
-		// No conversion between the elements of the array
+		// No conversion between the elements of the array, so we can't do the conversion
 		return nil
 	}
 
