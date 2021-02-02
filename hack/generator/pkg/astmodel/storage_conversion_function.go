@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 	"github.com/dave/dst"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sort"
 )
 
@@ -55,7 +56,7 @@ func NewStorageConversionFromFunction(
 	source TypeName,
 	staging TypeDefinition,
 	idFactory IdentifierFactory,
-) (*StorageConversionFunction, []error) {
+) (*StorageConversionFunction, error) {
 	result := &StorageConversionFunction{
 		name:                "ConvertFrom",
 		parameter:           source,
@@ -66,8 +67,8 @@ func NewStorageConversionFromFunction(
 		knownLocals:         make(KnownLocalsSet),
 	}
 
-	errs := result.createConversions(receiver)
-	return result, errs
+	err := result.createConversions(receiver)
+	return result, err
 }
 
 // NewStorageConversionToFunction creates a new StorageConversionFunction to convert to the specified destination
@@ -76,7 +77,7 @@ func NewStorageConversionToFunction(
 	destination TypeName,
 	staging TypeDefinition,
 	idFactory IdentifierFactory,
-) (*StorageConversionFunction, []error) {
+) (*StorageConversionFunction, error) {
 	result := &StorageConversionFunction{
 		name:                "ConvertTo",
 		parameter:           destination,
@@ -87,8 +88,8 @@ func NewStorageConversionToFunction(
 		knownLocals:         make(map[string]struct{}),
 	}
 
-	errs := result.createConversions(receiver)
-	return result, errs
+	err := result.createConversions(receiver)
+	return result, err
 }
 
 // Name returns the name of this function
@@ -311,7 +312,7 @@ func (fn *StorageConversionFunction) generateAssignments(source dst.Expr, destin
 
 // createConversions iterates through the properties on our receiver type, matching them up with
 // our other type and generating conversions where possible
-func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) []error {
+func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) error {
 	receiverObject := AsObjectType(receiver.Type())
 	otherObject := AsObjectType(fn.staging.Type())
 	var errs []error
@@ -343,5 +344,5 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 		}
 	}
 
-	return errs
+	return kerrors.NewAggregate(errs)
 }

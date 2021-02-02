@@ -106,10 +106,10 @@ func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase
 	}
 
 	convertFrom, errs := NewStorageConversionFromFunction(subjectDefinition, hubTypeName, stagingDefinition, idFactory)
-	gm.Expect(errs).To(BeEmpty())
+	gm.Expect(errs).To(BeNil())
 
 	convertTo, errs := NewStorageConversionToFunction(subjectDefinition, hubTypeName, stagingDefinition, idFactory)
-	gm.Expect(errs).To(BeEmpty())
+	gm.Expect(errs).To(BeNil())
 
 	subjectDefinition = subjectDefinition.WithType(subjectType.WithFunction(convertFrom).WithFunction(convertTo))
 
