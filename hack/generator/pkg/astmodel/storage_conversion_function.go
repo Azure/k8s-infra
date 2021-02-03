@@ -152,10 +152,8 @@ func (fn *StorageConversionFunction) AsFunc(generationContext *CodeGenerationCon
 	switch fn.conversionDirection {
 	case ConvertFrom:
 		parameterName = "source"
-		break
 	case ConvertTo:
 		parameterName = "destination"
-		break
 	default:
 		panic(fmt.Sprintf("unexpected conversion direction %q", fn.conversionDirection))
 	}
@@ -393,10 +391,8 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 			switch fn.conversionDirection {
 			case ConvertFrom:
 				conv, err = fn.createPropertyConversion(otherProperty, receiverProperty)
-				break
 			case ConvertTo:
 				conv, err = fn.createPropertyConversion(receiverProperty, otherProperty)
-				break
 			default:
 				panic(fmt.Sprintf("unexpected conversion direction %q", fn.conversionDirection))
 			}
