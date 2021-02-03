@@ -23,10 +23,11 @@ type StoragePropertyConversion func(source dst.Expr, destination dst.Expr, ctx *
 type StorageConversionFunction struct {
 	// Name of this conversion function
 	name string
-	// Name of the ultimate hub type to which we are converting, passed as a parameter
-	parameter TypeName
-	// Other Type of this conversion stage (if this isn't our parameter type, we'll delegate to this to finish the job)
-	staging TypeDefinition
+	// Name of the ultimate hub type to which we are converting, passed as a parameter to our function
+	hubType TypeDefinition
+	// Intermediate type of this conversion step
+	// nil if we are converting to/from the hub type directly, otherwise we
+	intermediateType *TypeDefinition
 	// Map of all property conversions we are going to use, keyed by name of the receiver property
 	conversions map[string]StoragePropertyConversion
 	// Reference to our identifier factory
@@ -53,14 +54,14 @@ var _ Function = &StorageConversionFunction{}
 // NewStorageConversionFromFunction creates a new StorageConversionFunction to convert from the specified source
 func NewStorageConversionFromFunction(
 	receiver TypeDefinition,
-	source TypeName,
-	staging TypeDefinition,
+	sourceHubType TypeDefinition,
+	intermediateType *TypeDefinition,
 	idFactory IdentifierFactory,
 ) (*StorageConversionFunction, error) {
 	result := &StorageConversionFunction{
 		name:                "ConvertFrom",
-		parameter:           source,
-		staging:             staging,
+		hubType:             sourceHubType,
+		intermediateType:    intermediateType,
 		idFactory:           idFactory,
 		conversionDirection: ConvertFrom,
 		conversions:         make(map[string]StoragePropertyConversion),
@@ -74,14 +75,14 @@ func NewStorageConversionFromFunction(
 // NewStorageConversionToFunction creates a new StorageConversionFunction to convert to the specified destination
 func NewStorageConversionToFunction(
 	receiver TypeDefinition,
-	destination TypeName,
-	staging TypeDefinition,
+	destinationHubType TypeDefinition,
+	intermediateType *TypeDefinition,
 	idFactory IdentifierFactory,
 ) (*StorageConversionFunction, error) {
 	result := &StorageConversionFunction{
 		name:                "ConvertTo",
-		parameter:           destination,
-		staging:             staging,
+		hubType:             destinationHubType,
+		intermediateType:    intermediateType,
 		idFactory:           idFactory,
 		conversionDirection: ConvertTo,
 		conversions:         make(map[string]StoragePropertyConversion),
@@ -99,14 +100,24 @@ func (fn *StorageConversionFunction) Name() string {
 
 // RequiredPackageReferences returns the set of package references required by this function
 func (fn *StorageConversionFunction) RequiredPackageReferences() *PackageReferenceSet {
-	return NewPackageReferenceSet(
-		fn.parameter.PackageReference,
-		fn.staging.name.PackageReference)
+	result := NewPackageReferenceSet(fn.hubType.Name().PackageReference)
+
+	if fn.intermediateType != nil {
+		result.AddReference(fn.intermediateType.Name().PackageReference)
+	}
+
+	return result
 }
 
 // References returns the set of types referenced by this function
 func (fn *StorageConversionFunction) References() TypeNameSet {
-	return NewTypeNameSet(fn.parameter, fn.staging.name)
+	result := NewTypeNameSet(fn.hubType.Name())
+
+	if fn.intermediateType != nil {
+		result.Add(fn.intermediateType.Name())
+	}
+
+	return result
 }
 
 // Equals checks to see if the supplied function is the same as this one
@@ -140,14 +151,14 @@ func (fn *StorageConversionFunction) AsFunc(ctx *CodeGenerationContext, receiver
 		Body:          fn.generateBody(receiverName, parameterName, ctx),
 	}
 
-	parameterPackage := ctx.MustGetImportedPackageName(fn.parameter.PackageReference)
+	parameterPackage := ctx.MustGetImportedPackageName(fn.hubType.Name().PackageReference)
 
 	funcDetails.AddParameter(
 		parameterName,
 		&dst.StarExpr{
 			X: &dst.SelectorExpr{
 				X:   dst.NewIdent(parameterPackage),
-				Sel: dst.NewIdent(fn.parameter.name),
+				Sel: dst.NewIdent(fn.hubType.Name().Name()),
 			},
 		})
 
@@ -314,7 +325,13 @@ func (fn *StorageConversionFunction) generateAssignments(source dst.Expr, destin
 // our other type and generating conversions where possible
 func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) error {
 	receiverObject := AsObjectType(receiver.Type())
-	otherObject := AsObjectType(fn.staging.Type())
+	var otherObject *ObjectType
+	if fn.intermediateType == nil {
+		otherObject = AsObjectType(fn.hubType.Type())
+	} else {
+		otherObject = AsObjectType(fn.intermediateType.Type())
+	}
+
 	var errs []error
 
 	// Flag receiver name as used

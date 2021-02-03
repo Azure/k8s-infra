@@ -3,13 +3,13 @@
 // Licensed under the MIT license.
 package vCurrent
 
-import "github.com/Azure/k8s-infra/hack/generated/_apis/Verification/vNext"
+import "github.com/Azure/k8s-infra/hack/generated/_apis/Verification/vHub"
 
 type Person struct {
 	nasty map[string][]map[string]bool `json:"my-oh-my"`
 }
 
-func (person Person) ConvertFrom(source *vNext.Person) error {
+func (person Person) ConvertFrom(source *vHub.Person) error {
 
 	// nasty
 	nastiesMap := make(map[string][]map[string]bool)
@@ -30,7 +30,7 @@ func (person Person) ConvertFrom(source *vNext.Person) error {
 	person.nasty = nastiesMap
 }
 
-func (person Person) ConvertTo(destination *vNext.Person) error {
+func (person Person) ConvertTo(destination *vHub.Person) error {
 
 	// nasty
 	nastiesMap := make(map[string][]map[string]bool)

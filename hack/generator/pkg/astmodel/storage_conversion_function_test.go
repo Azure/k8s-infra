@@ -89,37 +89,38 @@ func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase
 	vNext := makeTestLocalPackageReference("Verification", "vNext")
 	vHub := makeTestLocalPackageReference("Verification", "vHub")
 
-	subjectType := NewObjectType().
-		WithProperty(c.receiverProperty)
-
-	subjectDefinition := MakeTypeDefinition(
+	receiverType := NewObjectType().WithProperty(c.receiverProperty)
+	receiverDefinition := MakeTypeDefinition(
 		MakeTypeName(vCurrent, "Person"),
-		subjectType)
+		receiverType)
 
-	stagingTypeName := MakeTypeName(vNext, "Person")
-	stagingType := NewObjectType().WithProperty(c.otherProperty)
-	stagingDefinition := MakeTypeDefinition(stagingTypeName, stagingType)
+	hubTypeDefinition := MakeTypeDefinition(
+		MakeTypeName(vHub, "Person"),
+		NewObjectType().WithProperty(c.otherProperty))
 
-	hubTypeName := stagingTypeName
+	var intermediateTypeDefinition *TypeDefinition = nil
 	if !direct {
-		hubTypeName = MakeTypeName(vHub, "Person")
+		def := MakeTypeDefinition(
+			MakeTypeName(vNext, "Person"),
+			NewObjectType().WithProperty(c.otherProperty))
+		intermediateTypeDefinition = &def
 	}
 
-	convertFrom, errs := NewStorageConversionFromFunction(subjectDefinition, hubTypeName, stagingDefinition, idFactory)
+	convertFrom, errs := NewStorageConversionFromFunction(receiverDefinition, hubTypeDefinition, intermediateTypeDefinition, idFactory)
 	gm.Expect(errs).To(BeNil())
 
-	convertTo, errs := NewStorageConversionToFunction(subjectDefinition, hubTypeName, stagingDefinition, idFactory)
+	convertTo, errs := NewStorageConversionToFunction(receiverDefinition, hubTypeDefinition, intermediateTypeDefinition, idFactory)
 	gm.Expect(errs).To(BeNil())
 
-	subjectDefinition = subjectDefinition.WithType(subjectType.WithFunction(convertFrom).WithFunction(convertTo))
+	receiverDefinition = receiverDefinition.WithType(receiverType.WithFunction(convertFrom).WithFunction(convertTo))
 
-	defs := []TypeDefinition{subjectDefinition}
+	defs := []TypeDefinition{receiverDefinition}
 	packages := make(map[PackageReference]*PackageDefinition)
 
 	g := goldie.New(t)
 
 	packageDefinition := NewPackageDefinition(vCurrent.Group(), vCurrent.PackageName(), "1")
-	packageDefinition.AddDefinition(subjectDefinition)
+	packageDefinition.AddDefinition(receiverDefinition)
 
 	packages[vCurrent] = packageDefinition
 
