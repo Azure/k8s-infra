@@ -6,7 +6,6 @@
 package astmodel
 
 import (
-	"fmt"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 	"github.com/dave/dst"
 	"github.com/pkg/errors"
@@ -81,7 +80,7 @@ func createTypeConversion(
 		}
 	}
 
-	err := fmt.Errorf(
+	err := errors.Errorf(
 		"no conversion found to assign %s from %s",
 		destinationEndpoint.name,
 		sourceEndpoint.name)
