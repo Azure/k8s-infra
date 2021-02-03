@@ -60,7 +60,6 @@ func addCrossplaneEmbeddedResourceSpec(idFactory astmodel.IdentifierFactory) Pip
 		})
 }
 
-// TODO: Some duplication from above
 // addCrossplaneEmbeddedResourceStatus puts an embedded runtimev1alpha1.ResourceStatus on every spec type
 func addCrossplaneEmbeddedResourceStatus(idFactory astmodel.IdentifierFactory) PipelineStage {
 
