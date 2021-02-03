@@ -404,7 +404,10 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 			if err != nil {
 				// An error was returned; this can happen even if a conversion was created as well.
 				errs = append(errs, err)
-			} else if conv != nil {
+				continue
+			}
+
+			if conv != nil {
 				// A conversion was created, keep it for later
 				fn.conversions[string(receiverProperty.propertyName)] = conv
 			}
