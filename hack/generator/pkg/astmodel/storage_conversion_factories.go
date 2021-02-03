@@ -35,12 +35,12 @@ func createPropertyConversion(
 			sourceProperty.propertyName)
 	}
 
-	return func(source dst.Expr, destination dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return func(source dst.Expr, destination dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
 
 		var reader = astbuilder.Selector(source, string(sourceProperty.PropertyName()))
 		var writer = astbuilder.Selector(destination, string(destinationProperty.PropertyName()))
 
-		return conversion(reader, writer, ctx)
+		return conversion(reader, writer, generationContext)
 	}, nil
 }
 
@@ -115,7 +115,7 @@ func assignPrimitiveTypeFromPrimitiveType(
 		return nil
 	}
 
-	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
 		return []dst.Stmt{
 			astbuilder.SimpleAssignment(writer, token.ASSIGN, reader),
 		}
@@ -146,7 +146,7 @@ func assignOptionalPrimitiveTypeFromPrimitiveType(
 		return nil
 	}
 
-	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
 		return []dst.Stmt{
 			astbuilder.SimpleAssignment(writer, token.ASSIGN, astbuilder.AddrOf(reader)),
 		}
@@ -181,7 +181,7 @@ func assignPrimitiveTypeFromOptionalPrimitiveType(
 		return nil
 	}
 
-	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
 		// Need to check for null and only assign if we have a value
 		cond := astbuilder.NotEqual(reader, dst.NewIdent("nil"))
 
@@ -244,7 +244,7 @@ func assignArrayFromArray(
 		return nil
 	}
 
-	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
 		itemId := sourceEndpoint.CreateSingularLocal()
 		indexId := itemId + "Index"
 		tempId := sourceEndpoint.CreatePluralLocal("List")
@@ -252,7 +252,7 @@ func assignArrayFromArray(
 		declaration := astbuilder.SimpleAssignment(
 			dst.NewIdent(tempId),
 			token.DEFINE,
-			astbuilder.MakeList(dt.AsType(ctx), astbuilder.CallFunc("len", reader)))
+			astbuilder.MakeList(dt.AsType(generationContext), astbuilder.CallFunc("len", reader)))
 
 		body := conversion(
 			dst.NewIdent(itemId),
@@ -260,7 +260,7 @@ func assignArrayFromArray(
 				X:     dst.NewIdent(tempId),
 				Index: dst.NewIdent(indexId),
 			},
-			ctx,
+			generationContext,
 		)
 
 		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, dst.NewIdent(tempId))
@@ -310,7 +310,7 @@ func assignMapFromMap(
 		return nil
 	}
 
-	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
 		itemId := sourceEndpoint.CreateSingularLocal()
 		keyId := itemId + "Key"
 		tempId := sourceEndpoint.CreatePluralLocal("Map")
@@ -318,7 +318,7 @@ func assignMapFromMap(
 		declaration := astbuilder.SimpleAssignment(
 			dst.NewIdent(tempId),
 			token.DEFINE,
-			astbuilder.MakeMap(dt.key.AsType(ctx), dt.value.AsType(ctx)))
+			astbuilder.MakeMap(dt.key.AsType(generationContext), dt.value.AsType(generationContext)))
 
 		body := conversion(
 			dst.NewIdent(itemId),
@@ -326,7 +326,7 @@ func assignMapFromMap(
 				X:     dst.NewIdent(tempId),
 				Index: dst.NewIdent(keyId),
 			},
-			ctx,
+			generationContext,
 		)
 
 		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, dst.NewIdent(tempId))
