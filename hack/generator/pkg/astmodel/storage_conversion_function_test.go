@@ -34,7 +34,7 @@ func CreateStorageConversionFunctionTestCases() []StorageConversionPropertyTestC
 
 	nastyProperty := NewPropertyDefinition(
 		"nasty",
-		"my-oh-my",
+		"nasty",
 		NewMapType(
 			StringType,
 			NewArrayType(

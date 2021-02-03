@@ -13,36 +13,6 @@ import (
 	"go/token"
 )
 
-// createPropertyConversion tries to create a property conversion between the two provided properties, using all of the
-// available conversion functions in priority order to do so.
-func (fn StorageConversionFunction) createPropertyConversion(
-	sourceProperty *PropertyDefinition,
-	destinationProperty *PropertyDefinition) (StoragePropertyConversion, error) {
-
-	sourceEndpoint := NewStorageConversionEndpoint(
-		sourceProperty.propertyType, string(sourceProperty.propertyName), fn.knownLocals)
-	destinationEndpoint := NewStorageConversionEndpoint(
-		destinationProperty.propertyType, string(destinationProperty.propertyName), fn.knownLocals)
-
-	conversion, err := createTypeConversion(sourceEndpoint, destinationEndpoint)
-
-	if err != nil {
-		return nil, errors.Wrapf(
-			err,
-			"trying to assign %q from %q",
-			destinationProperty.propertyName,
-			sourceProperty.propertyName)
-	}
-
-	return func(source dst.Expr, destination dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
-
-		var reader = astbuilder.Selector(source, string(sourceProperty.PropertyName()))
-		var writer = astbuilder.Selector(destination, string(destinationProperty.PropertyName()))
-
-		return conversion(reader, writer, generationContext)
-	}, nil
-}
-
 // StorageTypeConversion generates the AST for a given conversion.
 // reader is an expression to read the original value
 // writer is an expression to write the converted value

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 	"github.com/dave/dst"
+	"github.com/pkg/errors"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sort"
 )
@@ -226,10 +227,7 @@ func (fn *StorageConversionFunction) generateDirectConversionFrom(
 	parameter string,
 	generationContext *CodeGenerationContext,
 ) []dst.Stmt {
-	receiverIdent := dst.NewIdent(receiver)
-	parameterIdent := dst.NewIdent(parameter)
-
-	return fn.generateAssignments(parameterIdent, receiverIdent, generationContext)
+	return fn.generateAssignments(dst.NewIdent(parameter), dst.NewIdent(receiver), generationContext)
 }
 
 // generateDirectConversionTo returns the method body required to directly copy information from
@@ -239,10 +237,7 @@ func (fn *StorageConversionFunction) generateDirectConversionTo(
 	parameter string,
 	generationContext *CodeGenerationContext,
 ) []dst.Stmt {
-	receiverIdent := dst.NewIdent(receiver)
-	parameterIdent := dst.NewIdent(parameter)
-
-	return fn.generateAssignments(receiverIdent, parameterIdent, generationContext)
+	return fn.generateAssignments(dst.NewIdent(receiver), dst.NewIdent(parameter), generationContext)
 }
 
 // generateIndirectConversionFrom returns the method body required to populate our receiver when
@@ -414,4 +409,34 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 	}
 
 	return kerrors.NewAggregate(errs)
+}
+
+// createPropertyConversion tries to create a property conversion between the two provided properties, using all of the
+// available conversion functions in priority order to do so.
+func (fn *StorageConversionFunction) createPropertyConversion(
+	sourceProperty *PropertyDefinition,
+	destinationProperty *PropertyDefinition) (StoragePropertyConversion, error) {
+
+	sourceEndpoint := NewStorageConversionEndpoint(
+		sourceProperty.propertyType, string(sourceProperty.propertyName), fn.knownLocals)
+	destinationEndpoint := NewStorageConversionEndpoint(
+		destinationProperty.propertyType, string(destinationProperty.propertyName), fn.knownLocals)
+
+	conversion, err := createTypeConversion(sourceEndpoint, destinationEndpoint)
+
+	if err != nil {
+		return nil, errors.Wrapf(
+			err,
+			"trying to assign %q from %q",
+			destinationProperty.propertyName,
+			sourceProperty.propertyName)
+	}
+
+	return func(source dst.Expr, destination dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
+
+		var reader = astbuilder.Selector(source, string(sourceProperty.PropertyName()))
+		var writer = astbuilder.Selector(destination, string(destinationProperty.PropertyName()))
+
+		return conversion(reader, writer, generationContext)
+	}, nil
 }
