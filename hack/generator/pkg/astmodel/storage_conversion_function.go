@@ -123,9 +123,21 @@ func (fn *StorageConversionFunction) References() TypeNameSet {
 // Equals checks to see if the supplied function is the same as this one
 func (fn *StorageConversionFunction) Equals(f Function) bool {
 	if other, ok := f.(*StorageConversionFunction); ok {
-		// Only check name for now
 		if fn.name != other.name {
+			// Different name means not-equal
 			return false
+		}
+
+		if len(fn.conversions) != len(other.conversions) {
+			// Different count of conversions means not-equal
+			return false
+		}
+
+		for name := range fn.conversions {
+			if _, found := other.conversions[name]; !found {
+				// Missing conversion means not-equal
+				return false
+			}
 		}
 	}
 
