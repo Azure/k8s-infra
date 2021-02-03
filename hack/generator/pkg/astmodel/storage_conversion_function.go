@@ -357,7 +357,7 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 	var errs []error
 
 	// Flag receiver name as used
-	fn.knownLocals.Add(receiver.name.name)
+	fn.knownLocals.Add(receiver.Name().Name())
 
 	for _, receiverProperty := range receiverObject.Properties() {
 		otherProperty, ok := otherObject.Property(receiverProperty.propertyName)
