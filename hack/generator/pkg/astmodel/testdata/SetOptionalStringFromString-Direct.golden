@@ -9,12 +9,14 @@ type Person struct {
 	name *string `json:"name"`
 }
 
+// ConvertFrom populates our Person from the provided source Person
 func (person Person) ConvertFrom(source *vHub.Person) error {
 
 	// name
 	person.name = &source.name
 }
 
+// ConvertTo populates the provided destination Person from our Person
 func (person Person) ConvertTo(destination *vHub.Person) error {
 
 	// name

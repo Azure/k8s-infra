@@ -12,6 +12,7 @@ type Person struct {
 	age int `json:"age"`
 }
 
+// ConvertFrom populates our Person from the provided source Person
 func (person Person) ConvertFrom(source *vHub.Person) error {
 	// personTemp is our intermediate for conversion
 	var personTemp vNext.Person
@@ -27,6 +28,7 @@ func (person Person) ConvertFrom(source *vHub.Person) error {
 	}
 }
 
+// ConvertTo populates the provided destination Person from our Person
 func (person Person) ConvertTo(destination *vHub.Person) error {
 	// personTemp is our intermediate for conversion
 	var personTemp vNext.Person

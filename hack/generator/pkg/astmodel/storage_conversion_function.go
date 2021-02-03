@@ -155,11 +155,14 @@ func (fn *StorageConversionFunction) Equals(f Function) bool {
 func (fn *StorageConversionFunction) AsFunc(generationContext *CodeGenerationContext, receiver TypeName) *dst.FuncDecl {
 
 	var parameterName string
+	var description string
 	switch fn.conversionDirection {
 	case ConvertFrom:
 		parameterName = "source"
+		description = fmt.Sprintf("populates our %s from the provided source %s", receiver.Name(), fn.hubType.Name().Name())
 	case ConvertTo:
 		parameterName = "destination"
+		description = fmt.Sprintf("populates the provided destination %s from our %s", fn.hubType.Name().Name(), receiver.Name())
 	default:
 		panic(fmt.Sprintf("unexpected conversion direction %q", fn.conversionDirection))
 	}
@@ -185,6 +188,7 @@ func (fn *StorageConversionFunction) AsFunc(generationContext *CodeGenerationCon
 		})
 
 	funcDetails.AddReturns("error")
+	funcDetails.AddComments(description)
 
 	return funcDetails.DefineFunc()
 }

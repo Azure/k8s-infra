@@ -9,9 +9,10 @@ import (
 )
 
 type Person struct {
-	nasty map[string][]map[string]bool `json:"my-oh-my"`
+	nasty map[string][]map[string]bool `json:"nasty"`
 }
 
+// ConvertFrom populates our Person from the provided source Person
 func (person Person) ConvertFrom(source *vHub.Person) error {
 	// personTemp is our intermediate for conversion
 	var personTemp vNext.Person
@@ -38,6 +39,7 @@ func (person Person) ConvertFrom(source *vHub.Person) error {
 	person.nasty = nastiesMap
 }
 
+// ConvertTo populates the provided destination Person from our Person
 func (person Person) ConvertTo(destination *vHub.Person) error {
 	// personTemp is our intermediate for conversion
 	var personTemp vNext.Person
