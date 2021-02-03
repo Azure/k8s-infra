@@ -202,6 +202,7 @@ func (fn *StorageConversionFunction) generateBody(receiver string, parameter str
 	}
 
 	// Intermediate step of conversion, not working directly with the hubType type we've been given
+	// Instead we convert to/from our intermediate type (which is one step closer to the hub type in our conversion graph)
 	switch fn.conversionDirection {
 	case ConvertFrom:
 		return fn.generateIndirectConversionFrom(receiver, parameter, ctx)
@@ -332,7 +333,6 @@ func (fn *StorageConversionFunction) generateAssignments(source dst.Expr, destin
 		conversion := fn.conversions[prop]
 		block := conversion(source, destination, ctx)
 		if len(block) > 0 {
-			//TODO: Tidy
 			firstStatement := block[0]
 			firstStatement.Decorations().Before = dst.EmptyLine
 			firstStatement.Decorations().Start.Append("// " + prop)

@@ -45,9 +45,10 @@ func createPropertyConversion(
 }
 
 // StorageTypeConversion generates the AST for a given conversion.
-// source is an expression to read the original value
-// destination is an expression to write the converted value
-type StorageTypeConversion func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt
+// reader is an expression to read the original value
+// writer is an expression to write the converted value
+// Both of these might be complex expressions, possibly involving indexing into arrays or maps.
+type StorageTypeConversion func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt
 
 // StorageTypeConversionFactory represents factory methods that can be used to create StorageTypeConversions
 // for a specific pair of types
