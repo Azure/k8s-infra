@@ -6,6 +6,7 @@
 package astmodel
 
 import (
+	"fmt"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 	"github.com/dave/dst"
 	"github.com/pkg/errors"
@@ -355,7 +356,7 @@ func zeroValue(p *PrimitiveType) string {
 		return "0"
 	case BoolType:
 		return "false"
+	default:
+		panic(fmt.Sprintf("unexpected primitive type %q", p.String()))
 	}
-
-	return "##DOESNOTCOMPUTE##"
 }
