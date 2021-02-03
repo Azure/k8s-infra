@@ -11,7 +11,8 @@ import (
 	"strings"
 )
 
-// StorageConversionEndpoint represents either a source or a destination field for a storage conversion
+// StorageConversionEndpoint represents either a source or a destination target for a storage conversion
+// In simple cases these will be fields, but can also represent indexed members of slices and maps.
 type StorageConversionEndpoint struct {
 	// theType is the Type of the value accessible via this endpoint
 	theType Type
