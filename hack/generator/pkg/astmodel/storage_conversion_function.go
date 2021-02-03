@@ -22,20 +22,23 @@ type StoragePropertyConversion func(
 
 // StorageConversionFunction represents a function that performs conversions for storage versions
 type StorageConversionFunction struct {
-	// Name of this conversion function
+	// name of this conversion function
 	name string
-	// Name of the ultimate hub type to which we are converting, passed as a parameter to our function
+	// hubType is the ultimate hub type to which (or from which) we are converting, passed as a
+	// parameter to our function
 	hubType TypeDefinition
-	// Intermediate type of this conversion step
-	// nil if we are converting to/from the hub type directly, otherwise we
+	// intermediateType optionaly identifies a type which is "closer" to the hubType through which
+	// we can achieve our conversion. Will be nil if we are converting to/from the hub type
+	// directly, otherwise we use this as an intermediate form.
 	intermediateType *TypeDefinition
-	// Map of all property conversions we are going to use, keyed by name of the receiver property
+	// conversions is a map of all property conversions we are going to use, keyed by name of the
+	// receiver property
 	conversions map[string]StoragePropertyConversion
-	// Reference to our identifier factory
+	// idFactory is a reference to an identifier factory used for creating Go identifiers
 	idFactory IdentifierFactory
-	// Which conversionType of conversion are we generating?
+	// conversionDirection indicates the kind of conversion we are generating
 	conversionDirection StorageConversionDirection
-	// A cached set of local identifiers that have already been used, to avoid conflicts
+	// knownLocals is a cached set of local identifiers that have already been used, to avoid conflicts
 	knownLocals *KnownLocalsSet
 }
 

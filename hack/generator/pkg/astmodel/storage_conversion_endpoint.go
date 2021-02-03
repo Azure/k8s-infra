@@ -32,13 +32,12 @@ func NewStorageConversionEndpoint(
 	}
 }
 
-// Expr returns a clone of the expression for this endpoint
-// (returning a clone avoids issues with reuse of fragments within the dst)
+// Type returns the type of this endpoint
 func (endpoint *StorageConversionEndpoint) Type() Type {
 	return endpoint.theType
 }
 
-// Create an identifier for a local variable that represents a single item
+// CreateSingularLocal creates an identifier for a local variable that represents a single item
 // Each call will return a unique identifier
 func (endpoint *StorageConversionEndpoint) CreateSingularLocal() string {
 	singular := flect.Singularize(endpoint.name)
@@ -65,6 +64,8 @@ type KnownLocalsSet struct {
 	idFactory IdentifierFactory
 }
 
+// NewKnownLocalsSet returns a new empty set of locals
+// idFactory is a reference to an identifier factory for creating valid Go identifiers
 func NewKnownLocalsSet(idFactory IdentifierFactory) *KnownLocalsSet {
 	return &KnownLocalsSet{
 		names:     make(map[string]struct{}),
@@ -72,7 +73,7 @@ func NewKnownLocalsSet(idFactory IdentifierFactory) *KnownLocalsSet {
 	}
 }
 
-// createLocal creates a new unique local with the specified suffix
+// createLocal creates a new unique Go local variable with the specified suffix
 // Has to be deterministic, so we use an incrementing number to make them unique
 func (locals KnownLocalsSet) createLocal(nameHint string) string {
 	baseName := locals.idFactory.CreateIdentifier(nameHint, NotExported)
