@@ -418,7 +418,7 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 }
 
 // createPropertyConversion tries to create a property conversion between the two provided properties, using all of the
-// available conversion functions in priority order to do so.
+// available conversion functions in priority order to do so. If no valid conversion could be created an error is returned.
 func (fn *StorageConversionFunction) createPropertyConversion(
 	sourceProperty *PropertyDefinition,
 	destinationProperty *PropertyDefinition) (StoragePropertyConversion, error) {

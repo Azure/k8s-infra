@@ -51,7 +51,7 @@ func createTypeConversion(
 	}
 
 	err := errors.Errorf(
-		"no conversion found to assign %s from %s",
+		"no conversion found to assign %q from %q",
 		destinationEndpoint.name,
 		sourceEndpoint.name)
 
@@ -275,7 +275,7 @@ func assignMapFromMap(
 	conversion, _ := createTypeConversion(srcEp, dstEp)
 
 	if conversion == nil {
-		// No conversion between the elements of the map
+		// No conversion between the elements of the map, so we can't do the conversion
 		return nil
 	}
 
