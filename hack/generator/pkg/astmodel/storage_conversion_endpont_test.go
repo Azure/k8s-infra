@@ -13,7 +13,8 @@ import (
 func TestKnownLocalsSetCreateLocal(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	knownLocals := make(KnownLocalsSet)
+	idFactory := NewIdentifierFactory()
+	knownLocals := NewKnownLocalsSet(idFactory)
 
 	g.Expect(knownLocals.createLocal("person")).To(Equal("person"))
 	g.Expect(knownLocals.createLocal("person")).To(Equal("person1"))
