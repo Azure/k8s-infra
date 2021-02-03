@@ -15,15 +15,14 @@ import (
 
 // createPropertyConversion tries to create a property conversion between the two provided properties, using all of the
 // available conversion functions in priority order to do so.
-func createPropertyConversion(
+func (fn StorageConversionFunction) createPropertyConversion(
 	sourceProperty *PropertyDefinition,
-	destinationProperty *PropertyDefinition,
-	knownLocals map[string]struct{}) (StoragePropertyConversion, error) {
+	destinationProperty *PropertyDefinition) (StoragePropertyConversion, error) {
 
 	sourceEndpoint := NewStorageConversionEndpoint(
-		sourceProperty.propertyType, string(sourceProperty.propertyName), knownLocals)
+		sourceProperty.propertyType, string(sourceProperty.propertyName), fn.knownLocals)
 	destinationEndpoint := NewStorageConversionEndpoint(
-		destinationProperty.propertyType, string(destinationProperty.propertyName), knownLocals)
+		destinationProperty.propertyType, string(destinationProperty.propertyName), fn.knownLocals)
 
 	conversion, err := createTypeConversion(sourceEndpoint, destinationEndpoint)
 

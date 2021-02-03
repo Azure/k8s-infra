@@ -392,10 +392,10 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 			var err error
 			switch fn.conversionDirection {
 			case ConvertFrom:
-				conv, err = createPropertyConversion(otherProperty, receiverProperty, fn.knownLocals)
+				conv, err = fn.createPropertyConversion(otherProperty, receiverProperty)
 				break
 			case ConvertTo:
-				conv, err = createPropertyConversion(receiverProperty, otherProperty, fn.knownLocals)
+				conv, err = fn.createPropertyConversion(receiverProperty, otherProperty)
 				break
 			default:
 				panic(fmt.Sprintf("unexpected conversion direction %q", fn.conversionDirection))
