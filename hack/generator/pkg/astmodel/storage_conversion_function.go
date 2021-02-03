@@ -36,7 +36,7 @@ type StorageConversionFunction struct {
 	// Which conversionType of conversion are we generating?
 	conversionDirection StorageConversionDirection
 	// A cached set of local identifiers that have already been used, to avoid conflicts
-	knownLocals KnownLocalsSet
+	knownLocals *KnownLocalsSet
 }
 
 // StorageConversionDirection specifies the direction of conversion we're implementing with this function
@@ -66,7 +66,7 @@ func NewStorageConversionFromFunction(
 		idFactory:           idFactory,
 		conversionDirection: ConvertFrom,
 		conversions:         make(map[string]StoragePropertyConversion),
-		knownLocals:         make(KnownLocalsSet),
+		knownLocals:         NewKnownLocalsSet(idFactory),
 	}
 
 	err := result.createConversions(receiver)
@@ -87,7 +87,7 @@ func NewStorageConversionToFunction(
 		idFactory:           idFactory,
 		conversionDirection: ConvertTo,
 		conversions:         make(map[string]StoragePropertyConversion),
-		knownLocals:         make(map[string]struct{}),
+		knownLocals:         NewKnownLocalsSet(idFactory),
 	}
 
 	err := result.createConversions(receiver)

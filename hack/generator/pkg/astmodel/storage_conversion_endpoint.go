@@ -9,10 +9,7 @@ import (
 	"github.com/gobuffalo/flect"
 	"strconv"
 	"strings"
-	"unicode"
 )
-
-type KnownLocalsSet map[string]struct{}
 
 // StorageConversionEndpoint represents either a source or a destination field for a storage conversion
 type StorageConversionEndpoint struct {
@@ -21,10 +18,13 @@ type StorageConversionEndpoint struct {
 	// name is the name of the underlying property, used to generate useful local identifiers
 	name string
 	// knownLocals is a shared map of locals that have already been created within a given function, to prevent duplicates
-	knownLocals KnownLocalsSet
+	knownLocals *KnownLocalsSet
 }
 
-func NewStorageConversionEndpoint(theType Type, name string, knownLocals KnownLocalsSet) *StorageConversionEndpoint {
+func NewStorageConversionEndpoint(
+	theType Type,
+	name string,
+	knownLocals *KnownLocalsSet) *StorageConversionEndpoint {
 	return &StorageConversionEndpoint{
 		theType:     theType,
 		name:        strings.ToLower(name),
@@ -60,14 +60,26 @@ func (endpoint *StorageConversionEndpoint) WithType(theType Type) *StorageConver
 		endpoint.knownLocals)
 }
 
+type KnownLocalsSet struct {
+	names     map[string]struct{}
+	idFactory IdentifierFactory
+}
+
+func NewKnownLocalsSet(idFactory IdentifierFactory) *KnownLocalsSet {
+	return &KnownLocalsSet{
+		names:     make(map[string]struct{}),
+		idFactory: idFactory,
+	}
+}
+
 // createLocal creates a new unique local with the specified suffix
 // Has to be deterministic, so we use an incrementing number to make them unique
 func (locals KnownLocalsSet) createLocal(nameHint string) string {
-	baseName := locals.toPrivate(nameHint)
+	baseName := locals.idFactory.CreateIdentifier(nameHint, NotExported)
 	id := baseName
 	index := 0
 	for {
-		_, found := locals[id]
+		_, found := locals.names[id]
 		if !found {
 			break
 		}
@@ -76,21 +88,13 @@ func (locals KnownLocalsSet) createLocal(nameHint string) string {
 		id = baseName + strconv.Itoa(index)
 	}
 
-	locals[id] = struct{}{}
+	locals.names[id] = struct{}{}
 
 	return id
 }
 
 // Add allows identifiers that have already been used to be registered, avoiding duplicates
 func (locals KnownLocalsSet) Add(local string) {
-	name := locals.toPrivate(local)
-	locals[name] = struct{}{}
-}
-
-// toPrivate converts a Go identifier into a private form
-func (locals KnownLocalsSet) toPrivate(s string) string {
-	// Just lowercase the first character
-	r := []rune(s)
-	r[0] = unicode.ToLower(r[0])
-	return string(r)
+	name := locals.idFactory.CreateIdentifier(local, NotExported)
+	locals.names[name] = struct{}{}
 }
