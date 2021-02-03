@@ -13,7 +13,7 @@ import (
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
 
-var RuntimeV1Alpha1PackageReference = astmodel.MakeExternalPackageReference("github.com/crossplane/crossplane-runtime/apis/core/v1alpha1")
+var CrossplaneRuntimeV1Alpha1Package = astmodel.MakeExternalPackageReference("github.com/crossplane/crossplane-runtime/apis/core/v1alpha1")
 
 // addCrossplaneEmbeddedResourceSpec puts an embedded runtimev1alpha1.ResourceSpec on every spec type
 func addCrossplaneEmbeddedResourceSpec(idFactory astmodel.IdentifierFactory) PipelineStage {
@@ -23,7 +23,7 @@ func addCrossplaneEmbeddedResourceSpec(idFactory astmodel.IdentifierFactory) Pip
 		"Puts an embedded runtimev1alpha1.ResourceSpec on every spec type",
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 			specTypeName := astmodel.MakeTypeName(
-				RuntimeV1Alpha1PackageReference,
+				CrossplaneRuntimeV1Alpha1Package,
 				idFactory.CreateIdentifier("ResourceSpec", astmodel.Exported))
 			embeddedSpec := astmodel.NewPropertyDefinition("", ",inline", specTypeName)
 
@@ -32,8 +32,7 @@ func addCrossplaneEmbeddedResourceSpec(idFactory astmodel.IdentifierFactory) Pip
 
 				if resource, ok := typeDef.Type().(*astmodel.ResourceType); ok {
 
-					// TODO: This function should be shared in some common place?
-					specDef, err := getResourceSpecDefinition(types, resource)
+					specDef, err := types.ResolveResourceSpecDefinition(resource)
 					if err != nil {
 						return nil, errors.Wrapf(err, "getting resource spec definition")
 					}
@@ -69,29 +68,27 @@ func addCrossplaneEmbeddedResourceStatus(idFactory astmodel.IdentifierFactory) P
 		"addCrossplaneEmbeddedResourceStatus",
 		"Puts an embedded runtimev1alpha1.ResourceStatus on every status type",
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
-			specTypeName := astmodel.MakeTypeName(
-				RuntimeV1Alpha1PackageReference,
+			statusTypeName := astmodel.MakeTypeName(
+				CrossplaneRuntimeV1Alpha1Package,
 				idFactory.CreateIdentifier("ResourceStatus", astmodel.Exported))
-			embeddedSpec := astmodel.NewPropertyDefinition("", ",inline", specTypeName)
+			embeddedStatus := astmodel.NewPropertyDefinition("", ",inline", statusTypeName)
 
 			result := make(astmodel.Types)
 			for _, typeDef := range types {
-
 				if resource, ok := typeDef.Type().(*astmodel.ResourceType); ok {
 
 					if astmodel.IgnoringErrors(resource.StatusType()) == nil {
 						continue
 					}
 
-					// TODO: This function should be shared in some common place?
-					statusDef, err := getResourceStatusDefinition(types, resource)
+					statusDef, err := types.ResolveResourceStatusDefinition(resource)
 					if err != nil {
 						return nil, errors.Wrapf(err, "getting resource status definition")
 					}
 
 					// The assumption here is that specs are all Objects
 					updatedDef, err := statusDef.ApplyObjectTransformation(func(o *astmodel.ObjectType) (astmodel.Type, error) {
-						return o.WithEmbeddedProperty(embeddedSpec)
+						return o.WithEmbeddedProperty(embeddedStatus)
 					})
 					if err != nil {
 						return nil, errors.Wrapf(err, "adding embedded crossplane status")
@@ -110,22 +107,4 @@ func addCrossplaneEmbeddedResourceStatus(idFactory astmodel.IdentifierFactory) P
 
 			return result, nil
 		})
-}
-
-func getResourceStatusDefinition(
-	definitions astmodel.Types,
-	resourceType *astmodel.ResourceType) (astmodel.TypeDefinition, error) {
-
-	statusName, ok := resourceType.StatusType().(astmodel.TypeName)
-	if !ok {
-		return astmodel.TypeDefinition{}, errors.Errorf("status was not of type TypeName, instead: %T", resourceType.SpecType())
-	}
-
-	resourceStatusDef, ok := definitions[statusName]
-	if !ok {
-		return astmodel.TypeDefinition{}, errors.Errorf("couldn't find status %v", statusName)
-	}
-
-	// preserve outer spec name
-	return resourceStatusDef.WithName(statusName), nil
 }

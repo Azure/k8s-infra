@@ -22,15 +22,16 @@ func addCrossplaneOwnerProperties(idFactory astmodel.IdentifierFactory) Pipeline
 		"Adds the 3-tuple of (xName, xNameRef, xNameSelector) for each owning resource",
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 			referenceTypeName := astmodel.MakeTypeName(
-				RuntimeV1Alpha1PackageReference,
+				CrossplaneRuntimeV1Alpha1Package,
 				idFactory.CreateIdentifier("Reference", astmodel.Exported))
 			selectorTypeName := astmodel.MakeTypeName(
-				RuntimeV1Alpha1PackageReference,
+				CrossplaneRuntimeV1Alpha1Package,
 				idFactory.CreateIdentifier("Selector", astmodel.Exported))
 
 			result := make(astmodel.Types)
 			for _, typeDef := range types {
 
+				// TODO: Do we need to rewrite this to deal with wrapping?
 				if resource, ok := typeDef.Type().(*astmodel.ResourceType); ok {
 
 					owners, err := lookupOwners(types, typeDef)
@@ -46,8 +47,7 @@ func addCrossplaneOwnerProperties(idFactory astmodel.IdentifierFactory) Pipeline
 						continue
 					}
 
-					// TODO: This function should be shared in some common place?
-					specDef, err := getResourceSpecDefinition(types, resource)
+					specDef, err := types.ResolveResourceSpecDefinition(resource)
 					if err != nil {
 						return nil, errors.Wrapf(err, "getting resource spec definition")
 					}
@@ -85,6 +85,7 @@ func addCrossplaneOwnerProperties(idFactory astmodel.IdentifierFactory) Pipeline
 				}
 			}
 
+			// Second pass that adds anything that we haven't already added
 			for _, typeDef := range types {
 				if !result.Contains(typeDef.Name()) {
 					result.Add(typeDef)
