@@ -144,6 +144,8 @@ func (fn *StorageConversionFunction) Equals(f Function) bool {
 				return false
 			}
 		}
+
+		return true
 	}
 
 	return false
