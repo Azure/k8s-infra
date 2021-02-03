@@ -147,11 +147,16 @@ func (fn *StorageConversionFunction) Equals(f Function) bool {
 // AsFunc renders this function as an AST for serialization to a Go source file
 func (fn *StorageConversionFunction) AsFunc(ctx *CodeGenerationContext, receiver TypeName) *dst.FuncDecl {
 
-	parameterName := "other" // safe default
-	if fn.conversionDirection == ConvertTo {
-		parameterName = "destination"
-	} else if fn.conversionDirection == ConvertFrom {
+	var parameterName string
+	switch fn.conversionDirection {
+	case ConvertFrom:
 		parameterName = "source"
+		break
+	case ConvertTo:
+		parameterName = "destination"
+		break
+	default:
+		panic(fmt.Sprintf("unexpected conversion direction %q", fn.conversionDirection))
 	}
 
 	receiverName := fn.idFactory.CreateIdentifier(receiver.Name(), NotExported)
@@ -184,23 +189,26 @@ func (fn *StorageConversionFunction) AsFunc(ctx *CodeGenerationContext, receiver
 // parameter is an expression for access to our parameter passed to the function, also used for field access
 // ctx is our code generation context, passed to allow resolving of identifiers in other packages
 func (fn *StorageConversionFunction) generateBody(receiver string, parameter string, ctx *CodeGenerationContext) []dst.Stmt {
-
-	if fn.parameter.Equals(fn.staging.name) {
-		// Last step of conversion, directly to the parameter type we've been given
-		if fn.conversionDirection == ConvertFrom {
+	if fn.intermediateType == nil {
+		// Last step of conversion, directly working with the hubType type we've been given
+		switch fn.conversionDirection {
+		case ConvertFrom:
 			return fn.generateDirectConversionFrom(receiver, parameter, ctx)
-		} else {
-			// fn.conversionType == ConvertTo
+		case ConvertTo:
 			return fn.generateDirectConversionTo(receiver, parameter, ctx)
+		default:
+			panic(fmt.Sprintf("unexpected conversion direction %q", fn.conversionDirection))
 		}
 	}
 
-	// Intermediate step of conversion, not working directly with the parameter type we've been given
-	if fn.conversionDirection == ConvertFrom {
+	// Intermediate step of conversion, not working directly with the hubType type we've been given
+	switch fn.conversionDirection {
+	case ConvertFrom:
 		return fn.generateIndirectConversionFrom(receiver, parameter, ctx)
-	} else {
-		// fn.conversionType == ConvertTo
+	case ConvertTo:
 		return fn.generateIndirectConversionTo(receiver, parameter, ctx)
+	default:
+		panic(fmt.Sprintf("unexpected conversion direction %q", fn.conversionDirection))
 	}
 }
 
@@ -234,12 +242,13 @@ func (fn *StorageConversionFunction) generateIndirectConversionFrom(receiver str
 
 	local := fn.knownLocals.createLocal(receiver + "Temp")
 
-	parameterPackage := ctx.MustGetImportedPackageName(fn.staging.name.PackageReference)
+	intermediateName := fn.intermediateType.Name()
+	parameterPackage := ctx.MustGetImportedPackageName(intermediateName.PackageReference)
 	localDeclaration := astbuilder.LocalVariableDeclaration(
 		local,
 		&dst.SelectorExpr{
 			X:   dst.NewIdent(parameterPackage),
-			Sel: dst.NewIdent(fn.staging.name.name),
+			Sel: dst.NewIdent(intermediateName.Name()),
 		},
 		fmt.Sprintf("// %s is our intermediate for conversion", local))
 	localDeclaration.Decorations().Before = dst.NewLine
@@ -274,12 +283,13 @@ func (fn *StorageConversionFunction) generateIndirectConversionTo(receiver strin
 
 	local := fn.knownLocals.createLocal(receiver + "Temp")
 
-	parameterPackage := ctx.MustGetImportedPackageName(fn.staging.name.PackageReference)
+	intermediateName := fn.intermediateType.Name()
+	parameterPackage := ctx.MustGetImportedPackageName(intermediateName.PackageReference)
 	localDeclaration := astbuilder.LocalVariableDeclaration(
 		local,
 		&dst.SelectorExpr{
 			X:   dst.NewIdent(parameterPackage),
-			Sel: dst.NewIdent(fn.staging.name.name),
+			Sel: dst.NewIdent(intermediateName.Name()),
 		},
 		fmt.Sprintf("// %s is our intermediate for conversion", local))
 	localDeclaration.Decorations().Before = dst.NewLine
@@ -355,20 +365,23 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 		if ok {
 			var conv StoragePropertyConversion
 			var err error
-			if fn.conversionDirection == ConvertFrom {
+			switch fn.conversionDirection {
+			case ConvertFrom:
 				conv, err = createPropertyConversion(otherProperty, receiverProperty, fn.knownLocals)
-			} else {
+				break
+			case ConvertTo:
 				conv, err = createPropertyConversion(receiverProperty, otherProperty, fn.knownLocals)
-			}
-
-			if conv != nil {
-				// A conversion was created, keep it for later
-				fn.conversions[string(receiverProperty.propertyName)] = conv
+				break
+			default:
+				panic(fmt.Sprintf("unexpected conversion direction %q", fn.conversionDirection))
 			}
 
 			if err != nil {
 				// An error was returned; this can happen even if a conversion was created as well.
 				errs = append(errs, err)
+			} else if conv != nil {
+				// A conversion was created, keep it for later
+				fn.conversions[string(receiverProperty.propertyName)] = conv
 			}
 		}
 	}
