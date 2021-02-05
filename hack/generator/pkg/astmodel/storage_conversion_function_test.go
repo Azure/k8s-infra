@@ -23,6 +23,18 @@ type StorageConversionPropertyTestCase struct {
 }
 
 func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTestCase {
+
+	vCurrent := makeTestLocalPackageReference("Verification", "vCurrent")
+	vNext := makeTestLocalPackageReference("Verification", "vNext")
+	vHub := makeTestLocalPackageReference("Verification", "vHub")
+
+	alpha := EnumValue{Identifier: "Alpha", Value: "alpha"}
+	beta := EnumValue{Identifier: "Beta", Value: "beta"}
+
+	enumType := NewEnumType(StringType, alpha, beta)
+	currentEnum := MakeTypeDefinition(MakeTypeName(vCurrent, "Release"), enumType)
+	nextEnum := MakeTypeDefinition(MakeTypeName(vNext, "Release"), enumType)
+
 	requiredStringProperty := NewPropertyDefinition("name", "name", StringType)
 	optionalStringProperty := NewPropertyDefinition("name", "name", NewOptionalType(StringType))
 	requiredIntProperty := NewPropertyDefinition("age", "age", IntType)
@@ -34,6 +46,11 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 	mapOfRequiredIntsProperty := NewPropertyDefinition("ratings", "ratings", NewMapType(StringType, IntType))
 	mapOfOptionalIntsProperty := NewPropertyDefinition("ratings", "ratings", NewMapType(StringType, NewOptionalType(IntType)))
 
+	requiredCurrentEnumProperty := NewPropertyDefinition("release", "release", currentEnum.name)
+	requiredNextEnumProperty := NewPropertyDefinition("release", "release", nextEnum.name)
+	optionalCurrentEnumProperty := NewPropertyDefinition("release", "release", NewOptionalType(currentEnum.name))
+	optionalNextEnumProperty := NewPropertyDefinition("release", "release", NewOptionalType(nextEnum.name))
+
 	nastyProperty := NewPropertyDefinition(
 		"nasty",
 		"nasty",
@@ -41,10 +58,6 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 			StringType,
 			NewArrayType(
 				NewMapType(StringType, BoolType))))
-
-	vCurrent := makeTestLocalPackageReference("Verification", "vCurrent")
-	vNext := makeTestLocalPackageReference("Verification", "vNext")
-	vHub := makeTestLocalPackageReference("Verification", "vHub")
 
 	testDirect := func(
 		name string,
@@ -129,6 +142,11 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 
 		testDirect("NastyTest", nastyProperty, nastyProperty),
 		testIndirect("NastyTest", nastyProperty, nastyProperty),
+
+		testDirect("SetRequiredEnumFromRequiredEnum", requiredCurrentEnumProperty, requiredNextEnumProperty, currentEnum, nextEnum),
+		testDirect("SetRequiredEnumFromOptionalEnum", requiredCurrentEnumProperty, optionalNextEnumProperty, currentEnum, nextEnum),
+		testDirect("SetOptionalEnumFromRequiredEnum", optionalCurrentEnumProperty, requiredNextEnumProperty, currentEnum, nextEnum),
+		testDirect("SetOptionalEnumFromOptionalEnum", optionalCurrentEnumProperty, optionalNextEnumProperty, currentEnum, nextEnum),
 	}
 }
 
