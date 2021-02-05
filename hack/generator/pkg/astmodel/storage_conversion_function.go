@@ -80,7 +80,11 @@ func NewStorageConversionFromFunction(
 	}
 
 	err := result.createConversions(receiver)
-	return result, err
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create '%s()'", result.name)
+	}
+
+	return result, nil
 }
 
 // NewStorageConversionToFunction creates a new StorageConversionFunction to convert to the specified destination
@@ -103,7 +107,11 @@ func NewStorageConversionToFunction(
 	}
 
 	err := result.createConversions(receiver)
-	return result, err
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create '%s()'", result.name)
+	}
+
+	return result, nil
 }
 
 // Name returns the name of this function
