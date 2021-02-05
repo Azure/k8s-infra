@@ -41,6 +41,10 @@ func init() {
 		assignOptionalPrimitiveTypeFromOptionalPrimitiveType,
 		assignArrayFromArray,
 		assignMapFromMap,
+		assignEnumTypeFromEnumType,
+		assignEnumTypeFromOptionalEnumType,
+		assignOptionalEnumTypeFromEnumType,
+		assignOptionalEnumTypeFromOptionalEnumType,
 	}
 }
 
@@ -403,6 +407,234 @@ func assignMapFromMap(
 			declaration,
 			loop,
 			assign,
+		}
+	}
+}
+
+// assignEnumTypeFromEnumType will generate a direct assignment if both types have the same
+// underlying primitive type and neither source nor destination is optional
+//
+// <destination> = <enum>(<source>)
+//
+func assignEnumTypeFromEnumType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion {
+
+	if _, srcOpt := AsOptionalType(sourceEndpoint.Type()); srcOpt {
+		// Source is optional, which we handle elsewhere
+		return nil
+	}
+
+	if _, dstOpt := AsOptionalType(destinationEndpoint.Type()); dstOpt {
+		// Destination is optional, which we handle elsewhere
+		return nil
+	}
+
+	srcName, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
+	if !srcIsEnum {
+		// Source is not an enum
+		return nil
+	}
+
+	_, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
+	if !dstIsEnum {
+		return nil
+	}
+
+	if !srcEnum.baseType.Equals(dstEnum.baseType) {
+		// Not the same underlying primitive type
+		return nil
+	}
+
+	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+		return []dst.Stmt{
+			astbuilder.SimpleAssignment(writer, token.ASSIGN, astbuilder.CallFunc(srcName.name, reader)),
+		}
+	}
+}
+
+// assignEnumTypeFromOptionalEnumType will generate a direct assignment if both types have the same
+// underlying primitive type and only the source is optional
+//
+// if <source> != nil {
+//    <destination> = <enum>(*<source>)
+// } else {
+//    <destination> = <zero>
+// }
+//
+func assignEnumTypeFromOptionalEnumType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion {
+
+	if _, srcOpt := AsOptionalType(sourceEndpoint.Type()); !srcOpt {
+		// Source is not optional
+		return nil
+	}
+
+	if _, dstOpt := AsOptionalType(destinationEndpoint.Type()); dstOpt {
+		// Destination is optional
+		return nil
+	}
+
+	srcName, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
+	if !srcIsEnum {
+		// Source is not an enum
+		return nil
+	}
+
+	_, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
+	if !dstIsEnum {
+		return nil
+	}
+
+	if !srcEnum.baseType.Equals(dstEnum.baseType) {
+		// Not the same underlying primitive type
+		return nil
+	}
+
+	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+		// Need to check for null and only assign if we have a value
+		cond := astbuilder.NotEqual(reader, dst.NewIdent("nil"))
+
+		assignValue := astbuilder.SimpleAssignment(
+			writer,
+			token.ASSIGN,
+			astbuilder.CallFunc(srcName.name, astbuilder.Dereference(reader)))
+
+		assignZero := astbuilder.SimpleAssignment(
+			writer,
+			token.ASSIGN,
+			astbuilder.CallFunc(srcName.name,
+				&dst.BasicLit{
+					Value: zeroValue(srcEnum.baseType),
+				}))
+
+		stmt := &dst.IfStmt{
+			Cond: cond,
+			Body: &dst.BlockStmt{
+				List: []dst.Stmt{
+					assignValue,
+				},
+			},
+			Else: &dst.BlockStmt{
+				List: []dst.Stmt{
+					assignZero,
+				},
+			},
+		}
+
+		return []dst.Stmt{stmt}
+	}
+}
+
+// assignOptionalEnumTypeFromEnumType will generate a direct assignment if both types have the same
+// underlying primitive type and only the destination is optional
+//
+// <destination> = <enum>(<source>)
+//
+func assignOptionalEnumTypeFromEnumType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion {
+
+	if _, srcOpt := AsOptionalType(sourceEndpoint.Type()); srcOpt {
+		// Source is optional
+		return nil
+	}
+
+	_, dstOpt := AsOptionalType(destinationEndpoint.Type())
+	if !dstOpt {
+		// Destination is not optional
+		return nil
+	}
+
+	srcName, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
+	if !srcIsEnum {
+		// Source is not an enum
+		return nil
+	}
+
+	_, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
+	if !dstIsEnum {
+		return nil
+	}
+
+	if !srcEnum.baseType.Equals(dstEnum.baseType) {
+		// Not the same underlying primitive type
+		return nil
+	}
+
+	local := destinationEndpoint.CreateSingularLocal()
+
+	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+		return []dst.Stmt{
+			astbuilder.SimpleAssignment(
+				dst.NewIdent(local),
+				token.DEFINE,
+				astbuilder.CallFunc(srcName.name, reader)),
+
+			astbuilder.SimpleAssignment(
+				writer,
+				token.ASSIGN,
+				astbuilder.AddrOf(dst.NewIdent(local))),
+		}
+	}
+}
+
+// assignOptionalEnumTypeFromOptionalEnumType will generate a direct assignment if both types have
+// the same underlying primitive type and are both optional
+//
+// <local> = <enum>(&<source>)
+// <destination> = &<local>
+//
+func assignOptionalEnumTypeFromOptionalEnumType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion {
+
+	if _, srcOpt := AsOptionalType(sourceEndpoint.Type()); !srcOpt {
+		// Source is not optional
+		return nil
+	}
+
+	if _, dstOpt := AsOptionalType(destinationEndpoint.Type()); !dstOpt {
+		// Destination is not optional
+		return nil
+	}
+
+	srcName, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
+	if !srcIsEnum {
+		// Source is not an enum
+		return nil
+	}
+
+	_, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
+	if !dstIsEnum {
+		// Destination is not an enum
+		return nil
+	}
+
+	if !srcEnum.baseType.Equals(dstEnum.baseType) {
+		// Not the same underlying primitive type
+		return nil
+	}
+
+	local := destinationEndpoint.CreateSingularLocal()
+
+	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+		return []dst.Stmt{
+			astbuilder.SimpleAssignment(
+				dst.NewIdent(local),
+				token.DEFINE,
+				astbuilder.CallFunc(srcName.name,
+					astbuilder.Dereference(reader))),
+
+			astbuilder.SimpleAssignment(
+				writer,
+				token.ASSIGN,
+				astbuilder.AddrOf(dst.NewIdent(local))),
 		}
 	}
 }
