@@ -18,3 +18,27 @@ func NewStorageConversionContext(types Types) *StorageConversionContext {
 		types: types,
 	}
 }
+
+// ResolveEnum takes a Type and resolves it into the name and definition of an enumeration,
+// returning true if found or false if not.
+func (c *StorageConversionContext) ResolveEnum(t Type) (TypeName, *EnumType, bool) {
+	name, ok := AsTypeName(t)
+	if !ok {
+		// Source is not identified by name
+		return TypeName{}, nil, false
+	}
+
+	aType, err := c.types.FullyResolve(name)
+	if err != nil {
+		// Can't resolve source
+		return TypeName{}, nil, false
+	}
+
+	enumType, srcIsEnum := AsEnumType(aType)
+	if !srcIsEnum {
+		// Source is not an enum
+		return TypeName{}, nil, false
+	}
+
+	return name, enumType, true
+}
