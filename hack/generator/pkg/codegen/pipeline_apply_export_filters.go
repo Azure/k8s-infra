@@ -30,9 +30,11 @@ func filterTypes(
 
 	newDefinitions := make(astmodel.Types)
 
+	filterer := configuration.BuildExportFilterer(definitions)
+
 	for _, def := range definitions {
 		defName := def.Name()
-		shouldExport, reason := configuration.ShouldExport(defName)
+		shouldExport, reason := filterer(defName)
 
 		switch shouldExport {
 		case config.Skip:
@@ -46,6 +48,8 @@ func filterTypes(
 			}
 
 			newDefinitions[def.Name()] = def
+		default:
+			panic("unhandled shouldExport case")
 		}
 	}
 
