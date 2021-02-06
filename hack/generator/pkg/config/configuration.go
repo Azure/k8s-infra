@@ -234,7 +234,7 @@ func buildExportFilterFunc(f *ExportFilter, allTypes astmodel.Types) ExportFilte
 		applicableTypes := make(astmodel.TypeNameSet)
 		for tn := range allTypes {
 			if f.AppliesToType(tn) {
-				getAllReferencedTypes(allTypes, tn, applicableTypes)
+				collectAllReferencedTypes(allTypes, tn, applicableTypes)
 			}
 		}
 
@@ -251,11 +251,11 @@ func buildExportFilterFunc(f *ExportFilter, allTypes astmodel.Types) ExportFilte
 	}
 }
 
-func getAllReferencedTypes(allTypes astmodel.Types, root astmodel.TypeName, output astmodel.TypeNameSet) {
+func collectAllReferencedTypes(allTypes astmodel.Types, root astmodel.TypeName, output astmodel.TypeNameSet) {
 	output.Add(root)
 	for referenced := range allTypes[root].Type().References() {
 		if !output.Contains(referenced) {
-			getAllReferencedTypes(allTypes, referenced, output)
+			collectAllReferencedTypes(allTypes, referenced, output)
 		}
 	}
 }
