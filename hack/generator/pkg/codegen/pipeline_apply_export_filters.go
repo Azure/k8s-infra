@@ -7,6 +7,7 @@ package codegen
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/config"
@@ -49,7 +50,7 @@ func filterTypes(
 
 			newDefinitions[def.Name()] = def
 		default:
-			panic("unhandled shouldExport case")
+			panic(fmt.Sprintf("unhandled shouldExport case %q", shouldExport))
 		}
 	}
 
