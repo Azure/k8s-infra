@@ -62,6 +62,8 @@ func SetUnion(s1, s2 TypeNameSet) TypeNameSet {
 	return make(TypeNameSet).AddAll(s1).AddAll(s2)
 }
 
+// AddAll adds all the names from the other set to this set,
+// and returns the updated set as well.
 func (ts TypeNameSet) AddAll(other TypeNameSet) TypeNameSet {
 	if ts == nil {
 		ts = make(TypeNameSet)
