@@ -129,7 +129,8 @@ func RunTestStorageConversionFunction_AsFunc(c StorageConversionPropertyTestCase
 	fileDef := NewFileDefinition(vCurrent, defs, packages)
 
 	buf := &bytes.Buffer{}
-	err := fileDef.SaveToWriter(buf)
+	fileWriter := NewGoSourceFileWriter(fileDef)
+	err := fileWriter.SaveToWriter(buf)
 	if err != nil {
 		t.Fatalf("could not generate file: %v", err)
 	}
