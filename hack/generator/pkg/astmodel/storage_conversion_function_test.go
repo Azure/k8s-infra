@@ -17,8 +17,8 @@ import (
 type StorageConversionPropertyTestCase struct {
 	name          string
 	currentObject TypeDefinition
-	nextObject    TypeDefinition
-	hubObject     *TypeDefinition
+	nextObject    *TypeDefinition
+	hubObject     TypeDefinition
 	types         Types
 }
 
@@ -62,7 +62,7 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 	testDirect := func(
 		name string,
 		currentProperty *PropertyDefinition,
-		nextProperty *PropertyDefinition,
+		hubProperty *PropertyDefinition,
 		otherDefinitions ...TypeDefinition) *StorageConversionPropertyTestCase {
 
 		currentType := NewObjectType().WithProperty(currentProperty)
@@ -70,20 +70,20 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 			MakeTypeName(vCurrent, "Person"),
 			currentType)
 
-		nextType := NewObjectType().WithProperty(nextProperty)
-		nextDefinition := MakeTypeDefinition(
-			MakeTypeName(vNext, "Person"),
-			nextType)
+		hubType := NewObjectType().WithProperty(hubProperty)
+		hubDefinition := MakeTypeDefinition(
+			MakeTypeName(vHub, "Person"),
+			hubType)
 
 		types := make(Types)
 		types.Add(currentDefinition)
-		types.Add(nextDefinition)
+		types.Add(hubDefinition)
 		types.AddAll(otherDefinitions)
 
 		return &StorageConversionPropertyTestCase{
 			name:          name + "-Direct",
 			currentObject: currentDefinition,
-			nextObject:    nextDefinition,
+			hubObject:     hubDefinition,
 			types:         types,
 		}
 	}
@@ -95,14 +95,14 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 
 		result := testDirect(name, currentProperty, nextProperty, otherDefinitions...)
 
-		hubType := NewObjectType().WithProperty(nextProperty)
-		hubDefinition := MakeTypeDefinition(
-			MakeTypeName(vHub, "Person"),
-			hubType)
+		nextType := NewObjectType().WithProperty(nextProperty)
+		nextDefinition := MakeTypeDefinition(
+			MakeTypeName(vNext, "Person"),
+			nextType)
 
 		result.name = name + "-ViaStaging"
-		result.hubObject = &hubDefinition
-		result.types.Add(hubDefinition)
+		result.nextObject = &nextDefinition
+		result.types.Add(nextDefinition)
 
 		return result
 	}
@@ -165,36 +165,25 @@ func RunTestStorageConversionFunction_AsFunc(c *StorageConversionPropertyTestCas
 
 	idFactory := NewIdentifierFactory()
 
-	receiverType := NewObjectType().WithProperty(c.receiverProperty)
-	receiverDefinition := MakeTypeDefinition(
-		MakeTypeName(vCurrent, "Person"),
-		receiverType)
 	conversionContext := NewStorageConversionContext(c.types)
 
-	hubTypeDefinition := MakeTypeDefinition(
-		MakeTypeName(vHub, "Person"),
-		NewObjectType().WithProperty(c.otherProperty))
+	currentType, ok := AsObjectType(c.currentObject.Type())
+	g.Expect(ok).To(BeTrue())
 
-	var intermediateTypeDefinition *TypeDefinition = nil
-	if !direct {
-		def := MakeTypeDefinition(
-			MakeTypeName(vNext, "Person"),
-			NewObjectType().WithProperty(c.otherProperty))
-		intermediateTypeDefinition = &def
-	}
+	convertFrom, errs := NewStorageConversionFromFunction(c.currentObject, c.hubObject, c.nextObject, idFactory, conversionContext)
+	g.Expect(errs).To(BeNil())
 
-	convertFrom, errs := NewStorageConversionFromFunction(receiverDefinition, hubTypeDefinition, intermediateTypeDefinition, conversionContext)
-	gm.Expect(errs).To(BeNil())
+	convertTo, errs := NewStorageConversionToFunction(c.currentObject, c.hubObject, c.nextObject, idFactory, conversionContext)
+	g.Expect(errs).To(BeNil())
 
-	convertTo, errs := NewStorageConversionToFunction(receiverDefinition, hubTypeDefinition, intermediateTypeDefinition, conversionContext)
-	gm.Expect(errs).To(BeNil())
-
-	receiverDefinition = receiverDefinition.WithType(receiverType.WithFunction(convertFrom).WithFunction(convertTo))
+	receiverDefinition := c.currentObject.WithType(currentType.WithFunction(convertFrom).WithFunction(convertTo))
 
 	defs := []TypeDefinition{receiverDefinition}
 	packages := make(map[PackageReference]*PackageDefinition)
 
-	packageDefinition := NewPackageDefinition(vCurrent.Group(), vCurrent.PackageName(), "1")
+	currentPackage := receiverDefinition.Name().PackageReference.(LocalPackageReference)
+
+	packageDefinition := NewPackageDefinition(currentPackage.Group(), currentPackage.PackageName(), "1")
 	packageDefinition.AddDefinition(receiverDefinition)
 
 	packages[currentPackage] = packageDefinition
