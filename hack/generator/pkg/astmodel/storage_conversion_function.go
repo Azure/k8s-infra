@@ -443,6 +443,7 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 	}
 
 	var errs []error
+
 	// Flag receiver name as used
 	fn.knownLocals.Add(receiver.Name().Name())
 
