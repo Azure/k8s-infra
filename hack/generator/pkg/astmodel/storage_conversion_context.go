@@ -10,6 +10,8 @@ package astmodel
 type StorageConversionContext struct {
 	// types is a map of all known type definitions, used to resolve TypeNames to actual types
 	types Types
+	// functionName is the name of the function we're currently generating
+	functionName string
 }
 
 // NewStorageConversionContext creates a new instance of a StorageConversionContext
@@ -17,6 +19,12 @@ func NewStorageConversionContext(types Types) *StorageConversionContext {
 	return &StorageConversionContext{
 		types: types,
 	}
+}
+
+func (c *StorageConversionContext) WithFunctionName(name string) *StorageConversionContext {
+	result := NewStorageConversionContext(c.types)
+	result.functionName = name
+	return result
 }
 
 // ResolveEnum takes a Type and resolves it into the name and definition of an enumeration,

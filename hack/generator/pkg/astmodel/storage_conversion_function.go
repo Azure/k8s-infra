@@ -76,7 +76,7 @@ func NewStorageConversionFromFunction(
 		conversionDirection: ConvertFrom,
 		conversions:         make(map[string]StoragePropertyConversion),
 		knownLocals:         NewKnownLocalsSet(idFactory),
-		conversionContext:   conversionContext,
+		conversionContext:   conversionContext.WithFunctionName("ConvertFrom"),
 	}
 
 	err := result.createConversions(receiver)
@@ -103,7 +103,7 @@ func NewStorageConversionToFunction(
 		conversionDirection: ConvertTo,
 		conversions:         make(map[string]StoragePropertyConversion),
 		knownLocals:         NewKnownLocalsSet(idFactory),
-		conversionContext:   conversionContext,
+		conversionContext:   conversionContext.WithFunctionName("ConvertTo"),
 	}
 
 	err := result.createConversions(receiver)
