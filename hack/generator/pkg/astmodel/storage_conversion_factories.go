@@ -433,12 +433,13 @@ func assignEnumTypeFromEnumType(
 
 	srcName, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
 	if !srcIsEnum {
-		// Source is not an enum
+		// source is not an enum
 		return nil
 	}
 
 	_, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
 	if !dstIsEnum {
+		// destination is not an enum
 		return nil
 	}
 

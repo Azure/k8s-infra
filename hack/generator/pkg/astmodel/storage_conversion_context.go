@@ -34,8 +34,8 @@ func (c *StorageConversionContext) ResolveEnum(t Type) (TypeName, *EnumType, boo
 		return TypeName{}, nil, false
 	}
 
-	enumType, srcIsEnum := AsEnumType(aType)
-	if !srcIsEnum {
+	enumType, isEnum := AsEnumType(aType)
+	if !isEnum {
 		// Source is not an enum
 		return TypeName{}, nil, false
 	}
