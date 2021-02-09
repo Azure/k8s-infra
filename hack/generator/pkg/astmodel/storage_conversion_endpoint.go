@@ -49,7 +49,7 @@ func (endpoint *StorageConversionEndpoint) CreateSingularLocal() string {
 // CreatePluralLocal creates an identifier for a local variable that represents multiple items
 // Each call will return a unique identifier
 func (endpoint *StorageConversionEndpoint) CreatePluralLocal(suffix string) string {
-	plural := flect.Pluralize(endpoint.name)
+	plural := flect.Singularize(endpoint.name)
 	return endpoint.knownLocals.createLocal(plural + suffix)
 }
 
