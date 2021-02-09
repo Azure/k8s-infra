@@ -18,13 +18,13 @@ import (
 func addCrossplaneForProvider(idFactory astmodel.IdentifierFactory) PipelineStage {
 
 	return MakePipelineStage(
-		"addForProviderProperty",
+		"addCrossplaneForProviderProperty",
 		"Adds a 'ForProvider' property on every spec",
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 
 			result := make(astmodel.Types)
 			for _, typeDef := range types {
-				if rt := astmodel.AsResourceType(typeDef.Type()); rt != nil {
+				if _, ok := astmodel.AsResourceType(typeDef.Type()); ok {
 					forProviderTypes, err := nestSpecIntoForProvider(
 						idFactory, types, typeDef)
 					if err != nil {
@@ -49,10 +49,13 @@ func nestSpecIntoForProvider(
 	types astmodel.Types,
 	typeDef astmodel.TypeDefinition) ([]astmodel.TypeDefinition, error) {
 
-	resource := astmodel.AsResourceType(typeDef.Type())
+	resource, ok := astmodel.AsResourceType(typeDef.Type())
+	if !ok {
+		return nil, errors.Errorf("provided typeDef was not a resourceType, instead %T", typeDef.Type())
+	}
 	resourceName := typeDef.Name()
 
-	specName, ok := resource.SpecType().(astmodel.TypeName)
+	specName, ok := astmodel.AsTypeName(resource.SpecType())
 	if !ok {
 		return nil, errors.Errorf("resource %q spec was not of type TypeName, instead: %T", resourceName, resource.SpecType())
 	}
@@ -61,7 +64,6 @@ func nestSpecIntoForProvider(
 	nestedPropertyName := "ForProvider"
 	return nestType(idFactory, types, specName, nestedTypeName, nestedPropertyName)
 }
-
 
 // nestType nests the contents of the provided outerType into a property with the given nestedPropertyName whose
 // type is the given nestedTypeName. The result is a type that looks something like the following:
@@ -81,7 +83,7 @@ func nestType(
 		return nil, errors.Errorf("couldn't find type %q", outerTypeName)
 	}
 
-	outerObject, ok := outerType.Type().(*astmodel.ObjectType)
+	outerObject, ok := astmodel.AsObjectType(outerType.Type())
 	if !ok {
 		return nil, errors.Errorf("type %q was not of type ObjectType, instead %T", outerTypeName, outerType.Type())
 	}
@@ -94,12 +96,13 @@ func nestType(
 		outerObject)
 	result = append(result, nestedDef)
 
+	nestedProperty := astmodel.NewPropertyDefinition(
+		idFactory.CreatePropertyName(nestedPropertyName, astmodel.Exported),
+		idFactory.CreateIdentifier(nestedPropertyName, astmodel.NotExported),
+		nestedDef.Name())
+
 	// Change existing spec to have a single property pointing to the above parameters object
-	updatedObject := outerObject.WithoutProperties().WithProperty(
-		astmodel.NewPropertyDefinition(
-			idFactory.CreatePropertyName(nestedPropertyName, astmodel.Exported),
-			idFactory.CreateIdentifier(nestedPropertyName, astmodel.NotExported),
-			nestedDef.Name()))
+	updatedObject := outerObject.WithoutProperties().WithProperty(nestedProperty)
 	result = append(result, astmodel.MakeTypeDefinition(outerTypeName, updatedObject))
 
 	return result, nil

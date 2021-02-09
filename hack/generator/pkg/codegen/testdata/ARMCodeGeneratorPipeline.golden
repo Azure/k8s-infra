@@ -18,10 +18,10 @@ reportTypesAndVersions              azure      Generate reports on types and ver
 createArmTypes                      azure      Create ARM types and remove ARM-only properties from Kubernetes types
 applyKubernetesResourceInterface    azure      Ensures that every resource implements the KubernetesResource interface
 addCrossplaneOwnerProperties        crossplane Adds the 3-tuple of (xName, xNameRef, xNameSelector) for each owning resource
-addForProviderProperty              crossplane Adds a for provider property on every spec
-addAtProviderProperty               crossplane Adds an at provider property on every status
-addCrossplaneEmbeddedResourceSpec   crossplane Puts an embedded runtimev1alpha1.ResourceSpec on every spec type
-addCrossplaneEmbeddedResourceStatus crossplane Puts an embedded runtimev1alpha1.ResourceStatus on every status type
+addCrossplaneForProviderProperty    crossplane Adds a 'ForProvider' property on every spec
+addCrossplaneAtProviderProperty     crossplane Adds an 'AtProvider' property on every status
+addCrossplaneEmbeddedResourceSpec   crossplane Adds an embedded runtimev1alpha1.ResourceSpec to every spec type
+addCrossplaneEmbeddedResourceStatus crossplane Adds an embedded runtimev1alpha1.ResourceStatus to every status type
 createStorage                       azure      Create storage versions of CRD types
 simplifyDefinitions                            Flatten definitions by removing wrapper types
 jsonTestCases                       azure      Add test cases to verify JSON serialization

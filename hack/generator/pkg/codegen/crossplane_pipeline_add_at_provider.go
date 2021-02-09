@@ -17,13 +17,13 @@ import (
 func addCrossplaneAtProvider(idFactory astmodel.IdentifierFactory) PipelineStage {
 
 	return MakePipelineStage(
-		"addAtProviderProperty",
+		"addCrossplaneAtProviderProperty",
 		"Adds an 'AtProvider' property on every status",
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 
 			result := make(astmodel.Types)
 			for _, typeDef := range types {
-				if rt := astmodel.AsResourceType(typeDef.Type()); rt != nil {
+				if _, ok := astmodel.AsResourceType(typeDef.Type()); ok {
 					atProviderTypes, err := nestStatusIntoAtProvider(
 						idFactory, types, typeDef)
 					if err != nil {
@@ -47,7 +47,10 @@ func nestStatusIntoAtProvider(
 	types astmodel.Types,
 	typeDef astmodel.TypeDefinition) ([]astmodel.TypeDefinition, error) {
 
-	resource := astmodel.AsResourceType(typeDef.Type())
+	resource, ok := astmodel.AsResourceType(typeDef.Type())
+	if !ok {
+		return nil, errors.Errorf("provided typeDef was not a resourceType, instead %T", typeDef.Type())
+	}
 	resourceName := typeDef.Name()
 
 	statusType := astmodel.IgnoringErrors(resource.StatusType())
@@ -55,7 +58,7 @@ func nestStatusIntoAtProvider(
 		return nil, nil // TODO: Some types don't have status yet
 	}
 
-	statusName, ok := astmodel.AsTresource.StatusType().(astmodel.TypeName)
+	statusName, ok := astmodel.AsTypeName(resource.StatusType())
 	if !ok {
 		return nil, errors.Errorf("resource %q status was not of type TypeName, instead: %T", resourceName, resource.StatusType())
 	}

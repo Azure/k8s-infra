@@ -29,7 +29,7 @@ func ensureArmTypeExistsForEveryResource() PipelineStage {
 // types which do not have a matching ARM type.
 func validateAllTypesHaveArmType(definitions astmodel.Types) error {
 	findArmType := func(t astmodel.Type) error {
-		name, ok := t.(astmodel.TypeName)
+		name, ok := astmodel.AsTypeName(t)
 		if !ok {
 			return errors.Errorf("type was not of type TypeName, instead %T", t)
 		}

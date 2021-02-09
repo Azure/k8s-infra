@@ -40,6 +40,7 @@ func addCrossplaneOwnerProperties(idFactory astmodel.IdentifierFactory) Pipeline
 					}
 
 					// The right-most owner is this type, so remove it
+					// Note that lookupOwners will error rather than return an empty list so this is safe
 					owners = owners[0 : len(owners)-1]
 
 					// This type has no owners so no modification needed
