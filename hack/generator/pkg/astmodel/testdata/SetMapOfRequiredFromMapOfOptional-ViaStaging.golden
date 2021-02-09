@@ -18,7 +18,10 @@ func (person Person) ConvertFrom(source *vHub.Person) error {
 	var personTemp vNext.Person
 
 	// Populate personTemp from source
-	personTemp.ConvertFrom(source)
+	err := personTemp.ConvertFrom(source)
+	if err != nil {
+		return errors.Wrap(err, "for person, calling personTemp.ConvertFrom(source)")
+	}
 
 	// ratings
 	ratingMap := make(map[string]int)
@@ -50,7 +53,10 @@ func (person Person) ConvertTo(destination *vHub.Person) error {
 	personTemp.ratings = ratingMap
 
 	// Populate destination from personTemp
-	personTemp.ConvertTo(destination)
+	err := personTemp.ConvertTo(destination)
+	if err != nil {
+		return errors.Wrap(err, "for person, calling personTemp.ConvertTo(destination)")
+	}
 
 	// No error
 	return nil
