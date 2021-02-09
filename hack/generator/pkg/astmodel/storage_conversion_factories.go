@@ -586,7 +586,7 @@ func assignOptionalEnumTypeFromEnumType(
 // assignOptionalEnumTypeFromOptionalEnumType will generate a direct assignment if both types have
 // the same underlying primitive type and are both optional
 //
-// <local> = <enum>(&<source>)
+// <local> = <enum>(*<source>)
 // <destination> = &<local>
 //
 func assignOptionalEnumTypeFromOptionalEnumType(
