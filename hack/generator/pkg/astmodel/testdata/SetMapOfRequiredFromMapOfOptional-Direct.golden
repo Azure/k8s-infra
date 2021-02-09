@@ -23,6 +23,9 @@ func (person Person) ConvertFrom(source *vHub.Person) error {
 	}
 
 	person.ratings = ratingMap
+
+	// No error
+	return nil
 }
 
 // ConvertTo populates the provided destination Person from our Person
@@ -35,4 +38,7 @@ func (person Person) ConvertTo(destination *vHub.Person) error {
 	}
 
 	destination.ratings = ratingMap
+
+	// No error
+	return nil
 }

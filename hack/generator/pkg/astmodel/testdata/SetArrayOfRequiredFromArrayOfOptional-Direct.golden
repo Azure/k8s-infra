@@ -23,6 +23,9 @@ func (person Person) ConvertFrom(source *vHub.Person) error {
 	}
 
 	person.scores = scoreList
+
+	// No error
+	return nil
 }
 
 // ConvertTo populates the provided destination Person from our Person
@@ -34,5 +37,8 @@ func (person Person) ConvertTo(destination *vHub.Person) error {
 		scoreList[scoreIndex] = &score
 	}
 
-	destination.scores = scoresList
+	destination.scores = scoreList
+
+	// No error
+	return nil
 }

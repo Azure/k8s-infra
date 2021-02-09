@@ -234,7 +234,9 @@ func (fn *StorageConversionFunction) generateDirectConversionFrom(
 	parameter string,
 	generationContext *CodeGenerationContext,
 ) []dst.Stmt {
-	return fn.generateAssignments(dst.NewIdent(parameter), dst.NewIdent(receiver), generationContext)
+	result := fn.generateAssignments(dst.NewIdent(parameter), dst.NewIdent(receiver), generationContext)
+	result = append(result, astbuilder.ReturnNoError())
+	return result
 }
 
 // generateDirectConversionTo returns the method body required to directly copy information from
@@ -244,7 +246,9 @@ func (fn *StorageConversionFunction) generateDirectConversionTo(
 	parameter string,
 	generationContext *CodeGenerationContext,
 ) []dst.Stmt {
-	return fn.generateAssignments(dst.NewIdent(receiver), dst.NewIdent(parameter), generationContext)
+	result := fn.generateAssignments(dst.NewIdent(receiver), dst.NewIdent(parameter), generationContext)
+	result = append(result, astbuilder.ReturnNoError())
+	return result
 }
 
 // generateIndirectConversionFrom returns the method body required to populate our receiver when
@@ -289,6 +293,8 @@ func (fn *StorageConversionFunction) generateIndirectConversionFrom(
 	result = append(result, localDeclaration)
 	result = append(result, callConvertFrom)
 	result = append(result, assignments...)
+	result = append(result, astbuilder.ReturnNoError())
+
 	return result
 }
 
@@ -334,6 +340,8 @@ func (fn *StorageConversionFunction) generateIndirectConversionTo(
 	result = append(result, localDeclaration)
 	result = append(result, assignments...)
 	result = append(result, callConvertTo)
+	result = append(result, astbuilder.ReturnNoError())
+
 	return result
 }
 
