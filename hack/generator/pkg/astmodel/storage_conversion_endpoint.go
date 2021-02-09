@@ -6,9 +6,10 @@
 package astmodel
 
 import (
-	"github.com/gobuffalo/flect"
 	"strconv"
 	"strings"
+
+	"github.com/gobuffalo/flect"
 )
 
 // StorageConversionEndpoint represents either a source or a destination target for a storage conversion

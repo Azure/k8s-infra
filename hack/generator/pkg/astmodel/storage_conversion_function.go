@@ -7,11 +7,12 @@ package astmodel
 
 import (
 	"fmt"
+	"sort"
+
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 	"github.com/dave/dst"
 	"github.com/pkg/errors"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
-	"sort"
 )
 
 // StoragePropertyConversion represents a function that generates the correct AST to convert a single property value
