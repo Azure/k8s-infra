@@ -19,57 +19,24 @@ func addCrossplaneForProvider(idFactory astmodel.IdentifierFactory) PipelineStag
 
 	return MakePipelineStage(
 		"addForProviderProperty",
-		"Adds a for provider property on every spec",
+		"Adds a 'ForProvider' property on every spec",
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 
 			result := make(astmodel.Types)
 			for _, typeDef := range types {
-				if _, ok := typeDef.Type().(*astmodel.ResourceType); ok {
+				if rt := astmodel.AsResourceType(typeDef.Type()); rt != nil {
 					forProviderTypes, err := nestSpecIntoForProvider(
 						idFactory, types, typeDef)
 					if err != nil {
-						return nil, errors.Wrapf(err, "creating ForProvider types")
+						return nil, errors.Wrapf(err, "creating 'ForProvider' types")
 					}
 
 					result.AddAll(forProviderTypes)
 				}
 			}
 
-			for _, typeDef := range types {
-				if !result.Contains(typeDef.Name()) {
-					result.Add(typeDef)
-				}
-			}
-
-			return result, nil
-		})
-}
-
-// addCrossplaneAtProvider adds an "AtProvider" property as the sole property in every resource status
-func addCrossplaneAtProvider(idFactory astmodel.IdentifierFactory) PipelineStage {
-
-	return MakePipelineStage(
-		"addAtProviderProperty",
-		"Adds an at provider property on every status",
-		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
-
-			result := make(astmodel.Types)
-			for _, typeDef := range types {
-				if _, ok := typeDef.Type().(*astmodel.ResourceType); ok {
-					atProviderTypes, err := nestStatusIntoAtProvider(
-						idFactory, types, typeDef)
-					if err != nil {
-						return nil, errors.Wrapf(err, "creating AtProvider types")
-					}
-					result.AddAll(atProviderTypes)
-				}
-			}
-
-			for _, typeDef := range types {
-				if !result.Contains(typeDef.Name()) {
-					result.Add(typeDef)
-				}
-			}
+			unmodified := types.Except(result)
+			result.AddTypes(unmodified)
 
 			return result, nil
 		})
@@ -82,12 +49,12 @@ func nestSpecIntoForProvider(
 	types astmodel.Types,
 	typeDef astmodel.TypeDefinition) ([]astmodel.TypeDefinition, error) {
 
-	resource := typeDef.Type().(*astmodel.ResourceType)
+	resource := astmodel.AsResourceType(typeDef.Type())
 	resourceName := typeDef.Name()
 
 	specName, ok := resource.SpecType().(astmodel.TypeName)
 	if !ok {
-		return nil, errors.Errorf("Resource %q spec was not of type TypeName, instead: %T", resourceName, resource.SpecType())
+		return nil, errors.Errorf("resource %q spec was not of type TypeName, instead: %T", resourceName, resource.SpecType())
 	}
 
 	nestedTypeName := resourceName.Name() + "Parameters"
@@ -95,30 +62,6 @@ func nestSpecIntoForProvider(
 	return nestType(idFactory, types, specName, nestedTypeName, nestedPropertyName)
 }
 
-// nestStatusIntoAtProvider returns the type definitions required to nest the contents of the "Status" type
-// into a property named "AtProvider" whose type is "<name>Observation"
-func nestStatusIntoAtProvider(
-	idFactory astmodel.IdentifierFactory,
-	types astmodel.Types,
-	typeDef astmodel.TypeDefinition) ([]astmodel.TypeDefinition, error) {
-
-	resource := typeDef.Type().(*astmodel.ResourceType)
-	resourceName := typeDef.Name()
-
-	statusType := astmodel.IgnoringErrors(resource.StatusType())
-	if statusType == nil {
-		return nil, nil // TODO: Some types don't have status yet
-	}
-
-	statusName, ok := resource.StatusType().(astmodel.TypeName)
-	if !ok {
-		return nil, errors.Errorf("Resource %q status was not of type TypeName, instead: %T", resourceName, resource.StatusType())
-	}
-
-	nestedTypeName := resourceName.Name() + "Observation"
-	nestedPropertyName := "AtProvider"
-	return nestType(idFactory, types, statusName, nestedTypeName, nestedPropertyName)
-}
 
 // nestType nests the contents of the provided outerType into a property with the given nestedPropertyName whose
 // type is the given nestedTypeName. The result is a type that looks something like the following:

@@ -77,3 +77,16 @@ func AsOptionalType(aType Type) *OptionalType {
 
 	return nil
 }
+
+// AsResourceType unwraps any wrappers around the provided type and returns either the underlying ResourceType or nil
+func AsResourceType(aType Type) *ResourceType {
+	if arr, ok := aType.(*ResourceType); ok {
+		return arr
+	}
+
+	if wrapper, ok := aType.(MetaType); ok {
+		return AsResourceType(wrapper.Unwrap())
+	}
+
+	return nil
+}
