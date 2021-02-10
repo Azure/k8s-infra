@@ -57,8 +57,8 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 
 	requiredCurrentRoleProperty := NewPropertyDefinition("role", "role", currentRole.Name())
 	requiredHubRoleProperty := NewPropertyDefinition("role", "role", hubRole.Name())
-	//optionalCurrentRoleProperty := NewPropertyDefinition("role", "role", NewOptionalType(currentRole.Name()))
-	//optionalNextRoleProperty := NewPropertyDefinition("role", "role", NewOptionalType(hubRole.Name()))
+	optionalCurrentRoleProperty := NewPropertyDefinition("role", "role", NewOptionalType(currentRole.Name()))
+	optionalNextRoleProperty := NewPropertyDefinition("role", "role", NewOptionalType(hubRole.Name()))
 
 	nastyProperty := NewPropertyDefinition(
 		"nasty",
@@ -158,9 +158,9 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 		testDirect("SetOptionalEnumFromOptionalEnum", optionalCurrentEnumProperty, optionalHubEnumProperty, currentEnum, hubEnum),
 
 		testDirect("SetRequiredObjectFromRequiredObject", requiredCurrentRoleProperty, requiredHubRoleProperty, currentRole, hubRole),
-		//testDirect("SetRequiredObjectFromOptionalObject", requiredCurrentRoleProperty, optionalNextRoleProperty, currentRole, hubRole),
-		//testDirect("SetOptionalObjectFromRequiredObject", optionalCurrentRoleProperty, requiredHubRoleProperty, currentRole, hubRole),
-		//testDirect("SetOptionalObjectFromOptionalObject", optionalCurrentRoleProperty, optionalNextRoleProperty, currentRole, hubRole),
+		testDirect("SetRequiredObjectFromOptionalObject", requiredCurrentRoleProperty, optionalNextRoleProperty, currentRole, hubRole),
+		testDirect("SetOptionalObjectFromRequiredObject", optionalCurrentRoleProperty, requiredHubRoleProperty, currentRole, hubRole),
+		testDirect("SetOptionalObjectFromOptionalObject", optionalCurrentRoleProperty, optionalNextRoleProperty, currentRole, hubRole),
 	}
 }
 

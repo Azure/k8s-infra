@@ -35,17 +35,24 @@ var typeConversionFactories []StorageTypeConversionFactory
 
 func init() {
 	typeConversionFactories = []StorageTypeConversionFactory{
+		// Primitive types
 		assignPrimitiveTypeFromPrimitiveType,
 		assignOptionalPrimitiveTypeFromPrimitiveType,
 		assignPrimitiveTypeFromOptionalPrimitiveType,
 		assignOptionalPrimitiveTypeFromOptionalPrimitiveType,
+		// Collection Types
 		assignArrayFromArray,
 		assignMapFromMap,
+		// Enumerations
 		assignEnumTypeFromEnumType,
 		assignEnumTypeFromOptionalEnumType,
 		assignOptionalEnumTypeFromEnumType,
 		assignOptionalEnumTypeFromOptionalEnumType,
+		// Complex object types
 		assignObjectTypeFromObjectType,
+		assignObjectTypeFromOptionalObjectType,
+		assignOptionalObjectTypeFromObjectType,
+		assignOptionalObjectTypeFromOptionalObjectType,
 	}
 }
 
@@ -216,19 +223,7 @@ func assignPrimitiveTypeFromOptionalPrimitiveType(
 				Value: zeroValue(srcPrim),
 			})
 
-		stmt := &dst.IfStmt{
-			Cond: cond,
-			Body: &dst.BlockStmt{
-				List: []dst.Stmt{
-					assignValue,
-				},
-			},
-			Else: &dst.BlockStmt{
-				List: []dst.Stmt{
-					assignZero,
-				},
-			},
-		}
+		stmt := astbuilder.SimpleIf(cond, assignValue, assignZero)
 
 		return []dst.Stmt{stmt}
 	}
@@ -815,6 +810,280 @@ func assignObjectTypeFromObjectType(
 			declaration,
 			conversion,
 			checkForError,
+			assignment,
+		}
+	}
+}
+
+// assignObjectTypeFromOptionalObjectType will generate a conversion if both properties are
+// TypeNames referencing ObjectType definitions and only the source is optional
+//
+// For ConvertFrom:
+//
+// var <local> <destinationType>
+// if <source> != nil {
+//     err := <local>.ConvertFrom(<source>)
+//     if err != nil {
+//         return errors.Wrap(err, "while calling <local>.ConvertTo(<source>)")
+//     }
+// }
+// <destination> = <local>
+//
+// For ConvertTo:
+//
+// var <local> <destinationType>
+// if <source> != nil {
+//     err := <source>.ConvertTo(&<local>)
+//     if err != nil {
+//         return errors.Wrap(err, "while calling <local>.ConvertTo(<source>)")
+//     }
+// }
+// <destination> = <local>
+//
+func assignObjectTypeFromOptionalObjectType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion {
+
+	if _, srcOpt := AsOptionalType(sourceEndpoint.Type()); !srcOpt {
+		// Source is not optional
+		return nil
+	}
+
+	if _, dstOpt := AsOptionalType(destinationEndpoint.Type()); dstOpt {
+		// Destination is optional
+		return nil
+	}
+
+	_, _, srcIsObject := conversionContext.ResolveObject(sourceEndpoint.Type())
+	if !srcIsObject {
+		// Source is not an object
+		return nil
+	}
+
+	dstName, _, dstIsObject := conversionContext.ResolveObject(destinationEndpoint.Type())
+	if !dstIsObject {
+		// Destination is not an object
+		return nil
+	}
+
+	local := destinationEndpoint.CreateLocal()
+
+	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
+
+		localId := dst.NewIdent(local)
+		errLocal := dst.NewIdent("err")
+
+		declaration := astbuilder.LocalVariableDeclaration(local, createTypeDeclaration(dstName, generationContext), "")
+
+		var conversion dst.Stmt
+		if dstName.PackageReference.Equals(generationContext.CurrentPackage()) {
+			conversion = astbuilder.SimpleAssignment(
+				errLocal,
+				token.DEFINE,
+				astbuilder.CallExpr(localId, conversionContext.functionName, reader))
+		} else {
+			conversion = astbuilder.SimpleAssignment(
+				errLocal,
+				token.DEFINE,
+				astbuilder.CallExpr(reader, conversionContext.functionName, localId))
+		}
+
+		checkForError := astbuilder.ReturnIfNotNil(
+			errLocal,
+			astbuilder.CallQualifiedFunc(
+				"errors",
+				"Wrap",
+				errLocal,
+				astbuilder.StringLiteralf("populating %s from %s, calling %s()", destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName)))
+
+		safeConversion := astbuilder.IfNotNil(reader, conversion, checkForError)
+
+		assignment := astbuilder.SimpleAssignment(
+			writer,
+			token.ASSIGN,
+			dst.NewIdent(local))
+
+		return []dst.Stmt{
+			declaration,
+			safeConversion,
+			assignment,
+		}
+	}
+}
+
+// assignOptionalObjectTypeFromObjectType will generate a conversion if both properties are
+// TypeNames referencing ObjectType definitions and only the destination is optional
+//
+// For ConvertFrom:
+//
+// var <local> <destinationType>
+// <local>.ConvertFrom(<source>)
+// <destination> = &<local>
+//
+// For ConvertTo:
+//
+// var <local> <destinationType>
+// <source>.ConvertTo(&<local>)
+// <destination> = &<local>
+//
+func assignOptionalObjectTypeFromObjectType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion {
+
+	if _, srcOpt := AsOptionalType(sourceEndpoint.Type()); srcOpt {
+		// Source is optional
+		return nil
+	}
+
+	if _, dstOpt := AsOptionalType(destinationEndpoint.Type()); !dstOpt {
+		// Destination is not optional
+		return nil
+	}
+
+	_, _, srcIsObject := conversionContext.ResolveObject(sourceEndpoint.Type())
+	if !srcIsObject {
+		// Source is not an object
+		return nil
+	}
+
+	dstName, _, dstIsObject := conversionContext.ResolveObject(destinationEndpoint.Type())
+	if !dstIsObject {
+		// Destination is not an object
+		return nil
+	}
+
+	local := destinationEndpoint.CreateLocal()
+
+	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
+
+		localId := dst.NewIdent(local)
+		errLocal := dst.NewIdent("err")
+
+		declaration := astbuilder.LocalVariableDeclaration(local, createTypeDeclaration(dstName, generationContext), "")
+
+		var conversion dst.Stmt
+		if dstName.PackageReference.Equals(generationContext.CurrentPackage()) {
+			conversion = astbuilder.SimpleAssignment(
+				errLocal,
+				token.DEFINE,
+				astbuilder.CallExpr(localId, conversionContext.functionName, astbuilder.AddrOf(reader)))
+		} else {
+			conversion = astbuilder.SimpleAssignment(
+				errLocal,
+				token.DEFINE,
+				astbuilder.CallExpr(reader, conversionContext.functionName, astbuilder.AddrOf(localId)))
+		}
+
+		checkForError := astbuilder.ReturnIfNotNil(
+			errLocal,
+			astbuilder.CallQualifiedFunc(
+				"errors",
+				"Wrap",
+				errLocal,
+				astbuilder.StringLiteralf("populating %s from %s, calling %s()", destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName)))
+
+		assignment := astbuilder.SimpleAssignment(
+			writer,
+			token.ASSIGN,
+			astbuilder.AddrOf(dst.NewIdent(local)))
+
+		return []dst.Stmt{
+			declaration,
+			conversion,
+			checkForError,
+			assignment,
+		}
+	}
+}
+
+// assignOptionalObjectTypeFromOptionalObjectType will generate a conversion if both properties are
+// TypeNames referencing ObjectType definitions and both source and destination are optional
+//
+// For ConvertFrom:
+//
+// var <local> <destinationType>
+// if <source> != nil {
+//     <local>.ConvertFrom(<source>)
+// }
+// <destination> = &<local>
+//
+// For ConvertTo:
+//
+// var <local> <destinationType>
+// if <source> != nil {
+//     <source>.ConvertTo(&<local>)
+// }
+// <destination> = &<local>
+//
+func assignOptionalObjectTypeFromOptionalObjectType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion {
+
+	if _, srcOpt := AsOptionalType(sourceEndpoint.Type()); !srcOpt {
+		// Source is not optional
+		return nil
+	}
+
+	if _, dstOpt := AsOptionalType(destinationEndpoint.Type()); !dstOpt {
+		// Destination is not optional
+		return nil
+	}
+
+	_, _, srcIsObject := conversionContext.ResolveObject(sourceEndpoint.Type())
+	if !srcIsObject {
+		// Source is not an object
+		return nil
+	}
+
+	dstName, _, dstIsObject := conversionContext.ResolveObject(destinationEndpoint.Type())
+	if !dstIsObject {
+		// Destination is not an object
+		return nil
+	}
+
+	local := destinationEndpoint.CreateLocal()
+
+	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
+
+		localId := dst.NewIdent(local)
+		errLocal := dst.NewIdent("err")
+
+		declaration := astbuilder.LocalVariableDeclaration(local, createTypeDeclaration(dstName, generationContext), "")
+
+		var conversion dst.Stmt
+		if dstName.PackageReference.Equals(generationContext.CurrentPackage()) {
+			conversion = astbuilder.SimpleAssignment(
+				errLocal,
+				token.DEFINE,
+				astbuilder.CallExpr(localId, conversionContext.functionName, reader))
+		} else {
+			conversion = astbuilder.SimpleAssignment(
+				errLocal,
+				token.DEFINE,
+				astbuilder.CallExpr(reader, conversionContext.functionName, localId))
+		}
+
+		checkForError := astbuilder.ReturnIfNotNil(
+			errLocal,
+			astbuilder.CallQualifiedFunc(
+				"errors",
+				"Wrap",
+				errLocal,
+				astbuilder.StringLiteralf("populating %s from %s, calling %s()", destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName)))
+
+		safeConversion := astbuilder.IfNotNil(reader, conversion, checkForError)
+
+		assignment := astbuilder.SimpleAssignment(
+			writer,
+			token.ASSIGN,
+			astbuilder.AddrOf(dst.NewIdent(local)))
+
+		return []dst.Stmt{
+			declaration,
+			safeConversion,
 			assignment,
 		}
 	}
