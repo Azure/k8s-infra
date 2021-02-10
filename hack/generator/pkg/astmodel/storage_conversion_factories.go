@@ -401,14 +401,23 @@ func assignMapFromMap(
 			token.DEFINE,
 			astbuilder.MakeMap(dstMap.key.AsType(generationContext), dstMap.value.AsType(generationContext)))
 
-		body := conversion(
+		shadow := astbuilder.SimpleAssignment(
+			dst.NewIdent(itemId),
+			token.DEFINE,
+			dst.NewIdent(itemId))
+
+		body := []dst.Stmt{
+			shadow,
+		}
+
+		body = append(body, conversion(
 			dst.NewIdent(itemId),
 			&dst.IndexExpr{
 				X:     dst.NewIdent(tempId),
 				Index: dst.NewIdent(keyId),
 			},
 			generationContext,
-		)
+		)...)
 
 		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, dst.NewIdent(tempId))
 
