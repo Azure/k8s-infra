@@ -309,9 +309,11 @@ func assignArrayFromArray(
 	}
 
 	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
-		itemId := sourceEndpoint.CreateSingularLocal()
-		indexId := itemId + "Index"
-		tempId := sourceEndpoint.CreatePluralLocal("List")
+		// We create three obviously related identifiers to use for the conversion
+		id := sourceEndpoint.CreateLocal()
+		itemId := id + "Item"
+		indexId := id + "Index"
+		tempId := id + "List"
 
 		declaration := astbuilder.SimpleAssignment(
 			dst.NewIdent(tempId),
@@ -380,9 +382,11 @@ func assignMapFromMap(
 	}
 
 	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
-		itemId := sourceEndpoint.CreateSingularLocal()
-		keyId := itemId + "Key"
-		tempId := sourceEndpoint.CreatePluralLocal("Map")
+		// We create three obviously related identifiers to use for the conversion
+		id := sourceEndpoint.CreateLocal()
+		itemId := id + "Value"
+		keyId := id + "Key"
+		tempId := id + "Map"
 
 		declaration := astbuilder.SimpleAssignment(
 			dst.NewIdent(tempId),
@@ -567,7 +571,7 @@ func assignOptionalEnumTypeFromEnumType(
 		return nil
 	}
 
-	local := destinationEndpoint.CreateSingularLocal()
+	local := destinationEndpoint.CreateLocal("Value")
 
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		return []dst.Stmt{
@@ -622,7 +626,7 @@ func assignOptionalEnumTypeFromOptionalEnumType(
 		return nil
 	}
 
-	local := destinationEndpoint.CreateSingularLocal()
+	local := destinationEndpoint.CreateLocal("Value")
 
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		return []dst.Stmt{
