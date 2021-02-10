@@ -25,7 +25,8 @@ func (person Person) ConvertTo(destination *vHub.Person) error {
 
 	// release
 	if person.release != nil {
-		destination.release = Release(*person.release)
+		release := Release(*person.release)
+		destination.release = release
 	} else {
 		destination.release = Release("")
 	}

@@ -151,9 +151,13 @@ func assignOptionalPrimitiveTypeFromPrimitiveType(
 		return nil
 	}
 
+	local := destinationEndpoint.CreateLocal("Value")
+
 	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
 		return []dst.Stmt{
-			astbuilder.SimpleAssignment(writer, token.ASSIGN, astbuilder.AddrOf(reader)),
+			// Stash the local in a local just in case the original gets modified later on
+			astbuilder.SimpleAssignment(dst.NewIdent(local), token.DEFINE, reader),
+			astbuilder.SimpleAssignment(writer, token.ASSIGN, astbuilder.AddrOf(dst.NewIdent(local))),
 		}
 	}
 }
@@ -266,9 +270,13 @@ func assignOptionalPrimitiveTypeFromOptionalPrimitiveType(
 		return nil
 	}
 
+	local := destinationEndpoint.CreateLocal("Value")
+
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		return []dst.Stmt{
-			astbuilder.SimpleAssignment(writer, token.ASSIGN, reader),
+			// Stash the local in a local just in case the original gets modified later on
+			astbuilder.SimpleAssignment(dst.NewIdent(local), token.DEFINE, astbuilder.Dereference(reader)),
+			astbuilder.SimpleAssignment(writer, token.ASSIGN, astbuilder.AddrOf(dst.NewIdent(local))),
 		}
 	}
 }
@@ -499,14 +507,21 @@ func assignEnumTypeFromOptionalEnumType(
 		return nil
 	}
 
+	local := destinationEndpoint.CreateLocal("Value")
+
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		// Need to check for null and only assign if we have a value
 		cond := astbuilder.NotEqual(reader, dst.NewIdent("nil"))
 
-		assignValue := astbuilder.SimpleAssignment(
+		readValue := astbuilder.SimpleAssignment(
+			dst.NewIdent(local),
+			token.DEFINE,
+			astbuilder.CallFunc(srcName.name, astbuilder.Dereference(reader)))
+
+		writeValue := astbuilder.SimpleAssignment(
 			writer,
 			token.ASSIGN,
-			astbuilder.CallFunc(srcName.name, astbuilder.Dereference(reader)))
+			dst.NewIdent(local))
 
 		assignZero := astbuilder.SimpleAssignment(
 			writer,
@@ -520,7 +535,8 @@ func assignEnumTypeFromOptionalEnumType(
 			Cond: cond,
 			Body: &dst.BlockStmt{
 				List: []dst.Stmt{
-					assignValue,
+					readValue,
+					writeValue,
 				},
 			},
 			Else: &dst.BlockStmt{

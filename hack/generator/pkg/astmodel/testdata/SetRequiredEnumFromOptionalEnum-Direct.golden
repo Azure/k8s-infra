@@ -14,7 +14,8 @@ func (person Person) ConvertFrom(source *vHub.Person) error {
 
 	// release
 	if source.release != nil {
-		person.release = Release(*source.release)
+		release := Release(*source.release)
+		person.release = release
 	} else {
 		person.release = Release("")
 	}
