@@ -1,6 +1,7 @@
 schemaUrl: https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json
 destinationGoModuleFile: ../generated/go.mod
 outputPath: _apis
+pipeline: azure
 typeFilters:
   - action: prune
     group: definitions
