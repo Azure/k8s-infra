@@ -18,7 +18,6 @@ func (person Person) ConvertFrom(source *vHub.Person) error {
 		score := score1Item
 		score1List[score1Index] = &score
 	}
-
 	person.scores = score1List
 
 	// No error
@@ -37,7 +36,6 @@ func (person Person) ConvertTo(destination *vHub.Person) error {
 			scoreList[scoreIndex] = 0
 		}
 	}
-
 	destination.scores = scoreList
 
 	// No error
