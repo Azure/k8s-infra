@@ -759,13 +759,13 @@ func assignObjectTypeFromObjectType(
 		return nil
 	}
 
-	_, _, srcIsObject := conversionContext.ResolveObject(sourceEndpoint.Type())
-	if !srcIsObject {
-		// Source is not an object
+	// Require source to be an object
+	if _, srcIsObject := conversionContext.ResolveObject(sourceEndpoint.Type()); !srcIsObject {
 		return nil
 	}
 
-	dstName, _, dstIsObject := conversionContext.ResolveObject(destinationEndpoint.Type())
+	// Require destination to be an object
+	dstName, dstIsObject := conversionContext.ResolveObject(destinationEndpoint.Type())
 	if !dstIsObject {
 		// Destination is not an object
 		return nil
@@ -855,13 +855,12 @@ func assignObjectTypeFromOptionalObjectType(
 		return nil
 	}
 
-	_, _, srcIsObject := conversionContext.ResolveObject(sourceEndpoint.Type())
-	if !srcIsObject {
+	if _, srcIsObject := conversionContext.ResolveObject(sourceEndpoint.Type()); !srcIsObject {
 		// Source is not an object
 		return nil
 	}
 
-	dstName, _, dstIsObject := conversionContext.ResolveObject(destinationEndpoint.Type())
+	dstName, dstIsObject := conversionContext.ResolveObject(destinationEndpoint.Type())
 	if !dstIsObject {
 		// Destination is not an object
 		return nil
@@ -942,13 +941,12 @@ func assignOptionalObjectTypeFromObjectType(
 		return nil
 	}
 
-	_, _, srcIsObject := conversionContext.ResolveObject(sourceEndpoint.Type())
-	if !srcIsObject {
+	if _, srcIsObject := conversionContext.ResolveObject(sourceEndpoint.Type()); !srcIsObject {
 		// Source is not an object
 		return nil
 	}
 
-	dstName, _, dstIsObject := conversionContext.ResolveObject(destinationEndpoint.Type())
+	dstName, dstIsObject := conversionContext.ResolveObject(destinationEndpoint.Type())
 	if !dstIsObject {
 		// Destination is not an object
 		return nil
@@ -1038,9 +1036,9 @@ func assignOptionalObjectTypeFromOptionalObjectType(
 		return nil
 	}
 
-	dstName, _, dstIsObject := conversionContext.ResolveObject(destinationEndpoint.Type())
+	// Require destination to be an object
+	dstName, dstIsObject := conversionContext.ResolveObject(destinationEndpoint.Type())
 	if !dstIsObject {
-		// Destination is not an object
 		return nil
 	}
 

@@ -51,26 +51,26 @@ func (c *StorageConversionContext) ResolveEnum(t Type) (TypeName, *EnumType, boo
 	return name, enumType, true
 }
 
-// ResolveObject takes a Type and resolves it into the name and definition of an object type,
+// ResolveObject takes a Type and resolves it into the name of an object type,
 // returning true if found or false if not.
-func (c *StorageConversionContext) ResolveObject(t Type) (TypeName, *ObjectType, bool) {
+func (c *StorageConversionContext) ResolveObject(t Type) (TypeName, bool) {
 	name, ok := AsTypeName(t)
 	if !ok {
 		// Source is not identified by name
-		return TypeName{}, nil, false
+		return TypeName{}, false
 	}
 
 	aType, err := c.types.FullyResolve(name)
 	if err != nil {
 		// Can't resolve source
-		return TypeName{}, nil, false
+		return TypeName{}, false
 	}
 
-	objectType, isObject := AsObjectType(aType)
+	_, isObject := AsObjectType(aType)
 	if !isObject {
-		// Source is not an enum
-		return TypeName{}, nil, false
+		// Source is not an object
+		return TypeName{}, false
 	}
 
-	return name, objectType, true
+	return name, true
 }
