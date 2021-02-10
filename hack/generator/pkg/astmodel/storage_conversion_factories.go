@@ -328,14 +328,23 @@ func assignArrayFromArray(
 			token.DEFINE,
 			astbuilder.MakeList(dstArray.AsType(generationContext), astbuilder.CallFunc("len", reader)))
 
-		body := conversion(
+		shadow := astbuilder.SimpleAssignment(
+			dst.NewIdent(itemId),
+			token.DEFINE,
+			dst.NewIdent(itemId))
+
+		body := []dst.Stmt{
+			shadow,
+		}
+
+		body = append(body, conversion(
 			dst.NewIdent(itemId),
 			&dst.IndexExpr{
 				X:     dst.NewIdent(tempId),
 				Index: dst.NewIdent(indexId),
 			},
 			generationContext,
-		)
+		)...)
 
 		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, dst.NewIdent(tempId))
 

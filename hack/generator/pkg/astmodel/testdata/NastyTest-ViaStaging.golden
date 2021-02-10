@@ -29,6 +29,7 @@ func (person Person) ConvertFrom(source *vHub.Person) error {
 		nastyValue := nastyValue
 		nasty1List := make([]map[string]bool, len(nastyValue))
 		for nasty1Index, nasty1Item := range nastyValue {
+			nasty1Item := nasty1Item
 			nasty2Map := make(map[string]bool)
 			for nasty2Key, nasty2Value := range nasty1Item {
 				nasty2Value := nasty2Value
@@ -58,6 +59,7 @@ func (person Person) ConvertTo(destination *vHub.Person) error {
 		nastyValue := nastyValue
 		nasty1List := make([]map[string]bool, len(nastyValue))
 		for nasty1Index, nasty1Item := range nastyValue {
+			nasty1Item := nasty1Item
 			nasty2Map := make(map[string]bool)
 			for nasty2Key, nasty2Value := range nasty1Item {
 				nasty2Value := nasty2Value
