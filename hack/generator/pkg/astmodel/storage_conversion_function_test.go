@@ -32,8 +32,8 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 	beta := EnumValue{Identifier: "Beta", Value: "beta"}
 
 	enumType := NewEnumType(StringType, alpha, beta)
-	currentEnum := MakeTypeDefinition(MakeTypeName(vCurrent, "Release"), enumType)
-	nextEnum := MakeTypeDefinition(MakeTypeName(vNext, "Release"), enumType)
+	currentEnum := MakeTypeDefinition(MakeTypeName(vCurrent, "Bucket"), enumType)
+	nextEnum := MakeTypeDefinition(MakeTypeName(vNext, "Container"), enumType)
 
 	requiredStringProperty := NewPropertyDefinition("name", "name", StringType)
 	optionalStringProperty := NewPropertyDefinition("name", "name", NewOptionalType(StringType))

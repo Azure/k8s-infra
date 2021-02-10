@@ -443,13 +443,13 @@ func assignEnumTypeFromEnumType(
 		return nil
 	}
 
-	srcName, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
+	_, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
 	if !srcIsEnum {
 		// source is not an enum
 		return nil
 	}
 
-	_, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
+	dstName, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
 	if !dstIsEnum {
 		// destination is not an enum
 		return nil
@@ -462,7 +462,7 @@ func assignEnumTypeFromEnumType(
 
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		return []dst.Stmt{
-			astbuilder.SimpleAssignment(writer, token.ASSIGN, astbuilder.CallFunc(srcName.name, reader)),
+			astbuilder.SimpleAssignment(writer, token.ASSIGN, astbuilder.CallFunc(dstName.name, reader)),
 		}
 	}
 }
@@ -491,13 +491,13 @@ func assignEnumTypeFromOptionalEnumType(
 		return nil
 	}
 
-	srcName, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
+	_, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
 	if !srcIsEnum {
 		// Source is not an enum
 		return nil
 	}
 
-	_, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
+	dstName, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
 	if !dstIsEnum {
 		return nil
 	}
@@ -516,7 +516,7 @@ func assignEnumTypeFromOptionalEnumType(
 		readValue := astbuilder.SimpleAssignment(
 			dst.NewIdent(local),
 			token.DEFINE,
-			astbuilder.CallFunc(srcName.name, astbuilder.Dereference(reader)))
+			astbuilder.CallFunc(dstName.name, astbuilder.Dereference(reader)))
 
 		writeValue := astbuilder.SimpleAssignment(
 			writer,
@@ -526,7 +526,7 @@ func assignEnumTypeFromOptionalEnumType(
 		assignZero := astbuilder.SimpleAssignment(
 			writer,
 			token.ASSIGN,
-			astbuilder.CallFunc(srcName.name,
+			astbuilder.CallFunc(dstName.name,
 				&dst.BasicLit{
 					Value: zeroValue(srcEnum.baseType),
 				}))
@@ -571,13 +571,13 @@ func assignOptionalEnumTypeFromEnumType(
 		return nil
 	}
 
-	srcName, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
+	_, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
 	if !srcIsEnum {
 		// Source is not an enum
 		return nil
 	}
 
-	_, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
+	dstName, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
 	if !dstIsEnum {
 		return nil
 	}
@@ -594,7 +594,7 @@ func assignOptionalEnumTypeFromEnumType(
 			astbuilder.SimpleAssignment(
 				dst.NewIdent(local),
 				token.DEFINE,
-				astbuilder.CallFunc(srcName.name, reader)),
+				astbuilder.CallFunc(dstName.name, reader)),
 
 			astbuilder.SimpleAssignment(
 				writer,
@@ -625,13 +625,13 @@ func assignOptionalEnumTypeFromOptionalEnumType(
 		return nil
 	}
 
-	srcName, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
+	_, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
 	if !srcIsEnum {
 		// Source is not an enum
 		return nil
 	}
 
-	_, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
+	dstName, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
 	if !dstIsEnum {
 		// Destination is not an enum
 		return nil
@@ -649,7 +649,7 @@ func assignOptionalEnumTypeFromOptionalEnumType(
 			astbuilder.SimpleAssignment(
 				dst.NewIdent(local),
 				token.DEFINE,
-				astbuilder.CallFunc(srcName.name,
+				astbuilder.CallFunc(dstName.name,
 					astbuilder.Dereference(reader))),
 
 			astbuilder.SimpleAssignment(
