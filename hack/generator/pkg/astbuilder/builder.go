@@ -284,7 +284,7 @@ func ReturnNoError() dst.Stmt {
 
 // WrappedErrorf returns the err local, wrapped with additional information
 func WrappedErrorf(template string, args ...interface{}) dst.Expr {
-	return astbuilder.CallQualifiedFunc(
+	return CallQualifiedFunc(
 		"errors",
 		"Wrap",
 		dst.NewIdent("err"),
