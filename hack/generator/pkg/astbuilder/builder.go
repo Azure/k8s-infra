@@ -282,6 +282,15 @@ func ReturnNoError() dst.Stmt {
 	return result
 }
 
+// WrappedErrorf returns the err local, wrapped with additional information
+func WrappedErrorf(template string, args ...interface{}) dst.Expr {
+	return astbuilder.CallQualifiedFunc(
+		"errors",
+		"Wrap",
+		dst.NewIdent("err"),
+		StringLiteralf(template, args...))
+}
+
 // QualifiedTypeName generates a reference to a type within an imported package
 //
 // <pkg>.<name>

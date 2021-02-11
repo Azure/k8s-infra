@@ -773,11 +773,9 @@ func assignObjectTypeFromObjectType(
 
 		checkForError := astbuilder.ReturnIfNotNil(
 			errLocal,
-			astbuilder.CallQualifiedFunc(
-				"errors",
-				"Wrap",
-				errLocal,
-				astbuilder.StringLiteralf("populating %s from %s, calling %s()", destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName)))
+			astbuilder.WrappedErrorf(
+				"populating %s from %s, calling %s()",
+				destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName))
 
 		assignment := astbuilder.SimpleAssignment(
 			writer,
@@ -868,11 +866,9 @@ func assignObjectTypeFromOptionalObjectType(
 
 		checkForError := astbuilder.ReturnIfNotNil(
 			errLocal,
-			astbuilder.CallQualifiedFunc(
-				"errors",
-				"Wrap",
-				errLocal,
-				astbuilder.StringLiteralf("populating %s from %s, calling %s()", destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName)))
+			astbuilder.WrappedErrorf(
+				"populating %s from %s, calling %s()",
+				destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName))
 
 		safeConversion := astbuilder.IfNotNil(reader, conversion, checkForError)
 
@@ -954,11 +950,9 @@ func assignOptionalObjectTypeFromObjectType(
 
 		checkForError := astbuilder.ReturnIfNotNil(
 			errLocal,
-			astbuilder.CallQualifiedFunc(
-				"errors",
-				"Wrap",
-				errLocal,
-				astbuilder.StringLiteralf("populating %s from %s, calling %s()", destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName)))
+			astbuilder.WrappedErrorf(
+				"populating %s from %s, calling %s()",
+				destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName))
 
 		assignment := astbuilder.SimpleAssignment(
 			writer,
@@ -1042,11 +1036,9 @@ func assignOptionalObjectTypeFromOptionalObjectType(
 
 		checkForError := astbuilder.ReturnIfNotNil(
 			dst.NewIdent("err"),
-			astbuilder.CallQualifiedFunc(
-				"errors",
-				"Wrap",
-				dst.NewIdent("err"),
-				astbuilder.StringLiteralf("populating %s from %s, calling %s()", destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName)))
+			astbuilder.WrappedErrorf(
+				"populating %s from %s, calling %s()",
+				destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName))
 
 		safeConversion := astbuilder.IfNotNil(reader, conversion, checkForError)
 

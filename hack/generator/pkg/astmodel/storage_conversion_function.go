@@ -306,11 +306,9 @@ func (fn *StorageConversionFunction) generateIndirectConversionFrom(
 
 	checkForError := astbuilder.ReturnIfNotNil(
 		errLocal,
-		astbuilder.CallQualifiedFunc(
-			"errors",
-			"Wrap",
-			errLocal,
-			astbuilder.StringLiteralf("for %s, calling %s.%s(%s)", receiver, local, fn.name, parameter)))
+		astbuilder.WrappedErrorf(
+			"for %s, calling %s.%s(%s)",
+			receiver, local, fn.name, parameter))
 
 	assignments := fn.generateAssignments(
 		dst.NewIdent(local),
@@ -365,11 +363,9 @@ func (fn *StorageConversionFunction) generateIndirectConversionTo(
 
 	checkForError := astbuilder.ReturnIfNotNil(
 		errLocal,
-		astbuilder.CallQualifiedFunc(
-			"errors",
-			"Wrap",
-			errLocal,
-			astbuilder.StringLiteralf("for %s, calling %s.%s(%s)", receiver, local, fn.name, parameter)))
+		astbuilder.WrappedErrorf(
+			"for %s, calling %s.%s(%s)",
+			receiver, local, fn.name, parameter))
 
 	assignments := fn.generateAssignments(
 		dst.NewIdent(receiver),
