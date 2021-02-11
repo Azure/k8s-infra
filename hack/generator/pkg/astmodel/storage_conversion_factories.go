@@ -298,17 +298,8 @@ func assignOptionalPrimitiveTypeFromOptionalPrimitiveType(
 
 		stmt := &dst.IfStmt{
 			Cond: cond,
-			Body: &dst.BlockStmt{
-				List: []dst.Stmt{
-					readValue,
-					writeValue,
-				},
-			},
-			Else: &dst.BlockStmt{
-				List: []dst.Stmt{
-					assignNil,
-				},
-			},
+			Body: astbuilder.StatementBlock(readValue, writeValue),
+			Else: astbuilder.StatementBlock(assignNil),
 		}
 
 		return []dst.Stmt{
@@ -570,17 +561,8 @@ func assignEnumTypeFromOptionalEnumType(
 
 		stmt := &dst.IfStmt{
 			Cond: cond,
-			Body: &dst.BlockStmt{
-				List: []dst.Stmt{
-					readValue,
-					writeValue,
-				},
-			},
-			Else: &dst.BlockStmt{
-				List: []dst.Stmt{
-					assignZero,
-				},
-			},
+			Body: astbuilder.StatementBlock(readValue, writeValue),
+			Else: astbuilder.StatementBlock(assignZero),
 		}
 
 		return []dst.Stmt{stmt}
@@ -710,18 +692,8 @@ func assignOptionalEnumTypeFromOptionalEnumType(
 
 		stmt := &dst.IfStmt{
 			Cond: cond,
-			Body: &dst.BlockStmt{
-				List: []dst.Stmt{
-					// Stash the local in a local just in case the original gets modified later on
-					readValue,
-					writeValue,
-				},
-			},
-			Else: &dst.BlockStmt{
-				List: []dst.Stmt{
-					assignZero,
-				},
-			},
+			Body: astbuilder.StatementBlock(readValue, writeValue),
+			Else: astbuilder.StatementBlock(assignZero),
 		}
 
 		return []dst.Stmt{

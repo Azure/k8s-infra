@@ -316,6 +316,13 @@ func NotEqual(lhs dst.Expr, rhs dst.Expr) *dst.BinaryExpr {
 	}
 }
 
+// StatementBlock generates a block containing the supplied statements
+func StatementBlock(statements ...dst.Stmt) *dst.BlockStmt {
+	return &dst.BlockStmt{
+		List: cloneStmtSlice(statements),
+	}
+}
+
 // cloneExprSlice is a utility method to clone a slice of expressions
 func cloneExprSlice(exprs []dst.Expr) []dst.Expr {
 	var result []dst.Expr

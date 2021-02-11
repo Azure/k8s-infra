@@ -54,16 +54,8 @@ func SimpleAssignmentWithErr(lhs dst.Expr, tok token.Token, rhs dst.Expr) *dst.A
 func SimpleIf(condition dst.Expr, trueBranch dst.Stmt, falseBranch dst.Stmt) *dst.IfStmt {
 	return &dst.IfStmt{
 		Cond: condition,
-		Body: &dst.BlockStmt{
-			List: []dst.Stmt{
-				trueBranch,
-			},
-		},
-		Else: &dst.BlockStmt{
-			List: []dst.Stmt{
-				falseBranch,
-			},
-		},
+		Body: StatementBlock(trueBranch),
+		Else: StatementBlock(falseBranch),
 	}
 }
 
@@ -80,8 +72,6 @@ func IfNotNil(toCheck dst.Expr, statements ...dst.Stmt) *dst.IfStmt {
 			Op: token.NEQ,
 			Y:  dst.NewIdent("nil"),
 		},
-		Body: &dst.BlockStmt{
-			List: cloneStmtSlice(statements),
-		},
+		Body: StatementBlock(statements...),
 	}
 }
