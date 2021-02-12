@@ -273,10 +273,44 @@ func assignOptionalPrimitiveTypeFromOptionalPrimitiveType(
 	local := destinationEndpoint.CreateLocal("Value")
 
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+
+		// Need to check for null and only assign if we have a value
+		cond := astbuilder.NotEqual(reader, dst.NewIdent("nil"))
+
+		readValue := astbuilder.SimpleAssignment(
+			dst.NewIdent(local),
+			token.DEFINE,
+			astbuilder.Dereference(reader))
+		readValue.Decs.Start.Append("// Copy to a local to avoid aliasing")
+		readValue.Decs.Before = dst.NewLine
+
+		writeValue := astbuilder.SimpleAssignment(
+			writer,
+			token.ASSIGN,
+			astbuilder.AddrOf(dst.NewIdent(local)))
+
+		assignNil := astbuilder.SimpleAssignment(
+			writer,
+			token.ASSIGN,
+			dst.NewIdent("nil"))
+
+		stmt := &dst.IfStmt{
+			Cond: cond,
+			Body: &dst.BlockStmt{
+				List: []dst.Stmt{
+					readValue,
+					writeValue,
+				},
+			},
+			Else: &dst.BlockStmt{
+				List: []dst.Stmt{
+					assignNil,
+				},
+			},
+		}
+
 		return []dst.Stmt{
-			// Stash the local in a local just in case the original gets modified later on
-			astbuilder.SimpleAssignment(dst.NewIdent(local), token.DEFINE, astbuilder.Dereference(reader)),
-			astbuilder.SimpleAssignment(writer, token.ASSIGN, astbuilder.AddrOf(dst.NewIdent(local))),
+			stmt,
 		}
 	}
 }
@@ -645,17 +679,50 @@ func assignOptionalEnumTypeFromOptionalEnumType(
 	local := destinationEndpoint.CreateLocal("Value")
 
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
-		return []dst.Stmt{
-			astbuilder.SimpleAssignment(
-				dst.NewIdent(local),
-				token.DEFINE,
-				astbuilder.CallFunc(dstName.name,
-					astbuilder.Dereference(reader))),
 
-			astbuilder.SimpleAssignment(
-				writer,
-				token.ASSIGN,
-				astbuilder.AddrOf(dst.NewIdent(local))),
+		// Need to check for null and only assign if we have a value
+		cond := astbuilder.NotEqual(reader, dst.NewIdent("nil"))
+
+		readValue := astbuilder.SimpleAssignment(
+			dst.NewIdent(local),
+			token.DEFINE,
+			astbuilder.CallFunc(dstName.name,
+				astbuilder.Dereference(reader)))
+		readValue.Decs.Start.Append("// Copy to a local to avoid aliasing")
+		readValue.Decs.Before = dst.NewLine
+
+		writeValue := astbuilder.SimpleAssignment(
+			writer,
+			token.ASSIGN,
+			astbuilder.AddrOf(dst.NewIdent(local)))
+
+		assignZero := astbuilder.SimpleAssignment(
+			writer,
+			token.ASSIGN,
+			astbuilder.CallFunc(
+				dstName.name,
+				&dst.BasicLit{
+					Value: zeroValue(dstEnum.baseType),
+				}))
+
+		stmt := &dst.IfStmt{
+			Cond: cond,
+			Body: &dst.BlockStmt{
+				List: []dst.Stmt{
+					// Stash the local in a local just in case the original gets modified later on
+					readValue,
+					writeValue,
+				},
+			},
+			Else: &dst.BlockStmt{
+				List: []dst.Stmt{
+					assignZero,
+				},
+			},
+		}
+
+		return []dst.Stmt{
+			stmt,
 		}
 	}
 }

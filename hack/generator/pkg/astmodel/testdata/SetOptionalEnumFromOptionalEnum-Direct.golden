@@ -13,8 +13,13 @@ type Person struct {
 func (person Person) ConvertFrom(source *vHub.Person) error {
 
 	// release
-	release := Bucket(*source.release)
-	person.release = &release
+	if source.release != nil {
+		// Copy to a local to avoid aliasing
+		release := Bucket(*source.release)
+		person.release = &release
+	} else {
+		person.release = Bucket("")
+	}
 
 	// No error
 	return nil
@@ -24,8 +29,13 @@ func (person Person) ConvertFrom(source *vHub.Person) error {
 func (person Person) ConvertTo(destination *vHub.Person) error {
 
 	// release
-	release := Container(*person.release)
-	destination.release = &release
+	if person.release != nil {
+		// Copy to a local to avoid aliasing
+		release := Container(*person.release)
+		destination.release = &release
+	} else {
+		destination.release = Container("")
+	}
 
 	// No error
 	return nil
