@@ -1040,17 +1040,23 @@ func assignOptionalObjectTypeFromOptionalObjectType(
 				"populating %s from %s, calling %s()",
 				destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName))
 
-		safeConversion := astbuilder.IfNotNil(reader, conversion, checkForError)
-
 		assignment := astbuilder.SimpleAssignment(
 			writer,
 			token.ASSIGN,
 			astbuilder.AddrOf(dst.NewIdent(copyvar)))
 
+		assignNil := astbuilder.SimpleAssignment(
+			writer,
+			token.ASSIGN,
+			dst.NewIdent("nil"))
+
+		stmt := astbuilder.SimpleIf(
+			astbuilder.NotEqual(reader, dst.NewIdent("nil")),
+			astbuilder.StatementBlock(declaration, conversion, checkForError, assignment),
+			assignNil)
+
 		return []dst.Stmt{
-			declaration,
-			safeConversion,
-			assignment,
+			stmt,
 		}
 	}
 }

@@ -13,14 +13,16 @@ type Person struct {
 func (person Person) ConvertFrom(source *vHub.Person) error {
 
 	// role
-	var role Release
 	if source.role != nil {
+		var role Release
 		err := role.ConvertFrom(source.role)
 		if err != nil {
 			return errors.Wrap(err, "populating role from role, calling ConvertFrom()")
 		}
+		person.role = &role
+	} else {
+		person.role = nil
 	}
-	person.role = &role
 
 	// No error
 	return nil
@@ -30,14 +32,16 @@ func (person Person) ConvertFrom(source *vHub.Person) error {
 func (person Person) ConvertTo(destination *vHub.Person) error {
 
 	// role
-	var role vHub.Release
 	if person.role != nil {
+		var role vHub.Release
 		err := person.role.ConvertTo(role)
 		if err != nil {
 			return errors.Wrap(err, "populating role from role, calling ConvertTo()")
 		}
+		destination.role = &role
+	} else {
+		destination.role = nil
 	}
-	destination.role = &role
 
 	// No error
 	return nil
