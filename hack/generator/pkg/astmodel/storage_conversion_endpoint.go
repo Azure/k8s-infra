@@ -6,7 +6,7 @@
 package astmodel
 
 import (
-	"strconv"
+	"fmt"
 	"strings"
 
 	"github.com/gobuffalo/flect"
