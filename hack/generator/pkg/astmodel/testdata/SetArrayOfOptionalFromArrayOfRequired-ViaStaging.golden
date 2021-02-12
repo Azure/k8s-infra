@@ -26,7 +26,6 @@ func (person Person) ConvertFrom(source *vHub.Person) error {
 	// scores
 	score1List := make([]*int, len(personTemp.scores))
 	for score1Index, score1Item := range personTemp.scores {
-		score1Item := score1Item
 		score := score1Item
 		score1List[score1Index] = &score
 	}
@@ -45,7 +44,6 @@ func (person Person) ConvertTo(destination *vHub.Person) error {
 	// scores
 	scoreList := make([]int, len(person.scores))
 	for scoreIndex, scoreItem := range person.scores {
-		scoreItem := scoreItem
 		if scoreItem != nil {
 			scoreList[scoreIndex] = *scoreItem
 		} else {
