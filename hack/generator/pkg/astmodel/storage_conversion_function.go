@@ -81,7 +81,7 @@ func NewStorageConversionFromFunction(
 
 	err := result.createConversions(receiver)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create '%s()'", result.name)
+		return nil, errors.Wrapf(err, "creating '%s()'", result.name)
 	}
 
 	return result, nil
