@@ -29,7 +29,7 @@ func NewStorageConversionEndpoint(
 	knownLocals *KnownLocalsSet) *StorageConversionEndpoint {
 	return &StorageConversionEndpoint{
 		theType:     theType,
-		name:        strings.ToLower(string(name)),
+		name:        strings.ToLower(name),
 		knownLocals: knownLocals,
 	}
 }
