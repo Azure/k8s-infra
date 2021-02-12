@@ -90,7 +90,7 @@ func (locals KnownLocalsSet) createLocal(nameHint string, suffixes ...string) st
 	index := 1
 	for {
 		for _, s := range suffixes {
-			if id, ok := locals.tryCreateLocal(nameHint + s + strconv.Itoa(index)); ok {
+			if id, ok := locals.tryCreateLocal(fmt.Sprintf("%s%s%d", nameHint, s, index)); ok {
 				return id
 			}
 		}
