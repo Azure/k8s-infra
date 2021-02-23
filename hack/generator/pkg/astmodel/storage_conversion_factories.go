@@ -939,13 +939,19 @@ func assignObjectTypeFromOptionalObjectType(
 // For ConvertFrom:
 //
 // var <local> <destinationType>
-// <local>.ConvertFrom(<source>)
+// err := <local>.ConvertFrom(&<source>)
+// if err != nil {
+//    return errors.Wrap(err, <message>)
+// }
 // <destination> = &<local>
 //
 // For ConvertTo:
 //
 // var <local> <destinationType>
-// <source>.ConvertTo(&<local>)
+// err := <source>.ConvertTo(&<local>)
+// if err != nil {
+//     return errors.Wrap(err, <message>)
+// }
 // <destination> = &<local>
 //
 func assignOptionalObjectTypeFromObjectType(
@@ -1029,19 +1035,29 @@ func assignOptionalObjectTypeFromObjectType(
 //
 // For ConvertFrom:
 //
-// var <local> <destinationType>
 // if <source> != nil {
-//     <local>.ConvertFrom(<source>)
+//     var <local> <destinationType>
+//     err := <local>.ConvertFrom(<source>)
+//     if err != nil {
+//         return errors.Wrap(err, <message>)
+//     }
+//     <destination> = &<local>
+// } else {
+//     <destination> = nil
 // }
-// <destination> = &<local>
 //
 // For ConvertTo:
 //
-// var <local> <destinationType>
 // if <source> != nil {
-//     <source>.ConvertTo(&<local>)
+//     var <local> <destinationType>
+//     err := <source>.ConvertTo(<local>)
+//     if err != nil {
+//         return errors.Wrap(err, <message>)
+//     }
+//     <destination> = &<local>
+// } else {
+//     <destination> = nil
 // }
-// <destination> = &<local>
 //
 func assignOptionalObjectTypeFromOptionalObjectType(
 	sourceEndpoint *StorageConversionEndpoint,
