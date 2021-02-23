@@ -471,13 +471,21 @@ func assignEnumTypeFromEnumType(
 	}
 
 	// Require source to be an enumeration
-	_, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
+	_, srcType, ok := conversionContext.ResolveType(sourceEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	srcEnum, srcIsEnum := AsEnumType(srcType)
 	if !srcIsEnum {
 		return nil
 	}
 
 	// Require destination to be an enumeration
-	dstName, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
+	dstName, dstType, ok := conversionContext.ResolveType(destinationEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	dstEnum, dstIsEnum := AsEnumType(dstType)
 	if !dstIsEnum {
 		return nil
 	}
@@ -519,13 +527,21 @@ func assignEnumTypeFromOptionalEnumType(
 	}
 
 	// Require source to be an enumeration
-	_, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
+	_, srcType, ok := conversionContext.ResolveType(sourceEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	srcEnum, srcIsEnum := AsEnumType(srcType)
 	if !srcIsEnum {
 		return nil
 	}
 
 	// Require destination to be an enumeration
-	dstName, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
+	dstName, dstType, ok := conversionContext.ResolveType(destinationEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	dstEnum, dstIsEnum := AsEnumType(dstType)
 	if !dstIsEnum {
 		return nil
 	}
@@ -589,14 +605,22 @@ func assignOptionalEnumTypeFromEnumType(
 		return nil
 	}
 
-	// Require source to be an enum
-	_, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
+	// Require source to be an enumeration
+	_, srcType, ok := conversionContext.ResolveType(sourceEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	srcEnum, srcIsEnum := AsEnumType(srcType)
 	if !srcIsEnum {
 		return nil
 	}
 
-	// Require destination to be an enum
-	dstName, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
+	// Require destination to be an enumeration
+	dstName, dstType, ok := conversionContext.ResolveType(destinationEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	dstEnum, dstIsEnum := AsEnumType(dstType)
 	if !dstIsEnum {
 		return nil
 	}
@@ -644,14 +668,22 @@ func assignOptionalEnumTypeFromOptionalEnumType(
 		return nil
 	}
 
-	// Require source to be an enum
-	_, srcEnum, srcIsEnum := conversionContext.ResolveEnum(sourceEndpoint.Type())
+	// Require source to be an enumeration
+	_, srcType, ok := conversionContext.ResolveType(sourceEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	srcEnum, srcIsEnum := AsEnumType(srcType)
 	if !srcIsEnum {
 		return nil
 	}
 
-	// Require destination to be an enum
-	dstName, dstEnum, dstIsEnum := conversionContext.ResolveEnum(destinationEndpoint.Type())
+	// Require destination to be an enumeration
+	dstName, dstType, ok := conversionContext.ResolveType(destinationEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	dstEnum, dstIsEnum := AsEnumType(dstType)
 	if !dstIsEnum {
 		return nil
 	}
@@ -739,12 +771,20 @@ func assignObjectTypeFromObjectType(
 	}
 
 	// Require source to be an object
-	if _, srcIsObject := conversionContext.ResolveObject(sourceEndpoint.Type()); !srcIsObject {
+	_, srcType, ok := conversionContext.ResolveType(sourceEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	if _, srcIsObject := AsObjectType(srcType); !srcIsObject {
 		return nil
 	}
 
 	// Require destination to be an object
-	dstName, dstIsObject := conversionContext.ResolveObject(destinationEndpoint.Type())
+	dstName, dstType, ok := conversionContext.ResolveType(destinationEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	_, dstIsObject := AsObjectType(dstType)
 	if !dstIsObject {
 		return nil
 	}
@@ -832,12 +872,20 @@ func assignObjectTypeFromOptionalObjectType(
 	}
 
 	// Require source to be an object
-	if _, srcIsObject := conversionContext.ResolveObject(sourceEndpoint.Type()); !srcIsObject {
+	_, srcType, ok := conversionContext.ResolveType(sourceEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	if _, srcIsObject := AsObjectType(srcType); !srcIsObject {
 		return nil
 	}
 
 	// Require destination to be an object
-	dstName, dstIsObject := conversionContext.ResolveObject(destinationEndpoint.Type())
+	dstName, dstType, ok := conversionContext.ResolveType(destinationEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	_, dstIsObject := AsObjectType(dstType)
 	if !dstIsObject {
 		return nil
 	}
@@ -916,12 +964,20 @@ func assignOptionalObjectTypeFromObjectType(
 	}
 
 	// Require source to be an object
-	if _, srcIsObject := conversionContext.ResolveObject(sourceEndpoint.Type()); !srcIsObject {
+	_, srcType, ok := conversionContext.ResolveType(sourceEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	if _, srcIsObject := AsObjectType(srcType); !srcIsObject {
 		return nil
 	}
 
 	// Require destination to be an object
-	dstName, dstIsObject := conversionContext.ResolveObject(destinationEndpoint.Type())
+	dstName, dstType, ok := conversionContext.ResolveType(destinationEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	_, dstIsObject := AsObjectType(dstType)
 	if !dstIsObject {
 		return nil
 	}
@@ -1003,12 +1059,20 @@ func assignOptionalObjectTypeFromOptionalObjectType(
 	}
 
 	// Require source to be an object
-	if _, srcIsObject := conversionContext.ResolveObject(sourceEndpoint.Type()); !srcIsObject {
+	_, srcType, ok := conversionContext.ResolveType(sourceEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	if _, srcIsObject := AsObjectType(srcType); !srcIsObject {
 		return nil
 	}
 
 	// Require destination to be an object
-	dstName, dstIsObject := conversionContext.ResolveObject(destinationEndpoint.Type())
+	dstName, dstType, ok := conversionContext.ResolveType(destinationEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	_, dstIsObject := AsObjectType(dstType)
 	if !dstIsObject {
 		return nil
 	}
