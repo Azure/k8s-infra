@@ -227,7 +227,7 @@ func assignPrimitiveTypeFromOptionalPrimitiveType(
 				Value: zeroValue(srcPrim),
 			})
 
-		stmt := astbuilder.SimpleIf(cond, assignValue, assignZero)
+		stmt := astbuilder.SimpleIfElse(cond, assignValue, assignZero)
 
 		return []dst.Stmt{stmt}
 	}
@@ -1050,7 +1050,7 @@ func assignOptionalObjectTypeFromOptionalObjectType(
 			token.ASSIGN,
 			dst.NewIdent("nil"))
 
-		stmt := astbuilder.SimpleIf(
+		stmt := astbuilder.SimpleIfElse(
 			astbuilder.NotEqual(reader, dst.NewIdent("nil")),
 			astbuilder.StatementBlock(declaration, conversion, checkForError, assignment),
 			assignNil)
