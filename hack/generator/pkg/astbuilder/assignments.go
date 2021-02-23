@@ -54,20 +54,8 @@ func SimpleAssignmentWithErr(lhs dst.Expr, tok token.Token, rhs dst.Expr) *dst.A
 func SimpleIf(condition dst.Expr, trueBranch dst.Stmt, falseBranch dst.Stmt) *dst.IfStmt {
 	result := &dst.IfStmt{
 		Cond: condition,
-		Body: StatementBlock(trueBranch),
-		Else: StatementBlock(falseBranch),
-	}
-
-	if block, ok := trueBranch.(*dst.BlockStmt); ok {
-		result.Body = block
-	} else {
-		result.Body = StatementBlock(trueBranch)
-	}
-
-	if block, ok := falseBranch.(*dst.BlockStmt); ok {
-		result.Else = block
-	} else {
-		result.Else = StatementBlock(falseBranch)
+		Body: EnsureStatementBlock(trueBranch),
+		Else: EnsureStatementBlock(falseBranch),
 	}
 
 	return result

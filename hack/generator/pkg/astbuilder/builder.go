@@ -332,6 +332,16 @@ func StatementBlock(statements ...dst.Stmt) *dst.BlockStmt {
 	}
 }
 
+// EnsureStatementBlock wraps any statement into a block safely
+// (without double wrapping an existing block)
+func EnsureStatementBlock(statement dst.Stmt) *dst.BlockStmt {
+	if block, ok := statement.(*dst.BlockStmt); ok {
+		return block
+	}
+
+	return StatementBlock(statement)
+}
+
 // cloneExprSlice is a utility method to clone a slice of expressions
 func cloneExprSlice(exprs []dst.Expr) []dst.Expr {
 	var result []dst.Expr
