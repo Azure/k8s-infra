@@ -275,6 +275,10 @@ func Returns(returns ...dst.Expr) dst.Stmt {
 }
 
 // ReturnNoError creates a return nil statement for when no error occurs
+//
+//    // No error
+//    return nil
+//
 func ReturnNoError() dst.Stmt {
 	result := Returns(dst.NewIdent("nil"))
 	result.Decorations().Before = dst.EmptyLine
@@ -283,6 +287,9 @@ func ReturnNoError() dst.Stmt {
 }
 
 // WrappedErrorf returns the err local, wrapped with additional information
+//
+// errors.Wrap(err, <message>)
+//
 func WrappedErrorf(template string, args ...interface{}) dst.Expr {
 	return CallQualifiedFunc(
 		"errors",
