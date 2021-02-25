@@ -12,6 +12,8 @@ removeAliases                                  Remove type aliases
 pluralizeNames                                 Improve resource pluralization
 stripUnreferenced                              Strip unreferenced types
 assertTypesStructureValid                      Asserts that the types collection is valid
+removeEmbeddedSubResources          azure      Removes properties that point to embedded sub-resources
+removeEmbeddedResources             azure      Removes properties that point to embedded resources
 filterTypes                                    Filter generated types
 stripUnreferenced                              Strip unreferenced types
 replaceAnyTypeWithJSON                         Replacing interface{}s with arbitrary JSON

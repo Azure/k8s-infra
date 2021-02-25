@@ -128,6 +128,9 @@ func createAllPipelineStages(idFactory astmodel.IdentifierFactory, configuration
 
 		assertTypesCollectionValid(),
 
+		removeEmbeddedSubResources().UsedFor(ARMTarget), // TODO: For now only used for ARM,
+		removeEmbeddedResources().UsedFor(ARMTarget),    // TODO: For now only used for ARM,
+
 		// Apply export filters before generating
 		// ARM types for resources etc:
 		applyExportFilters(configuration),
