@@ -6,6 +6,7 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"path"
 	"path/filepath"
@@ -243,10 +244,17 @@ func buildExportFilterFunc(f *ExportFilter, allTypes astmodel.Types) ExportFilte
 
 	case ExportFilterIncludeTransitive:
 		applicableTypes := make(astmodel.TypeNameSet)
+		foundMatch := false
 		for tn := range allTypes {
 			if f.AppliesToType(tn) {
+				foundMatch = true
 				collectAllReferencedTypes(allTypes, tn, applicableTypes)
 			}
+		}
+
+		// TODO: should we consider somehow turning this into an err?
+		if !foundMatch {
+			panic(fmt.Sprintf("no types matched for include-transitive filter on group: %q, name: %q", f.Group, f.Name))
 		}
 
 		return func(typeName astmodel.TypeName) (ShouldExportResult, string) {
