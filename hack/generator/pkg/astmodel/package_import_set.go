@@ -64,7 +64,7 @@ func (set *PackageImportSet) Remove(packageImport PackageImport) {
 	delete(set.imports, packageImport.packageReference)
 }
 
-// Contains allows checking to see if an import is included
+// ContainsImport allows checking to see if an import is included
 func (set *PackageImportSet) ContainsImport(packageImport PackageImport) bool {
 	if imp, ok := set.imports[packageImport.packageReference]; ok {
 		return imp.Equals(packageImport)
@@ -82,7 +82,7 @@ func (set *PackageImportSet) ImportFor(ref PackageReference) (PackageImport, boo
 	return PackageImport{}, false
 }
 
-// AsSlice() returns a slice containing all the imports
+// AsSlice returns a slice containing all the imports
 func (set *PackageImportSet) AsSlice() []PackageImport {
 	var result []PackageImport
 	for _, imp := range set.imports {
@@ -92,7 +92,7 @@ func (set *PackageImportSet) AsSlice() []PackageImport {
 	return result
 }
 
-// AsSortedSlice() return a sorted slice containing all the imports
+// AsSortedSlice return a sorted slice containing all the imports
 func (set *PackageImportSet) AsSortedSlice() []PackageImport {
 	result := set.AsSlice()
 
@@ -132,7 +132,7 @@ func (set *PackageImportSet) ApplyName(ref PackageReference, name string) {
 	}
 }
 
-// ResolveConflicts() attempts to resolve any import conflicts and returns an error if any cannot
+// ResolveConflicts attempts to resolve any import conflicts and returns an error if any cannot
 // be resolved
 func (set *PackageImportSet) ResolveConflicts() error {
 	remappedImports := make(map[PackageReference]PackageImport)
@@ -216,7 +216,7 @@ func (set *PackageImportSet) findConflictingImports() map[string][]PackageImport
 	return result
 }
 
-// ByNameInGroups() orders PackageImport instances by name,
+// ByNameInGroups orders PackageImport instances by name
 // We order explicitly named packages before implicitly named ones
 func ByNameInGroups(left PackageImport, right PackageImport) bool {
 	if left.name != right.name {
@@ -244,7 +244,7 @@ func ByNameInGroups(left PackageImport, right PackageImport) bool {
 	return left.packageReference.String() < right.packageReference.String()
 }
 
-// Extract a name for the service for use to disambiguate imports
+// ServiceNameForImport extracts a name for the service for use to disambiguate imports
 // E.g. for microsoft.batch/v201700401, extract "batch"
 //      for microsoft.storage/v20200101 extract "storage"
 //      for microsoft.storsimple.1200 extract "storsimple1200" and so on
