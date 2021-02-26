@@ -6,6 +6,7 @@
 package astmodel
 
 import (
+	"k8s.io/klog/v2"
 	"sort"
 	"strings"
 
@@ -148,6 +149,7 @@ func (set *PackageImportSet) ResolveConflicts() error {
 		}
 
 		remappedImports[imp.packageReference] = imp
+		klog.Warningf("Remapped %v to %v", imp.packageReference, name)
 		return imp.WithName(name)
 	})
 
@@ -157,6 +159,7 @@ func (set *PackageImportSet) ResolveConflicts() error {
 		// Only rename imports we already renamed above
 		if _, ok := remappedImports[imp.packageReference]; ok {
 			name := set.versionedNameForImport(imp)
+			klog.Warningf("Remapped %v to %v", imp.packageReference, name)
 			return imp.WithName(name)
 		}
 
