@@ -215,6 +215,12 @@ func (objectType *ObjectType) References() TypeNameSet {
 		}
 	}
 
+	for _, property := range objectType.embedded {
+		for ref := range property.PropertyType().References() {
+			results = results.Add(ref)
+		}
+	}
+
 	// Not collecting types from functions deliberately.
 	return results
 }
