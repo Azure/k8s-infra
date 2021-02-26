@@ -49,7 +49,8 @@ func removeTypeAliases() PipelineStage {
 func resolveTypeName(visitor *astmodel.TypeVisitor, name astmodel.TypeName, types astmodel.Types) (astmodel.Type, error) {
 	def, ok := types[name]
 	if !ok {
-		panic(fmt.Sprintf("Couldn't find type for type name %s", name))
+		klog.Warningf("Couldn't find type for type name %s", name)
+		return name, nil
 	}
 
 	// If this typeName definition has a type of object, enum, validated, flagged, resource, or resourceList
