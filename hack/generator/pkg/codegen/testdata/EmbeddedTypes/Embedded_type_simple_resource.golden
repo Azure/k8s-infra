@@ -11,6 +11,7 @@ import (
 )
 
 type EmbeddedTestTypeArm struct {
+	FancyProp int `json:"fancyProp"`
 }
 
 // +kubebuilder:object:root=true
@@ -82,6 +83,7 @@ func (fakeResourceSpecArm FakeResource_SpecArm) GetType() string {
 }
 
 type EmbeddedTestType struct {
+	FancyProp int `json:"fancyProp"`
 }
 
 var _ genruntime.ArmTransformer = &EmbeddedTestType{}
@@ -92,6 +94,7 @@ func (embeddedTestType *EmbeddedTestType) ConvertToArm(name string) (interface{}
 		return nil, nil
 	}
 	var result EmbeddedTestTypeArm
+	result.FancyProp = embeddedTestType.FancyProp
 	return result, nil
 }
 
@@ -106,6 +109,7 @@ func (embeddedTestType *EmbeddedTestType) PopulateFromArm(owner genruntime.Known
 	if !ok {
 		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected EmbeddedTestTypeArm, got %T", armInput)
 	}
+	embeddedTestType.FancyProp = typedInput.FancyProp
 	return nil
 }
 

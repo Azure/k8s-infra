@@ -70,7 +70,7 @@ func makeTestLocalPackageReference(group string, version string) astmodel.LocalP
 func makeEmbeddedTestTypeDefinition() astmodel.TypeDefinition {
 	name := astmodel.MakeTypeName(makeTestLocalPackageReference("test", "v20200101"), "EmbeddedTestType")
 	t := astmodel.NewObjectType()
-	t.WithProperty(astmodel.NewPropertyDefinition("FancyProp", "fancyProp", astmodel.IntType))
+	t = t.WithProperty(astmodel.NewPropertyDefinition("FancyProp", "fancyProp", astmodel.IntType))
 
 	return astmodel.MakeTypeDefinition(name, t)
 }
