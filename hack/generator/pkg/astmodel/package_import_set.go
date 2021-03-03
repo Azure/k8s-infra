@@ -6,12 +6,13 @@
 package astmodel
 
 import (
-	"k8s.io/klog/v2"
 	"sort"
 	"strings"
 
 	"github.com/dave/dst"
 	"github.com/pkg/errors"
+	"k8s.io/klog/v2"
+
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
