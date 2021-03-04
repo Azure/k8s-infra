@@ -11,123 +11,185 @@ import (
 	"github.com/pkg/errors"
 )
 
-// TODO: This shares a lot of concept with ReferenceGraph -- combine somehow?
+// TODO: This is conceptually kinda close to ReferenceGraph except more powerful
 
-// TODO: One awkward thing about this is that while it applies the visitor to each item
-// TODO: in the graph, it doesn't give us a good way to modify type names (so if we change the structure of an
-// TODO: object, we need to after-the-fact go and fix up references to that object. It might be better if we
-// TODO: instead did this DFS style with a call in the type visitor VisitTypeName, which could then modify the
-// TODO: TypeName it returned in the case that the type it examined was modified. If we do this, we will need
-// TODO: external state to track what new types were added/modified
+// TypeWalkerRemoveType is a special TypeName that informs the type walker to remove the property containing this TypeName
+// entirely.
+var TypeWalkerRemoveType = MakeTypeName(LocalPackageReference{}, "TypeWalkerRemoveProperty")
 
+// TODO: it's awkward to have so much configuration on this thing (3 separate funcs that apply at different places in the walking process?)
+// TODO: but unsure if there's a better way... bring it up in code review.
 
-type typeWalkerQueueItem struct {
-	typeName TypeName
-	ctx      interface{}
-}
-
-// TypeWalker applies a TypeVisitor to each type in a type graph. Types referenced from the root
-// type are walked in breadth-first order.
+// TypeWalker performs a depth first search across the types provided, applying the visitor to each TypeDefinition.
+// MakeContextFunc is called before each visit, and AfterVisitFunc is called after each visit. WalkCycle is called
+// if a cycle is detected.
 type TypeWalker struct {
 	allTypes Types
-	visitor TypeVisitor
+	visitor  TypeVisitor
 
-	walkQueue []typeWalkerQueueItem
+	// MakeContextFunc is called before a type is visited.
+	MakeContextFunc func(it TypeName, ctx interface{}) (interface{}, error)
+	// AfterVisitFunc is called after the type walker has applied the visitor to a TypeDefinition.
+	AfterVisitFunc func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error)
+	// WalkCycle is called if a cycle is detected. It allows configurable behavior for how to handle cycles.
+	WalkCycle func(def TypeDefinition, ctx interface{}) (TypeName, error)
 
-	WalkFunc func(this *TypeWalker, def TypeDefinition, ctx interface{}) (TypeDefinition, error)
-	EnqueueContextFunc func(it TypeName, ctx interface{}) (interface{}, error) // Used to provide per-queue-item context
+	state                   typeWalkerState
+	originalVisitTypeName   func(this *TypeVisitor, it TypeName, ctx interface{}) (Type, error)
+	originalVisitObjectType func(this *TypeVisitor, it *ObjectType, ctx interface{}) (Type, error)
 }
 
-// NewTypeWalker returns a TypeWalker. The provided visitor VisitTypeName function must return a TypeName or calls to
+type typeWalkerState struct {
+	result     Types
+	processing map[TypeName]struct{}
+}
+
+// NewTypeWalker returns a TypeWalker.
+// The provided visitor VisitTypeName function must return a TypeName and VisitObjectType must return an ObjectType or calls to
 // Walk will panic.
 func NewTypeWalker(allTypes Types, visitor TypeVisitor) *TypeWalker {
 	typeWalker := TypeWalker{
 		allTypes: allTypes,
 	}
-	// visitor is a copy so modifications are safe here and won't impact passed visitor
-	originalVisitTypeName := visitor.VisitTypeName
-	visitor.VisitTypeName = func(this *TypeVisitor, it TypeName, ctx interface{}) (Type, error) {
-		result, err := originalVisitTypeName(this, it, ctx) // TODO: Type name changing here would also be... awkward. What to do?
-		if err != nil {
-			return nil, err
-		}
+	typeWalker.originalVisitTypeName = visitor.VisitTypeName
+	typeWalker.originalVisitObjectType = visitor.VisitObjectType
 
-		// There's an expectation here that this function returns a type name
-		typeName, ok := result.(TypeName)
-		if !ok {
-			panic(fmt.Sprintf("VisitTypeName did not return a TypeName, instead %q -> %T", it, result))
-		}
+	// visitor is a copy - modifications won't impact passed visitor
+	visitor.VisitTypeName = typeWalker.visitTypeName
+	visitor.VisitObjectType = typeWalker.visitObjectType
 
-		updatedCtx, err := typeWalker.EnqueueContextFunc(it, ctx)
-		if err != nil {
-			return nil, err
-		}
-		typeWalker.walkQueue = append(typeWalker.walkQueue, typeWalkerQueueItem{typeName: typeName, ctx: updatedCtx})
-
-		return result, nil
-	}
 	typeWalker.visitor = visitor
-	// TODO: Are these really "identity"? Maybe the walk is but the other one maybe not...
-	typeWalker.WalkFunc = IdentityWalk
-	typeWalker.EnqueueContextFunc = IdentityEnqueueContext
+	typeWalker.AfterVisitFunc = DefaultAfterVisit
+	typeWalker.MakeContextFunc = IdentityMakeContext
+	typeWalker.WalkCycle = IdentityWalkCycle
 
 	return &typeWalker
 }
 
-// Walk performs a breadth-first walk of the provided type definition and all types referenced by it.
-// Each walked definition has the TypeWalker visitor applied to it.
-// A type definition is visited once for each occurrence at a unique location in the type graph, but
-// can only appear in the result once. Before adding a definition to the result, a check is performed to see if
-// a definition with the same name already exists, and an error is returned if a type has the same name as one
-// already in the result set but a different structure.
-// Cycles in the type graph are allowed. Each type in a cycle is visited only once.
-func (t *TypeWalker) Walk(def TypeDefinition, ctx interface{}) (Types, error) {
-	result := make(Types)
-	visited := make(map[Type]struct{})
-
-	t.walkQueue = append(t.walkQueue, typeWalkerQueueItem{typeName: def.Name(), ctx: ctx})
-	for len(t.walkQueue) > 0 {
-		// Note: items are added to walkQueue by the visitor when visiting TypeName
-		queueItem := t.walkQueue[0]
-		t.walkQueue = t.walkQueue[1:]
-
-		def, ok := t.allTypes[queueItem.typeName]
-		if !ok {
-			return nil, errors.Errorf("unable to find type named %q", queueItem.typeName)
-		}
-
-		// Prevent loops to the exact same type-instance (note this isn't Equals based
-		// it's reference based). This prevents loops while allowing multiple instances
-		// of the same from different parts of the graph to be walked.
-		if _, ok := visited[def.Type()]; ok {
-			continue
-		}
-
-		updatedDef, err := t.WalkFunc(t, def, queueItem.ctx)
-		if err != nil {
-			return nil, errors.Wrap(err, "walkFunc returned an error")
-		}
-
-		visited[def.Type()] = struct{}{}
-
-		err = result.AddWithEqualityCheck(updatedDef)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return result, nil
-}
-
-func IdentityWalk(this *TypeWalker, def TypeDefinition, ctx interface{}) (TypeDefinition, error) {
-	updatedType, err := this.visitor.Visit(def.Type(), ctx)
+func (t *TypeWalker) visitTypeName(this *TypeVisitor, it TypeName, ctx interface{}) (Type, error) {
+	updatedCtx, err := t.MakeContextFunc(it, ctx)
 	if err != nil {
-		return TypeDefinition{}, err
+		return nil, err
 	}
 
-	return def.WithType(updatedType), nil
+	visitedTypeName, err := t.originalVisitTypeName(this, it, updatedCtx)
+	if err != nil {
+		return nil, err
+	}
+	var ok bool
+	it, ok = visitedTypeName.(TypeName)
+	if !ok {
+		panic(fmt.Sprintf("TypeWalker visitor VisitTypeName must return a TypeName, instead returned %T", visitedTypeName))
+	}
+
+	def, ok := t.allTypes[it]
+	if !ok {
+		return nil, errors.Errorf("couldn't find type %q", it)
+	}
+
+	// Prevent loops by bypassing this type if it's currently being processed. The processing
+	// slice is basically the "path" taken to get to the current type.
+	if _, ok := t.state.processing[def.Name()]; ok {
+		return t.WalkCycle(def, updatedCtx)
+	}
+	t.state.processing[def.Name()] = struct{}{}
+
+	updatedType, err := this.Visit(def.Type(), updatedCtx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error visiting type %q", def.Name())
+	}
+	updatedDef, err := t.AfterVisitFunc(def, def.WithType(updatedType), updatedCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	delete(t.state.processing, def.Name())
+
+	err = t.state.result.AddWithEqualityCheck(updatedDef)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedDef.Name(), nil
 }
 
-func IdentityEnqueueContext(_ TypeName, _ interface{}) (interface{}, error) {
-	return nil, nil
+func (t *TypeWalker) visitObjectType(this *TypeVisitor, it *ObjectType, ctx interface{}) (Type, error) {
+	result, err := t.originalVisitObjectType(this, it, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ot, ok := result.(*ObjectType)
+	if !ok {
+		panic(fmt.Sprintf("TypeWalker visitor VisitObjectType must return a *ObjectType, instead returned %T", result))
+	}
+
+	for _, prop := range ot.Properties() {
+		isCycle := isRemoveType(prop.PropertyType())
+		if isCycle {
+			ot = ot.WithoutProperty(prop.PropertyName())
+		}
+	}
+
+	return ot, nil
+}
+
+// Walk returns a Types collection constructed by applying the Visitor to each type in the graph of types reachable
+// from the provided TypeDefinition 'def'. Types are visited in a depth-first order. Cycles are not visited.
+func (t *TypeWalker) Walk(def TypeDefinition, ctx interface{}) (Types, error) {
+	t.state = typeWalkerState{
+		result:     make(Types),
+		processing: make(map[TypeName]struct{}),
+	}
+
+	t.state.processing[def.Name()] = struct{}{}
+
+	updatedType, err := t.visitor.Visit(def.Type(), ctx)
+	if err != nil {
+		return nil, err
+	}
+	updatedDef, err := t.AfterVisitFunc(def, def.WithType(updatedType), ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = t.state.result.AddWithEqualityCheck(updatedDef)
+	if err != nil {
+		return nil, err
+	}
+
+	return t.state.result, nil
+}
+
+// DefaultAfterVisit is the default AfterVisit function for TypeWalker. It returns the TypeDefinition from Visit unmodified
+func DefaultAfterVisit(_ TypeDefinition, updated TypeDefinition, _ interface{}) (TypeDefinition, error) {
+	return updated, nil
+}
+
+// IdentityMakeContext returns the context unmodified
+func IdentityMakeContext(_ TypeName, ctx interface{}) (interface{}, error) {
+	return ctx, nil
+}
+
+// IdentityWalkCycle is the default cycle walking behavior. It returns the cycle TypeName unmodified (so the cycle is
+// not removed or otherwise changed)
+func IdentityWalkCycle(def TypeDefinition, _ interface{}) (TypeName, error) {
+	return def.Name(), nil
+}
+
+func isRemoveType(t Type) bool {
+	switch cast := t.(type) {
+	case TypeName:
+		return cast.Equals(TypeWalkerRemoveType)
+	case *PrimitiveType:
+		return false
+	case MetaType:
+		return isRemoveType(cast.Unwrap())
+	case *ArrayType:
+		return isRemoveType(cast.Element())
+	case *MapType:
+		return isRemoveType(cast.KeyType()) || isRemoveType(cast.ValueType())
+	}
+
+	panic(fmt.Sprintf("Unknown Type: %T", t))
 }

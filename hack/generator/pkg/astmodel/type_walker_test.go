@@ -103,11 +103,11 @@ func TestTypeWalker_IdentityWalkReturnsIdenticalTypes(t *testing.T) {
 	visitor := MakeTypeVisitor()
 	walker := NewTypeWalker(types, visitor)
 
-	var walked []TypeDefinition
+	var walked []string
 
-	walker.WalkFunc = func(this *TypeWalker, def TypeDefinition, ctx interface{}) (TypeDefinition, error) {
-		walked = append(walked, def)
-		return IdentityWalk(this, def, ctx)
+	walker.AfterVisitFunc = func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error) {
+		walked = append(walked, original.Name().Name())
+		return DefaultAfterVisit(original, updated, ctx)
 	}
 
 	rootDef := types[rootTypeName]
@@ -117,9 +117,9 @@ func TestTypeWalker_IdentityWalkReturnsIdenticalTypes(t *testing.T) {
 	g.Expect(len(walked)).To(Equal(3))
 	g.Expect(len(updatedTypes)).To(Equal(3))
 
-	g.Expect(walked[0].Name().Name()).To(Equal("Root"))
-	g.Expect(walked[1].Name().Name()).To(Equal("Left"))
-	g.Expect(walked[2].Name().Name()).To(Equal("Right"))
+	g.Expect(walked).To(ContainElement("Left"))
+	g.Expect(walked).To(ContainElement("Right"))
+	g.Expect(walked).To(ContainElement("Root"))
 
 	for _, updated := range updatedTypes {
 		g.Expect(updated.Type().Equals(types[updated.Name()].Type())).To(BeTrue())
@@ -135,9 +135,9 @@ func TestTypeWalker_DuplicateTypesAreWalkedOnceEach_ReturnedOnce(t *testing.T) {
 
 	var walked []TypeDefinition
 
-	walker.WalkFunc = func(this *TypeWalker, def TypeDefinition, ctx interface{}) (TypeDefinition, error) {
-		walked = append(walked, def)
-		return IdentityWalk(this, def, ctx)
+	walker.AfterVisitFunc = func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error) {
+		walked = append(walked, original)
+		return DefaultAfterVisit(original, updated, ctx)
 	}
 
 	rootDef := types[rootTypeName]
@@ -147,26 +147,27 @@ func TestTypeWalker_DuplicateTypesAreWalkedOnceEach_ReturnedOnce(t *testing.T) {
 	g.Expect(len(walked)).To(Equal(3))
 	g.Expect(len(updatedTypes)).To(Equal(2))
 
-	g.Expect(walked[0].Name().Name()).To(Equal("Root"))
+	g.Expect(walked[0].Name().Name()).To(Equal("Left"))
 	g.Expect(walked[1].Name().Name()).To(Equal("Left"))
+	g.Expect(walked[2].Name().Name()).To(Equal("Root"))
 
 	for _, updated := range updatedTypes {
 		g.Expect(updated.Type().Equals(types[updated.Name()].Type())).To(BeTrue())
 	}
 }
 
-func TestTypeWalker_CyclesAllowed(t *testing.T) {
+func TestTypeWalker_CyclesAllowed_AreNotWalked(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	types := makeCycleTypeGraph()
 	visitor := MakeTypeVisitor()
 	walker := NewTypeWalker(types, visitor)
 
-	var walked []TypeDefinition
+	var walked []string
 
-	walker.WalkFunc = func(this *TypeWalker, def TypeDefinition, ctx interface{}) (TypeDefinition, error) {
-		walked = append(walked, def)
-		return IdentityWalk(this, def, ctx)
+	walker.AfterVisitFunc = func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error) {
+		walked = append(walked, original.Name().Name())
+		return DefaultAfterVisit(original, updated, ctx)
 	}
 
 	rootDef := types[rootTypeName]
@@ -176,12 +177,55 @@ func TestTypeWalker_CyclesAllowed(t *testing.T) {
 	g.Expect(len(walked)).To(Equal(3))
 	g.Expect(len(updatedTypes)).To(Equal(3))
 
-	g.Expect(walked[0].Name().Name()).To(Equal("Root"))
-	g.Expect(walked[1].Name().Name()).To(Equal("Left"))
-	g.Expect(walked[2].Name().Name()).To(Equal("Right"))
+	g.Expect(walked).To(ContainElement("Left"))
+	g.Expect(walked).To(ContainElement("Right"))
+	g.Expect(walked).To(ContainElement("Root"))
 
 	for _, updated := range updatedTypes {
 		g.Expect(updated.Type().Equals(types[updated.Name()].Type())).To(BeTrue())
+	}
+}
+
+func TestTypeWalker_CanPruneCycles(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	types := makeCycleTypeGraph()
+	visitor := MakeTypeVisitor()
+	walker := NewTypeWalker(types, visitor)
+
+	var walked []string
+
+	walker.AfterVisitFunc = func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error) {
+		walked = append(walked, original.Name().Name())
+		return DefaultAfterVisit(original, updated, ctx)
+	}
+
+	walker.WalkCycle = func(original TypeDefinition, ctx interface{}) (TypeName, error) {
+		// Prune all cycles
+		return TypeWalkerRemoveType, nil
+	}
+
+	rootDef := types[rootTypeName]
+	updatedTypes, err := walker.Walk(rootDef, nil)
+	g.Expect(err).ToNot(HaveOccurred())
+
+	g.Expect(len(walked)).To(Equal(3))
+	g.Expect(len(updatedTypes)).To(Equal(3))
+
+	g.Expect(walked).To(ContainElement("Left"))
+	g.Expect(walked).To(ContainElement("Right"))
+	g.Expect(walked).To(ContainElement("Root"))
+
+	for _, updated := range updatedTypes {
+		// Expect only left to be updated - that is only type with cycle property
+		if updated.Name().Equals(leftTypeName) {
+			g.Expect(updated.Type().Equals(types[updated.Name()].Type())).To(BeFalse())
+			obj, ok := updated.Type().(*ObjectType)
+			g.Expect(ok).To(BeTrue())
+			g.Expect(len(obj.Properties())).To(Equal(0))
+		} else {
+			g.Expect(updated.Type().Equals(types[updated.Name()].Type())).To(BeTrue())
+		}
 	}
 }
 
@@ -194,12 +238,12 @@ func TestTypeWalker_ContextPropagated(t *testing.T) {
 
 	walked := make(map[TypeName]int)
 
-	walker.WalkFunc = func(this *TypeWalker, def TypeDefinition, ctx interface{}) (TypeDefinition, error) {
+	walker.AfterVisitFunc = func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error) {
 		typedCtx := ctx.(int)
-		walked[def.Name()] = typedCtx
-		return IdentityWalk(this, def, ctx)
+		walked[updated.Name()] = typedCtx
+		return DefaultAfterVisit(original, updated, ctx)
 	}
-	walker.EnqueueContextFunc = func(_ TypeName, ctx interface{}) (interface{}, error) {
+	walker.MakeContextFunc = func(_ TypeName, ctx interface{}) (interface{}, error) {
 		typedCtx := ctx.(int)
 		typedCtx += 1
 
@@ -228,6 +272,8 @@ func TestTypeWalker_VisitorApplied(t *testing.T) {
 	types := makeSimpleTestTypeGraph()
 	visitor := MakeTypeVisitor()
 	visitor.VisitObjectType = func(this *TypeVisitor, it *ObjectType, ctx interface{}) (Type, error) {
+		_ = ctx.(int) // Ensure context is the right shape
+
 		// Find any properties of type string and remove them
 		for _, prop := range it.Properties() {
 			if prop.PropertyType() == StringType {
@@ -240,7 +286,7 @@ func TestTypeWalker_VisitorApplied(t *testing.T) {
 	walker := NewTypeWalker(types, visitor)
 
 	rootDef := types[rootTypeName]
-	updatedTypes, err := walker.Walk(rootDef, nil)
+	updatedTypes, err := walker.Walk(rootDef, 0)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	g.Expect(len(updatedTypes)).To(Equal(3))
@@ -257,4 +303,32 @@ func TestTypeWalker_VisitorApplied(t *testing.T) {
 			g.Expect(updated.Type().Equals(types[updated.Name()].Type())).To(BeTrue())
 		}
 	}
+}
+
+func TestTypeWalker_CanChangeNameInOnlyCertainPlaces(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	types := makeDuplicateReferencesTypeGraph()
+	visitor := MakeTypeVisitor()
+	walker := NewTypeWalker(types, visitor)
+
+	left2TypeName := MakeTypeName(leftTypeName.PackageReference, "Left2")
+
+	changed := false
+	walker.AfterVisitFunc = func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error) {
+		if updated.Name().Name() == "Left" && !changed {
+			changed = true
+			updated = updated.WithName(left2TypeName)
+		}
+		return DefaultAfterVisit(original, updated, ctx)
+	}
+
+	rootDef := types[rootTypeName]
+	updatedTypes, err := walker.Walk(rootDef, nil)
+	g.Expect(err).ToNot(HaveOccurred())
+
+	g.Expect(len(updatedTypes)).To(Equal(3))
+	g.Expect(updatedTypes).To(HaveKey(left2TypeName))
+	g.Expect(updatedTypes).To(HaveKey(leftTypeName))
+	g.Expect(updatedTypes[left2TypeName].Type().Equals(updatedTypes[leftTypeName].Type())).To(BeTrue())
 }
