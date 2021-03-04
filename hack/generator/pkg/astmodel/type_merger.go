@@ -7,29 +7,33 @@ package astmodel
 
 import (
 	"reflect"
+
+	"github.com/pkg/errors"
 )
 
 // TypeMerger is like a visitor for 2 types.
 // The `ctx` argument can be used to “smuggle” additional data down the call-chain.
 type TypeMerger struct {
-	mergers  map[TypePair]TypeMergerFunc
-	fallback TypeMergerFunc
+	mergers  []mergerRegistration
+	fallback MergerFunc
 }
 
-type TypePair struct{ left, right reflect.Type }
-type TypeMergerFunc func(left, right Type) Type
+type mergerRegistration struct {
+	left, right reflect.Type
+	merge       MergerFunc
+}
 
-func NewTypeMerger(fallback TypeMergerFunc) TypeMerger {
-	return TypeMerger{
-		mergers:  make(map[TypePair]TypeMergerFunc),
-		fallback: fallback,
-	}
+type MergerFunc func(ctx interface{}, left, right Type) (Type, error)
+
+func NewTypeMerger(fallback MergerFunc) TypeMerger {
+	return TypeMerger{fallback: fallback}
 }
 
 var typeInterface reflect.Type = reflect.TypeOf((*Type)(nil)).Elem() // yuck
+var errorInterface reflect.Type = reflect.TypeOf((*error)(nil)).Elem()
+var mergerFuncType reflect.Type = reflect.TypeOf((*MergerFunc)(nil)).Elem()
 
-func (m *TypeMerger) Add(merger interface{}) {
-
+func validateMerger(merger interface{}) (reflect.Value, reflect.Type, reflect.Type, bool) {
 	it := reflect.ValueOf(merger)
 	if it.Kind() != reflect.Func {
 		panic("merger must be a function")
@@ -37,46 +41,125 @@ func (m *TypeMerger) Add(merger interface{}) {
 
 	mergerType := it.Type()
 
-	if mergerType.NumIn() != 2 {
-		panic("merger must take two arguments")
+	if mergerType.NumIn() != 2 && mergerType.NumIn() != 3 {
+		panic("merger must take 2 arguments (Type, Type) or 3 arguments (X, Type, Type)")
 	}
 
-	if mergerType.NumOut() != 1 {
-		panic("merger must return one value")
-	}
+	inOffset := mergerType.NumIn() - 2
+	leftArg := mergerType.In(inOffset + 0)
+	rightArg := mergerType.In(inOffset + 1)
 
-	if mergerType.Out(0) != typeInterface {
-		panic("merger must return a Type")
-	}
-
-	leftArg := mergerType.In(0)
-	rightArg := mergerType.In(1)
 	if !leftArg.AssignableTo(typeInterface) || !rightArg.AssignableTo(typeInterface) {
 		panic("merger must take in types assignable to Type")
 	}
 
-	key := TypePair{leftArg, rightArg}
-	m.mergers[key] = func(left, right Type) Type {
-		return it.Call([]reflect.Value{reflect.ValueOf(left), reflect.ValueOf(right)})[0].Interface().(Type)
+	if mergerType.NumOut() != 2 ||
+		mergerType.Out(0) != typeInterface ||
+		mergerType.Out(1) != errorInterface {
+		panic("merger must return (Type, error)")
 	}
+
+	return it, leftArg, rightArg, inOffset != 0
+}
+
+func (m *TypeMerger) Add(mergeFunc interface{}) {
+	merger, leftArg, rightArg, takesCtx := validateMerger(mergeFunc)
+
+	m.mergers = append(m.mergers,
+		mergerRegistration{
+			left:  leftArg,
+			right: rightArg,
+			merge: reflect.MakeFunc(mergerFuncType, func(args []reflect.Value) []reflect.Value {
+				// we dereference the Type here to the underlying value so that
+				// the merger can take either Type or a specific type.
+				// if it takes Type then the compiler/runtime will convert the value back to a Type
+				ctxValue := args[0].Elem()
+				leftValue := args[1].Elem()
+				rightValue := args[2].Elem()
+				if takesCtx {
+					return merger.Call([]reflect.Value{ctxValue, leftValue, rightValue})
+				} else {
+					return merger.Call([]reflect.Value{leftValue, rightValue})
+				}
+			}).Interface().(MergerFunc),
+		})
+}
+
+func (m *TypeMerger) AddUnordered(mergeFunc interface{}) {
+	merger, leftArg, rightArg, takesCtx := validateMerger(mergeFunc)
+
+	m.mergers = append(m.mergers,
+		mergerRegistration{
+			left:  leftArg,
+			right: rightArg,
+			merge: reflect.MakeFunc(mergerFuncType, func(args []reflect.Value) []reflect.Value {
+				ctxValue := args[0].Elem()
+				leftValue := args[1].Elem()
+				rightValue := args[2].Elem()
+				if takesCtx {
+					return merger.Call([]reflect.Value{ctxValue, leftValue, rightValue})
+				} else {
+					return merger.Call([]reflect.Value{leftValue, rightValue})
+				}
+			}).Interface().(MergerFunc),
+		})
+
+	m.mergers = append(m.mergers,
+		mergerRegistration{
+			left:  rightArg, // flipped
+			right: leftArg,  // flipped
+			merge: reflect.MakeFunc(mergerFuncType, func(args []reflect.Value) []reflect.Value {
+				ctxValue := args[0].Elem()
+				leftValue := args[2].Elem()  // flipped
+				rightValue := args[1].Elem() // flipped
+				if takesCtx {
+					return merger.Call([]reflect.Value{ctxValue, leftValue, rightValue})
+				} else {
+					return merger.Call([]reflect.Value{leftValue, rightValue})
+				}
+			}).Interface().(MergerFunc),
+		})
 }
 
 // Merge merges the two types according to the provided mergers and fallback
-func (m *TypeMerger) Merge(left, right Type) Type {
+func (m *TypeMerger) Merge(left, right Type, ctx ...interface{}) (Type, error) {
+
+	if len(ctx) > 1 {
+		// optional argument
+		panic("can only pass one ctx value")
+	}
+
+	var ctxValue interface{}
+	if len(ctx) == 1 {
+		ctxValue = ctx[0]
+	}
+
 	if left == nil {
-		return right
+		return right, nil
 	}
 
 	if right == nil {
-		return left
+		return left, nil
 	}
 
 	leftType := reflect.ValueOf(left).Type()
 	rightType := reflect.ValueOf(right).Type()
 
-	if merger, ok := m.mergers[TypePair{leftType, rightType}]; ok {
-		return merger(left, right)
+	for _, merger := range m.mergers {
+		if (merger.left == leftType || merger.left == typeInterface) &&
+			(merger.right == rightType || merger.right == typeInterface) {
+			result, err := merger.merge(ctxValue, left, right)
+			if (result == nil && err == nil) || errors.Is(err, ContinueMerge) {
+				// these conditions indicate that the merger was not actually applicable,
+				// despite having a type that matched
+				continue
+			}
+
+			return result, err
+		}
 	}
 
-	return m.fallback(left, right)
+	return m.fallback(ctxValue, left, right)
 }
+
+var ContinueMerge error = errors.New("special error that indicates that the merger was not applicable")
