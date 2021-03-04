@@ -23,6 +23,7 @@ type PropertyDefinition struct {
 	propertyType Type
 	description  string
 	isRequired   bool
+	flatten      bool // maps to x-ms-flatten: should the propertyType be flattened into the parent
 	tags         map[string][]string
 }
 
@@ -55,8 +56,23 @@ func (property *PropertyDefinition) PropertyType() Type {
 
 // SetRequired sets if the property is required or not
 func (property *PropertyDefinition) SetRequired(required bool) *PropertyDefinition {
+	if required == property.isRequired {
+		return property
+	}
+
 	result := *property
 	result.isRequired = required
+	return &result
+}
+
+// SetFlatten sets if the property should be flattened or not
+func (property *PropertyDefinition) SetFlatten(flatten bool) *PropertyDefinition {
+	if flatten == property.flatten {
+		return property
+	}
+
+	result := *property
+	result.flatten = flatten
 	return &result
 }
 

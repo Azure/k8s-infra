@@ -501,3 +501,31 @@ func TestPropertyDefinition_Equals_WhenGivenPropertyDefinition_ReturnsExpectedRe
 		})
 	}
 }
+
+func TestSettingSameRequiredValueDoesNotAllocateNewPropertyDefinition(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	strProperty := createStringProperty("FullName", "Full Legal Name")
+	strPropertyRequired := strProperty.SetRequired(true)
+
+	// safety check
+	g.Expect(strProperty).ToNot(Equal(strPropertyRequired))
+
+	// actual asserts
+	g.Expect(strProperty.SetRequired(false)).To(BeIdenticalTo(strProperty))
+	g.Expect(strPropertyRequired.SetRequired(true)).To(BeIdenticalTo(strPropertyRequired))
+}
+
+func TestSettingSameFlattenValueDoesNotAllocateNewPropertyDefinition(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	strProperty := createStringProperty("FullName", "Full Legal Name")
+	strPropertyFlatten := strProperty.SetFlatten(true)
+
+	// safety check
+	g.Expect(strProperty).ToNot(Equal(strPropertyFlatten))
+
+	// actual asserts
+	g.Expect(strProperty.SetFlatten(false)).To(BeIdenticalTo(strProperty))
+	g.Expect(strPropertyFlatten.SetFlatten(true)).To(BeIdenticalTo(strPropertyFlatten))
+}
