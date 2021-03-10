@@ -17,7 +17,7 @@ import (
 type StorageConversionPropertyTestCase struct {
 	name          string
 	currentObject TypeDefinition
-	nextObject    *TypeDefinition
+	otherObject   TypeDefinition
 	hubObject     TypeDefinition
 	types         Types
 }
@@ -110,7 +110,7 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 			nextType)
 
 		result.name = name + "-ViaStaging"
-		result.nextObject = &nextDefinition
+		result.otherObject = nextDefinition
 		result.types.Add(nextDefinition)
 
 		return result
@@ -184,10 +184,10 @@ func RunTestStorageConversionFunction_AsFunc(c *StorageConversionPropertyTestCas
 	currentType, ok := AsObjectType(c.currentObject.Type())
 	g.Expect(ok).To(BeTrue())
 
-	convertFrom, errs := NewStorageConversionFromFunction(c.currentObject, c.nextObject, idFactory, conversionContext)
+	convertFrom, errs := NewStorageConversionFromFunction(c.currentObject, c.otherObject, idFactory, conversionContext)
 	g.Expect(errs).To(BeNil())
 
-	convertTo, errs := NewStorageConversionToFunction(c.currentObject, c.nextObject, idFactory, conversionContext)
+	convertTo, errs := NewStorageConversionToFunction(c.currentObject, c.otherObject, idFactory, conversionContext)
 	g.Expect(errs).To(BeNil())
 
 	receiverDefinition := c.currentObject.WithType(currentType.WithFunction(convertFrom).WithFunction(convertTo))
