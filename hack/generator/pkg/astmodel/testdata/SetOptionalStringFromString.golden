@@ -3,27 +3,32 @@
 // Licensed under the MIT license.
 package vCurrent
 
-import "github.com/Azure/k8s-infra/hack/generated/_apis/Verification/vHub"
+import "github.com/Azure/k8s-infra/hack/generated/_apis/Verification/vNext"
 
 type Person struct {
-	name string `json:"name"`
+	name *string `json:"name"`
 }
 
 // ConvertFrom populates our Person from the provided source Person
-func (person Person) ConvertFrom(source *vHub.Person) error {
+func (person Person) ConvertFrom(source *vNext.Person) error {
 
 	// name
-	person.name = source.name
+	name := source.name
+	person.name = &name
 
 	// No error
 	return nil
 }
 
 // ConvertTo populates the provided destination Person from our Person
-func (person Person) ConvertTo(destination *vHub.Person) error {
+func (person Person) ConvertTo(destination *vNext.Person) error {
 
 	// name
-	destination.name = person.name
+	if person.name != nil {
+		destination.name = *person.name
+	} else {
+		destination.name = ""
+	}
 
 	// No error
 	return nil

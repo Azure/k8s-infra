@@ -3,35 +3,37 @@
 // Licensed under the MIT license.
 package vCurrent
 
-import "github.com/Azure/k8s-infra/hack/generated/_apis/Verification/vHub"
+import "github.com/Azure/k8s-infra/hack/generated/_apis/Verification/vNext"
 
 type Person struct {
-	role Release `json:"role"`
+	role *Release `json:"role"`
 }
 
 // ConvertFrom populates our Person from the provided source Person
-func (person Person) ConvertFrom(source *vHub.Person) error {
+func (person Person) ConvertFrom(source *vNext.Person) error {
 
 	// role
 	var role Release
-	err := role.ConvertFrom(source.role)
+	err := role.ConvertFrom(&source.role)
 	if err != nil {
 		return errors.Wrap(err, "populating role from role, calling ConvertFrom()")
 	}
-	person.role = role
+	person.role = &role
 
 	// No error
 	return nil
 }
 
 // ConvertTo populates the provided destination Person from our Person
-func (person Person) ConvertTo(destination *vHub.Person) error {
+func (person Person) ConvertTo(destination *vNext.Person) error {
 
 	// role
-	var role vHub.Release
-	err := person.role.ConvertTo(role)
-	if err != nil {
-		return errors.Wrap(err, "populating role from role, calling ConvertTo()")
+	var role vNext.Release
+	if person.role != nil {
+		err := person.role.ConvertTo(role)
+		if err != nil {
+			return errors.Wrap(err, "populating role from role, calling ConvertTo()")
+		}
 	}
 	destination.role = role
 
