@@ -32,7 +32,7 @@ type StorageConversionFunction struct {
 	hubType TypeDefinition
 	// otherType is the type we are converting to (or from). This will be a type which is "closer"
 	// to the hub storage type, making this a building block of the final conversion.
-	otherType *TypeDefinition
+	otherType TypeDefinition
 	// conversions is a map of all property conversions we are going to use, keyed by name of the
 	// receiver property
 	conversions map[string]StoragePropertyConversion
@@ -62,7 +62,7 @@ var _ Function = &StorageConversionFunction{}
 // NewStorageConversionFromFunction creates a new StorageConversionFunction to convert from the specified source
 func NewStorageConversionFromFunction(
 	receiver TypeDefinition,
-	otherType *TypeDefinition,
+	otherType TypeDefinition,
 	idFactory IdentifierFactory,
 	conversionContext *StorageConversionContext,
 ) (*StorageConversionFunction, error) {
@@ -87,7 +87,7 @@ func NewStorageConversionFromFunction(
 // NewStorageConversionToFunction creates a new StorageConversionFunction to convert to the specified destination
 func NewStorageConversionToFunction(
 	receiver TypeDefinition,
-	otherType *TypeDefinition,
+	otherType TypeDefinition,
 	idFactory IdentifierFactory,
 	conversionContext *StorageConversionContext,
 ) (*StorageConversionFunction, error) {
@@ -118,24 +118,14 @@ func (fn *StorageConversionFunction) Name() string {
 func (fn *StorageConversionFunction) RequiredPackageReferences() *PackageReferenceSet {
 	result := NewPackageReferenceSet(
 		ErrorsReference,
-		fn.hubType.Name().PackageReference)
-
-	if fn.otherType != nil {
-		result.AddReference(fn.otherType.Name().PackageReference)
-	}
+		fn.otherType.Name().PackageReference)
 
 	return result
 }
 
 // References returns the set of types referenced by this function
 func (fn *StorageConversionFunction) References() TypeNameSet {
-	result := NewTypeNameSet(fn.hubType.Name())
-
-	if fn.otherType != nil {
-		result.Add(fn.otherType.Name())
-	}
-
-	return result
+	return NewTypeNameSet(fn.hubType.Name(), fn.otherType.Name())
 }
 
 // Equals checks to see if the supplied function is the same as this one
@@ -215,25 +205,12 @@ func (fn *StorageConversionFunction) generateBody(
 	parameter string,
 	generationContext *CodeGenerationContext,
 ) []dst.Stmt {
-	if fn.otherType == nil {
-		// Last step of conversion, directly working with the hubType type we've been given
-		switch fn.conversionDirection {
-		case ConvertFrom:
-			return fn.generateDirectConversionFrom(receiver, parameter, generationContext)
-		case ConvertTo:
-			return fn.generateDirectConversionTo(receiver, parameter, generationContext)
-		default:
-			panic(fmt.Sprintf("unexpected conversion direction %q", fn.conversionDirection))
-		}
-	}
-
-	// Intermediate step of conversion, not working directly with the hubType type we've been given
-	// Instead we convert to/from our intermediate type (which is one step closer to the hub type in our conversion graph)
+	// Last step of conversion, directly working with the hubType type we've been given
 	switch fn.conversionDirection {
 	case ConvertFrom:
-		return fn.generateIndirectConversionFrom(receiver, parameter, generationContext)
+		return fn.generateDirectConversionFrom(receiver, parameter, generationContext)
 	case ConvertTo:
-		return fn.generateIndirectConversionTo(receiver, parameter, generationContext)
+		return fn.generateDirectConversionTo(receiver, parameter, generationContext)
 	default:
 		panic(fmt.Sprintf("unexpected conversion direction %q", fn.conversionDirection))
 	}
@@ -421,16 +398,9 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 	}
 
 	var otherObject *ObjectType
-	if fn.otherType == nil {
-		otherObject, ok = AsObjectType(fn.hubType.Type())
-		if !ok {
-			return errors.Errorf("expected TypeDefinition %q to wrap hub object type, but none found", fn.hubType.Name().String())
-		}
-	} else {
-		otherObject, ok = AsObjectType(fn.otherType.Type())
-		if !ok {
-			return errors.Errorf("expected TypeDefinition %q to wrap intermediate object type, but none found", fn.otherType.Name().String())
-		}
+	otherObject, ok = AsObjectType(fn.hubType.Type())
+	if !ok {
+		return errors.Errorf("expected TypeDefinition %q to wrap hub object type, but none found", fn.hubType.Name().String())
 	}
 
 	var errs []error
