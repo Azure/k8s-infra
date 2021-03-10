@@ -7,7 +7,6 @@ package astmodel
 
 import (
 	"fmt"
-	"go/token"
 	"sort"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
@@ -234,120 +233,6 @@ func (fn *StorageConversionFunction) generateDirectConversionTo(
 ) []dst.Stmt {
 	result := fn.generateAssignments(dst.NewIdent(receiver), dst.NewIdent(parameter), generationContext)
 	result = append(result, astbuilder.ReturnNoError())
-	return result
-}
-
-// generateIndirectConversionFrom returns the method body required to populate our receiver when
-// we don't directly understand the structure of the parameter value.
-// To accommodate this, we first convert to an intermediate form:
-//
-// var staging IntermediateType
-// staging.ConvertFrom(parameter)
-// [copy values from staging]
-//
-func (fn *StorageConversionFunction) generateIndirectConversionFrom(
-	receiver string,
-	parameter string,
-	generationContext *CodeGenerationContext,
-) []dst.Stmt {
-
-	local := fn.knownLocals.createLocal(receiver + "Temp")
-	errLocal := dst.NewIdent("err")
-
-	intermediateName := fn.otherType.Name()
-	parameterPackage := generationContext.MustGetImportedPackageName(intermediateName.PackageReference)
-	localDeclaration := astbuilder.LocalVariableDeclaration(
-		local,
-		&dst.SelectorExpr{
-			X:   dst.NewIdent(parameterPackage),
-			Sel: dst.NewIdent(intermediateName.Name()),
-		},
-		fmt.Sprintf("// %s is our intermediate for conversion", local))
-	localDeclaration.Decorations().Before = dst.NewLine
-
-	callConvertFrom := astbuilder.SimpleAssignment(
-		errLocal,
-		token.DEFINE,
-		astbuilder.CallQualifiedFunc(local, fn.name, dst.NewIdent(parameter)))
-	callConvertFrom.Decorations().Before = dst.EmptyLine
-	callConvertFrom.Decorations().Start.Append(
-		fmt.Sprintf("// Populate %s from %s", local, parameter))
-
-	checkForError := astbuilder.ReturnIfNotNil(
-		errLocal,
-		astbuilder.WrappedErrorf(
-			"for %s, calling %s.%s(%s)",
-			receiver, local, fn.name, parameter))
-
-	assignments := fn.generateAssignments(
-		dst.NewIdent(local),
-		dst.NewIdent(receiver),
-		generationContext)
-
-	var result []dst.Stmt
-	result = append(result, localDeclaration)
-	result = append(result, callConvertFrom)
-	result = append(result, checkForError)
-	result = append(result, assignments...)
-	result = append(result, astbuilder.ReturnNoError())
-
-	return result
-}
-
-// generateIndirectConversionTo returns the method body required to populate our parameter
-// instance when we don't directly understand the structure of the parameter value.
-// To accommodate this, we first populate an intermediate form that is then converted.
-//
-// var staging IntermediateType
-// [copy values to staging]
-// staging.ConvertTo(parameter)
-//
-func (fn *StorageConversionFunction) generateIndirectConversionTo(
-	receiver string,
-	parameter string,
-	generationContext *CodeGenerationContext,
-) []dst.Stmt {
-
-	local := fn.knownLocals.createLocal(receiver + "Temp")
-	errLocal := dst.NewIdent("err")
-
-	intermediateName := fn.otherType.Name()
-	parameterPackage := generationContext.MustGetImportedPackageName(intermediateName.PackageReference)
-	localDeclaration := astbuilder.LocalVariableDeclaration(
-		local,
-		&dst.SelectorExpr{
-			X:   dst.NewIdent(parameterPackage),
-			Sel: dst.NewIdent(intermediateName.Name()),
-		},
-		fmt.Sprintf("// %s is our intermediate for conversion", local))
-	localDeclaration.Decorations().Before = dst.NewLine
-
-	callConvertTo := astbuilder.SimpleAssignment(
-		errLocal,
-		token.DEFINE,
-		astbuilder.CallQualifiedFunc(local, fn.name, dst.NewIdent(parameter)))
-	callConvertTo.Decorations().Before = dst.EmptyLine
-	callConvertTo.Decorations().Start.Append(
-		fmt.Sprintf("// Populate %s from %s", parameter, local))
-
-	checkForError := astbuilder.ReturnIfNotNil(
-		errLocal,
-		astbuilder.WrappedErrorf(
-			"for %s, calling %s.%s(%s)",
-			receiver, local, fn.name, parameter))
-
-	assignments := fn.generateAssignments(
-		dst.NewIdent(receiver),
-		dst.NewIdent(local),
-		generationContext)
-
-	var result []dst.Stmt
-	result = append(result, localDeclaration)
-	result = append(result, assignments...)
-	result = append(result, callConvertTo)
-	result = append(result, checkForError)
-	result = append(result, astbuilder.ReturnNoError())
-
 	return result
 }
 
