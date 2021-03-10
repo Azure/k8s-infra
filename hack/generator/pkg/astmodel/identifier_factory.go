@@ -158,7 +158,7 @@ func createReservedWords() map[string]string {
 }
 
 func (factory *identifierFactory) CreatePackageNameFromVersion(version string) string {
-	return "v" + sanitizePackageName(version)
+	return "v1alpha1api" + sanitizePackageName(version)
 }
 
 func (factory *identifierFactory) CreateGroupName(group string) string {
