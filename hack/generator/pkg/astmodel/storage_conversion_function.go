@@ -27,9 +27,6 @@ type StoragePropertyConversion func(
 type StorageConversionFunction struct {
 	// name of this conversion function
 	name string
-	// hubType is the ultimate hub type to which (or from which) we are converting, passed as a
-	// parameter to our function
-	hubType TypeDefinition
 	// otherType is the type we are converting to (or from). This will be a type which is "closer"
 	// to the hub storage type, making this a building block of the final conversion.
 	otherType TypeDefinition
@@ -125,7 +122,7 @@ func (fn *StorageConversionFunction) RequiredPackageReferences() *PackageReferen
 
 // References returns the set of types referenced by this function
 func (fn *StorageConversionFunction) References() TypeNameSet {
-	return NewTypeNameSet(fn.hubType.Name(), fn.otherType.Name())
+	return NewTypeNameSet(fn.otherType.Name())
 }
 
 // Equals checks to see if the supplied function is the same as this one
@@ -162,10 +159,10 @@ func (fn *StorageConversionFunction) AsFunc(generationContext *CodeGenerationCon
 	switch fn.conversionDirection {
 	case ConvertFrom:
 		parameterName = "source"
-		description = fmt.Sprintf("populates our %s from the provided source %s", receiver.Name(), fn.hubType.Name().Name())
+		description = fmt.Sprintf("populates our %s from the provided source %s", receiver.Name(), fn.otherType.Name().Name())
 	case ConvertTo:
 		parameterName = "destination"
-		description = fmt.Sprintf("populates the provided destination %s from our %s", fn.hubType.Name().Name(), receiver.Name())
+		description = fmt.Sprintf("populates the provided destination %s from our %s", fn.otherType.Name().Name(), receiver.Name())
 	default:
 		panic(fmt.Sprintf("unexpected conversion direction %q", fn.conversionDirection))
 	}
@@ -179,14 +176,14 @@ func (fn *StorageConversionFunction) AsFunc(generationContext *CodeGenerationCon
 		Body:          fn.generateBody(receiverName, parameterName, generationContext),
 	}
 
-	parameterPackage := generationContext.MustGetImportedPackageName(fn.hubType.Name().PackageReference)
+	parameterPackage := generationContext.MustGetImportedPackageName(fn.otherType.Name().PackageReference)
 
 	funcDetails.AddParameter(
 		parameterName,
 		&dst.StarExpr{
 			X: &dst.SelectorExpr{
 				X:   dst.NewIdent(parameterPackage),
-				Sel: dst.NewIdent(fn.hubType.Name().Name()),
+				Sel: dst.NewIdent(fn.otherType.Name().Name()),
 			},
 		})
 
@@ -398,9 +395,9 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 	}
 
 	var otherObject *ObjectType
-	otherObject, ok = AsObjectType(fn.hubType.Type())
+	otherObject, ok = AsObjectType(fn.otherType.Type())
 	if !ok {
-		return errors.Errorf("expected TypeDefinition %q to wrap hub object type, but none found", fn.hubType.Name().String())
+		return errors.Errorf("expected TypeDefinition %q to wrap hub object type, but none found", fn.otherType.Name().String())
 	}
 
 	var errs []error
