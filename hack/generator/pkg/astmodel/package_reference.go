@@ -26,6 +26,8 @@ type PackageReference interface {
 	Equals(ref PackageReference) bool
 	// String returns the string representation of the package reference
 	String() string
+	// IsPreview returns true if this package reference is a preview
+	IsPreview() bool
 }
 
 // PackageAsLocalPackage converts the given PackageReference into a LocalPackageReference if possible.

@@ -5,7 +5,10 @@
 
 package astmodel
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 const (
 	StoragePackageSuffix = "storage"
@@ -31,6 +34,14 @@ func MakeStoragePackageReference(local LocalPackageReference) StoragePackageRefe
 // String returns the string representation of the package reference
 func (spr StoragePackageReference) String() string {
 	return fmt.Sprintf("storage:%v", spr.PackagePath())
+}
+
+// IsPreview returns true if this package reference is a preview
+func (spr StoragePackageReference) IsPreview() bool {
+	lc := strings.ToLower(spr.version)
+	return strings.Contains(lc, "alpha") ||
+		strings.Contains(lc, "beta") ||
+		strings.Contains(lc, "preview")
 }
 
 // IsStoragePackageReference returns true if the reference is to a storage package

@@ -5,7 +5,10 @@
 
 package astmodel
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // LocalPackageReference specifies a local package name or reference
 type LocalPackageReference struct {
@@ -66,6 +69,14 @@ func (pr LocalPackageReference) Equals(ref PackageReference) bool {
 // String returns the string representation of the package reference
 func (pr LocalPackageReference) String() string {
 	return pr.PackagePath()
+}
+
+// IsPreview returns true if this package reference is a preview
+func (pr LocalPackageReference) IsPreview() bool {
+	lc := strings.ToLower(pr.version)
+	return strings.Contains(lc, "alpha") ||
+		strings.Contains(lc, "beta") ||
+		strings.Contains(lc, "preview")
 }
 
 // IsLocalPackageReference returns true if the supplied reference is a local one
