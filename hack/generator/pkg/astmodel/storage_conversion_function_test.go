@@ -18,7 +18,6 @@ type StorageConversionPropertyTestCase struct {
 	name          string
 	currentObject TypeDefinition
 	otherObject   TypeDefinition
-	hubObject     TypeDefinition
 	types         Types
 }
 
@@ -92,7 +91,7 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 		return &StorageConversionPropertyTestCase{
 			name:          name + "-Direct",
 			currentObject: currentDefinition,
-			hubObject:     hubDefinition,
+			otherObject:   hubDefinition,
 			types:         types,
 		}
 	}
