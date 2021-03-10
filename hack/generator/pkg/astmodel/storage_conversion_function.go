@@ -30,10 +30,9 @@ type StorageConversionFunction struct {
 	// hubType is the ultimate hub type to which (or from which) we are converting, passed as a
 	// parameter to our function
 	hubType TypeDefinition
-	// intermediateType optionally identifies a type which is "closer" to the hubType through which
-	// we can achieve our conversion. Will be nil if we are converting to/from the hub type
-	// directly, otherwise we use this as an intermediate form.
-	intermediateType *TypeDefinition
+	// otherType is the type we are converting to (or from). This will be a type which is "closer"
+	// to the hub storage type, making this a building block of the final conversion.
+	otherType *TypeDefinition
 	// conversions is a map of all property conversions we are going to use, keyed by name of the
 	// receiver property
 	conversions map[string]StoragePropertyConversion
@@ -71,7 +70,7 @@ func NewStorageConversionFromFunction(
 	result := &StorageConversionFunction{
 		name:                "ConvertFrom",
 		hubType:             sourceHubType,
-		intermediateType:    intermediateType,
+		otherType:           intermediateType,
 		idFactory:           idFactory,
 		conversionDirection: ConvertFrom,
 		conversions:         make(map[string]StoragePropertyConversion),
@@ -98,7 +97,7 @@ func NewStorageConversionToFunction(
 	result := &StorageConversionFunction{
 		name:                "ConvertTo",
 		hubType:             destinationHubType,
-		intermediateType:    intermediateType,
+		otherType:           intermediateType,
 		idFactory:           idFactory,
 		conversionDirection: ConvertTo,
 		conversions:         make(map[string]StoragePropertyConversion),
@@ -125,8 +124,8 @@ func (fn *StorageConversionFunction) RequiredPackageReferences() *PackageReferen
 		ErrorsReference,
 		fn.hubType.Name().PackageReference)
 
-	if fn.intermediateType != nil {
-		result.AddReference(fn.intermediateType.Name().PackageReference)
+	if fn.otherType != nil {
+		result.AddReference(fn.otherType.Name().PackageReference)
 	}
 
 	return result
@@ -136,8 +135,8 @@ func (fn *StorageConversionFunction) RequiredPackageReferences() *PackageReferen
 func (fn *StorageConversionFunction) References() TypeNameSet {
 	result := NewTypeNameSet(fn.hubType.Name())
 
-	if fn.intermediateType != nil {
-		result.Add(fn.intermediateType.Name())
+	if fn.otherType != nil {
+		result.Add(fn.otherType.Name())
 	}
 
 	return result
@@ -220,7 +219,7 @@ func (fn *StorageConversionFunction) generateBody(
 	parameter string,
 	generationContext *CodeGenerationContext,
 ) []dst.Stmt {
-	if fn.intermediateType == nil {
+	if fn.otherType == nil {
 		// Last step of conversion, directly working with the hubType type we've been given
 		switch fn.conversionDirection {
 		case ConvertFrom:
@@ -285,7 +284,7 @@ func (fn *StorageConversionFunction) generateIndirectConversionFrom(
 	local := fn.knownLocals.createLocal(receiver + "Temp")
 	errLocal := dst.NewIdent("err")
 
-	intermediateName := fn.intermediateType.Name()
+	intermediateName := fn.otherType.Name()
 	parameterPackage := generationContext.MustGetImportedPackageName(intermediateName.PackageReference)
 	localDeclaration := astbuilder.LocalVariableDeclaration(
 		local,
@@ -342,7 +341,7 @@ func (fn *StorageConversionFunction) generateIndirectConversionTo(
 	local := fn.knownLocals.createLocal(receiver + "Temp")
 	errLocal := dst.NewIdent("err")
 
-	intermediateName := fn.intermediateType.Name()
+	intermediateName := fn.otherType.Name()
 	parameterPackage := generationContext.MustGetImportedPackageName(intermediateName.PackageReference)
 	localDeclaration := astbuilder.LocalVariableDeclaration(
 		local,
@@ -426,15 +425,15 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 	}
 
 	var otherObject *ObjectType
-	if fn.intermediateType == nil {
+	if fn.otherType == nil {
 		otherObject, ok = AsObjectType(fn.hubType.Type())
 		if !ok {
 			return errors.Errorf("expected TypeDefinition %q to wrap hub object type, but none found", fn.hubType.Name().String())
 		}
 	} else {
-		otherObject, ok = AsObjectType(fn.intermediateType.Type())
+		otherObject, ok = AsObjectType(fn.otherType.Type())
 		if !ok {
-			return errors.Errorf("expected TypeDefinition %q to wrap intermediate object type, but none found", fn.intermediateType.Name().String())
+			return errors.Errorf("expected TypeDefinition %q to wrap intermediate object type, but none found", fn.otherType.Name().String())
 		}
 	}
 
