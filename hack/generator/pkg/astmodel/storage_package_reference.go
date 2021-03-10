@@ -32,13 +32,13 @@ func MakeStoragePackageReference(local LocalPackageReference) StoragePackageRefe
 }
 
 // String returns the string representation of the package reference
-func (spr StoragePackageReference) String() string {
-	return fmt.Sprintf("storage:%v", spr.PackagePath())
+func (s StoragePackageReference) String() string {
+	return fmt.Sprintf("storage:%v", s.PackagePath())
 }
 
 // IsPreview returns true if this package reference is a preview
-func (spr StoragePackageReference) IsPreview() bool {
-	lc := strings.ToLower(spr.version)
+func (s StoragePackageReference) IsPreview() bool {
+	lc := strings.ToLower(s.version)
 	return strings.Contains(lc, "alpha") ||
 		strings.Contains(lc, "beta") ||
 		strings.Contains(lc, "preview")

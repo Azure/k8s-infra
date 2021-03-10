@@ -25,36 +25,36 @@ func MakeExternalPackageReference(packagePath string) ExternalPackageReference {
 
 // AsLocalPackage returns an empty local reference and false to indicate that library packages
 // are not local
-func (pr ExternalPackageReference) AsLocalPackage() (LocalPackageReference, bool) {
+func (e ExternalPackageReference) AsLocalPackage() (LocalPackageReference, bool) {
 	return LocalPackageReference{}, false
 }
 
 // PackageName returns the package name of this reference
-func (pr ExternalPackageReference) PackageName() string {
-	l := strings.Split(pr.packagePath, "/")
+func (e ExternalPackageReference) PackageName() string {
+	l := strings.Split(e.packagePath, "/")
 	return l[len(l)-1]
 }
 
 // PackagePath returns the fully qualified package path
-func (pr ExternalPackageReference) PackagePath() string {
-	return pr.packagePath
+func (e ExternalPackageReference) PackagePath() string {
+	return e.packagePath
 }
 
 // Equals returns true if the passed package reference references the same package, false otherwise
-func (pr ExternalPackageReference) Equals(ref PackageReference) bool {
+func (e ExternalPackageReference) Equals(ref PackageReference) bool {
 	if other, ok := ref.(ExternalPackageReference); ok {
-		return pr.packagePath == other.packagePath
+		return e.packagePath == other.packagePath
 	}
 
 	return false
 }
 
 // IsPreview returns false because external references are never previews
-func (pr ExternalPackageReference) IsPreview() bool {
+func (e ExternalPackageReference) IsPreview() bool {
 	return false
 }
 
 // String returns the string representation of the package reference
-func (pr ExternalPackageReference) String() string {
-	return pr.packagePath
+func (e ExternalPackageReference) String() string {
+	return e.packagePath
 }
