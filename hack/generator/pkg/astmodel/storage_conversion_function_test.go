@@ -184,10 +184,10 @@ func RunTestStorageConversionFunction_AsFunc(c *StorageConversionPropertyTestCas
 	currentType, ok := AsObjectType(c.currentObject.Type())
 	g.Expect(ok).To(BeTrue())
 
-	convertFrom, errs := NewStorageConversionFromFunction(c.currentObject, c.hubObject, c.nextObject, idFactory, conversionContext)
+	convertFrom, errs := NewStorageConversionFromFunction(c.currentObject, c.nextObject, idFactory, conversionContext)
 	g.Expect(errs).To(BeNil())
 
-	convertTo, errs := NewStorageConversionToFunction(c.currentObject, c.hubObject, c.nextObject, idFactory, conversionContext)
+	convertTo, errs := NewStorageConversionToFunction(c.currentObject, c.nextObject, idFactory, conversionContext)
 	g.Expect(errs).To(BeNil())
 
 	receiverDefinition := c.currentObject.WithType(currentType.WithFunction(convertFrom).WithFunction(convertTo))

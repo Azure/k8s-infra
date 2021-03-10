@@ -62,15 +62,13 @@ var _ Function = &StorageConversionFunction{}
 // NewStorageConversionFromFunction creates a new StorageConversionFunction to convert from the specified source
 func NewStorageConversionFromFunction(
 	receiver TypeDefinition,
-	sourceHubType TypeDefinition,
-	intermediateType *TypeDefinition,
+	otherType *TypeDefinition,
 	idFactory IdentifierFactory,
 	conversionContext *StorageConversionContext,
 ) (*StorageConversionFunction, error) {
 	result := &StorageConversionFunction{
 		name:                "ConvertFrom",
-		hubType:             sourceHubType,
-		otherType:           intermediateType,
+		otherType:           otherType,
 		idFactory:           idFactory,
 		conversionDirection: ConvertFrom,
 		conversions:         make(map[string]StoragePropertyConversion),
@@ -89,15 +87,13 @@ func NewStorageConversionFromFunction(
 // NewStorageConversionToFunction creates a new StorageConversionFunction to convert to the specified destination
 func NewStorageConversionToFunction(
 	receiver TypeDefinition,
-	destinationHubType TypeDefinition,
-	intermediateType *TypeDefinition,
+	otherType *TypeDefinition,
 	idFactory IdentifierFactory,
 	conversionContext *StorageConversionContext,
 ) (*StorageConversionFunction, error) {
 	result := &StorageConversionFunction{
 		name:                "ConvertTo",
-		hubType:             destinationHubType,
-		otherType:           intermediateType,
+		otherType:           otherType,
 		idFactory:           idFactory,
 		conversionDirection: ConvertTo,
 		conversions:         make(map[string]StoragePropertyConversion),
