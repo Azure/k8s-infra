@@ -9,8 +9,8 @@ type Person struct {
 	nasty map[string][]map[string]bool `json:"nasty"`
 }
 
-// ConvertFrom populates our Person from the provided source Person
-func (person Person) ConvertFrom(source *vNext.Person) error {
+// ConvertFromVNext populates our Person from the provided source Person
+func (person Person) ConvertFromVNext(source *vNext.Person) error {
 
 	// nasty
 	nastyMap := make(map[string][]map[string]bool)
@@ -31,8 +31,8 @@ func (person Person) ConvertFrom(source *vNext.Person) error {
 	return nil
 }
 
-// ConvertTo populates the provided destination Person from our Person
-func (person Person) ConvertTo(destination *vNext.Person) error {
+// ConvertToVNext populates the provided destination Person from our Person
+func (person Person) ConvertToVNext(destination *vNext.Person) error {
 
 	// nasty
 	nastyMap := make(map[string][]map[string]bool)

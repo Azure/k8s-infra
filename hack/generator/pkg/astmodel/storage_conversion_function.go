@@ -63,14 +63,16 @@ func NewStorageConversionFromFunction(
 	conversionContext *StorageConversionContext,
 ) (*StorageConversionFunction, error) {
 	result := &StorageConversionFunction{
-		name:                "ConvertFrom",
 		otherType:           otherType,
 		idFactory:           idFactory,
 		conversionDirection: ConvertFrom,
 		conversions:         make(map[string]StoragePropertyConversion),
 		knownLocals:         NewKnownLocalsSet(idFactory),
-		conversionContext:   conversionContext.WithFunctionName("ConvertFrom"),
 	}
+
+	version := idFactory.CreateIdentifier(otherType.Name().PackageReference.PackageName(), Exported)
+	result.name = "ConvertFrom" + version
+	result.conversionContext = conversionContext.WithFunctionName(result.name)
 
 	err := result.createConversions(receiver)
 	if err != nil {
@@ -88,14 +90,16 @@ func NewStorageConversionToFunction(
 	conversionContext *StorageConversionContext,
 ) (*StorageConversionFunction, error) {
 	result := &StorageConversionFunction{
-		name:                "ConvertTo",
 		otherType:           otherType,
 		idFactory:           idFactory,
 		conversionDirection: ConvertTo,
 		conversions:         make(map[string]StoragePropertyConversion),
 		knownLocals:         NewKnownLocalsSet(idFactory),
-		conversionContext:   conversionContext.WithFunctionName("ConvertTo"),
 	}
+
+	version := idFactory.CreateIdentifier(otherType.Name().PackageReference.PackageName(), Exported)
+	result.name = "ConvertTo" + version
+	result.conversionContext = conversionContext.WithFunctionName(result.name)
 
 	err := result.createConversions(receiver)
 	if err != nil {
