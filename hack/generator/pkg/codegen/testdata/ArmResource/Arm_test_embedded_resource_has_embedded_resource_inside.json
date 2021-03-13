@@ -25,7 +25,7 @@
                 "type": {
                     "type": "string",
                     "enum": [
-                        "Microsoft.Azure/B"
+                        "Microsoft.Azure/C"
                     ]
                 },
                 "apiVersion": {
@@ -35,7 +35,7 @@
                     ]
                 },
                 "properties": {
-                    "$ref": "#/definitions/CResource"
+                    "$ref": "#/definitions/CProperties"
                 }
             },
             "required": [
@@ -63,7 +63,7 @@
                     ]
                 },
                 "properties": {
-                    "$ref": "#/definitions/BResource"
+                    "$ref": "#/definitions/BProperties"
                 }
             },
             "required": [

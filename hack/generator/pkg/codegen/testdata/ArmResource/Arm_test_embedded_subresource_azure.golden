@@ -19,7 +19,7 @@ type A struct {
 	Spec              A_Spec `json:"spec,omitempty"`
 }
 
-// +kubebuilder:webhook:path=/mutate-test-infra-azure-com-v20200101-a,mutating=true,sideEffects=None,matchPolicy=Exact,failurePolicy=fail,groups=test.infra.azure.com,resources=as,verbs=create;update,versions=v20200101,name=default.v20200101.as.test.infra.azure.com
+// +kubebuilder:webhook:path=/mutate-test-infra-azure-com-v20200101-a,mutating=true,sideEffects=None,matchPolicy=Exact,failurePolicy=fail,groups=test.infra.azure.com,resources=as,verbs=create;update,versions=v20200101,name=default.v20200101.as.test.infra.azure.com,admissionReviewVersions=v1beta1
 
 var _ admission.Defaulter = &A{}
 
@@ -84,7 +84,7 @@ type B struct {
 	Spec              B_Spec `json:"spec,omitempty"`
 }
 
-// +kubebuilder:webhook:path=/mutate-test-infra-azure-com-v20200101-b,mutating=true,sideEffects=None,matchPolicy=Exact,failurePolicy=fail,groups=test.infra.azure.com,resources=bs,verbs=create;update,versions=v20200101,name=default.v20200101.bs.test.infra.azure.com
+// +kubebuilder:webhook:path=/mutate-test-infra-azure-com-v20200101-b,mutating=true,sideEffects=None,matchPolicy=Exact,failurePolicy=fail,groups=test.infra.azure.com,resources=bs,verbs=create;update,versions=v20200101,name=default.v20200101.bs.test.infra.azure.com,admissionReviewVersions=v1beta1
 
 var _ admission.Defaulter = &B{}
 
@@ -119,7 +119,7 @@ type BList struct {
 type B_SpecArm struct {
 	ApiVersion BSpecApiVersion `json:"apiVersion"`
 	Name       string          `json:"name"`
-	Properties *BResourceArm   `json:"properties,omitempty"`
+	Properties *BPropertiesArm `json:"properties,omitempty"`
 	Type       BSpecType       `json:"type"`
 }
 
@@ -142,9 +142,8 @@ func (bSpecArm B_SpecArm) GetType() string {
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/AProperties
 type APropertiesArm struct {
-	IntField    *int                   `json:"intField,omitempty"`
-	RefField    *BResource_EmbeddedArm `json:"refField,omitempty"`
-	StringField *string                `json:"stringField,omitempty"`
+	IntField    *int    `json:"intField,omitempty"`
+	StringField *string `json:"stringField,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-06-01"}
@@ -218,12 +217,9 @@ func (aSpec *A_Spec) PopulateFromArm(owner genruntime.KnownResourceReference, ar
 // SetAzureName sets the Azure name of the resource
 func (aSpec *A_Spec) SetAzureName(azureName string) { aSpec.AzureName = azureName }
 
-//Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/BResource
-type BResourceArm struct {
-	Id         *string         `json:"id,omitempty"`
-	Name       *string         `json:"name,omitempty"`
-	Properties *BPropertiesArm `json:"properties,omitempty"`
-	Type       *string         `json:"type,omitempty"`
+//Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/BProperties
+type BPropertiesArm struct {
+	EnumField *BPropertiesEnumField `json:"enumField,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-06-01"}
@@ -242,8 +238,8 @@ type B_Spec struct {
 	AzureName string `json:"azureName"`
 
 	// +kubebuilder:validation:Required
-	Owner      genruntime.KnownResourceReference `group:"microsoft.resources.infra.azure.com" json:"owner" kind:"ResourceGroup"`
-	Properties *BResource                        `json:"properties,omitempty"`
+	Owner      genruntime.KnownResourceReference `group:"test.infra.azure.com" json:"owner" kind:"A"`
+	Properties *BProperties                      `json:"properties,omitempty"`
 }
 
 var _ genruntime.ArmTransformer = &B_Spec{}
@@ -261,7 +257,7 @@ func (bSpec *B_Spec) ConvertToArm(name string) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		propertiesTyped := properties.(BResourceArm)
+		propertiesTyped := properties.(BPropertiesArm)
 		result.Properties = &propertiesTyped
 	}
 	result.Type = BSpecTypeMicrosoftAzureB
@@ -283,7 +279,7 @@ func (bSpec *B_Spec) PopulateFromArm(owner genruntime.KnownResourceReference, ar
 	bSpec.Owner = owner
 	var err error
 	if typedInput.Properties != nil {
-		var properties BResource
+		var properties BProperties
 		err = properties.PopulateFromArm(owner, *typedInput.Properties)
 		if err != nil {
 			return err
@@ -299,9 +295,8 @@ func (bSpec *B_Spec) SetAzureName(azureName string) { bSpec.AzureName = azureNam
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/AProperties
 type AProperties struct {
-	IntField    *int                `json:"intField,omitempty"`
-	RefField    *BResource_Embedded `json:"refField,omitempty"`
-	StringField *string             `json:"stringField,omitempty"`
+	IntField    *int    `json:"intField,omitempty"`
+	StringField *string `json:"stringField,omitempty"`
 }
 
 var _ genruntime.ArmTransformer = &AProperties{}
@@ -315,14 +310,6 @@ func (aProperties *AProperties) ConvertToArm(name string) (interface{}, error) {
 	if aProperties.IntField != nil {
 		intFieldTyped := *aProperties.IntField
 		result.IntField = &intFieldTyped
-	}
-	if aProperties.RefField != nil {
-		refField, err := (*aProperties.RefField).ConvertToArm(name)
-		if err != nil {
-			return nil, err
-		}
-		refFieldTyped := refField.(BResource_EmbeddedArm)
-		result.RefField = &refFieldTyped
 	}
 	if aProperties.StringField != nil {
 		stringFieldTyped := *aProperties.StringField
@@ -346,106 +333,11 @@ func (aProperties *AProperties) PopulateFromArm(owner genruntime.KnownResourceRe
 		intFieldTyped := *typedInput.IntField
 		aProperties.IntField = &intFieldTyped
 	}
-	var err error
-	if typedInput.RefField != nil {
-		var refField BResource_Embedded
-		err = refField.PopulateFromArm(owner, *typedInput.RefField)
-		if err != nil {
-			return err
-		}
-		refFieldTyped := refField
-		aProperties.RefField = &refFieldTyped
-	}
 	if typedInput.StringField != nil {
 		stringFieldTyped := *typedInput.StringField
 		aProperties.StringField = &stringFieldTyped
 	}
 	return nil
-}
-
-//Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/BProperties
-type BPropertiesArm struct {
-	EnumField *BPropertiesEnumField `json:"enumField,omitempty"`
-}
-
-//Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/BResource
-type BResource struct {
-	Id         *string      `json:"id,omitempty"`
-	Name       *string      `json:"name,omitempty"`
-	Properties *BProperties `json:"properties,omitempty"`
-	Type       *string      `json:"type,omitempty"`
-}
-
-var _ genruntime.ArmTransformer = &BResource{}
-
-// ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (bResource *BResource) ConvertToArm(name string) (interface{}, error) {
-	if bResource == nil {
-		return nil, nil
-	}
-	var result BResourceArm
-	if bResource.Id != nil {
-		idTyped := *bResource.Id
-		result.Id = &idTyped
-	}
-	if bResource.Name != nil {
-		nameTyped := *bResource.Name
-		result.Name = &nameTyped
-	}
-	if bResource.Properties != nil {
-		properties, err := (*bResource.Properties).ConvertToArm(name)
-		if err != nil {
-			return nil, err
-		}
-		propertiesTyped := properties.(BPropertiesArm)
-		result.Properties = &propertiesTyped
-	}
-	if bResource.Type != nil {
-		typeTyped := *bResource.Type
-		result.Type = &typeTyped
-	}
-	return result, nil
-}
-
-// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
-func (bResource *BResource) CreateEmptyArmValue() interface{} {
-	return BResourceArm{}
-}
-
-// PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
-func (bResource *BResource) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(BResourceArm)
-	if !ok {
-		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected BResourceArm, got %T", armInput)
-	}
-	if typedInput.Id != nil {
-		idTyped := *typedInput.Id
-		bResource.Id = &idTyped
-	}
-	if typedInput.Name != nil {
-		nameTyped := *typedInput.Name
-		bResource.Name = &nameTyped
-	}
-	var err error
-	if typedInput.Properties != nil {
-		var properties BProperties
-		err = properties.PopulateFromArm(owner, *typedInput.Properties)
-		if err != nil {
-			return err
-		}
-		propertiesTyped := properties
-		bResource.Properties = &propertiesTyped
-	}
-	if typedInput.Type != nil {
-		typeTyped := *typedInput.Type
-		bResource.Type = &typeTyped
-	}
-	return nil
-}
-
-//Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/BResource
-type BResource_EmbeddedArm struct {
-	Id *string `json:"id,omitempty"`
 }
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/BProperties
@@ -490,44 +382,6 @@ func (bProperties *BProperties) PopulateFromArm(owner genruntime.KnownResourceRe
 type BPropertiesEnumField string
 
 const BPropertiesEnumFieldQux = BPropertiesEnumField("Qux")
-
-//Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/BResource
-type BResource_Embedded struct {
-	Id *string `json:"id,omitempty"`
-}
-
-var _ genruntime.ArmTransformer = &BResource_Embedded{}
-
-// ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (bResourceEmbedded *BResource_Embedded) ConvertToArm(name string) (interface{}, error) {
-	if bResourceEmbedded == nil {
-		return nil, nil
-	}
-	var result BResource_EmbeddedArm
-	if bResourceEmbedded.Id != nil {
-		idTyped := *bResourceEmbedded.Id
-		result.Id = &idTyped
-	}
-	return result, nil
-}
-
-// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
-func (bResourceEmbedded *BResource_Embedded) CreateEmptyArmValue() interface{} {
-	return BResource_EmbeddedArm{}
-}
-
-// PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
-func (bResourceEmbedded *BResource_Embedded) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(BResource_EmbeddedArm)
-	if !ok {
-		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected BResource_EmbeddedArm, got %T", armInput)
-	}
-	if typedInput.Id != nil {
-		idTyped := *typedInput.Id
-		bResourceEmbedded.Id = &idTyped
-	}
-	return nil
-}
 
 func init() {
 	SchemeBuilder.Register(&A{}, &AList{}, &B{}, &BList{})

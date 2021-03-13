@@ -1,5 +1,5 @@
 {
-    "$comment": "Test that an ARM resource that has another ARM resource embedded inside one of its properties correctly has the embedded resource removed",
+    "$comment": "Test that an ARM resource that has another ARM resource embedded inside one of its properties correctly has the embedded resource removed. This emulates a pattern seen commonly in Microsoft.Networking, for example with PublicIPAddress which is used in various places (such as LoadBalancer.properties.frontendIPConfigurations[].properties.publicIPAddress) in addition to as a top level type. Note that sometimes the JSON schema (spec) doesn't show these relationships but the Swagger does.",
     "id": "https://test.test/schemas/2020-01-01/test.json",
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Test",
@@ -107,6 +107,9 @@
                 },
                 "properties": {
                     "$ref": "#/definitions/BProperties"
+                },
+                "id": {
+                    "type": "string"
                 }
             }
         }

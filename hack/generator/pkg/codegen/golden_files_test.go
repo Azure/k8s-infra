@@ -150,7 +150,7 @@ func NewTestCodeGenerator(testName string, path string, t *testing.T, testConfig
 	case config.GenerationPipelineAzure:
 		codegen.RemoveStages("deleteGenerated", "rogueCheck", "createStorage", "reportTypesAndVersions")
 		if !testConfig.HasARMResources {
-			codegen.RemoveStages("createArmTypes", "applyArmConversionInterface", "removeEmbeddedResources", "removeEmbeddedSubResources", "removeEmptyObjectTypes")
+			codegen.RemoveStages("createArmTypes", "applyArmConversionInterface", "removeEmbeddedResources", "removeEmptyObjectTypes")
 			codegen.ReplaceStage("stripUnreferenced", stripUnusedTypesPipelineStage())
 		}
 	case config.GenerationPipelineCrossplane:

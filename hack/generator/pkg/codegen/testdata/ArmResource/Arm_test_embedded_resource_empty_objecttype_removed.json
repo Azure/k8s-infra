@@ -1,5 +1,5 @@
 {
-    "$comment": "Test that an ARM resource that has another ARM resource embedded inside one of its properties, but that same property is also used in a context where it's the top level type",
+    "$comment": "Test that an ARM resource that has another ARM resource embedded inside one of its properties correctly has the embedded resource and any empty object types created by that removal removed.",
     "id": "https://test.test/schemas/2020-01-01/test.json",
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Test",
@@ -32,7 +32,7 @@
                     ]
                 },
                 "properties": {
-                    "$ref": "#/definitions/BResource"
+                    "$ref": "#/definitions/BProperties"
                 }
             },
             "required": [
@@ -107,9 +107,6 @@
                 },
                 "properties": {
                     "$ref": "#/definitions/BProperties"
-                },
-                "id": {
-                    "type": "string"
                 }
             }
         }

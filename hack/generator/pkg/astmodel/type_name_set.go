@@ -5,6 +5,8 @@
 
 package astmodel
 
+import "fmt"
+
 // TypeNameSet stores type names in no particular order without
 // duplicates.
 type TypeNameSet map[TypeName]struct{}
