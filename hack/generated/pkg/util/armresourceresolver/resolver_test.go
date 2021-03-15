@@ -14,6 +14,8 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	//lint:ignore SA1019 ignoring deprecation to unblock CI builds
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
