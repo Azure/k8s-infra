@@ -205,7 +205,6 @@ func (fn *StorageConversionFunction) generateBody(
 	parameter string,
 	generationContext *CodeGenerationContext,
 ) []dst.Stmt {
-	// Last step of conversion, directly working with the hubType type we've been given
 	switch fn.conversionDirection {
 	case ConvertFrom:
 		return fn.generateDirectConversionFrom(receiver, parameter, generationContext)
