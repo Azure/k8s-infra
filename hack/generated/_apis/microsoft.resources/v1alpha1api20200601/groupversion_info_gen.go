@@ -9,7 +9,7 @@ Licensed under the MIT license.
 // All object properties are optional by default, this will be overridden when needed:
 // +kubebuilder:validation:Optional
 // +groupName=microsoft.resources.infra.azure.com
-package v20200601
+package v1alpha1api20200601
 
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
