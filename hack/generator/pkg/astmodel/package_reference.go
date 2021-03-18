@@ -31,7 +31,8 @@ type PackageReference interface {
 	Equals(ref PackageReference) bool
 	// String returns the string representation of the package reference
 	String() string
-	// IsPreview returns true if this package reference is a preview
+	// IsPreview returns true if this package reference has a suffix indicating it's a preview
+	// release, false otherwise
 	IsPreview() bool
 }
 
@@ -101,7 +102,7 @@ func (v *versionComparer) Compare() int {
 		}
 
 		if unicode.IsLetter(v.left[v.leftIndex]) && unicode.IsLetter(v.right[v.rightIndex]) {
-			// Found the start of a number
+			// Found the start of an identifier
 			compare := v.compareIdentifier()
 			if compare != 0 {
 				return compare
@@ -131,7 +132,7 @@ func (v *versionComparer) Compare() int {
 
 // compareNumeric compares two digit sequences as though they represent an integer number. We don't
 // convert the number to a literal int because we don't want to run the risk of overflow, but
-// fortunately we can compare numbers digit by digit.
+// fortunately we can compare integer numbers by length and digit by digit.
 func (v *versionComparer) compareNumeric() int {
 	// Start by skipping any leading zeros as they don't change the value
 	v.leftIndex = v.endOfSpan(v.left, v.leftIndex, v.IsZero)
