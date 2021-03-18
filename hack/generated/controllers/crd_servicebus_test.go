@@ -7,21 +7,22 @@ package controllers_test
 
 import (
 	"context"
-	util "github.com/Azure/k8s-infra/hack/generated/pkg/util"
 	"testing"
 
+	"github.com/Azure/k8s-infra/hack/generated/pkg/testcommon"
+
 	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	servicebus "github.com/Azure/k8s-infra/hack/generated/_apis/microsoft.servicebus/v20180101preview"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/testcommon"
+	util "github.com/Azure/k8s-infra/hack/generated/pkg/util"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func Test_ServiceBus_Namespace_CRUD(t *testing.T) {
 	t.Parallel()
 
 	g := NewGomegaWithT(t)
-	log := controllers.NewBannerLogger()
+	log := util.NewBannerLogger()
 	log.Header(t.Name())
 
 	ctx := context.Background()
