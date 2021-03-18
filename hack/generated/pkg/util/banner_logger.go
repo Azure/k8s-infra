@@ -25,15 +25,15 @@ func (b *BannerLogger) Header(content string) {
 	lineLength := utf8.RuneCountInString(content)
 	fmt.Println(strings.Repeat("=", lineLength))
 	fmt.Println(content)
-	fmt.Println(strings.Repeat(line, lineLength))
+	fmt.Println(strings.Repeat("=", lineLength))
 }
 
 func (b *BannerLogger) Subheader(content string) {
 	text := fmt.Sprintf("%s %s", b.label(), content)
 	lineLength := utf8.RuneCountInString(text)
-	fmt.Println(strings.Repeat(line, lineLength))
+	fmt.Println(strings.Repeat("-", lineLength))
 	fmt.Println(text)
-	fmt.Println(strings.Repeat(line, lineLength))
+	fmt.Println(strings.Repeat("-", lineLength))
 }
 
 func (b *BannerLogger) NewSublogger() *BannerLogger {
