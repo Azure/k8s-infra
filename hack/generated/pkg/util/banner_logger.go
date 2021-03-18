@@ -31,6 +31,12 @@ func (b *BannerLogger) WriteBanner(line string, content string) {
 	fmt.Println(strings.Repeat(line, lineLength))
 }
 
+func (b *BannerLogger) NewSublogger() *BannerLogger {
+	return &BannerLogger{
+		parent: b,
+	}
+}
+
 // label returns an indexed identifier for the current stage
 func (b *BannerLogger) label() string {
 	if b.parent == nil {
