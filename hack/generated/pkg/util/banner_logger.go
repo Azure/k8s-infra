@@ -29,6 +29,7 @@ func (b *BannerLogger) Header(content string) {
 }
 
 func (b *BannerLogger) Subheader(content string) {
+	b.currentStage++
 	text := fmt.Sprintf("%s %s", b.label(), content)
 	lineLength := utf8.RuneCountInString(text)
 	fmt.Println(strings.Repeat("-", lineLength))
