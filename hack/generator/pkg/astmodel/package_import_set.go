@@ -6,12 +6,11 @@
 package astmodel
 
 import (
-	"sort"
-	"strings"
-
 	"github.com/dave/dst"
 	"github.com/pkg/errors"
 	"k8s.io/klog/v2"
+	"sort"
+	"strings"
 
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 )
@@ -269,7 +268,8 @@ func (set *PackageImportSet) ServiceNameForImport(imp PackageImport) string {
 //      for microsoft.storage/v20200101 extract "storagev20200101" and so on
 func (set *PackageImportSet) versionedNameForImport(imp PackageImport) string {
 	service := set.ServiceNameForImport(imp)
-	return service + imp.packageReference.PackageName()
+	version := imp.packageReference.PackageName()
+	return service + strings.Title(version)
 }
 
 func (set *PackageImportSet) orderImports(i PackageImport, j PackageImport) bool {

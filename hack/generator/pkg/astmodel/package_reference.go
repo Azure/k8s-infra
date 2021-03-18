@@ -6,9 +6,10 @@
 package astmodel
 
 import (
-	"github.com/pkg/errors"
 	"sort"
 	"unicode"
+
+	"github.com/pkg/errors"
 )
 
 const (
