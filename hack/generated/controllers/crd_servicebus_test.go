@@ -7,6 +7,7 @@ package controllers_test
 
 import (
 	"context"
+	util "github.com/Azure/k8s-infra/hack/generated/pkg/util"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -20,13 +21,18 @@ func Test_ServiceBus_Namespace_CRUD(t *testing.T) {
 	t.Parallel()
 
 	g := NewGomegaWithT(t)
+	log := controllers.NewBannerLogger()
+	log.Header(t.Name())
+
 	ctx := context.Background()
 	testContext, err := testContext.ForTest(t)
 	g.Expect(err).ToNot(HaveOccurred())
 
+	log.Subheader("Create new test resource group")
 	rg, err := testContext.CreateNewTestResourceGroup(testcommon.WaitForCreation)
 	g.Expect(err).ToNot(HaveOccurred())
 
+	log.Subheader("Create service bus namespace")
 	zoneRedundant := false
 	namespace := &servicebus.Namespace{
 		ObjectMeta: testContext.MakeObjectMetaWithName(testContext.Namer.GenerateName("sbnamespace")),
@@ -50,13 +56,14 @@ func Test_ServiceBus_Namespace_CRUD(t *testing.T) {
 
 	// Run sub-tests
 	t.Run("Queue CRUD", func(t *testing.T) {
-		ServiceBus_Queue_CRUD(t, testContext, namespace.ObjectMeta)
+		ServiceBus_Queue_CRUD(t, testContext, namespace.ObjectMeta, log.NewSublogger())
 	})
 
 	g.Expect(namespace.Status.Id).ToNot(BeNil())
 	armId := *namespace.Status.Id
 
 	// Delete
+	log.Subheader("Delete service bus namespace")
 	err = testContext.KubeClient.Delete(ctx, namespace)
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Eventually(namespace).Should(testContext.Match.BeDeleted(ctx))
@@ -68,7 +75,8 @@ func Test_ServiceBus_Namespace_CRUD(t *testing.T) {
 	g.Expect(exists).To(BeFalse())
 }
 
-func ServiceBus_Queue_CRUD(t *testing.T, testContext testcommon.KubePerTestContext, sbNamespace metav1.ObjectMeta) {
+func ServiceBus_Queue_CRUD(
+	t *testing.T, testContext testcommon.KubePerTestContext, sbNamespace metav1.ObjectMeta, log *util.BannerLogger) {
 	ctx := context.Background()
 
 	g := NewGomegaWithT(t)
@@ -82,6 +90,7 @@ func ServiceBus_Queue_CRUD(t *testing.T, testContext testcommon.KubePerTestConte
 	}
 
 	// Create
+	log.Subheader("Create servicebus queue")
 	err := testContext.KubeClient.Create(ctx, queue)
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Eventually(queue).Should(testContext.Match.BeProvisioned(ctx))
@@ -92,6 +101,7 @@ func ServiceBus_Queue_CRUD(t *testing.T, testContext testcommon.KubePerTestConte
 	g.Expect(queue.Status.Properties.SizeInBytes).ToNot(BeNil())
 	g.Expect(*queue.Status.Properties.SizeInBytes).To(Equal(0))
 
+	log.Subheader("Delete servicebus queue")
 	err = testContext.KubeClient.Delete(ctx, queue)
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Eventually(queue).Should(testContext.Match.BeDeleted(ctx))
