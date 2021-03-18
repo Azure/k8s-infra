@@ -297,24 +297,24 @@ func TestPackageImportSet_ResolveConflicts_GivenImplicityNamedConflicts_AssignsE
 			"Import conflicts with versioned resolution (i)",
 			createSet(emailTestRef, networkTestRef, emailTestAltRef, networkTestAltRef),
 			emailTestRef,
-			"emailv20180801",
+			"emailV20180801",
 		},
 		{
 			"Import conflicts with versioned resolution (ii)",
 			createSet(emailTestRef, networkTestRef, emailTestAltRef, networkTestAltRef),
 			networkTestRef,
-			"networkv20180801"},
+			"networkV20180801"},
 		{
 			"Import conflicts with versioned resolution (iii)",
 			createSet(emailTestRef, networkTestRef, emailTestAltRef, networkTestAltRef),
 			emailTestAltRef,
-			"emailv20200801",
+			"emailV20200801",
 		},
 		{
 			"Import conflicts with versioned resolution (iv)",
 			createSet(emailTestRef, networkTestRef, emailTestAltRef, networkTestAltRef),
 			networkTestAltRef,
-			"networkv20200801",
+			"networkV20200801",
 		},
 	}
 
