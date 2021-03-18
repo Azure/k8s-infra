@@ -12,17 +12,22 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
+	util "github.com/Azure/k8s-infra/hack/generated/pkg/util"
 )
 
 func Test_ResourceGroup_CRUD(t *testing.T) {
 	t.Parallel()
 
 	g := NewGomegaWithT(t)
+	log := util.NewBannerLogger()
+	log.Header(t.Name())
+
 	ctx := context.Background()
 	testContext, err := testContext.ForTest(t)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	// Create a resource group
+	log.Subheader("Create resource group")
 	rg := testContext.NewTestResourceGroup()
 	err = testContext.KubeClient.Create(ctx, rg)
 	g.Expect(err).ToNot(HaveOccurred())
@@ -36,6 +41,7 @@ func Test_ResourceGroup_CRUD(t *testing.T) {
 	armId := rg.Status.ID
 
 	// Delete the resource group
+	log.Subheader("Delete resource group")
 	err = testContext.KubeClient.Delete(ctx, rg)
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Eventually(rg).Should(testContext.Match.BeDeleted(ctx))

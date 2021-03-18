@@ -14,16 +14,21 @@ import (
 
 	storage "github.com/Azure/k8s-infra/hack/generated/_apis/microsoft.storage/v20190401"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/testcommon"
+	util "github.com/Azure/k8s-infra/hack/generated/pkg/util"
 )
 
 func Test_StorageAccount_CRUD(t *testing.T) {
 	t.Parallel()
 
 	g := NewGomegaWithT(t)
+	log := util.NewBannerLogger()
+	log.Header(t.Name())
+
 	ctx := context.Background()
 	testContext, err := testContext.ForTest(t)
 	g.Expect(err).ToNot(HaveOccurred())
 
+	log.Subheader("Create resource group")
 	rg, err := testContext.CreateNewTestResourceGroup(testcommon.WaitForCreation)
 	g.Expect(err).ToNot(HaveOccurred())
 
@@ -31,6 +36,7 @@ func Test_StorageAccount_CRUD(t *testing.T) {
 	namer := testContext.Namer.WithSeparator("")
 
 	// Create a storage account
+	log.Subheader("Create storage account")
 	accessTier := storage.StorageAccountPropertiesCreateParametersAccessTierHot
 	acct := &storage.StorageAccount{
 		ObjectMeta: testContext.MakeObjectMetaWithName(namer.GenerateName("stor")),
@@ -61,10 +67,11 @@ func Test_StorageAccount_CRUD(t *testing.T) {
 
 	// Run sub-tests on storage account
 	t.Run("Blob Services CRUD", func(t *testing.T) {
-		StorageAccount_BlobServices_CRUD(t, testContext, acct.ObjectMeta)
+		StorageAccount_BlobServices_CRUD(t, testContext, acct.ObjectMeta, log.NewSublogger())
 	})
 
 	// Delete the storage account
+	log.Subheader("Delete storage account")
 	err = testContext.KubeClient.Delete(ctx, acct)
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Eventually(acct).Should(testContext.Match.BeDeleted(ctx))
@@ -78,7 +85,8 @@ func Test_StorageAccount_CRUD(t *testing.T) {
 	g.Expect(exists).To(BeFalse())
 }
 
-func StorageAccount_BlobServices_CRUD(t *testing.T, testContext testcommon.KubePerTestContext, storageAccount metav1.ObjectMeta) {
+func StorageAccount_BlobServices_CRUD(
+	t *testing.T, testContext testcommon.KubePerTestContext, storageAccount metav1.ObjectMeta, log *util.BannerLogger) {
 	ctx := context.Background()
 
 	g := NewGomegaWithT(t)
@@ -91,6 +99,7 @@ func StorageAccount_BlobServices_CRUD(t *testing.T, testContext testcommon.KubeP
 	}
 
 	// Create
+	log.Subheader("Create blob service")
 	err := testContext.KubeClient.Create(ctx, blobService)
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Eventually(blobService).Should(testContext.Match.BeProvisioned(ctx))
