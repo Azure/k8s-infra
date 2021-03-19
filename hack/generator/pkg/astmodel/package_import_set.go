@@ -270,7 +270,7 @@ func (set *PackageImportSet) ServiceNameForImport(imp PackageImport) string {
 func (set *PackageImportSet) versionedNameForImport(imp PackageImport) string {
 	service := set.ServiceNameForImport(imp)
 	version := imp.packageReference.PackageName()
-	return service + strings.Title(version)
+	return service + version
 }
 
 func (set *PackageImportSet) orderImports(i PackageImport, j PackageImport) bool {
