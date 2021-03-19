@@ -74,7 +74,7 @@ func (v *versionComparer) Compare() int {
 		}
 
 		if v.leftIndex >= len(v.left) {
-			// Ran out of the left array; if the right array has an identifier, right goes first, otherwise left
+			// Ran out of the left array only; if the right array has an identifier, right goes first, otherwise left
 			if unicode.IsLetter(v.right[v.rightIndex]) {
 				return 1
 			}
@@ -83,7 +83,7 @@ func (v *versionComparer) Compare() int {
 		}
 
 		if v.rightIndex >= len(v.right) {
-			// Ran out of the right array; if the left array has an identifier, left goes first, otherwise right
+			// Ran out of the right array only; if the left array has an identifier, left goes first, otherwise right
 			if unicode.IsLetter(v.left[v.leftIndex]) {
 				return -1
 			}
@@ -91,7 +91,10 @@ func (v *versionComparer) Compare() int {
 			return 1
 		}
 
-		if unicode.IsDigit(v.left[v.leftIndex]) && unicode.IsDigit(v.right[v.rightIndex]) {
+		leftRune := v.left[v.leftIndex]
+		rightRune := v.right[v.rightIndex]
+
+		if unicode.IsDigit(leftRune) && unicode.IsDigit(rightRune) {
 			// Found the start of a number
 			compare := v.compareNumeric()
 			if compare != 0 {
@@ -101,7 +104,7 @@ func (v *versionComparer) Compare() int {
 			continue
 		}
 
-		if unicode.IsLetter(v.left[v.leftIndex]) && unicode.IsLetter(v.right[v.rightIndex]) {
+		if unicode.IsLetter(leftRune) && unicode.IsLetter(rightRune) {
 			// Found the start of an identifier
 			compare := v.compareIdentifier()
 			if compare != 0 {
@@ -111,7 +114,7 @@ func (v *versionComparer) Compare() int {
 			continue
 		}
 
-		if v.left[v.leftIndex] == v.right[v.rightIndex] {
+		if leftRune == rightRune {
 			// Both runes the same, skip to the next one
 			v.leftIndex++
 			v.rightIndex++
@@ -119,7 +122,7 @@ func (v *versionComparer) Compare() int {
 		}
 
 		// Runes are different, make a decision
-		if v.left[v.leftIndex] < v.right[v.rightIndex] {
+		if leftRune < rightRune {
 			return -1
 		} else {
 			return 1
