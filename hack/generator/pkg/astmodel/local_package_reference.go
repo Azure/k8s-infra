@@ -73,10 +73,8 @@ func (pr LocalPackageReference) String() string {
 
 // IsPreview returns true if this package reference is a preview
 func (pr LocalPackageReference) IsPreview() bool {
-	lc := strings.ToLower(pr.version)
-	return strings.Contains(lc, "alpha") ||
-		strings.Contains(lc, "beta") ||
-		strings.Contains(lc, "preview")
+	_, isPreview := containsPreviewVersionLabel(strings.ToLower(pr.version))
+	return isPreview
 }
 
 // IsLocalPackageReference returns true if the supplied reference is a local one

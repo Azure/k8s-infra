@@ -38,10 +38,8 @@ func (s StoragePackageReference) String() string {
 
 // IsPreview returns true if this package reference is a preview
 func (s StoragePackageReference) IsPreview() bool {
-	lc := strings.ToLower(s.version)
-	return strings.Contains(lc, "alpha") ||
-		strings.Contains(lc, "beta") ||
-		strings.Contains(lc, "preview")
+	_, isPreview := containsPreviewVersionLabel(strings.ToLower(s.version))
+	return isPreview
 }
 
 // IsStoragePackageReference returns true if the reference is to a storage package

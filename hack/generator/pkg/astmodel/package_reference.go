@@ -7,6 +7,7 @@ package astmodel
 
 import (
 	"sort"
+	strings "strings"
 	"unicode"
 
 	"github.com/pkg/errors"
@@ -196,8 +197,8 @@ func (v *versionComparer) compareIdentifier() int {
 	}
 
 	// Check to see if we have any special identifiers
-	leftRank, leftIsSpecial := v.identifierRank(left)
-	rightRank, rightIsSpecial := v.identifierRank(right)
+	leftRank, leftIsSpecial := v.isPreviewVersionLabel(left)
+	rightRank, rightIsSpecial := v.isPreviewVersionLabel(right)
 
 	// Check to see if both identifiers are special
 	if leftIsSpecial && rightIsSpecial {
@@ -244,19 +245,32 @@ func (v *versionComparer) IsZero(r rune) bool {
 	return r == '0'
 }
 
-// specialVersionIdentifiers is a sequence of specially treated identifiers
+// previewVersionLabels is a sequence of specially treated identifiers
 // These come before all others and are compared in the order listed here
-var specialVersionIdentifiers []string = []string{
+var previewVersionLabels []string = []string{
 	"alpha",
 	"beta",
 	"preview",
 }
 
-// identifierRank checks the passed identifier to see if it is one of our special set, and if so
-// returns its rank and true. If the passed identifier is not special, returns -1 and false.
-func (v *versionComparer) identifierRank(identifier string) (int, bool) {
-	for rank, id := range specialVersionIdentifiers {
+// isPreviewVersionLabel checks the passed identifier to see if it is one of our special set, and
+// if so returns its rank and true. If the passed identifier is not special, returns -1 and false.
+func (v *versionComparer) isPreviewVersionLabel(identifier string) (int, bool) {
+	for rank, id := range previewVersionLabels {
 		if identifier == id {
+			return rank, true
+		}
+	}
+
+	return -1, false
+}
+
+// containsPreviewVersionLabel checks the passed identifier to see if it ends with one of our
+// special set, and if so returns its rank and true. If the passed identifier does not end with
+// one, returns -1 and false.
+func containsPreviewVersionLabel(identifier string) (int, bool) {
+	for rank, id := range previewVersionLabels {
+		if strings.Contains(identifier, id) {
 			return rank, true
 		}
 	}
