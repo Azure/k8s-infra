@@ -7,7 +7,7 @@ package astmodel
 
 import (
 	"sort"
-	strings "strings"
+	"strings"
 	"unicode"
 
 	"github.com/pkg/errors"
