@@ -265,15 +265,15 @@ func (v *versionComparer) isPreviewVersionLabel(identifier string) (int, bool) {
 	return -1, false
 }
 
-// containsPreviewVersionLabel checks the passed identifier to see if it ends with one of our
-// special set, and if so returns its rank and true. If the passed identifier does not end with
-// one, returns -1 and false.
-func containsPreviewVersionLabel(identifier string) (int, bool) {
-	for rank, id := range previewVersionLabels {
+// containsPreviewVersionLabel checks the passed identifier to see if it contains one of our
+// special set, and if so returns its true. If the passed identifier does not contain one,
+// returns false.
+func containsPreviewVersionLabel(identifier string) bool {
+	for _, id := range previewVersionLabels {
 		if strings.Contains(identifier, id) {
-			return rank, true
+			return true
 		}
 	}
 
-	return -1, false
+	return false
 }
