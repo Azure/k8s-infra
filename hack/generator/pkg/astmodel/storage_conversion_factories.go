@@ -160,7 +160,7 @@ func assignOptionalPrimitiveTypeFromPrimitiveType(
 		return nil
 	}
 
-	copyVar := destinationEndpoint.CreateLocal("Value")
+	copyVar := destinationEndpoint.CreateLocal("", "Value")
 
 	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
 		return []dst.Stmt{
@@ -272,7 +272,7 @@ func assignOptionalPrimitiveTypeFromOptionalPrimitiveType(
 		return nil
 	}
 
-	copyVar := destinationEndpoint.CreateLocal("Value")
+	copyVar := destinationEndpoint.CreateLocal("", "Value")
 
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 
@@ -551,7 +551,7 @@ func assignEnumTypeFromOptionalEnumType(
 		return nil
 	}
 
-	local := destinationEndpoint.CreateLocal("Value")
+	local := destinationEndpoint.CreateLocal("", "Enum")
 
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		// Need to check for null and only assign if we have a value
@@ -630,7 +630,7 @@ func assignOptionalEnumTypeFromEnumType(
 		return nil
 	}
 
-	copyVar := destinationEndpoint.CreateLocal("Value")
+	copyVar := destinationEndpoint.CreateLocal("", "Enum")
 
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 		return []dst.Stmt{
@@ -693,7 +693,7 @@ func assignOptionalEnumTypeFromOptionalEnumType(
 		return nil
 	}
 
-	copyVar := destinationEndpoint.CreateLocal("Value")
+	copyVar := destinationEndpoint.CreateLocal("", "Enum")
 
 	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
 
