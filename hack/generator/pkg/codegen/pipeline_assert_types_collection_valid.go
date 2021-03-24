@@ -24,7 +24,7 @@ func assertTypesCollectionValid() PipelineStage {
 
 			for _, def := range types {
 				if astmodel.IsResourceDefinition(def) {
-					_, err := typeWalker.Walk(def, nil)
+					_, err := typeWalker.Walk(def)
 					if err != nil {
 						return nil, err
 					}
