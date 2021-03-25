@@ -111,7 +111,7 @@ func TestTypeWalker_IdentityWalkReturnsIdenticalTypes(t *testing.T) {
 	}
 
 	rootDef := types[rootTypeName]
-	updatedTypes, err := walker.Walk(rootDef, nil)
+	updatedTypes, err := walker.Walk(rootDef)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	g.Expect(len(walked)).To(Equal(3))
@@ -141,7 +141,7 @@ func TestTypeWalker_DuplicateTypesAreWalkedOnceEach_ReturnedOnce(t *testing.T) {
 	}
 
 	rootDef := types[rootTypeName]
-	updatedTypes, err := walker.Walk(rootDef, nil)
+	updatedTypes, err := walker.Walk(rootDef)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	g.Expect(len(walked)).To(Equal(3))
@@ -171,7 +171,7 @@ func TestTypeWalker_CyclesAllowed_AreNotWalked(t *testing.T) {
 	}
 
 	rootDef := types[rootTypeName]
-	updatedTypes, err := walker.Walk(rootDef, nil)
+	updatedTypes, err := walker.Walk(rootDef)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	g.Expect(len(walked)).To(Equal(3))
@@ -206,7 +206,7 @@ func TestTypeWalker_CanPruneCycles(t *testing.T) {
 	}
 
 	rootDef := types[rootTypeName]
-	updatedTypes, err := walker.Walk(rootDef, nil)
+	updatedTypes, err := walker.Walk(rootDef)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	g.Expect(len(walked)).To(Equal(3))
@@ -244,6 +244,9 @@ func TestTypeWalker_ContextPropagated(t *testing.T) {
 		return DefaultAfterVisit(original, updated, ctx)
 	}
 	walker.MakeContext = func(_ TypeName, ctx interface{}) (interface{}, error) {
+		if ctx == nil {
+			return 0, nil
+		}
 		typedCtx := ctx.(int)
 		typedCtx += 1
 
@@ -251,7 +254,7 @@ func TestTypeWalker_ContextPropagated(t *testing.T) {
 	}
 
 	rootDef := types[rootTypeName]
-	updatedTypes, err := walker.Walk(rootDef, 0)
+	updatedTypes, err := walker.Walk(rootDef)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	g.Expect(len(walked)).To(Equal(3))
@@ -284,9 +287,12 @@ func TestTypeWalker_VisitorApplied(t *testing.T) {
 		return IdentityVisitOfObjectType(this, it, ctx)
 	}
 	walker := NewTypeWalker(types, visitor)
+	walker.MakeContext = func(_ TypeName, _ interface{}) (interface{}, error) {
+		return 0, nil
+	}
 
 	rootDef := types[rootTypeName]
-	updatedTypes, err := walker.Walk(rootDef, 0)
+	updatedTypes, err := walker.Walk(rootDef)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	g.Expect(len(updatedTypes)).To(Equal(3))
@@ -324,7 +330,7 @@ func TestTypeWalker_CanChangeNameInOnlyCertainPlaces(t *testing.T) {
 	}
 
 	rootDef := types[rootTypeName]
-	updatedTypes, err := walker.Walk(rootDef, nil)
+	updatedTypes, err := walker.Walk(rootDef)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	g.Expect(len(updatedTypes)).To(Equal(3))

@@ -145,24 +145,15 @@ func (t *TypeWalker) visitObjectType(this *TypeVisitor, it *ObjectType, ctx inte
 // Walk returns a Types collection constructed by applying the Visitor to each type in the graph of types reachable
 // from the provided TypeDefinition 'def'. Types are visited in a depth-first order. Cycles are not followed
 // (so each type in a cycle will be visited only once).
-func (t *TypeWalker) Walk(def TypeDefinition, ctx interface{}) (Types, error) {
+func (t *TypeWalker) Walk(def TypeDefinition) (Types, error) {
 	t.state = typeWalkerState{
 		result:     make(Types),
 		processing: make(map[TypeName]struct{}),
 	}
 
-	t.state.processing[def.Name()] = struct{}{}
-
-	updatedType, err := t.visitor.Visit(def.Type(), ctx)
-	if err != nil {
-		return nil, err
-	}
-	updatedDef, err := t.AfterVisit(def, def.WithType(updatedType), ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	err = t.state.result.AddWithEqualityCheck(updatedDef)
+	// Visit our own name to start the walk.
+	// Initial ctx is nil -- MakeContext will get called and fabricate a context if needed
+	_, err := t.visitor.Visit(def.Name(), nil)
 	if err != nil {
 		return nil, err
 	}
