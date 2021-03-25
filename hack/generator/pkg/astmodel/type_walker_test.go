@@ -200,9 +200,9 @@ func TestTypeWalker_CanPruneCycles(t *testing.T) {
 		return DefaultAfterVisit(original, updated, ctx)
 	}
 
-	walker.WalkCycle = func(original TypeDefinition, ctx interface{}) (TypeName, error) {
+	walker.RemoveCycle = func(original TypeDefinition, ctx interface{}) (bool, error) {
 		// Prune all cycles
-		return TypeWalkerRemoveType, nil
+		return true, nil
 	}
 
 	rootDef := types[rootTypeName]

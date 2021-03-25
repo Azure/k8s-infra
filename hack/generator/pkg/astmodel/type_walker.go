@@ -13,15 +13,15 @@ import (
 
 // TODO: This is conceptually kinda close to ReferenceGraph except more powerful
 
-// TypeWalkerRemoveType is a special TypeName that informs the type walker to remove the property containing this TypeName
+// typeWalkerRemoveType is a special TypeName that informs the type walker to remove the property containing this TypeName
 // entirely.
-var TypeWalkerRemoveType = MakeTypeName(LocalPackageReference{}, "TypeWalkerRemoveProperty")
+var typeWalkerRemoveType = MakeTypeName(LocalPackageReference{}, "TypeWalkerRemoveProperty")
 
 // TODO: it's awkward to have so much configuration on this thing (3 separate funcs that apply at different places in the walking process?)
 // TODO: but unsure if there's a better way... bring it up in code review.
 
 // TypeWalker performs a depth first traversal across the types provided, applying the visitor to each TypeDefinition.
-// MakeContext is called before each visit, and AfterVisit is called after each visit. WalkCycle is called
+// MakeContext is called before each visit, and AfterVisit is called after each visit. RemoveCycle is called
 // if a cycle is detected.
 type TypeWalker struct {
 	allTypes Types
@@ -32,8 +32,8 @@ type TypeWalker struct {
 	MakeContext func(it TypeName, ctx interface{}) (interface{}, error)
 	// AfterVisit is called after the type walker has applied the visitor to a TypeDefinition.
 	AfterVisit func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error)
-	// WalkCycle is called if a cycle is detected. It allows configurable behavior for how to handle cycles.
-	WalkCycle func(def TypeDefinition, ctx interface{}) (TypeName, error)
+	// RemoveCycle is called if a cycle is detected. If true is returned the cycle will be pruned, otherwise it will be preserved as-is.
+	RemoveCycle func(def TypeDefinition, ctx interface{}) (bool, error)
 
 	state                   typeWalkerState
 	originalVisitTypeName   func(this *TypeVisitor, it TypeName, ctx interface{}) (Type, error)
@@ -55,7 +55,7 @@ func NewTypeWalker(allTypes Types, visitor TypeVisitor) *TypeWalker {
 		originalVisitObjectType: visitor.VisitObjectType,
 		AfterVisit:              DefaultAfterVisit,
 		MakeContext:             IdentityMakeContext,
-		WalkCycle:               IdentityWalkCycle,
+		RemoveCycle:             IdentityRemoveCycle,
 	}
 
 	// visitor is a copy - modifications won't impact passed visitor
@@ -89,7 +89,16 @@ func (t *TypeWalker) visitTypeName(this *TypeVisitor, it TypeName, ctx interface
 
 	// Prevent loops by bypassing this type if it's currently being processed.
 	if _, ok := t.state.processing[def.Name()]; ok {
-		return t.WalkCycle(def, updatedCtx)
+		remove, err := t.RemoveCycle(def, updatedCtx)
+		if err != nil {
+			return nil, err
+		}
+		if remove {
+			return typeWalkerRemoveType, nil
+		} else {
+			// Preserve
+			return def.Name(), nil
+		}
 	}
 	t.state.processing[def.Name()] = struct{}{}
 
@@ -171,16 +180,15 @@ func IdentityMakeContext(_ TypeName, ctx interface{}) (interface{}, error) {
 	return ctx, nil
 }
 
-// IdentityWalkCycle is the default cycle walking behavior. It returns the cycle TypeName unmodified (so the cycle is
-// not removed or otherwise changed)
-func IdentityWalkCycle(def TypeDefinition, _ interface{}) (TypeName, error) {
-	return def.Name(), nil
+// IdentityRemoveCycle is the default cycle removal behavior. It preserves all cycles unmodified.
+func IdentityRemoveCycle(_ TypeDefinition, _ interface{}) (bool, error) {
+	return false, nil
 }
 
 func isRemoveType(t Type) bool {
 	switch cast := t.(type) {
 	case TypeName:
-		return cast.Equals(TypeWalkerRemoveType)
+		return cast.Equals(typeWalkerRemoveType)
 	case *PrimitiveType:
 		return false
 	case MetaType:
