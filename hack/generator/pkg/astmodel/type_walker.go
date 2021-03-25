@@ -20,17 +20,18 @@ var TypeWalkerRemoveType = MakeTypeName(LocalPackageReference{}, "TypeWalkerRemo
 // TODO: it's awkward to have so much configuration on this thing (3 separate funcs that apply at different places in the walking process?)
 // TODO: but unsure if there's a better way... bring it up in code review.
 
-// TypeWalker performs a depth first search across the types provided, applying the visitor to each TypeDefinition.
-// MakeContextFunc is called before each visit, and AfterVisitFunc is called after each visit. WalkCycle is called
+// TypeWalker performs a depth first traversal across the types provided, applying the visitor to each TypeDefinition.
+// MakeContext is called before each visit, and AfterVisit is called after each visit. WalkCycle is called
 // if a cycle is detected.
 type TypeWalker struct {
 	allTypes Types
 	visitor  TypeVisitor
 
-	// MakeContextFunc is called before a type is visited.
-	MakeContextFunc func(it TypeName, ctx interface{}) (interface{}, error)
-	// AfterVisitFunc is called after the type walker has applied the visitor to a TypeDefinition.
-	AfterVisitFunc func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error)
+	// MakeContext is called before any type but the root type is visited. It is given the current context and returns
+	// a new context for use in the upcoming Visit.
+	MakeContext func(it TypeName, ctx interface{}) (interface{}, error)
+	// AfterVisit is called after the type walker has applied the visitor to a TypeDefinition.
+	AfterVisit func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error)
 	// WalkCycle is called if a cycle is detected. It allows configurable behavior for how to handle cycles.
 	WalkCycle func(def TypeDefinition, ctx interface{}) (TypeName, error)
 
@@ -49,25 +50,25 @@ type typeWalkerState struct {
 // Walk will panic.
 func NewTypeWalker(allTypes Types, visitor TypeVisitor) *TypeWalker {
 	typeWalker := TypeWalker{
-		allTypes: allTypes,
+		allTypes:                allTypes,
+		originalVisitTypeName:   visitor.VisitTypeName,
+		originalVisitObjectType: visitor.VisitObjectType,
+		AfterVisit:              DefaultAfterVisit,
+		MakeContext:             IdentityMakeContext,
+		WalkCycle:               IdentityWalkCycle,
 	}
-	typeWalker.originalVisitTypeName = visitor.VisitTypeName
-	typeWalker.originalVisitObjectType = visitor.VisitObjectType
 
 	// visitor is a copy - modifications won't impact passed visitor
 	visitor.VisitTypeName = typeWalker.visitTypeName
 	visitor.VisitObjectType = typeWalker.visitObjectType
 
 	typeWalker.visitor = visitor
-	typeWalker.AfterVisitFunc = DefaultAfterVisit
-	typeWalker.MakeContextFunc = IdentityMakeContext
-	typeWalker.WalkCycle = IdentityWalkCycle
 
 	return &typeWalker
 }
 
 func (t *TypeWalker) visitTypeName(this *TypeVisitor, it TypeName, ctx interface{}) (Type, error) {
-	updatedCtx, err := t.MakeContextFunc(it, ctx)
+	updatedCtx, err := t.MakeContext(it, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +77,7 @@ func (t *TypeWalker) visitTypeName(this *TypeVisitor, it TypeName, ctx interface
 	if err != nil {
 		return nil, err
 	}
-	var ok bool
-	it, ok = visitedTypeName.(TypeName)
+	it, ok := visitedTypeName.(TypeName)
 	if !ok {
 		panic(fmt.Sprintf("TypeWalker visitor VisitTypeName must return a TypeName, instead returned %T", visitedTypeName))
 	}
@@ -87,8 +87,7 @@ func (t *TypeWalker) visitTypeName(this *TypeVisitor, it TypeName, ctx interface
 		return nil, errors.Errorf("couldn't find type %q", it)
 	}
 
-	// Prevent loops by bypassing this type if it's currently being processed. The processing
-	// slice is basically the "path" taken to get to the current type.
+	// Prevent loops by bypassing this type if it's currently being processed.
 	if _, ok := t.state.processing[def.Name()]; ok {
 		return t.WalkCycle(def, updatedCtx)
 	}
@@ -98,7 +97,7 @@ func (t *TypeWalker) visitTypeName(this *TypeVisitor, it TypeName, ctx interface
 	if err != nil {
 		return nil, errors.Wrapf(err, "error visiting type %q", def.Name())
 	}
-	updatedDef, err := t.AfterVisitFunc(def, def.WithType(updatedType), updatedCtx)
+	updatedDef, err := t.AfterVisit(def, def.WithType(updatedType), updatedCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -125,8 +124,8 @@ func (t *TypeWalker) visitObjectType(this *TypeVisitor, it *ObjectType, ctx inte
 	}
 
 	for _, prop := range ot.Properties() {
-		isCycle := isRemoveType(prop.PropertyType())
-		if isCycle {
+		shouldRemove := isRemoveType(prop.PropertyType())
+		if shouldRemove {
 			ot = ot.WithoutProperty(prop.PropertyName())
 		}
 	}
@@ -135,7 +134,8 @@ func (t *TypeWalker) visitObjectType(this *TypeVisitor, it *ObjectType, ctx inte
 }
 
 // Walk returns a Types collection constructed by applying the Visitor to each type in the graph of types reachable
-// from the provided TypeDefinition 'def'. Types are visited in a depth-first order. Cycles are not visited.
+// from the provided TypeDefinition 'def'. Types are visited in a depth-first order. Cycles are not followed
+// (so each type in a cycle will be visited only once).
 func (t *TypeWalker) Walk(def TypeDefinition, ctx interface{}) (Types, error) {
 	t.state = typeWalkerState{
 		result:     make(Types),
@@ -148,7 +148,7 @@ func (t *TypeWalker) Walk(def TypeDefinition, ctx interface{}) (Types, error) {
 	if err != nil {
 		return nil, err
 	}
-	updatedDef, err := t.AfterVisitFunc(def, def.WithType(updatedType), ctx)
+	updatedDef, err := t.AfterVisit(def, def.WithType(updatedType), ctx)
 	if err != nil {
 		return nil, err
 	}
