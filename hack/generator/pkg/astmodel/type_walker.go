@@ -11,29 +11,26 @@ import (
 	"github.com/pkg/errors"
 )
 
-// TODO: This is conceptually kinda close to ReferenceGraph except more powerful
+// TODO: This is conceptually kinda close to ReferenceGraph except more powerful. We may be able to refactor ReferenceGraph to use this
 
 // typeWalkerRemoveType is a special TypeName that informs the type walker to remove the property containing this TypeName
 // entirely.
 var typeWalkerRemoveType = MakeTypeName(LocalPackageReference{}, "TypeWalkerRemoveProperty")
 
-// TODO: it's awkward to have so much configuration on this thing (3 separate funcs that apply at different places in the walking process?)
-// TODO: but unsure if there's a better way... bring it up in code review.
-
 // TypeWalker performs a depth first traversal across the types provided, applying the visitor to each TypeDefinition.
-// MakeContext is called before each visit, and AfterVisit is called after each visit. RemoveCycle is called
+// MakeContext is called before each visit, and AfterVisit is called after each visit. ShouldRemoveCycle is called
 // if a cycle is detected.
 type TypeWalker struct {
 	allTypes Types
 	visitor  TypeVisitor
 
-	// MakeContext is called before any type but the root type is visited. It is given the current context and returns
-	// a new context for use in the upcoming Visit.
+	// MakeContext is called before any type is visited - including before the root type is visited. It is given the current context and returns
+	// a new context for use in the upcoming Visit. When visiting the root type, the ctx parameter is always nil.
 	MakeContext func(it TypeName, ctx interface{}) (interface{}, error)
 	// AfterVisit is called after the type walker has applied the visitor to a TypeDefinition.
 	AfterVisit func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error)
-	// RemoveCycle is called if a cycle is detected. If true is returned the cycle will be pruned, otherwise it will be preserved as-is.
-	RemoveCycle func(def TypeDefinition, ctx interface{}) (bool, error)
+	// ShouldRemoveCycle is called if a cycle is detected. If true is returned the cycle will be pruned, otherwise it will be preserved as-is.
+	ShouldRemoveCycle func(def TypeDefinition, ctx interface{}) (bool, error)
 
 	state                   typeWalkerState
 	originalVisitTypeName   func(this *TypeVisitor, it TypeName, ctx interface{}) (Type, error)
@@ -53,9 +50,9 @@ func NewTypeWalker(allTypes Types, visitor TypeVisitor) *TypeWalker {
 		allTypes:                allTypes,
 		originalVisitTypeName:   visitor.VisitTypeName,
 		originalVisitObjectType: visitor.VisitObjectType,
-		AfterVisit:              DefaultAfterVisit,
+		AfterVisit:              IdentityAfterVisit,
 		MakeContext:             IdentityMakeContext,
-		RemoveCycle:             IdentityRemoveCycle,
+		ShouldRemoveCycle:       IdentityShouldRemoveCycle,
 	}
 
 	// visitor is a copy - modifications won't impact passed visitor
@@ -70,12 +67,12 @@ func NewTypeWalker(allTypes Types, visitor TypeVisitor) *TypeWalker {
 func (t *TypeWalker) visitTypeName(this *TypeVisitor, it TypeName, ctx interface{}) (Type, error) {
 	updatedCtx, err := t.MakeContext(it, ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "MakeContext failed for name %q", it)
 	}
 
 	visitedTypeName, err := t.originalVisitTypeName(this, it, updatedCtx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "VisitTypeName failed for name %q", it)
 	}
 	it, ok := visitedTypeName.(TypeName)
 	if !ok {
@@ -89,9 +86,9 @@ func (t *TypeWalker) visitTypeName(this *TypeVisitor, it TypeName, ctx interface
 
 	// Prevent loops by bypassing this type if it's currently being processed.
 	if _, ok := t.state.processing[def.Name()]; ok {
-		remove, err := t.RemoveCycle(def, updatedCtx)
+		remove, err := t.ShouldRemoveCycle(def, updatedCtx)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "ShouldRemoveCycle failed for def %q", def.Name())
 		}
 		if remove {
 			return typeWalkerRemoveType, nil
@@ -108,7 +105,7 @@ func (t *TypeWalker) visitTypeName(this *TypeVisitor, it TypeName, ctx interface
 	}
 	updatedDef, err := t.AfterVisit(def, def.WithType(updatedType), updatedCtx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "AfterVisit failed for def %q", def.Name())
 	}
 
 	delete(t.state.processing, def.Name())
@@ -133,7 +130,7 @@ func (t *TypeWalker) visitObjectType(this *TypeVisitor, it *ObjectType, ctx inte
 	}
 
 	for _, prop := range ot.Properties() {
-		shouldRemove := isRemoveType(prop.PropertyType())
+		shouldRemove := shouldRemove(prop.PropertyType())
 		if shouldRemove {
 			ot = ot.WithoutProperty(prop.PropertyName())
 		}
@@ -161,8 +158,8 @@ func (t *TypeWalker) Walk(def TypeDefinition) (Types, error) {
 	return t.state.result, nil
 }
 
-// DefaultAfterVisit is the default AfterVisit function for TypeWalker. It returns the TypeDefinition from Visit unmodified
-func DefaultAfterVisit(_ TypeDefinition, updated TypeDefinition, _ interface{}) (TypeDefinition, error) {
+// IdentityAfterVisit is the default AfterVisit function for TypeWalker. It returns the TypeDefinition from Visit unmodified.
+func IdentityAfterVisit(_ TypeDefinition, updated TypeDefinition, _ interface{}) (TypeDefinition, error) {
 	return updated, nil
 }
 
@@ -171,23 +168,23 @@ func IdentityMakeContext(_ TypeName, ctx interface{}) (interface{}, error) {
 	return ctx, nil
 }
 
-// IdentityRemoveCycle is the default cycle removal behavior. It preserves all cycles unmodified.
-func IdentityRemoveCycle(_ TypeDefinition, _ interface{}) (bool, error) {
+// IdentityShouldRemoveCycle is the default cycle removal behavior. It preserves all cycles unmodified.
+func IdentityShouldRemoveCycle(_ TypeDefinition, _ interface{}) (bool, error) {
 	return false, nil
 }
 
-func isRemoveType(t Type) bool {
+func shouldRemove(t Type) bool {
 	switch cast := t.(type) {
 	case TypeName:
 		return cast.Equals(typeWalkerRemoveType)
 	case *PrimitiveType:
 		return false
 	case MetaType:
-		return isRemoveType(cast.Unwrap())
+		return shouldRemove(cast.Unwrap())
 	case *ArrayType:
-		return isRemoveType(cast.Element())
+		return shouldRemove(cast.Element())
 	case *MapType:
-		return isRemoveType(cast.KeyType()) || isRemoveType(cast.ValueType())
+		return shouldRemove(cast.KeyType()) || shouldRemove(cast.ValueType())
 	}
 
 	panic(fmt.Sprintf("Unknown Type: %T", t))

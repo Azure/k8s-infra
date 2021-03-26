@@ -107,7 +107,7 @@ func TestTypeWalker_IdentityWalkReturnsIdenticalTypes(t *testing.T) {
 
 	walker.AfterVisit = func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error) {
 		walked = append(walked, original.Name().Name())
-		return DefaultAfterVisit(original, updated, ctx)
+		return IdentityAfterVisit(original, updated, ctx)
 	}
 
 	rootDef := types[rootTypeName]
@@ -137,7 +137,7 @@ func TestTypeWalker_DuplicateTypesAreWalkedOnceEach_ReturnedOnce(t *testing.T) {
 
 	walker.AfterVisit = func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error) {
 		walked = append(walked, original)
-		return DefaultAfterVisit(original, updated, ctx)
+		return IdentityAfterVisit(original, updated, ctx)
 	}
 
 	rootDef := types[rootTypeName]
@@ -167,7 +167,7 @@ func TestTypeWalker_CyclesAllowed_AreNotWalked(t *testing.T) {
 
 	walker.AfterVisit = func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error) {
 		walked = append(walked, original.Name().Name())
-		return DefaultAfterVisit(original, updated, ctx)
+		return IdentityAfterVisit(original, updated, ctx)
 	}
 
 	rootDef := types[rootTypeName]
@@ -197,10 +197,10 @@ func TestTypeWalker_CanPruneCycles(t *testing.T) {
 
 	walker.AfterVisit = func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error) {
 		walked = append(walked, original.Name().Name())
-		return DefaultAfterVisit(original, updated, ctx)
+		return IdentityAfterVisit(original, updated, ctx)
 	}
 
-	walker.RemoveCycle = func(original TypeDefinition, ctx interface{}) (bool, error) {
+	walker.ShouldRemoveCycle = func(original TypeDefinition, ctx interface{}) (bool, error) {
 		// Prune all cycles
 		return true, nil
 	}
@@ -241,7 +241,7 @@ func TestTypeWalker_ContextPropagated(t *testing.T) {
 	walker.AfterVisit = func(original TypeDefinition, updated TypeDefinition, ctx interface{}) (TypeDefinition, error) {
 		typedCtx := ctx.(int)
 		walked[updated.Name()] = typedCtx
-		return DefaultAfterVisit(original, updated, ctx)
+		return IdentityAfterVisit(original, updated, ctx)
 	}
 	walker.MakeContext = func(_ TypeName, ctx interface{}) (interface{}, error) {
 		if ctx == nil {
@@ -326,7 +326,7 @@ func TestTypeWalker_CanChangeNameInOnlyCertainPlaces(t *testing.T) {
 			changed = true
 			updated = updated.WithName(left2TypeName)
 		}
-		return DefaultAfterVisit(original, updated, ctx)
+		return IdentityAfterVisit(original, updated, ctx)
 	}
 
 	rootDef := types[rootTypeName]
