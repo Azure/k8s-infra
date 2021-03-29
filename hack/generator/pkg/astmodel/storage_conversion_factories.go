@@ -16,9 +16,9 @@ import (
 
 // StorageTypeConversion generates the AST for a given conversion.
 // reader is an expression to read the original value
-// writer is an expression to write the converted value
+// writer is a function that creates one or more statements to write the converted value
 // Both of these might be complex expressions, possibly involving indexing into arrays or maps.
-type StorageTypeConversion func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt
+type StorageTypeConversion func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt
 
 // StorageTypeConversionFactory represents factory methods that can be used to create StorageTypeConversions
 // for a specific pair of types
@@ -114,10 +114,9 @@ func assignPrimitiveTypeFromPrimitiveType(
 		return nil
 	}
 
-	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
-		return []dst.Stmt{
-			astbuilder.SimpleAssignment(writer, token.ASSIGN, reader),
-		}
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
+		// can write a primitive value directly
+		return writer(reader)
 	}
 }
 
@@ -162,12 +161,14 @@ func assignOptionalPrimitiveTypeFromPrimitiveType(
 
 	copyVar := destinationEndpoint.CreateLocal("", "Value")
 
-	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
-		return []dst.Stmt{
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
+		result := []dst.Stmt{
 			// Stash the value in a local just in case the original gets modified later on
 			astbuilder.SimpleAssignment(dst.NewIdent(copyVar), token.DEFINE, reader),
-			astbuilder.SimpleAssignment(writer, token.ASSIGN, astbuilder.AddrOf(dst.NewIdent(copyVar))),
 		}
+
+		result = append(result, writer(astbuilder.AddrOf(dst.NewIdent(copyVar)))...)
+		return result
 	}
 }
 
@@ -211,23 +212,20 @@ func assignPrimitiveTypeFromOptionalPrimitiveType(
 		return nil
 	}
 
-	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
 		// Need to check for null and only assign if we have a value
 		cond := astbuilder.NotEqual(reader, dst.NewIdent("nil"))
 
-		assignValue := astbuilder.SimpleAssignment(
-			writer,
-			token.ASSIGN,
-			astbuilder.Dereference(reader))
+		assignValue := writer(astbuilder.Dereference(reader))
 
-		assignZero := astbuilder.SimpleAssignment(
-			writer,
-			token.ASSIGN,
-			&dst.BasicLit{
-				Value: zeroValue(srcPrim),
-			})
+		assignZero := writer(&dst.BasicLit{
+			Value: zeroValue(srcPrim),
+		})
 
-		stmt := astbuilder.SimpleIfElse(cond, assignValue, assignZero)
+		stmt := astbuilder.SimpleIfElse(
+			cond,
+			astbuilder.StatementBlock(assignValue...),
+			astbuilder.StatementBlock(assignZero...))
 
 		return []dst.Stmt{stmt}
 	}
@@ -274,7 +272,7 @@ func assignOptionalPrimitiveTypeFromOptionalPrimitiveType(
 
 	copyVar := destinationEndpoint.CreateLocal("", "Value")
 
-	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, ctx *CodeGenerationContext) []dst.Stmt {
 
 		// Need to check for null and only assign if we have a value
 		cond := astbuilder.NotEqual(reader, dst.NewIdent("nil"))
@@ -286,20 +284,19 @@ func assignOptionalPrimitiveTypeFromOptionalPrimitiveType(
 		readValue.Decs.Start.Append("// Copy to a local to avoid aliasing")
 		readValue.Decs.Before = dst.NewLine
 
-		writeValue := astbuilder.SimpleAssignment(
-			writer,
-			token.ASSIGN,
-			astbuilder.AddrOf(dst.NewIdent(copyVar)))
+		writeValue := writer(astbuilder.AddrOf(dst.NewIdent(copyVar)))
+		writeNil := writer(dst.NewIdent("nil"))
 
-		assignNil := astbuilder.SimpleAssignment(
-			writer,
-			token.ASSIGN,
-			dst.NewIdent("nil"))
+		body := []dst.Stmt{
+			readValue,
+		}
+
+		body = append(body, writeValue...)
 
 		stmt := &dst.IfStmt{
 			Cond: cond,
-			Body: astbuilder.StatementBlock(readValue, writeValue),
-			Else: astbuilder.StatementBlock(assignNil),
+			Body: astbuilder.StatementBlock(body...),
+			Else: astbuilder.StatementBlock(writeNil...),
 		}
 
 		return []dst.Stmt{
@@ -342,7 +339,7 @@ func assignArrayFromArray(
 		return nil
 	}
 
-	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
 		// We create three obviously related identifiers to use for the conversion
 		id := sourceEndpoint.CreateLocal()
 		itemId := id + "Item"
@@ -354,24 +351,34 @@ func assignArrayFromArray(
 			token.DEFINE,
 			astbuilder.MakeList(dstArray.AsType(generationContext), astbuilder.CallFunc("len", reader)))
 
-		body := conversion(
+		assignToElement := func(expr dst.Expr) []dst.Stmt {
+			return []dst.Stmt{
+				astbuilder.SimpleAssignment(
+					&dst.IndexExpr{
+						X:     dst.NewIdent(tempId),
+						Index: dst.NewIdent(indexId),
+					},
+					token.ASSIGN,
+					expr),
+			}
+		}
+
+		loopBody := conversion(
 			dst.NewIdent(itemId),
-			&dst.IndexExpr{
-				X:     dst.NewIdent(tempId),
-				Index: dst.NewIdent(indexId),
-			},
-			generationContext,
-		)
+			assignToElement,
+			generationContext)
 
-		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, dst.NewIdent(tempId))
+		assign := writer(dst.NewIdent(tempId))
 
-		loop := astbuilder.IterateOverListWithIndex(indexId, itemId, reader, body...)
+		loop := astbuilder.IterateOverListWithIndex(indexId, itemId, reader, loopBody...)
 
-		return []dst.Stmt{
+		result := []dst.Stmt{
 			declaration,
 			loop,
-			assign,
 		}
+
+		result = append(result, assign...)
+		return result
 	}
 }
 
@@ -417,7 +424,7 @@ func assignMapFromMap(
 		return nil
 	}
 
-	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
 		// We create three obviously related identifiers to use for the conversion
 		id := sourceEndpoint.CreateLocal()
 		itemId := id + "Value"
@@ -429,24 +436,35 @@ func assignMapFromMap(
 			token.DEFINE,
 			astbuilder.MakeMap(dstMap.key.AsType(generationContext), dstMap.value.AsType(generationContext)))
 
-		body := conversion(
+		assignToItem := func(expr dst.Expr) []dst.Stmt {
+			return []dst.Stmt{
+				astbuilder.SimpleAssignment(
+					&dst.IndexExpr{
+						X:     dst.NewIdent(tempId),
+						Index: dst.NewIdent(keyId),
+					},
+					token.ASSIGN,
+					expr),
+			}
+		}
+
+		loopBody := conversion(
 			dst.NewIdent(itemId),
-			&dst.IndexExpr{
-				X:     dst.NewIdent(tempId),
-				Index: dst.NewIdent(keyId),
-			},
+			assignToItem,
 			generationContext,
 		)
 
-		assign := astbuilder.SimpleAssignment(writer, token.ASSIGN, dst.NewIdent(tempId))
+		assign := writer(dst.NewIdent(tempId))
 
-		loop := astbuilder.IterateOverMapWithValue(keyId, itemId, reader, body...)
+		loop := astbuilder.IterateOverMapWithValue(keyId, itemId, reader, loopBody...)
 
-		return []dst.Stmt{
+		result := []dst.Stmt{
 			declaration,
 			loop,
-			assign,
 		}
+
+		result = append(result, assign...)
+		return result
 	}
 }
 
@@ -495,10 +513,8 @@ func assignEnumTypeFromEnumType(
 		return nil
 	}
 
-	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
-		return []dst.Stmt{
-			astbuilder.SimpleAssignment(writer, token.ASSIGN, astbuilder.CallFunc(dstName.name, reader)),
-		}
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, ctx *CodeGenerationContext) []dst.Stmt {
+		return writer(astbuilder.CallFunc(dstName.name, reader))
 	}
 }
 
@@ -553,7 +569,7 @@ func assignEnumTypeFromOptionalEnumType(
 
 	local := destinationEndpoint.CreateLocal("", "Enum")
 
-	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, ctx *CodeGenerationContext) []dst.Stmt {
 		// Need to check for null and only assign if we have a value
 		cond := astbuilder.NotEqual(reader, dst.NewIdent("nil"))
 
@@ -562,23 +578,22 @@ func assignEnumTypeFromOptionalEnumType(
 			token.DEFINE,
 			astbuilder.CallFunc(dstName.name, astbuilder.Dereference(reader)))
 
-		writeValue := astbuilder.SimpleAssignment(
-			writer,
-			token.ASSIGN,
-			dst.NewIdent(local))
+		writeValue := writer(dst.NewIdent(local))
 
-		assignZero := astbuilder.SimpleAssignment(
-			writer,
-			token.ASSIGN,
-			astbuilder.CallFunc(dstName.name,
-				&dst.BasicLit{
-					Value: zeroValue(srcEnum.baseType),
-				}))
+		assignZero := writer(astbuilder.CallFunc(dstName.name,
+			&dst.BasicLit{
+				Value: zeroValue(srcEnum.baseType),
+			}))
+
+		body := []dst.Stmt{
+			readValue,
+		}
+		body = append(body, writeValue...)
 
 		stmt := &dst.IfStmt{
 			Cond: cond,
-			Body: astbuilder.StatementBlock(readValue, writeValue),
-			Else: astbuilder.StatementBlock(assignZero),
+			Body: astbuilder.StatementBlock(body...),
+			Else: astbuilder.StatementBlock(assignZero...),
 		}
 
 		return []dst.Stmt{stmt}
@@ -632,18 +647,16 @@ func assignOptionalEnumTypeFromEnumType(
 
 	copyVar := destinationEndpoint.CreateLocal("", "Enum")
 
-	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
-		return []dst.Stmt{
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, ctx *CodeGenerationContext) []dst.Stmt {
+		result := []dst.Stmt{
 			astbuilder.SimpleAssignment(
 				dst.NewIdent(copyVar),
 				token.DEFINE,
 				astbuilder.CallFunc(dstName.name, reader)),
-
-			astbuilder.SimpleAssignment(
-				writer,
-				token.ASSIGN,
-				astbuilder.AddrOf(dst.NewIdent(copyVar))),
 		}
+
+		result = append(result, writer(astbuilder.AddrOf(dst.NewIdent(copyVar)))...)
+		return result
 	}
 }
 
@@ -695,7 +708,7 @@ func assignOptionalEnumTypeFromOptionalEnumType(
 
 	copyVar := destinationEndpoint.CreateLocal("", "Enum")
 
-	return func(reader dst.Expr, writer dst.Expr, ctx *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, ctx *CodeGenerationContext) []dst.Stmt {
 
 		// Need to check for null and only assign if we have a value
 		cond := astbuilder.NotEqual(reader, dst.NewIdent("nil"))
@@ -708,24 +721,23 @@ func assignOptionalEnumTypeFromOptionalEnumType(
 		readValue.Decs.Start.Append("// Copy to a local to avoid aliasing")
 		readValue.Decs.Before = dst.NewLine
 
-		writeValue := astbuilder.SimpleAssignment(
-			writer,
-			token.ASSIGN,
-			astbuilder.AddrOf(dst.NewIdent(copyVar)))
+		writeValue := writer(astbuilder.AddrOf(dst.NewIdent(copyVar)))
 
-		assignZero := astbuilder.SimpleAssignment(
-			writer,
-			token.ASSIGN,
-			astbuilder.CallFunc(
-				dstName.name,
-				&dst.BasicLit{
-					Value: zeroValue(dstEnum.baseType),
-				}))
+		assignZero := writer(astbuilder.CallFunc(
+			dstName.name,
+			&dst.BasicLit{
+				Value: zeroValue(dstEnum.baseType),
+			}))
+
+		body := []dst.Stmt{
+			readValue,
+		}
+		body = append(body, writeValue...)
 
 		stmt := &dst.IfStmt{
 			Cond: cond,
-			Body: astbuilder.StatementBlock(readValue, writeValue),
-			Else: astbuilder.StatementBlock(assignZero),
+			Body: astbuilder.StatementBlock(body...),
+			Else: astbuilder.StatementBlock(assignZero...),
 		}
 
 		return []dst.Stmt{
@@ -791,7 +803,7 @@ func assignObjectTypeFromObjectType(
 
 	copyVar := destinationEndpoint.CreateLocal()
 
-	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
 
 		localId := dst.NewIdent(copyVar)
 		errLocal := dst.NewIdent("err")
@@ -817,17 +829,16 @@ func assignObjectTypeFromObjectType(
 				"populating %s from %s, calling %s()",
 				destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName))
 
-		assignment := astbuilder.SimpleAssignment(
-			writer,
-			token.ASSIGN,
-			dst.NewIdent(copyVar))
+		assignment := writer(dst.NewIdent(copyVar))
 
-		return []dst.Stmt{
+		result := []dst.Stmt{
 			declaration,
 			conversion,
 			checkForError,
-			assignment,
 		}
+
+		result = append(result, assignment...)
+		return result
 	}
 }
 
@@ -892,7 +903,7 @@ func assignObjectTypeFromOptionalObjectType(
 
 	copyVar := destinationEndpoint.CreateLocal()
 
-	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
 
 		localId := dst.NewIdent(copyVar)
 		errLocal := dst.NewIdent("err")
@@ -920,16 +931,15 @@ func assignObjectTypeFromOptionalObjectType(
 
 		safeConversion := astbuilder.IfNotNil(reader, conversion, checkForError)
 
-		assignment := astbuilder.SimpleAssignment(
-			writer,
-			token.ASSIGN,
-			dst.NewIdent(copyVar))
+		assignment := writer(dst.NewIdent(copyVar))
 
-		return []dst.Stmt{
+		result := []dst.Stmt{
 			declaration,
 			safeConversion,
-			assignment,
 		}
+
+		result = append(result, assignment...)
+		return result
 	}
 }
 
@@ -990,7 +1000,7 @@ func assignOptionalObjectTypeFromObjectType(
 
 	copyVar := destinationEndpoint.CreateLocal()
 
-	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
 
 		localId := dst.NewIdent(copyVar)
 		errLocal := dst.NewIdent("err")
@@ -1016,17 +1026,16 @@ func assignOptionalObjectTypeFromObjectType(
 				"populating %s from %s, calling %s()",
 				destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName))
 
-		assignment := astbuilder.SimpleAssignment(
-			writer,
-			token.ASSIGN,
-			astbuilder.AddrOf(dst.NewIdent(copyVar)))
+		assignment := writer(astbuilder.AddrOf(dst.NewIdent(copyVar)))
 
-		return []dst.Stmt{
+		result := []dst.Stmt{
 			declaration,
 			conversion,
 			checkForError,
-			assignment,
 		}
+
+		result = append(result, assignment...)
+		return result
 	}
 }
 
@@ -1095,7 +1104,7 @@ func assignOptionalObjectTypeFromOptionalObjectType(
 
 	copyVar := destinationEndpoint.CreateLocal()
 
-	return func(reader dst.Expr, writer dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt {
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
 
 		declaration := astbuilder.LocalVariableDeclaration(
 			copyVar,
@@ -1120,20 +1129,21 @@ func assignOptionalObjectTypeFromOptionalObjectType(
 				"populating %s from %s, calling %s()",
 				destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName))
 
-		assignment := astbuilder.SimpleAssignment(
-			writer,
-			token.ASSIGN,
-			astbuilder.AddrOf(dst.NewIdent(copyVar)))
+		assignment := writer(astbuilder.AddrOf(dst.NewIdent(copyVar)))
 
-		assignNil := astbuilder.SimpleAssignment(
-			writer,
-			token.ASSIGN,
-			dst.NewIdent("nil"))
+		assignNil := writer(dst.NewIdent("nil"))
+
+		body := []dst.Stmt{
+			declaration,
+			conversion,
+			checkForError,
+		}
+		body = append(body, assignment...)
 
 		stmt := astbuilder.SimpleIfElse(
 			astbuilder.NotEqual(reader, dst.NewIdent("nil")),
-			astbuilder.StatementBlock(declaration, conversion, checkForError, assignment),
-			assignNil)
+			astbuilder.StatementBlock(body...),
+			astbuilder.StatementBlock(assignNil...))
 
 		return []dst.Stmt{
 			stmt,
