@@ -98,11 +98,24 @@ func assignToOptionalType(
 		return nil
 	}
 
+	local := destinationEndpoint.CreateLocal("", "Temp")
+
 	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
-		// Create a writer that takes the address of the passed expression
-		// Note that we are dependent on any wrapping conversion to ensure no aliasing occurs
+		// Create a writer that uses the address of the passed expression
+		// If expr isn't a plain identifier (implying a local variable), we introduce one
 		addrOfWriter := func(expr dst.Expr) []dst.Stmt {
-			return writer(astbuilder.AddrOf(expr))
+			if _, ok := expr.(*dst.Ident); ok {
+				return writer(astbuilder.AddrOf(expr))
+			}
+
+			assignment := astbuilder.SimpleAssignment(
+				dst.NewIdent(local),
+				token.DEFINE,
+				expr)
+
+			writing := writer(astbuilder.AddrOf(dst.NewIdent(local)))
+
+			return astbuilder.Statements(assignment, writing)
 		}
 
 		return conversion(reader, addrOfWriter, generationContext)
@@ -146,11 +159,8 @@ func assignPrimitiveTypeFromPrimitiveType(
 		return nil
 	}
 
-	local := destinationEndpoint.CreateLocal("", "Value")
-
 	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
-		assign := astbuilder.SimpleAssignment(dst.NewIdent(local), token.DEFINE, reader)
-		return astbuilder.Statements(assign, writer(dst.NewIdent(local)))
+		return writer(reader)
 	}
 }
 
