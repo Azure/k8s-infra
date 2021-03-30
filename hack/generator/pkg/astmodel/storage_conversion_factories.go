@@ -36,8 +36,6 @@ var typeConversionFactories []StorageTypeConversionFactory
 
 func init() {
 	typeConversionFactories = []StorageTypeConversionFactory{
-		// Meta-conversions
-		assignToOptionalType,
 		// Primitive types
 		assignPrimitiveTypeFromPrimitiveType,
 		assignPrimitiveTypeFromOptionalPrimitiveType,
@@ -51,6 +49,9 @@ func init() {
 		// Complex object types
 		assignObjectTypeFromObjectType,
 		assignObjectTypeFromOptionalObjectType,
+		// Meta-conversions
+		assignToOptionalType,
+		assignToEnumerationType,
 	}
 }
 
@@ -120,6 +121,56 @@ func assignToOptionalType(
 		}
 
 		return conversion(reader, addrOfWriter, generationContext)
+	}
+}
+
+// assignToEnumerationType will generate a conversion where the destination is an enumeration if
+// the source is type compatible with the base type of the enumeration
+//
+// <destination> = &<source>
+//
+func assignToEnumerationType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion {
+
+	// Require destination to NOT be optional
+	_, dstIsOpt := AsOptionalType(destinationEndpoint.Type())
+	if dstIsOpt {
+		// Destination is not optional
+		return nil
+	}
+
+	// Require destination to be an enumeration
+	dstName, dstType, ok := conversionContext.ResolveType(destinationEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	dstEnum, ok := AsEnumType(dstType)
+	if !ok {
+		return nil
+	}
+
+	// Require a conversion between the base type of the enumeration and our source
+	dstEp := destinationEndpoint.WithType(dstEnum.baseType)
+	conversion, _ := createTypeConversion(sourceEndpoint, dstEp, conversionContext)
+	if conversion == nil {
+		return nil
+	}
+
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
+		convertingWriter := func(expr dst.Expr) []dst.Stmt {
+			cast := &dst.CallExpr{
+				Fun:  dstName.AsType(generationContext),
+				Args: []dst.Expr{reader},
+			}
+			return writer(cast)
+		}
+
+		return conversion(
+			reader,
+			convertingWriter,
+			generationContext)
 	}
 }
 
@@ -397,6 +448,7 @@ func assignMapFromMap(
 // <local> = <baseType>(<source>)
 // <destination> = <enum>(<local>)
 //
+// We don't technically need this one, but it generates nicer code because it bypasses an unnecessary cast.
 func assignEnumTypeFromEnumType(
 	sourceEndpoint *StorageConversionEndpoint,
 	destinationEndpoint *StorageConversionEndpoint,
@@ -451,8 +503,9 @@ func assignEnumTypeFromEnumType(
 	}
 }
 
-// assignPrimitiveTypeFromEnumType will generate a conversion if both types have the same underlying
-// primitive type and neither source nor destination is optional
+// assignPrimitiveTypeFromEnumType will generate a conversion from an enumeration if the
+// destination has the underlying base type of the enumeration and neither source nor destination
+// is optional
 //
 // <local> = <baseType>(<source>)
 // <destination> = <enum>(<local>)
