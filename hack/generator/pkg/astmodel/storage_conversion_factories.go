@@ -46,6 +46,7 @@ func init() {
 		assignEnumTypeFromEnumType,
 		assignPrimitiveTypeFromEnumType,
 		assignEnumTypeFromOptionalEnumType,
+		assignPrimitiveTypeFromOptionalEnumType,
 		// Complex object types
 		assignObjectTypeFromObjectType,
 		assignObjectTypeFromOptionalObjectType,
@@ -626,6 +627,89 @@ func assignEnumTypeFromOptionalEnumType(
 				&dst.BasicLit{
 					Value: zeroValue(sourceEnum.baseType),
 				}))
+
+		stmt := &dst.IfStmt{
+			Cond: cond,
+			Body: astbuilder.StatementBlock(updateLocalFromReader...),
+			Else: astbuilder.StatementBlock(updateLocalWithZero...),
+		}
+
+		assignValue := writer(dst.NewIdent(local))
+		return astbuilder.Statements(declaration, stmt, assignValue)
+	}
+}
+
+// assignPrimitiveTypeFromOptionalEnumType will generate a conversion from an optional enumeration if
+// the destination has the underlying base type of the enumeration and the destination is not
+// optional
+//
+// if <source> != nil {
+//    <destination> = <enum>(*<source>)
+// } else {
+//    <destination> = <zero>
+// }
+//
+func assignPrimitiveTypeFromOptionalEnumType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion {
+
+	// Require source to be optional
+	if _, srcOpt := AsOptionalType(sourceEndpoint.Type()); !srcOpt {
+		return nil
+	}
+
+	// Require destination to be non-optional
+	if _, dstOpt := AsOptionalType(destinationEndpoint.Type()); dstOpt {
+		return nil
+	}
+
+	// Require source to be an enumeration
+	srcName, srcType, ok := conversionContext.ResolveType(sourceEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	srcEnum, srcIsEnum := AsEnumType(srcType)
+	if !srcIsEnum {
+		return nil
+	}
+
+	// Require destination to be a primitive type
+	dstPrim, ok := AsPrimitiveType(destinationEndpoint.Type())
+	if !ok {
+		return nil
+	}
+
+	// Require source enumeration to have the destination as base type
+	if !srcEnum.baseType.Equals(dstPrim) {
+		return nil
+	}
+
+	local := destinationEndpoint.CreateLocal("", "As"+srcName.Name(), "Enum")
+
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, ctx *CodeGenerationContext) []dst.Stmt {
+
+		declaration := astbuilder.LocalVariableDeclaration(local, dstPrim.AsType(ctx), "")
+
+		// Need to check for null and only assign if we have a value
+		cond := astbuilder.NotEqual(reader, dst.NewIdent("nil"))
+
+		writeLocal := func(expr dst.Expr) []dst.Stmt {
+			return []dst.Stmt{
+				astbuilder.SimpleAssignment(
+					dst.NewIdent(local),
+					token.ASSIGN,
+					expr),
+			}
+		}
+
+		updateLocalFromReader := writeLocal(
+			astbuilder.CallFunc(dstPrim.Name(), astbuilder.Dereference(reader)))
+
+		updateLocalWithZero := writeLocal(
+			&dst.BasicLit{
+				Value: zeroValue(dstPrim),
+			})
 
 		stmt := &dst.IfStmt{
 			Cond: cond,
