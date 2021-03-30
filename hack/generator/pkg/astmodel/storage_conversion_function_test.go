@@ -119,15 +119,13 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 
 		createTest("NastyTest", nastyProperty, nastyProperty),
 
-		createTest("SetRequiredEnumFromRequiredEnum", requiredCurrentEnumProperty, requiredHubEnumProperty, currentEnum, hubEnum),
-		createTest("SetRequiredEnumFromOptionalEnum", requiredCurrentEnumProperty, optionalHubEnumProperty, currentEnum, hubEnum),
-		createTest("SetOptionalEnumFromRequiredEnum", optionalCurrentEnumProperty, requiredHubEnumProperty, currentEnum, hubEnum),
-		createTest("SetOptionalEnumFromOptionalEnum", optionalCurrentEnumProperty, optionalHubEnumProperty, currentEnum, hubEnum),
+		createTest("ConvertBetweenRequiredEnumAndRequiredEnum", requiredCurrentEnumProperty, requiredHubEnumProperty, currentEnum, hubEnum),
+		createTest("ConvertBetweenRequiredEnumAndOptionalEnum", requiredCurrentEnumProperty, optionalHubEnumProperty, currentEnum, hubEnum),
+		createTest("ConvertBetweenOptionalEnumAndOptionalEnum", optionalCurrentEnumProperty, optionalHubEnumProperty, currentEnum, hubEnum),
 
-		createTest("SetRequiredObjectFromRequiredObject", requiredCurrentRoleProperty, requiredHubRoleProperty, currentRole, hubRole),
-		createTest("SetRequiredObjectFromOptionalObject", requiredCurrentRoleProperty, optionalNextRoleProperty, currentRole, hubRole),
-		createTest("SetOptionalObjectFromRequiredObject", optionalCurrentRoleProperty, requiredHubRoleProperty, currentRole, hubRole),
-		createTest("SetOptionalObjectFromOptionalObject", optionalCurrentRoleProperty, optionalNextRoleProperty, currentRole, hubRole),
+		createTest("ConvertBetweenRequiredObjectAndRequiredObject", requiredCurrentRoleProperty, requiredHubRoleProperty, currentRole, hubRole),
+		createTest("ConvertBetweenRequiredObjectAndOptionalObject", requiredCurrentRoleProperty, optionalNextRoleProperty, currentRole, hubRole),
+		createTest("ConvertBetweenOptionalObjectAndOptionalObject", optionalCurrentRoleProperty, optionalNextRoleProperty, currentRole, hubRole),
 
 		createTest("ConvertBetweenEnumAndBaseType", requiredSkuStringProperty, requiredSkuEnumProperty, currentEnum),
 		createTest("ConvertBetweenEnumAndOptionalBaseType", optionalSkuStringProperty, requiredSkuEnumProperty, currentEnum),
