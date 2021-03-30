@@ -341,10 +341,9 @@ func assignArrayFromArray(
 
 	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
 		// We create three obviously related identifiers to use for the conversion
-		id := sourceEndpoint.CreateLocal()
-		itemId := id + "Item"
-		indexId := id + "Index"
-		tempId := id + "List"
+		itemId := sourceEndpoint.CreateLocal("Item")
+		indexId := sourceEndpoint.CreateLocal("Index")
+		tempId := sourceEndpoint.CreateLocal("List")
 
 		declaration := astbuilder.SimpleAssignment(
 			dst.NewIdent(tempId),
@@ -426,10 +425,9 @@ func assignMapFromMap(
 
 	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
 		// We create three obviously related identifiers to use for the conversion
-		id := sourceEndpoint.CreateLocal()
-		itemId := id + "Value"
-		keyId := id + "Key"
-		tempId := id + "Map"
+		itemId := sourceEndpoint.CreateLocal("Value")
+		keyId := sourceEndpoint.CreateLocal("Key")
+		tempId := sourceEndpoint.CreateLocal("Map")
 
 		declaration := astbuilder.SimpleAssignment(
 			dst.NewIdent(tempId),
