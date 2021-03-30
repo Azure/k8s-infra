@@ -347,18 +347,18 @@ func (e embeddedResourceRemover) NewResourceRemovalTypeWalker(visitor astmodel.T
 		return typedCtx.WithMoreDepth(), nil
 	}
 
-	typeWalker.WalkCycle = func(def astmodel.TypeDefinition, ctx interface{}) (astmodel.TypeName, error) {
+	typeWalker.ShouldRemoveCycle = func(def astmodel.TypeDefinition, ctx interface{}) (bool, error) {
 		// If we're about to walk a cycle that is to a known resource type, just skip it entirely
 		if e.resourcePropertiesTypes.Contains(def.Name()) || e.resourceStatusTypes.Contains(def.Name()) {
-			return astmodel.TypeWalkerRemoveType, nil
+			return true, nil
 		}
 
 		if isTypeResourceLookalike(def.Type()) {
 			klog.V(5).Infof("Type %q is a resource lookalike", def.Name())
-			return astmodel.TypeWalkerRemoveType, nil
+			return true, nil
 		}
 
-		return def.Name(), nil // Leave other cycles for now
+		return false, nil // Leave other cycles for now
 	}
 
 	return typeWalker
@@ -378,8 +378,16 @@ func (e embeddedResourceRemover) removeEmbeddedResourceProperties() (astmodel.Ty
 
 	for _, def := range e.types {
 		if astmodel.IsResourceDefinition(def) {
-			ctx := resourceRemovalVisitorContext{resource: def.Name(), depth: 0, modifiedTypes: make(astmodel.Types)}
-			updatedTypes, err := typeWalker.Walk(def, ctx)
+			// TODO: Bit awkward that we're modifying typewalker here... maybe should bring back initial ctx param?
+			typeWalker.MakeContext = func(it astmodel.TypeName, ctx interface{}) (interface{}, error) {
+				if ctx == nil {
+					return resourceRemovalVisitorContext{resource: def.Name(), depth: 0, modifiedTypes: make(astmodel.Types)}, nil
+				}
+				typedCtx := ctx.(resourceRemovalVisitorContext)
+				return typedCtx.WithMoreDepth(), nil
+			}
+
+			updatedTypes, err := typeWalker.Walk(def)
 			if err != nil {
 				return nil, err
 			}
