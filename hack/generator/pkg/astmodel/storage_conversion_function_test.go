@@ -58,6 +58,11 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 	optionalCurrentRoleProperty := NewPropertyDefinition("role", "role", NewOptionalType(currentRole.Name()))
 	optionalNextRoleProperty := NewPropertyDefinition("role", "role", NewOptionalType(hubRole.Name()))
 
+	requiredSkuStringProperty := NewPropertyDefinition("sku", "sku", StringType)
+	requiredSkuEnumProperty := NewPropertyDefinition("sku", "sku", currentEnum.name)
+	optionalSkuStringProperty := NewPropertyDefinition("sku", "sku", NewOptionalType(StringType))
+	optionalSkuEnumProperty := NewPropertyDefinition("sku", "sku", NewOptionalType(currentEnum.name))
+
 	nastyProperty := NewPropertyDefinition(
 		"nasty",
 		"nasty",
@@ -66,7 +71,7 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 			NewArrayType(
 				NewMapType(StringType, BoolType))))
 
-	testDirect := func(
+	createTest := func(
 		name string,
 		currentProperty *PropertyDefinition,
 		hubProperty *PropertyDefinition,
@@ -96,33 +101,38 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 	}
 
 	return []*StorageConversionPropertyTestCase{
-		testDirect("SetStringFromString", requiredStringProperty, requiredStringProperty),
-		testDirect("SetStringFromOptionalString", requiredStringProperty, optionalStringProperty),
-		testDirect("SetOptionalStringFromString", optionalStringProperty, requiredStringProperty),
-		testDirect("SetOptionalStringFromOptionalString", optionalStringProperty, optionalStringProperty),
+		createTest("SetStringFromString", requiredStringProperty, requiredStringProperty),
+		createTest("SetStringFromOptionalString", requiredStringProperty, optionalStringProperty),
+		createTest("SetOptionalStringFromString", optionalStringProperty, requiredStringProperty),
+		createTest("SetOptionalStringFromOptionalString", optionalStringProperty, optionalStringProperty),
 
-		testDirect("SetIntFromInt", requiredIntProperty, requiredIntProperty),
-		testDirect("SetIntFromOptionalInt", requiredIntProperty, optionalIntProperty),
+		createTest("SetIntFromInt", requiredIntProperty, requiredIntProperty),
+		createTest("SetIntFromOptionalInt", requiredIntProperty, optionalIntProperty),
 
-		testDirect("SetArrayOfRequiredFromArrayOfRequired", arrayOfRequiredIntProperty, arrayOfRequiredIntProperty),
-		testDirect("SetArrayOfRequiredFromArrayOfOptional", arrayOfRequiredIntProperty, arrayOfOptionalIntProperty),
-		testDirect("SetArrayOfOptionalFromArrayOfRequired", arrayOfOptionalIntProperty, arrayOfRequiredIntProperty),
+		createTest("SetArrayOfRequiredFromArrayOfRequired", arrayOfRequiredIntProperty, arrayOfRequiredIntProperty),
+		createTest("SetArrayOfRequiredFromArrayOfOptional", arrayOfRequiredIntProperty, arrayOfOptionalIntProperty),
+		createTest("SetArrayOfOptionalFromArrayOfRequired", arrayOfOptionalIntProperty, arrayOfRequiredIntProperty),
 
-		testDirect("SetMapOfRequiredFromMapOfRequired", mapOfRequiredIntsProperty, mapOfRequiredIntsProperty),
-		testDirect("SetMapOfRequiredFromMapOfOptional", mapOfRequiredIntsProperty, mapOfOptionalIntsProperty),
-		testDirect("SetMapOfOptionalFromMapOfRequired", mapOfOptionalIntsProperty, mapOfRequiredIntsProperty),
+		createTest("SetMapOfRequiredFromMapOfRequired", mapOfRequiredIntsProperty, mapOfRequiredIntsProperty),
+		createTest("SetMapOfRequiredFromMapOfOptional", mapOfRequiredIntsProperty, mapOfOptionalIntsProperty),
+		createTest("SetMapOfOptionalFromMapOfRequired", mapOfOptionalIntsProperty, mapOfRequiredIntsProperty),
 
-		testDirect("NastyTest", nastyProperty, nastyProperty),
+		createTest("NastyTest", nastyProperty, nastyProperty),
 
-		testDirect("SetRequiredEnumFromRequiredEnum", requiredCurrentEnumProperty, requiredHubEnumProperty, currentEnum, hubEnum),
-		testDirect("SetRequiredEnumFromOptionalEnum", requiredCurrentEnumProperty, optionalHubEnumProperty, currentEnum, hubEnum),
-		testDirect("SetOptionalEnumFromRequiredEnum", optionalCurrentEnumProperty, requiredHubEnumProperty, currentEnum, hubEnum),
-		testDirect("SetOptionalEnumFromOptionalEnum", optionalCurrentEnumProperty, optionalHubEnumProperty, currentEnum, hubEnum),
+		createTest("SetRequiredEnumFromRequiredEnum", requiredCurrentEnumProperty, requiredHubEnumProperty, currentEnum, hubEnum),
+		createTest("SetRequiredEnumFromOptionalEnum", requiredCurrentEnumProperty, optionalHubEnumProperty, currentEnum, hubEnum),
+		createTest("SetOptionalEnumFromRequiredEnum", optionalCurrentEnumProperty, requiredHubEnumProperty, currentEnum, hubEnum),
+		createTest("SetOptionalEnumFromOptionalEnum", optionalCurrentEnumProperty, optionalHubEnumProperty, currentEnum, hubEnum),
 
-		testDirect("SetRequiredObjectFromRequiredObject", requiredCurrentRoleProperty, requiredHubRoleProperty, currentRole, hubRole),
-		testDirect("SetRequiredObjectFromOptionalObject", requiredCurrentRoleProperty, optionalNextRoleProperty, currentRole, hubRole),
-		testDirect("SetOptionalObjectFromRequiredObject", optionalCurrentRoleProperty, requiredHubRoleProperty, currentRole, hubRole),
-		testDirect("SetOptionalObjectFromOptionalObject", optionalCurrentRoleProperty, optionalNextRoleProperty, currentRole, hubRole),
+		createTest("SetRequiredObjectFromRequiredObject", requiredCurrentRoleProperty, requiredHubRoleProperty, currentRole, hubRole),
+		createTest("SetRequiredObjectFromOptionalObject", requiredCurrentRoleProperty, optionalNextRoleProperty, currentRole, hubRole),
+		createTest("SetOptionalObjectFromRequiredObject", optionalCurrentRoleProperty, requiredHubRoleProperty, currentRole, hubRole),
+		createTest("SetOptionalObjectFromOptionalObject", optionalCurrentRoleProperty, optionalNextRoleProperty, currentRole, hubRole),
+
+		createTest("ConvertBetweenEnumAndBaseType", requiredSkuStringProperty, requiredSkuEnumProperty, currentEnum),
+		createTest("ConvertBetweenEnumAndOptionalBaseType", optionalSkuStringProperty, requiredSkuEnumProperty, currentEnum),
+		createTest("ConvertBetweenOptionalEnumAndBaseType", requiredSkuStringProperty, optionalSkuEnumProperty, currentEnum),
+		createTest("ConvertBetweenOptionalEnumAndOptionalBaseType", optionalSkuStringProperty, optionalSkuEnumProperty, currentEnum),
 	}
 }
 
