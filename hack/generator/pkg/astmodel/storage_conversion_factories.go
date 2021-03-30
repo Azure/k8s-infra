@@ -46,6 +46,7 @@ func init() {
 		assignMapFromMap,
 		// Enumerations
 		assignEnumTypeFromEnumType,
+		assignPrimitiveTypeFromEnumType,
 		assignEnumTypeFromOptionalEnumType,
 		// Complex object types
 		assignObjectTypeFromObjectType,
@@ -447,6 +448,53 @@ func assignEnumTypeFromEnumType(
 
 		result = append(result, writer(dst.NewIdent(local))...)
 		return result
+	}
+}
+
+// assignPrimitiveTypeFromEnumType will generate a conversion if both types have the same underlying
+// primitive type and neither source nor destination is optional
+//
+// <local> = <baseType>(<source>)
+// <destination> = <enum>(<local>)
+//
+func assignPrimitiveTypeFromEnumType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion {
+
+	// Require source to be non-optional
+	if _, srcOpt := AsOptionalType(sourceEndpoint.Type()); srcOpt {
+		return nil
+	}
+
+	// Require destination to be non-optional
+	if _, dstOpt := AsOptionalType(destinationEndpoint.Type()); dstOpt {
+		return nil
+	}
+
+	// Require source to be an enumeration
+	_, srcType, ok := conversionContext.ResolveType(sourceEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	srcEnum, srcIsEnum := AsEnumType(srcType)
+	if !srcIsEnum {
+		return nil
+	}
+
+	// Require destination to be a primitive type
+	dstPrimitive, ok := AsPrimitiveType(destinationEndpoint.Type())
+	if !ok {
+		return nil
+	}
+
+	// Require enumeration to have the destination as base type
+	if !srcEnum.baseType.Equals(dstPrimitive) {
+		return nil
+	}
+
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, ctx *CodeGenerationContext) []dst.Stmt {
+		return writer(astbuilder.CallFunc(dstPrimitive.Name(), reader))
 	}
 }
 
