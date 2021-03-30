@@ -269,8 +269,8 @@ func assignArrayFromArray(
 
 	// Require a conversion between the array types
 	unwrappedSourceEndpoint := sourceEndpoint.WithType(sourceArray.element)
-	unwrappedDestinationEntpoint := destinationEndpoint.WithType(destinationArray.element)
-	conversion, _ := createTypeConversion(unwrappedSourceEndpoint, unwrappedDestinationEntpoint, conversionContext)
+	unwrappedDestinationEndpoint := destinationEndpoint.WithType(destinationArray.element)
+	conversion, _ := createTypeConversion(unwrappedSourceEndpoint, unwrappedDestinationEndpoint, conversionContext)
 	if conversion == nil {
 		return nil
 	}
@@ -348,8 +348,8 @@ func assignMapFromMap(
 
 	// Require a conversion between the map items
 	unwrappedSourceEndpoint := sourceEndpoint.WithType(sourceMap.value)
-	unwrappedDesinationEndpoint := destinationEndpoint.WithType(destinationMap.value)
-	conversion, _ := createTypeConversion(unwrappedSourceEndpoint, unwrappedDesinationEndpoint, conversionContext)
+	unwrappedDestinationEndpoint := destinationEndpoint.WithType(destinationMap.value)
+	conversion, _ := createTypeConversion(unwrappedSourceEndpoint, unwrappedDestinationEndpoint, conversionContext)
 	if conversion == nil {
 		return nil
 	}
@@ -437,7 +437,7 @@ func assignEnumTypeFromEnumType(
 		return nil
 	}
 
-	local := destinationEndpoint.CreateLocal("", "Value")
+	local := destinationEndpoint.CreateLocal("", "As"+destinationName.Name(), "Value")
 	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, ctx *CodeGenerationContext) []dst.Stmt {
 		result := []dst.Stmt{
 			astbuilder.SimpleAssignment(
@@ -523,7 +523,7 @@ func assignEnumTypeFromOptionalEnumType(
 	}
 
 	// Require source to be an enumeration
-	_, sourceType, sourceFound := conversionContext.ResolveType(sourceEndpoint.Type())
+	sourceName, sourceType, sourceFound := conversionContext.ResolveType(sourceEndpoint.Type())
 	if !sourceFound {
 		return nil
 	}
@@ -547,7 +547,7 @@ func assignEnumTypeFromOptionalEnumType(
 		return nil
 	}
 
-	local := destinationEndpoint.CreateLocal("", "Enum")
+	local := destinationEndpoint.CreateLocal("", "As"+sourceName.Name(), "Enum")
 
 	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, ctx *CodeGenerationContext) []dst.Stmt {
 
