@@ -150,11 +150,8 @@ func assignPrimitiveTypeFromPrimitiveType(
 	local := destinationEndpoint.CreateLocal("", "Value")
 
 	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
-		result := []dst.Stmt{
-			astbuilder.SimpleAssignment(dst.NewIdent(local), token.DEFINE, reader),
-		}
-		result = append(result, writer(dst.NewIdent(local))...)
-		return result
+		assign := astbuilder.SimpleAssignment(dst.NewIdent(local), token.DEFINE, reader)
+		return astbuilder.Statements(assign, writer(dst.NewIdent(local)))
 	}
 }
 
@@ -222,20 +219,13 @@ func assignPrimitiveTypeFromOptionalPrimitiveType(
 			Value: zeroValue(srcPrim),
 		})
 
-		stmt := astbuilder.SimpleIfElse(
+		convert := astbuilder.SimpleIfElse(
 			cond,
 			astbuilder.StatementBlock(updateLocalFromReader...),
 			astbuilder.StatementBlock(updateLocalWithZero...))
 
 		assignValue := writer(dst.NewIdent(local))
-
-		result := []dst.Stmt{
-			declaration,
-			stmt,
-		}
-
-		result = append(result, assignValue...)
-		return result
+		return astbuilder.Statements(declaration, convert, assignValue)
 	}
 }
 
@@ -300,26 +290,13 @@ func assignArrayFromArray(
 		avoidAliasing.Decs.Start.Append("// Shadow the loop variable to avoid aliasing")
 		avoidAliasing.Decs.Before = dst.NewLine
 
-		loopBody := []dst.Stmt{
+		loopBody := astbuilder.Statements(
 			avoidAliasing,
-		}
-
-		loopBody = append(loopBody, conversion(
-			dst.NewIdent(itemId),
-			writeToElement,
-			generationContext)...)
+			conversion(dst.NewIdent(itemId), writeToElement, generationContext))
 
 		assign := writer(dst.NewIdent(tempId))
-
 		loop := astbuilder.IterateOverListWithIndex(indexId, itemId, reader, loopBody...)
-
-		result := []dst.Stmt{
-			declaration,
-			loop,
-		}
-
-		result = append(result, assign...)
-		return result
+		return astbuilder.Statements(declaration, loop, assign)
 	}
 }
 
@@ -392,27 +369,13 @@ func assignMapFromMap(
 		avoidAliasing.Decs.Start.Append("// Shadow the loop variable to avoid aliasing")
 		avoidAliasing.Decs.Before = dst.NewLine
 
-		loopBody := []dst.Stmt{
+		loopBody := astbuilder.Statements(
 			avoidAliasing,
-		}
-
-		loopBody = append(loopBody, conversion(
-			dst.NewIdent(itemId),
-			assignToItem,
-			generationContext,
-		)...)
+			conversion(dst.NewIdent(itemId), assignToItem, generationContext))
 
 		assign := writer(dst.NewIdent(tempId))
-
 		loop := astbuilder.IterateOverMapWithValue(keyId, itemId, reader, loopBody...)
-
-		result := []dst.Stmt{
-			declaration,
-			loop,
-		}
-
-		result = append(result, assign...)
-		return result
+		return astbuilder.Statements(declaration, loop, assign)
 	}
 }
 
@@ -559,14 +522,7 @@ func assignEnumTypeFromOptionalEnumType(
 		}
 
 		assignValue := writer(dst.NewIdent(local))
-
-		result := []dst.Stmt{
-			declaration,
-			stmt,
-		}
-
-		result = append(result, assignValue...)
-		return result
+		return astbuilder.Statements(declaration, stmt, assignValue)
 	}
 }
 
@@ -654,15 +610,7 @@ func assignObjectTypeFromObjectType(
 				destinationEndpoint.name, sourceEndpoint.name, conversionContext.functionName))
 
 		assignment := writer(dst.NewIdent(copyVar))
-
-		result := []dst.Stmt{
-			declaration,
-			conversion,
-			checkForError,
-		}
-
-		result = append(result, assignment...)
-		return result
+		return astbuilder.Statements(declaration, conversion, checkForError, assignment)
 	}
 }
 
@@ -756,14 +704,7 @@ func assignObjectTypeFromOptionalObjectType(
 		safeConversion := astbuilder.IfNotNil(reader, conversion, checkForError)
 
 		assignment := writer(dst.NewIdent(copyVar))
-
-		result := []dst.Stmt{
-			declaration,
-			safeConversion,
-		}
-
-		result = append(result, assignment...)
-		return result
+		return astbuilder.Statements(declaration, safeConversion, assignment)
 	}
 }
 
