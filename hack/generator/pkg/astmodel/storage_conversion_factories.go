@@ -350,7 +350,7 @@ func assignArrayFromArray(
 			token.DEFINE,
 			astbuilder.MakeList(dstArray.AsType(generationContext), astbuilder.CallFunc("len", reader)))
 
-		assignToElement := func(expr dst.Expr) []dst.Stmt {
+		writeToElement := func(expr dst.Expr) []dst.Stmt {
 			return []dst.Stmt{
 				astbuilder.SimpleAssignment(
 					&dst.IndexExpr{
@@ -362,10 +362,18 @@ func assignArrayFromArray(
 			}
 		}
 
-		loopBody := conversion(
+		avoidAliasing := astbuilder.SimpleAssignment(dst.NewIdent(itemId), token.DEFINE, dst.NewIdent(itemId))
+		avoidAliasing.Decs.Start.Append("// Shadow the loop variable to avoid aliasing")
+		avoidAliasing.Decs.Before = dst.NewLine
+
+		loopBody := []dst.Stmt{
+			avoidAliasing,
+		}
+
+		loopBody = append(loopBody, conversion(
 			dst.NewIdent(itemId),
-			assignToElement,
-			generationContext)
+			writeToElement,
+			generationContext)...)
 
 		assign := writer(dst.NewIdent(tempId))
 
@@ -446,11 +454,19 @@ func assignMapFromMap(
 			}
 		}
 
-		loopBody := conversion(
+		avoidAliasing := astbuilder.SimpleAssignment(dst.NewIdent(itemId), token.DEFINE, dst.NewIdent(itemId))
+		avoidAliasing.Decs.Start.Append("// Shadow the loop variable to avoid aliasing")
+		avoidAliasing.Decs.Before = dst.NewLine
+
+		loopBody := []dst.Stmt{
+			avoidAliasing,
+		}
+
+		loopBody = append(loopBody, conversion(
 			dst.NewIdent(itemId),
 			assignToItem,
 			generationContext,
-		)
+		)...)
 
 		assign := writer(dst.NewIdent(tempId))
 
