@@ -21,7 +21,6 @@ func newTestName(name string) astmodel.TypeName {
 	return astmodel.MakeTypeName(makeTestLocalPackageReference("group", "2020-01-01"), name)
 }
 
-// TODO: This is copied from astmodel tests
 func newTestObject(name astmodel.TypeName, fields ...*astmodel.PropertyDefinition) astmodel.TypeDefinition {
 	return astmodel.MakeTypeDefinition(name, astmodel.NewObjectType().WithProperties(fields...))
 }
@@ -32,7 +31,7 @@ func typesWithSubresourceTypeNoOriginalNameUsage() astmodel.Types {
 	suffix := "TestSuffix"
 
 	originalTypeName := newTestName("T1")
-	modifiedTypeName := makeEmbeddedResourceTypeName(embeddedResourceTypeName{original: originalTypeName, context: resourceTypeName.Name(), suffix: suffix, count: 0})
+	modifiedTypeName := embeddedResourceTypeName{original: originalTypeName, context: resourceTypeName.Name(), suffix: suffix, count: 0}.ToTypeName()
 	modifiedObject := newTestObject(modifiedTypeName)
 	result.Add(modifiedObject.WithType(exampleTypeFlag.ApplyTo(modifiedObject.Type())))
 
@@ -52,7 +51,7 @@ func typesWithSubresourceTypeOriginalNameUsage() astmodel.Types {
 	suffix := "TestSuffix"
 
 	originalTypeName := newTestName("T1")
-	modifiedTypeName := makeEmbeddedResourceTypeName(embeddedResourceTypeName{original: originalTypeName, context: resourceTypeName.Name(), suffix: suffix, count: 0})
+	modifiedTypeName := embeddedResourceTypeName{original: originalTypeName, context: resourceTypeName.Name(), suffix: suffix, count: 0}.ToTypeName()
 	modifiedObject := newTestObject(modifiedTypeName)
 	result.Add(modifiedObject.WithType(exampleTypeFlag.ApplyTo(modifiedObject.Type())))
 	result.Add(newTestObject(originalTypeName))
@@ -78,11 +77,11 @@ func typesWithSubresourceTypeMultipleUsageContextsOneResource() astmodel.Types {
 	suffix := "TestSuffix"
 
 	originalTypeName := newTestName("T1")
-	modifiedTypeName1 := makeEmbeddedResourceTypeName(embeddedResourceTypeName{original: originalTypeName, context: resourceTypeName.Name(), suffix: suffix, count: 0})
+	modifiedTypeName1 := embeddedResourceTypeName{original: originalTypeName, context: resourceTypeName.Name(), suffix: suffix, count: 0}.ToTypeName()
 	modifiedObject1 := newTestObject(modifiedTypeName1)
 	result.Add(modifiedObject1.WithType(exampleTypeFlag.ApplyTo(modifiedObject1.Type())))
 
-	modifiedTypeName2 := makeEmbeddedResourceTypeName(embeddedResourceTypeName{original: originalTypeName, context: resourceTypeName.Name(), suffix: suffix, count: 1})
+	modifiedTypeName2 := embeddedResourceTypeName{original: originalTypeName, context: resourceTypeName.Name(), suffix: suffix, count: 1}.ToTypeName()
 	modifiedObject2 := newTestObject(modifiedTypeName2)
 	result.Add(modifiedObject2.WithType(exampleTypeFlag.ApplyTo(modifiedObject2.Type())))
 
@@ -109,11 +108,11 @@ func typesWithSubresourceTypeMultipleResourcesOneUsageContextEach() astmodel.Typ
 	suffix := "TestSuffix"
 
 	originalTypeName := newTestName("T1")
-	modifiedTypeName1 := makeEmbeddedResourceTypeName(embeddedResourceTypeName{original: originalTypeName, context: resourceTypeName.Name(), suffix: suffix, count: 0})
+	modifiedTypeName1 := embeddedResourceTypeName{original: originalTypeName, context: resourceTypeName.Name(), suffix: suffix, count: 0}.ToTypeName()
 	modifiedObject1 := newTestObject(modifiedTypeName1)
 	result.Add(modifiedObject1.WithType(exampleTypeFlag.ApplyTo(modifiedObject1.Type())))
 
-	modifiedTypeName2 := makeEmbeddedResourceTypeName(embeddedResourceTypeName{original: originalTypeName, context: resourceTypeName2.Name(), suffix: suffix, count: 0})
+	modifiedTypeName2 := embeddedResourceTypeName{original: originalTypeName, context: resourceTypeName2.Name(), suffix: suffix, count: 0}.ToTypeName()
 	modifiedObject2 := newTestObject(modifiedTypeName2)
 	result.Add(modifiedObject2.WithType(exampleTypeFlag.ApplyTo(modifiedObject2.Type())))
 
@@ -137,7 +136,7 @@ func TestCleanupTypeNames_TypeWithNoOriginalName_UpdatedNameCollapsed(t *testing
 
 	expectedUpdatedTypeName := newTestName("T1")
 
-	updatedTypes, err := cleanupTypeNames(typesWithSubresourceTypeNoOriginalNameUsage(), exampleTypeFlag)
+	updatedTypes, err := simplifyTypeNames(typesWithSubresourceTypeNoOriginalNameUsage(), exampleTypeFlag)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	g.Expect(len(updatedTypes)).To(Equal(2))
@@ -160,7 +159,7 @@ func TestCleanupTypeNames_TypeWithOriginalNameExists_UpdatedNamePartiallyCollaps
 	expectedUpdatedTypeName := newTestName("T1_TestSuffix")
 	expectedOriginalTypeName := newTestName("T1")
 
-	updatedTypes, err := cleanupTypeNames(typesWithSubresourceTypeOriginalNameUsage(), exampleTypeFlag)
+	updatedTypes, err := simplifyTypeNames(typesWithSubresourceTypeOriginalNameUsage(), exampleTypeFlag)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	g.Expect(len(updatedTypes)).To(Equal(3))
@@ -187,7 +186,7 @@ func TestCleanupTypeNames_UpdatedNamesAreAllForSameResource_UpdatedNamesStripped
 	expectedUpdatedTypeName1 := newTestName("T1_TestSuffix")
 	expectedUpdatedTypeName2 := newTestName("T1_TestSuffix_1")
 
-	updatedTypes, err := cleanupTypeNames(typesWithSubresourceTypeMultipleUsageContextsOneResource(), exampleTypeFlag)
+	updatedTypes, err := simplifyTypeNames(typesWithSubresourceTypeMultipleUsageContextsOneResource(), exampleTypeFlag)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	g.Expect(len(updatedTypes)).To(Equal(3))
@@ -214,7 +213,7 @@ func TestCleanupTypeNames_UpdatedNamesAreEachForDifferentResource_UpdatedNamesSt
 	expectedUpdatedTypeName1 := newTestName("T1_Resource_TestSuffix")
 	expectedUpdatedTypeName2 := newTestName("T1_Resource2_TestSuffix")
 
-	updatedTypes, err := cleanupTypeNames(typesWithSubresourceTypeMultipleResourcesOneUsageContextEach(), exampleTypeFlag)
+	updatedTypes, err := simplifyTypeNames(typesWithSubresourceTypeMultipleResourcesOneUsageContextEach(), exampleTypeFlag)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	g.Expect(len(updatedTypes)).To(Equal(3))

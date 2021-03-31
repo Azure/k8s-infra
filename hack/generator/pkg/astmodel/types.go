@@ -7,7 +7,6 @@ package astmodel
 
 import (
 	"fmt"
-	"sort"
 
 	"github.com/pkg/errors"
 )
@@ -186,25 +185,4 @@ func (types Types) ResolveResourceStatusDefinition(
 
 	// preserve outer spec name
 	return resourceStatusDef.WithName(statusName), nil
-}
-
-// AsSortedSlice returns a slice ordered by package name/type name, for use when the collection
-// of Types must be processed in a deterministic order.
-func (types Types) AsSortedSlice() []TypeDefinition {
-	var orderedTypes []TypeDefinition
-	for _, def := range types {
-		orderedTypes = append(orderedTypes, def)
-	}
-	sort.Slice(orderedTypes, func(i, j int) bool {
-		left := orderedTypes[i]
-		right := orderedTypes[j]
-
-		if left.Name().PackageReference.Equals(right.Name().PackageReference) {
-			return left.Name().Name() < right.Name().Name()
-		}
-
-		return left.Name().PackageReference.String() < right.Name().PackageReference.String()
-	})
-
-	return orderedTypes
 }

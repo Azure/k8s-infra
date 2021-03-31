@@ -21,21 +21,28 @@ import (
 // removeEmbeddedResources uses a variety of heuristics to remove resources that are embedded inside other resources.
 // There are a number of different kinds of embeddings:
 // 1. A "Properties" embedding. When we process the Azure JSON schema/Swagger we manufacture a "Spec"
-//    type that doesn't exist in the JSON schema/Swagger. In the JSON schema the resource itself must comply with ARM resource requirements,
-//    meaning that all of the RP specific properties are stored in the "Properties" property which for the sake of example we will say has type "R1Properties".
-//    Other resources which have a property somewhere in their type hierarchy with that same "R1Properties" type are actually embedding the R1 resource entirely inside themselves.
-//    Since the R1 resource is its own resource it doesn't make sense to have it embedded inside another resource in Kubernetes. These embeddings should really just be
-//    cross resource references. This pipeline finds such embeddings and removes them. A concrete example of one such embedding is
-//    v20181001 Microsoft.Networking Connection.Spec.Properties.LocalNetworkGateway2.Properties. The LocalNetworkGateway2 property is of
-//    type "LocalNetworkGateway" which is itself a resource. The ideal shape of Connection.Spec.Properties.LocalNetworkGate2 would just be a
-//    reference to a LocalNetworkGateway resource. TODO: Talk about how sure we are of this
-// 2. A subresource embedding. For the same reasons above, embedded subresources don't make sense in Kubernetes. In the case of embedded subresources,
-//    the ideal shape would be a complete removal of the reference. We forbid parent resources directly referencing child resources as it complicates the
-//    Watches scenario for each resource reconciler. It's also not a common pattern in Kubernetes - usually you can identify children for a given parent via
-//    a label. An example of this type of embedding is v20180601 Microsoft.Networking RouteTable.Spec.Properties.Routes. The Routes property is of type
-//    RouteTableRoutes which is a child resource of RouteTable.
-// Note that even though the above examples do not include Status types, the same rules apply to Status types, with the only difference being that for Status types
-// the resource reference in Swagger (the source of the Status types) is to the Status type (as opposed to the "Properties" type for Spec).
+//    type that doesn't exist in the JSON schema/Swagger. In the JSON schema the resource itself must comply with ARM
+//    resource requirements, meaning that all of the RP specific properties are stored in the "Properties"
+//    property which for the sake of example we will say has type "R1Properties".
+//    Other resources which have a property somewhere in their type hierarchy with that same "R1Properties"
+//    type are actually embedding the R1 resource entirely inside themselves. Since the R1 resource is its own
+//    resource it doesn't make sense to have it embedded inside another resource in Kubernetes. These embeddings
+//    should really just be cross resource references. This pipeline finds such embeddings and removes them. A concrete
+//    example of one such embedding is
+//    v20181001 Microsoft.Networking Connection.Spec.Properties.LocalNetworkGateway2.Properties.
+//    The LocalNetworkGateway2 property is of type "LocalNetworkGateway" which is itself a resource.
+//    The ideal shape of Connection.Spec.Properties.LocalNetworkGate2 would just be a reference to a
+//    LocalNetworkGateway resource. TODO: Talk about how sure we are of this
+// 2. A subresource embedding. For the same reasons above, embedded subresources don't make sense in Kubernetes.
+//    In the case of embedded subresources, the ideal shape would be a complete removal of the reference. We forbid
+//    parent resources directly referencing child resources as it complicates the Watches scenario for each resource
+//    reconciler. It's also not a common pattern in Kubernetes - usually you can identify children for a
+//    given parent via a label. An example of this type of embedding is
+//    v20180601 Microsoft.Networking RouteTable.Spec.Properties.Routes. The Routes property is of type RouteTableRoutes
+//    which is a child resource of RouteTable.
+// Note that even though the above examples do not include Status types, the same rules apply to Status types, with
+// the only difference being that for Status types the resource reference in Swagger (the source of the Status types)
+// is to the Status type (as opposed to the "Properties" type for Spec).
 func removeEmbeddedResources() PipelineStage {
 	return MakePipelineStage(
 		"removeEmbeddedResources",
@@ -50,7 +57,8 @@ func removeEmbeddedResources() PipelineStage {
 		})
 }
 
-// findSubResourcePropertiesTypeNames finds the "Properties" type of each subresource and returns a map of parent resource to subresource "Properties" type names.
+// findSubResourcePropertiesTypeNames finds the "Properties" type of each subresource and returns a map of
+// parent resource to subresource "Properties" type names.
 func findSubResourcePropertiesTypeNames(types astmodel.Types) (map[astmodel.TypeName]astmodel.TypeNameSet, error) {
 	resources := types.Where(func(def astmodel.TypeDefinition) bool {
 		_, ok := astmodel.AsResourceType(def.Type())
@@ -241,7 +249,7 @@ type embeddedResourceRemover struct {
 	typeFlag                 astmodel.TypeFlag
 }
 
-func makeEmbeddedResourceRemover(types astmodel.Types) (embeddedResourceRemover, error) { // TODO: Are we ok with this returning an error?
+func makeEmbeddedResourceRemover(types astmodel.Types) (embeddedResourceRemover, error) {
 	resourceStatusTypes := findAllResourceStatusTypes(types)
 	resourceToSubresourceMap, err := findSubResourcePropertiesTypeNames(types)
 	if err != nil {
@@ -270,7 +278,6 @@ func (e embeddedResourceRemover) MakeEmbeddedResourceRemovalTypeVisitor() astmod
 	visitor.VisitObjectType = func(this *astmodel.TypeVisitor, it *astmodel.ObjectType, ctx interface{}) (astmodel.Type, error) {
 		typedCtx := ctx.(resourceRemovalVisitorContext)
 
-		// TODO: Is this the best way to achieve this protection?
 		if typedCtx.depth <= 2 {
 			// If we are not at sufficient depth, don't bother checking for subresource references. The resource itself and its spec type
 			// will not refer to a subresource. There are some instances of resources (such as Microsoft.Web v20160801 Sites) where the resource
@@ -311,7 +318,7 @@ func (e embeddedResourceRemover) NewResourceRemovalTypeWalker(visitor astmodel.T
 		typedCtx := ctx.(resourceRemovalVisitorContext)
 
 		if !original.Name().Equals(updated.Name()) {
-			panic(fmt.Sprintf("Unexpeted name mismatch during type walk: %q -> %q", original.Name(), updated.Name()))
+			panic(fmt.Sprintf("Unexpected name mismatch during type walk: %q -> %q", original.Name(), updated.Name()))
 		}
 
 		if !original.Type().Equals(updated.Type()) {
@@ -319,7 +326,7 @@ func (e embeddedResourceRemover) NewResourceRemovalTypeWalker(visitor astmodel.T
 			var newName astmodel.TypeName
 			exists := false
 			for count := 0; ; count++ {
-				newName = makeEmbeddedResourceTypeName(embeddedResourceTypeName{original: original.Name(), context: typedCtx.resource.Name(), suffix: e.typeSuffix, count: count})
+				newName = embeddedResourceTypeName{original: original.Name(), context: typedCtx.resource.Name(), suffix: e.typeSuffix, count: count}.ToTypeName()
 				existing, ok := typedCtx.modifiedTypes[newName]
 				if !ok {
 					break
@@ -340,11 +347,6 @@ func (e embeddedResourceRemover) NewResourceRemovalTypeWalker(visitor astmodel.T
 		}
 
 		return updated, nil
-	}
-
-	typeWalker.MakeContext = func(_ astmodel.TypeName, ctx interface{}) (interface{}, error) {
-		typedCtx := ctx.(resourceRemovalVisitorContext)
-		return typedCtx.WithMoreDepth(), nil
 	}
 
 	typeWalker.ShouldRemoveCycle = func(def astmodel.TypeDefinition, ctx interface{}) (bool, error) {
@@ -369,12 +371,6 @@ func (e embeddedResourceRemover) removeEmbeddedResourceProperties() (astmodel.Ty
 
 	visitor := e.MakeEmbeddedResourceRemovalTypeVisitor()
 	typeWalker := e.NewResourceRemovalTypeWalker(visitor)
-
-	// TODO: probably remove this
-	// TODO: Actually we need this I think in order to guarantee we also discover types in the same order (and thus they get the same number assigned to them if they are used in multiple embedding contexts)
-	// TODO: Nope this doesn't solve that issue, at least not by itself
-	// Force ordering for determinism to ease debugging
-	// types := e.types.AsSortedSlice()
 
 	for _, def := range e.types {
 		if astmodel.IsResourceDefinition(def) {
@@ -401,98 +397,97 @@ func (e embeddedResourceRemover) removeEmbeddedResourceProperties() (astmodel.Ty
 		}
 	}
 
-	return cleanupTypeNames(result, e.typeFlag)
+	return simplifyTypeNames(result, e.typeFlag)
 }
 
-// TODO: Method too long
-// Only keep the suffix if the shorter (non-suffixed) name is also in use
-func cleanupTypeNames(types astmodel.Types, flag astmodel.TypeFlag) (astmodel.Types, error) {
+type renamer struct {
+	types astmodel.Types
+}
+
+func (r renamer) singleNameToOriginalName(original astmodel.TypeName, associatedNames astmodel.TypeNameSet) (map[astmodel.TypeName]astmodel.TypeName, error) {
+	_, originalExists := r.types[original]
+	if originalExists || len(associatedNames) != 1 {
+		return nil, nil
+	}
+
+	klog.V(4).Infof("There are no usages of %q. Collapsing %q into the original for simplicity.", original, associatedNames.Single())
 	renames := make(map[astmodel.TypeName]astmodel.TypeName)
+	renames[associatedNames.Single()] = original
 
-	// Find all of the type names that have the flag we're interested in
-	updatedNames := make(map[astmodel.TypeName]astmodel.TypeNameSet)
-	for _, def := range types {
-		if flag.IsOn(def.Type()) {
-			embeddedName, err := splitEmbeddedResourceTypeName(def.Name())
-			if err != nil {
-				return nil, err
-			}
-
-			associatedNames := updatedNames[embeddedName.original]
-			associatedNames = associatedNames.Add(def.Name())
-			updatedNames[embeddedName.original] = associatedNames
-		}
-	}
-
-	for original, associatedNames := range updatedNames {
-		_, originalExists := types[original]
-
-		// If original name doesn't exist and there is only one new name, rename new name to original name
-		if !originalExists && len(associatedNames) == 1 {
-			renames[associatedNames.Single()] = original
-
-			klog.V(4).Infof("There are no usages of %q. Collapsing %q into the original for simplicity.", original, associatedNames.Single())
-			continue
-		}
-
-		// TODO: This may be a duplicate of below?
-		// If original name does exist and there is only one new name, remove context part of the new name (the resource name), but keep the suffix
-		if originalExists && len(associatedNames) == 1 {
-			associated := associatedNames.Single()
-			embeddedName, err := splitEmbeddedResourceTypeName(associated)
-			if err != nil {
-				return nil, err
-			}
-			embeddedName.context = ""
-			embeddedName.count = 0
-			renames[associated] = makeCollapsedEmbeddedResourceTypeName(embeddedName)
-
-			klog.V(4).Infof("There is only a single context %q is used in. Renaming it to %q for simplicity.", associated, renames[associated])
-			continue
-		}
-
-		// Gather information about the associated types
-		associatedCountPerContext := make(map[string]int)
-		for associated := range associatedNames {
-			embeddedName, err := splitEmbeddedResourceTypeName(associated)
-			if err != nil {
-				return nil, err
-			}
-			associatedCountPerContext[embeddedName.context] = associatedCountPerContext[embeddedName.context] + 1
-		}
-
-		// If all updated names share the same context, the context is not adding any disambiguation value so we can remove it
-		if len(associatedCountPerContext) == 1 {
-			for associated := range associatedNames {
-				embeddedName, err := splitEmbeddedResourceTypeName(associated)
-				if err != nil {
-					return nil, err
-				}
-				embeddedName.context = ""
-				renames[associated] = makeCollapsedEmbeddedResourceTypeName(embeddedName)
-			}
-			continue
-		}
-
-		// remove _0, which especially for the cases where there's only a single
-		// kind of usage will make the type name much clearer
-		for associated := range associatedNames {
-			embeddedName, err := splitEmbeddedResourceTypeName(associated)
-			if err != nil {
-				return nil, err
-			}
-
-			possibleRename := makeCollapsedEmbeddedResourceTypeName(embeddedName)
-			if !possibleRename.Equals(associated) {
-				renames[associated] = possibleRename
-			}
-		}
-	}
-
-	return performRenames(types, renames, flag)
+	return renames, nil
 }
 
-func performRenames(types astmodel.Types, renames map[astmodel.TypeName]astmodel.TypeName, flag astmodel.TypeFlag) (astmodel.Types, error) {
+func (r renamer) associatedNameUsedInSingleContext(_ astmodel.TypeName, associatedNames astmodel.TypeNameSet) (map[astmodel.TypeName]astmodel.TypeName, error) {
+	if len(associatedNames) != 1 {
+		return nil, nil
+	}
+
+	renames := make(map[astmodel.TypeName]astmodel.TypeName)
+	associated := associatedNames.Single()
+	embeddedName, err := parseContextualTypeName(associated)
+	if err != nil {
+		return nil, err
+	}
+	embeddedName.context = ""
+	embeddedName.count = 0
+	renames[associated] = embeddedName.ToSimplifiedTypeName()
+	klog.V(4).Infof("There is only a single context %q is used in. Renaming it to %q for simplicity.", associated, renames[associated])
+
+	return renames, nil
+}
+
+func (r renamer) associatedNameUsedInSingleContextMultipleCounts(_ astmodel.TypeName, associatedNames astmodel.TypeNameSet) (map[astmodel.TypeName]astmodel.TypeName, error) {
+	// Gather information about the associated types
+	associatedCountPerContext := make(map[string]int)
+	for associated := range associatedNames {
+		embeddedName, err := parseContextualTypeName(associated)
+		if err != nil {
+			return nil, err
+		}
+		associatedCountPerContext[embeddedName.context] = associatedCountPerContext[embeddedName.context] + 1
+	}
+
+	if len(associatedCountPerContext) != 1 {
+		return nil, nil
+	}
+
+	// If all updated names share the same context, the context is not adding any disambiguation value so we can remove it
+	renames := make(map[astmodel.TypeName]astmodel.TypeName)
+	for associated := range associatedNames {
+		embeddedName, err := parseContextualTypeName(associated)
+		if err != nil {
+			return nil, err
+		}
+		embeddedName.context = ""
+		renames[associated] = embeddedName.ToSimplifiedTypeName()
+	}
+
+	return renames, nil
+}
+
+func (r renamer) simplifyRemainingAssociatedNames(_ astmodel.TypeName, associatedNames astmodel.TypeNameSet) (map[astmodel.TypeName]astmodel.TypeName, error) {
+	// remove _0, which especially for the cases where there's only a single
+	// kind of usage will make the type name much clearer
+	renames := make(map[astmodel.TypeName]astmodel.TypeName)
+	for associated := range associatedNames {
+		embeddedName, err := parseContextualTypeName(associated)
+		if err != nil {
+			return nil, err
+		}
+
+		possibleRename := embeddedName.ToSimplifiedTypeName()
+		if !possibleRename.Equals(associated) {
+			renames[associated] = possibleRename
+		}
+	}
+
+	return renames, nil
+}
+
+func (r renamer) performRenames(
+	renames map[astmodel.TypeName]astmodel.TypeName,
+	flag astmodel.TypeFlag) (astmodel.Types, error) {
+
 	result := make(astmodel.Types)
 
 	renamingVisitor := astmodel.MakeTypeVisitor()
@@ -503,12 +498,14 @@ func performRenames(types astmodel.Types, renames map[astmodel.TypeName]astmodel
 		return astmodel.IdentityVisitOfTypeName(this, it, ctx)
 	}
 
-	for _, def := range types {
+	for _, def := range r.types {
 		updatedDef, err := renamingVisitor.VisitDefinition(def, nil)
 		if err != nil {
 			return nil, err
 		}
-		updatedType, err := flag.RemoveFrom(updatedDef.Type()) // TODO: If we don't remove this, something is causing these types to not be emitted. Unsure what that is... should track it down
+		// TODO: If we don't remove this, something is causing these types to not be emitted.
+		// TODO: Unsure what that is... should track it down
+		updatedType, err := flag.RemoveFrom(updatedDef.Type())
 		if err != nil {
 			return nil, err
 		}
@@ -518,53 +515,96 @@ func performRenames(types astmodel.Types, renames map[astmodel.TypeName]astmodel
 	return result, nil
 }
 
-// TODO: We could push some of this stuff down into its own package I think... only advantage of that would be to reduce huge count of lines in this file. Thoughts?
+// simplifyTypeNames simplifies contextual type names if possible.
+func simplifyTypeNames(types astmodel.Types, flag astmodel.TypeFlag) (astmodel.Types, error) {
+	renames := make(map[astmodel.TypeName]astmodel.TypeName)
+
+	// Find all of the type names that have the flag we're interested in
+	updatedNames := make(map[astmodel.TypeName]astmodel.TypeNameSet)
+	for _, def := range types {
+		if flag.IsOn(def.Type()) {
+			embeddedName, err := parseContextualTypeName(def.Name())
+			if err != nil {
+				return nil, err
+			}
+
+			associatedNames := updatedNames[embeddedName.original]
+			associatedNames = associatedNames.Add(def.Name())
+			updatedNames[embeddedName.original] = associatedNames
+		}
+	}
+
+	renamer := renamer{types: types}
+	renameActions := []func(_ astmodel.TypeName, associatedNames astmodel.TypeNameSet) (map[astmodel.TypeName]astmodel.TypeName, error){
+		renamer.singleNameToOriginalName,
+		renamer.associatedNameUsedInSingleContext,
+		renamer.associatedNameUsedInSingleContextMultipleCounts,
+		renamer.simplifyRemainingAssociatedNames,
+	}
+
+	for original, associatedNames := range updatedNames {
+		for _, action := range renameActions {
+			result, err := action(original, associatedNames)
+			if err != nil {
+				return nil, err
+			}
+
+			if result != nil {
+				// Add renames
+				for oldName, newName := range result {
+					renames[oldName] = newName
+				}
+				break
+			}
+		}
+	}
+
+	return renamer.performRenames(renames, flag)
+}
 
 type embeddedResourceTypeName struct {
 	original astmodel.TypeName
-	context  string // TODO: Rename this to resource?
+	context  string
 	suffix   string
 	count    int
 }
 
-// TODO: ugly name...
-// TODO: really all of this is kinda ugly
-func makeEmbeddedResourceTypeNameInternal(original astmodel.TypeName, context string, suffix string, count string) astmodel.TypeName {
-	return astmodel.MakeTypeName(original.PackageReference, original.Name()+context+suffix+count)
-}
-
-func makeEmbeddedResourceTypeName(name embeddedResourceTypeName) astmodel.TypeName {
-	if name.context == "" {
+func (e embeddedResourceTypeName) ToTypeName() astmodel.TypeName {
+	if e.context == "" {
 		panic("context cannot be empty when making embedded resource type name")
 	}
 
-	if name.suffix == "" {
+	if e.suffix == "" {
 		panic("suffix cannot be empty when making embedded resource type name")
 	}
 
-	nameContext := "_" + name.context
-	suffix := "_" + name.suffix
-	countString := fmt.Sprintf("_%d", name.count)
-	return makeEmbeddedResourceTypeNameInternal(name.original, nameContext, suffix, countString)
+	nameContext := "_" + e.context
+	suffix := "_" + e.suffix
+	countString := fmt.Sprintf("_%d", e.count)
+	return makeContextualTypeName(e.original, nameContext, suffix, countString)
 }
 
-func makeCollapsedEmbeddedResourceTypeName(name embeddedResourceTypeName) astmodel.TypeName {
+func (e embeddedResourceTypeName) ToSimplifiedTypeName() astmodel.TypeName {
 	nameContext := ""
-	if name.context != "" {
-		nameContext = "_" + name.context
+	if e.context != "" {
+		nameContext = "_" + e.context
 	}
 	countString := ""
-	if name.count > 0 {
-		countString = fmt.Sprintf("_%d", name.count)
+	if e.count > 0 {
+		countString = fmt.Sprintf("_%d", e.count)
 	}
 	suffix := ""
-	if name.suffix != "" {
-		suffix = "_" + name.suffix
+	if e.suffix != "" {
+		suffix = "_" + e.suffix
 	}
-	return makeEmbeddedResourceTypeNameInternal(name.original, nameContext, suffix, countString)
+	return makeContextualTypeName(e.original, nameContext, suffix, countString)
 }
 
-func splitEmbeddedResourceTypeName(name astmodel.TypeName) (embeddedResourceTypeName, error) {
+func makeContextualTypeName(original astmodel.TypeName, context string, suffix string, count string) astmodel.TypeName {
+	return astmodel.MakeTypeName(original.PackageReference, original.Name()+context+suffix+count)
+}
+
+func parseContextualTypeName(name astmodel.TypeName) (embeddedResourceTypeName, error) {
 	split := strings.Split(name.Name(), "_")
 	if len(split) < 4 {
 		return embeddedResourceTypeName{}, errors.Errorf("can't split embedded resource type name: %q didn't have 4 sections", name)
@@ -591,10 +631,6 @@ func requiredResourceProperties() []string {
 	return []string{
 		"Name",
 		"Properties",
-
-		// TODO: I think type actually needs to be required -- other kinds of embeds may not have a type but need to be treated
-		// TODO: differently (see VNET -> Subnet)
-		//"Type",
 	}
 }
 

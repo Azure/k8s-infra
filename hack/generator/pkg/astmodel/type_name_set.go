@@ -82,20 +82,6 @@ func (ts TypeNameSet) AddAll(other TypeNameSet) TypeNameSet {
 	return ts
 }
 
-// TODO: Not using this anymore -- remove?
-func (ts TypeNameSet) AsSlice() []TypeName {
-	if ts == nil {
-		return nil
-	}
-
-	var result []TypeName
-	for name := range ts {
-		result = append(result, name)
-	}
-
-	return result
-}
-
 // Single returns the single TypeName in the set. This panics if there is not a single item in the set.
 func (ts TypeNameSet) Single() TypeName {
 	if len(ts) != 1 {

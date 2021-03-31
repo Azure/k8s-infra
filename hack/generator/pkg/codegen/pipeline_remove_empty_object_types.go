@@ -85,37 +85,8 @@ type visitorCtx struct {
 
 func makeRemovedTypeVisitor(toRemove astmodel.TypeNameSet) astmodel.TypeVisitor {
 	visitor := astmodel.MakeTypeVisitor()
-	//visitor.VisitObjectType = func(this *astmodel.TypeVisitor, it *astmodel.ObjectType, ctx interface{}) (astmodel.Type, error) {
-	//	properties := it.Properties()
-	//	embedded := it.EmbeddedProperties()
-	//
-	//	for _, property := range properties {
-	//		typeName, isTypeName := astmodel.AsTypeName(property.PropertyType())
-	//		if !isTypeName {
-	//			continue
-	//		}
-	//
-	//
-	//		if toRemove.Contains(typeName) {
-	//			// TODO: Do we need to worry about required-ness here (i.e. is removing an empty ObjectType bad if it's required?)
-	//			it = it.WithoutProperty(property.PropertyName())
-	//		}
-	//	}
-	//
-	//	for _, property := range embedded {
-	//		typeName, ok := astmodel.AsTypeName(property.PropertyType())
-	//		if !ok {
-	//			continue
-	//		}
-	//
-	//		if toRemove.Contains(typeName) {
-	//			it = it.WithoutEmbeddedProperty(typeName)
-	//		}
-	//	}
-	//
-	//	return astmodel.IdentityVisitOfObjectType(this, it, ctx)
-	//}
-	// TODO: This is basically copied from IDentityVisitOfObjectType, but since it has/needs a per-property context we can't use that
+
+	// This is basically copied from IdentityVisitOfObjectType, but since it has/needs a per-property context we can't use that
 	visitor.VisitObjectType = func(this *astmodel.TypeVisitor, it *astmodel.ObjectType, ctx interface{}) (astmodel.Type, error) {
 		// just map the property types
 		var errs []error
