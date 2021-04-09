@@ -15,8 +15,9 @@ import (
 )
 
 // StorageTypeConversion generates the AST for a given conversion.
-// reader is an expression to read the original value
-// writer is a function that creates one or more statements to write the converted value
+// reader is an expression to read the original value.
+// writer is a function that accepts an expression for reading a value and creates one or more
+// statements to write that value.
 // Both of these might be complex expressions, possibly involving indexing into arrays or maps.
 type StorageTypeConversion func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt
 
@@ -234,6 +235,8 @@ func assignPrimitiveTypeFromOptionalPrimitiveType(
 //
 // <arr> := make([]<type>, len(<reader>))
 // for <index>, <value> := range <reader> {
+//     // Shadow the loop variable to avoid aliasing
+//     <value> := <value>
 //     <arr>[<index>] := <value> // Or other conversion as required
 // }
 // <writer> = <arr>
