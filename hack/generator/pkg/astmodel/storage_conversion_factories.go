@@ -98,8 +98,6 @@ func assignToOptionalType(
 		return nil
 	}
 
-	//copyVar := destinationEndpoint.CreateLocal("", "Temp")
-
 	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
 		// Create a writer that takes the address of the passed expression
 		// Note that we are dependent on any wrapping conversion to ensure no aliasing occurs
