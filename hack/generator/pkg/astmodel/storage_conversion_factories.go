@@ -50,6 +50,8 @@ func init() {
 		// Complex object types
 		assignObjectTypeFromObjectType,
 		assignObjectTypeFromOptionalObjectType,
+		// Known types
+		assignKnownReferenceFromKnownReference,
 		// Meta-conversions
 		assignToOptionalType,
 		assignToEnumerationType,
@@ -901,6 +903,53 @@ func assignObjectTypeFromOptionalObjectType(
 
 		assignment := writer(dst.NewIdent(copyVar))
 		return astbuilder.Statements(declaration, safeConversion, assignment)
+	}
+}
+
+// assignKnownReferenceFromKnownReference will generate a direct assignment if both types are genruntime.KnownResourceReference
+//
+// <destination> = <source>.Copy()
+//
+func assignKnownReferenceFromKnownReference(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint,
+	_ *StorageConversionContext) StorageTypeConversion {
+
+	// Require source to be non-optional
+	if _, sourceIsOptional := AsOptionalType(sourceEndpoint.Type()); sourceIsOptional {
+		return nil
+	}
+
+	// Require destination to be non-optional
+	if _, destinationIsOptional := AsOptionalType(destinationEndpoint.Type()); destinationIsOptional {
+		return nil
+	}
+
+	// Require source to be a named type
+	sourceName, sourceIsName := AsTypeName(sourceEndpoint.Type())
+	if !sourceIsName {
+		return nil
+	}
+
+	// Require destination to be a named type
+	destinationName, destinationIsName := AsTypeName(destinationEndpoint.Type())
+	if !destinationIsName {
+		return nil
+	}
+
+	// Require source to be a KnownResourceReference
+	if sourceName.Name() != "KnownResourceReference" {
+		return nil
+	}
+
+	// Require destination to be a KnownResourceReference
+	if destinationName.Name() != "KnownResourceReference" {
+		return nil
+	}
+
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
+		copy := astbuilder.CallExpr(reader, "Copy")
+		return writer(copy)
 	}
 }
 
