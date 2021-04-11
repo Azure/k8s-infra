@@ -93,7 +93,7 @@ func assignToOptionalType(
 		return nil
 	}
 
-	// Require a conversion between the wrapped type and our source
+	// Require a conversion between the unwrapped type and our source
 	unwrappedEndpoint := destinationEndpoint.WithType(destinationOptional.element)
 	conversion, _ := createTypeConversion(sourceEndpoint, unwrappedEndpoint, conversionContext)
 	if conversion == nil {
@@ -105,6 +105,7 @@ func assignToOptionalType(
 	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
 		// Create a writer that uses the address of the passed expression
 		// If expr isn't a plain identifier (implying a local variable), we introduce one
+		// This both allows us to avoid aliasing and complies with Go language semantics
 		addrOfWriter := func(expr dst.Expr) []dst.Stmt {
 			if _, ok := expr.(*dst.Ident); ok {
 				return writer(astbuilder.AddrOf(expr))
@@ -157,9 +158,9 @@ func assignFromOptionalType(
 		var cacheOriginal dst.Stmt
 		var actualReader dst.Expr
 
-		// If the value we're reading is a local, it's cheap to read and we can skip using a local
-		// (which makes the generated code easier to read). In other cases, we want to cache the
-		// value in a local to avoid repeating any expensive conversion.
+		// If the value we're reading is a local or a field, it's cheap to read and we can skip
+		// using a local (which makes the generated code easier to read). In other cases, we want
+		// to cache the value in a local to avoid repeating any expensive conversion.
 
 		if _, ok := reader.(*dst.Ident); ok {
 			// reading a local variable
@@ -252,7 +253,7 @@ func assignToEnumerationType(
 }
 
 // assignPrimitiveTypeFromPrimitiveType will generate a direct assignment if both types have the
-// same underlying primitive type and are not optional
+// same primitive type and are not optional
 //
 // <destination> = <source>
 //
@@ -552,6 +553,7 @@ func assignPrimitiveTypeFromEnumType(
 		return writer(astbuilder.CallFunc(dstPrimitive.Name(), reader))
 	}
 }
+
 // assignObjectTypeFromObjectType will generate a conversion if both properties are TypeNames
 // referencing ObjectType definitions and neither property is optional
 //
@@ -616,7 +618,7 @@ func assignObjectTypeFromObjectType(
 
 		declaration := astbuilder.LocalVariableDeclaration(copyVar, createTypeDeclaration(destinationName, generationContext), "")
 
-		// If our reader is a dereference, we stript that off (because we need a pointer), else we
+		// If our reader is a dereference, we strip that off (because we need a pointer), else we
 		// take the address of it
 		var actualReader dst.Expr
 		if deref, ok := reader.(*dst.UnaryExpr); ok && deref.Op == token.MUL {
@@ -691,8 +693,7 @@ func assignKnownReferenceFromKnownReference(
 	}
 
 	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
-		copy := astbuilder.CallExpr(reader, "Copy")
-		return writer(copy)
+		return writer(astbuilder.CallExpr(reader, "Copy"))
 	}
 }
 
