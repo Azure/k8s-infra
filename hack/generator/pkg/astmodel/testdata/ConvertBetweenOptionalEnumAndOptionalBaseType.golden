@@ -13,13 +13,12 @@ type Person struct {
 func (person Person) ConvertFromVNext(source *vNext.Person) error {
 
 	// sku
-	var sku string
 	if source.sku != nil {
-		sku = string(*source.sku)
+		sku := string(*source.sku)
+		person.sku = &sku
 	} else {
-		sku = ""
+		person.sku = nil
 	}
-	person.sku = &sku
 
 	// No error
 	return nil
@@ -29,14 +28,12 @@ func (person Person) ConvertFromVNext(source *vNext.Person) error {
 func (person Person) ConvertToVNext(destination *vNext.Person) error {
 
 	// sku
-	var sku string
 	if person.sku != nil {
-		sku = *person.sku
+		sku := vNext.Bucket(*person.sku)
+		destination.sku = &sku
 	} else {
-		sku = ""
+		destination.sku = nil
 	}
-	skuTemp := vNext.Bucket(person.sku)
-	destination.sku = &skuTemp
 
 	// No error
 	return nil
