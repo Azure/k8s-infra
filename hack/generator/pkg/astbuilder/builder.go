@@ -355,7 +355,10 @@ func EnsureStatementBlock(statement dst.Stmt) *dst.BlockStmt {
 func Statements(statements ...interface{}) []dst.Stmt {
 	var result []dst.Stmt
 	for _, s := range statements {
-		if stmt, ok := s.(dst.Stmt); ok {
+		if s == nil {
+			// Skip nils
+			continue
+		} else if stmt, ok := s.(dst.Stmt); ok {
 			result = append(result, stmt)
 		} else if stmts, ok := s.([]dst.Stmt); ok {
 			result = append(result, stmts...)
