@@ -242,7 +242,7 @@ func assignFromOptionalType(
 
 		writeZeroValue := writer(
 			&dst.BasicLit{
-				Value: zeroValue(destinationEndpoint.Type()),
+				Value: zeroValue(destinationEndpoint.Type(), conversionContext.types),
 			})
 
 		stmt := &dst.IfStmt{
@@ -759,9 +759,21 @@ func createTypeDeclaration(name TypeName, generationContext *CodeGenerationConte
 	return astbuilder.Selector(dst.NewIdent(packageName), name.Name())
 }
 
-func zeroValue(t Type) string {
+func zeroValue(t Type, types Types) string {
 	if isTypeOptional(t) {
 		return "nil"
+	}
+
+	if name, isName := AsTypeName(t); isName {
+		// We've got a type name, need to see what it resolves to
+		enumType, isEnum := types.ResolveEnumType(name)
+		if isEnum {
+			// Zero value for an enum is the zero value of the base type
+			return zeroValue(enumType.baseType, types)
+		}
+
+		// Otherwise default to an empty instantiation
+		return fmt.Sprintf("%s{}", name.Name())
 	}
 
 	if primitiveType, isPrimitive := AsPrimitiveType(t); isPrimitive {
@@ -781,10 +793,6 @@ func zeroValue(t Type) string {
 		default:
 			panic(fmt.Sprintf("unexpected primitive type %q", t.String()))
 		}
-	}
-
-	if name, isName := AsTypeName(t); isName {
-		return fmt.Sprintf("%s{}", name.Name())
 	}
 
 	panic(fmt.Sprintf("unexpected type %q", t.String()))
