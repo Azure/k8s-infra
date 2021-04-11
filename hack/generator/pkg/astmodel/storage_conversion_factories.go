@@ -758,21 +758,33 @@ func createTypeDeclaration(name TypeName, generationContext *CodeGenerationConte
 	return astbuilder.Selector(dst.NewIdent(packageName), name.Name())
 }
 
-func zeroValue(p *PrimitiveType) string {
-	switch p {
-	case StringType:
-		return "\"\""
-	case IntType:
-		return "0"
-	case FloatType:
-		return "0"
-	case UInt32Type:
-		return "0"
-	case UInt64Type:
-		return "0"
-	case BoolType:
-		return "false"
-	default:
-		panic(fmt.Sprintf("unexpected primitive type %q", p.String()))
+func zeroValue(t Type) string {
+	if isTypeOptional(t) {
+		return "nil"
 	}
+
+	if primitiveType, isPrimitive := AsPrimitiveType(t); isPrimitive {
+		switch primitiveType {
+		case StringType:
+			return "\"\""
+		case IntType:
+			return "0"
+		case FloatType:
+			return "0"
+		case UInt32Type:
+			return "0"
+		case UInt64Type:
+			return "0"
+		case BoolType:
+			return "false"
+		default:
+			panic(fmt.Sprintf("unexpected primitive type %q", t.String()))
+		}
+	}
+
+	if name, isName := AsTypeName(t); isName {
+		return fmt.Sprintf("%s{}", name.Name())
+	}
+
+	panic(fmt.Sprintf("unexpected type %q", t.String()))
 }
