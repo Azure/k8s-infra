@@ -36,8 +36,9 @@ var typeConversionFactories []StorageTypeConversionFactory
 
 func init() {
 	typeConversionFactories = []StorageTypeConversionFactory{
-		// Primitive types
+		// Primitive types and aliases
 		assignPrimitiveTypeFromPrimitiveType,
+		assignAliasedPrimitiveTypeFromAliasedPrimitiveType,
 		// Collection Types
 		assignArrayFromArray,
 		assignMapFromMap,
@@ -52,6 +53,8 @@ func init() {
 		assignFromOptionalType, // Must go before assignToOptionalType
 		assignToOptionalType,
 		assignToEnumerationType,
+		assignFromAliasedPrimitiveType,
+		assignToAliasedPrimitiveType,
 	}
 }
 
@@ -293,6 +296,147 @@ func assignPrimitiveTypeFromPrimitiveType(
 		return writer(reader)
 	}
 }
+
+// assignAliasedPrimitiveTypeFromAliasedPrimitiveType will generate a direct assignment if both
+// types have the same underlying primitive type and are not optional
+//
+// <destination> = <cast>(<source>)
+//
+func assignAliasedPrimitiveTypeFromAliasedPrimitiveType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion {
+
+	// Require source to be non-optional
+	if _, sourceIsOptional := AsOptionalType(sourceEndpoint.Type()); sourceIsOptional {
+		return nil
+	}
+
+	// Require destination to be non-optional
+	if _, destinationIsOptional := AsOptionalType(destinationEndpoint.Type()); destinationIsOptional {
+		return nil
+	}
+
+	// Require source to be a name that resolves to a primitive type
+	_, sourceType, ok := conversionContext.ResolveType(sourceEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	sourcePrimitive, sourceIsPrimitive := AsPrimitiveType(sourceType)
+	if !sourceIsPrimitive {
+		return nil
+	}
+
+	// Require destination to be a name the resolves to a primitive type
+	destinationName, destinationType, ok := conversionContext.ResolveType(destinationEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	destinationPrimitive, destinationIsPrimitive := AsPrimitiveType(destinationType)
+	if !destinationIsPrimitive {
+		return nil
+	}
+
+	// Require both properties to have the same primitive type
+	if !sourcePrimitive.Equals(destinationPrimitive) {
+		return nil
+	}
+
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
+		return writer(&dst.CallExpr{
+			Fun:  destinationName.AsType(generationContext),
+			Args: []dst.Expr{reader},
+		})
+	}
+}
+
+// assignFromAliasedPrimitiveType will convert an alias of a primitive type into that primitive
+// type as long as it is not optional and we can find a conversion to consume that primitive value
+func assignFromAliasedPrimitiveType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion {
+
+	// Require source to be non-optional
+	if _, sourceIsOptional := AsOptionalType(sourceEndpoint.Type()); sourceIsOptional {
+		return nil
+	}
+
+	// Require source to be a name that resolves to a primitive type
+	_, sourceType, ok := conversionContext.ResolveType(sourceEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	sourcePrimitive, sourceIsPrimitive := AsPrimitiveType(sourceType)
+	if !sourceIsPrimitive {
+		return nil
+	}
+
+	// Require a conversion for the underlying type
+	primitiveEndpoint := sourceEndpoint.WithType(sourcePrimitive)
+	conversion, _ := createTypeConversion(primitiveEndpoint, destinationEndpoint, conversionContext)
+	if conversion == nil {
+		return nil
+	}
+
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
+
+		actualReader := &dst.CallExpr{
+			Fun:  sourcePrimitive.AsType(generationContext),
+			Args: []dst.Expr{reader},
+		}
+
+		return conversion(actualReader, writer, generationContext)
+	}
+}
+
+// assignToAliasedPrimitiveType will convert a primitive value into the aliased type as long as it
+// is not optional and we can find a conversion to give us the primitive type.
+//
+// <destination> = <cast>(<source>)
+//
+func assignToAliasedPrimitiveType(
+	sourceEndpoint *StorageConversionEndpoint,
+	destinationEndpoint *StorageConversionEndpoint,
+	conversionContext *StorageConversionContext) StorageTypeConversion {
+
+	// Require destination to be non-optional
+	if _, destinationIsOptional := AsOptionalType(destinationEndpoint.Type()); destinationIsOptional {
+		return nil
+	}
+
+	// Require destination to be a name the resolves to a primitive type
+	destinationName, destinationType, ok := conversionContext.ResolveType(destinationEndpoint.Type())
+	if !ok {
+		return nil
+	}
+	destinationPrimitive, destinationIsPrimitive := AsPrimitiveType(destinationType)
+	if !destinationIsPrimitive {
+		return nil
+	}
+
+	// Require a conversion for the underlying type
+	primitiveEndpoint := sourceEndpoint.WithType(destinationPrimitive)
+	conversion, _ := createTypeConversion(sourceEndpoint, primitiveEndpoint, conversionContext)
+	if conversion == nil {
+		return nil
+	}
+
+	return func(reader dst.Expr, writer func(dst.Expr) []dst.Stmt, generationContext *CodeGenerationContext) []dst.Stmt {
+
+		actualWriter := func(expr dst.Expr) []dst.Stmt {
+			castToAlias := &dst.CallExpr{
+				Fun:  destinationName.AsType(generationContext),
+				Args: []dst.Expr{expr},
+			}
+
+			return writer(castToAlias)
+		}
+
+		return conversion(reader, actualWriter, generationContext)
+	}
+}
+
 // assignArrayFromArray will generate a code fragment to populate an array, assuming the
 // underlying types of the two arrays are compatible
 //
@@ -713,10 +857,21 @@ func zeroValue(t Type, types Types) string {
 
 	if name, isName := AsTypeName(t); isName {
 		// We've got a type name, need to see what it resolves to
-		enumType, isEnum := types.ResolveEnumType(name)
+		actualType, err := types.FullyResolve(name)
+		if err != nil {
+			// This should never happen
+			panic(err)
+		}
+
+		enumType, isEnum := AsEnumType(actualType)
 		if isEnum {
 			// Zero value for an enum is the zero value of the base type
 			return zeroValue(enumType.baseType, types)
+		}
+
+		primitiveType, isPrimitive := AsPrimitiveType(actualType)
+		if isPrimitive {
+			return zeroValue(primitiveType, types)
 		}
 
 		// Otherwise default to an empty instantiation
