@@ -243,7 +243,7 @@ func assignToEnumerationType(
 		convertingWriter := func(expr dst.Expr) []dst.Stmt {
 			cast := &dst.CallExpr{
 				Fun:  dstName.AsType(generationContext),
-				Args: []dst.Expr{reader},
+				Args: []dst.Expr{expr},
 			}
 			return writer(cast)
 		}
