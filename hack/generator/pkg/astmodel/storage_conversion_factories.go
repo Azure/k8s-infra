@@ -128,7 +128,7 @@ func assignToOptionalType(
 // assignToEnumerationType will generate a conversion where the destination is an enumeration if
 // the source is type compatible with the base type of the enumeration
 //
-// <destination> = &<source>
+// <destination> = <enumeration-cast>(<source>)
 //
 func assignToEnumerationType(
 	sourceEndpoint *StorageConversionEndpoint,
