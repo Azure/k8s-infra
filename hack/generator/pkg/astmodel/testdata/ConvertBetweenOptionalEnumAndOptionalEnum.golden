@@ -29,11 +29,11 @@ func (person Person) ConvertFromVNext(source *vNext.Person) error {
 func (person Person) ConvertToVNext(destination *vNext.Person) error {
 
 	// release
-	var release Container
+	var release Bucket
 	if person.release != nil {
-		release = Container(*person.release)
+		release = Bucket(*person.release)
 	} else {
-		release = Container("")
+		release = Bucket("")
 	}
 	destination.release = &release
 

@@ -30,7 +30,7 @@ func (person Person) ConvertToVNext(destination *vNext.Person) error {
 	} else {
 		sku = ""
 	}
-	destination.sku = Bucket(person.sku)
+	destination.sku = vNext.Bucket(person.sku)
 
 	// No error
 	return nil

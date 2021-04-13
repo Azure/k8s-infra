@@ -31,7 +31,7 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 
 	enumType := NewEnumType(StringType, alpha, beta)
 	currentEnum := MakeTypeDefinition(MakeTypeName(vCurrent, "Bucket"), enumType)
-	hubEnum := MakeTypeDefinition(MakeTypeName(vNext, "Container"), enumType)
+	hubEnum := MakeTypeDefinition(MakeTypeName(vNext, "Bucket"), enumType)
 
 	requiredStringProperty := NewPropertyDefinition("name", "name", StringType)
 	optionalStringProperty := NewPropertyDefinition("name", "name", NewOptionalType(StringType))
@@ -59,9 +59,9 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 	optionalNextRoleProperty := NewPropertyDefinition("role", "role", NewOptionalType(hubRole.Name()))
 
 	requiredSkuStringProperty := NewPropertyDefinition("sku", "sku", StringType)
-	requiredSkuEnumProperty := NewPropertyDefinition("sku", "sku", currentEnum.name)
+	requiredNextSkuEnumProperty := NewPropertyDefinition("sku", "sku", hubEnum.name)
 	optionalSkuStringProperty := NewPropertyDefinition("sku", "sku", NewOptionalType(StringType))
-	optionalSkuEnumProperty := NewPropertyDefinition("sku", "sku", NewOptionalType(currentEnum.name))
+	optionalNextSkuEnumProperty := NewPropertyDefinition("sku", "sku", NewOptionalType(hubEnum.name))
 
 	nastyProperty := NewPropertyDefinition(
 		"nasty",
@@ -127,10 +127,10 @@ func CreateStorageConversionFunctionTestCases() []*StorageConversionPropertyTest
 		createTest("ConvertBetweenRequiredObjectAndOptionalObject", requiredCurrentRoleProperty, optionalNextRoleProperty, currentRole, hubRole),
 		createTest("ConvertBetweenOptionalObjectAndOptionalObject", optionalCurrentRoleProperty, optionalNextRoleProperty, currentRole, hubRole),
 
-		createTest("ConvertBetweenEnumAndBaseType", requiredSkuStringProperty, requiredSkuEnumProperty, currentEnum),
-		createTest("ConvertBetweenEnumAndOptionalBaseType", optionalSkuStringProperty, requiredSkuEnumProperty, currentEnum),
-		createTest("ConvertBetweenOptionalEnumAndBaseType", requiredSkuStringProperty, optionalSkuEnumProperty, currentEnum),
-		createTest("ConvertBetweenOptionalEnumAndOptionalBaseType", optionalSkuStringProperty, optionalSkuEnumProperty, currentEnum),
+		createTest("ConvertBetweenEnumAndBaseType", requiredSkuStringProperty, requiredNextSkuEnumProperty, currentEnum, hubEnum),
+		createTest("ConvertBetweenEnumAndOptionalBaseType", optionalSkuStringProperty, requiredNextSkuEnumProperty, currentEnum, hubEnum),
+		createTest("ConvertBetweenOptionalEnumAndBaseType", requiredSkuStringProperty, optionalNextSkuEnumProperty, currentEnum, hubEnum),
+		createTest("ConvertBetweenOptionalEnumAndOptionalBaseType", optionalSkuStringProperty, optionalNextSkuEnumProperty, currentEnum, hubEnum),
 	}
 }
 

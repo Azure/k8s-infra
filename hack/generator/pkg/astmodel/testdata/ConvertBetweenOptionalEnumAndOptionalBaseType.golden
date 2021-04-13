@@ -35,7 +35,7 @@ func (person Person) ConvertToVNext(destination *vNext.Person) error {
 	} else {
 		sku = ""
 	}
-	skuTemp := Bucket(person.sku)
+	skuTemp := vNext.Bucket(person.sku)
 	destination.sku = &skuTemp
 
 	// No error
