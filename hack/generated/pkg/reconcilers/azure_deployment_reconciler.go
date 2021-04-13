@@ -42,10 +42,10 @@ import (
 
 const (
 	// TODO: Delete these later in favor of something in status?
-	DeploymentIdAnnotation   = "deployment-id.infra.azure.com"
+	DeploymentIDAnnotation   = "deployment-id.infra.azure.com"
 	DeploymentNameAnnotation = "deployment-name.infra.azure.com"
 	ResourceStateAnnotation  = "resource-state.infra.azure.com"
-	ResourceIdAnnotation     = "resource-id.infra.azure.com"
+	ResourceIDAnnotation     = "resource-id.infra.azure.com"
 	ResourceErrorAnnotation  = "resource-error.infra.azure.com"
 	ResourceSigAnnotationKey = "resource-sig.infra.azure.com"
 	// PreserveDeploymentAnnotation is the key which tells the applier to keep or delete the deployment
@@ -71,9 +71,8 @@ const (
 	DeleteActionMonitorDelete = DeleteAction("MonitorDelete")
 )
 
-// TODO: I'm pretty sure we can come up with a way to drop the action parameter here
-type CreateOrUpdateActionFunc = func(ctx context.Context, action CreateOrUpdateAction) (ctrl.Result, error)
-type DeleteActionFunc = func(ctx context.Context, action DeleteAction) (ctrl.Result, error)
+type CreateOrUpdateActionFunc = func(ctx context.Context) (ctrl.Result, error)
+type DeleteActionFunc = func(ctx context.Context) (ctrl.Result, error)
 
 var _ genruntime.Reconciler = &AzureDeploymentReconciler{}
 
@@ -116,7 +115,7 @@ func (r *AzureDeploymentReconciler) CreateOrUpdate(ctx context.Context) (ctrl.Re
 		return ctrl.Result{}, err
 	}
 
-	result, err := actionFunc(ctx, action)
+	result, err := actionFunc(ctx)
 	if err != nil {
 		r.log.Error(err, "Error during CreateOrUpdate", "action", action)
 		r.recorder.Event(r.obj, v1.EventTypeWarning, "CreateOrUpdateActionError", err.Error())
@@ -135,7 +134,7 @@ func (r *AzureDeploymentReconciler) Delete(ctx context.Context) (ctrl.Result, er
 		return ctrl.Result{}, err
 	}
 
-	result, err := actionFunc(ctx, action)
+	result, err := actionFunc(ctx)
 	if err != nil {
 		r.log.Error(err, "Error during Delete", "action", action)
 		r.recorder.Event(r.obj, v1.EventTypeWarning, "DeleteActionError", err.Error())
@@ -154,18 +153,13 @@ func (r *AzureDeploymentReconciler) GetResourceProvisioningState() armclient.Pro
 	return armclient.ProvisioningState(r.obj.GetAnnotations()[ResourceStateAnnotation])
 }
 
-func (r *AzureDeploymentReconciler) GetDeploymentId() (string, bool) {
-	id, ok := r.obj.GetAnnotations()[DeploymentIdAnnotation]
+func (r *AzureDeploymentReconciler) GetDeploymentID() (string, bool) {
+	id, ok := r.obj.GetAnnotations()[DeploymentIDAnnotation]
 	return id, ok
 }
 
-func (r *AzureDeploymentReconciler) GetDeploymentIdOrDefault() string {
-	id, _ := r.GetDeploymentId()
-	return id
-}
-
-func (r *AzureDeploymentReconciler) SetDeploymentId(id string) {
-	r.addAnnotation(DeploymentIdAnnotation, id)
+func (r *AzureDeploymentReconciler) SetDeploymentID(id string) {
+	r.addAnnotation(DeploymentIDAnnotation, id)
 }
 
 func (r *AzureDeploymentReconciler) GetDeploymentName() (string, bool) {
@@ -199,12 +193,12 @@ func (r *AzureDeploymentReconciler) GetShouldPreserveDeployment() bool {
 	return preserveDeployment
 }
 
-func (r *AzureDeploymentReconciler) GetResourceIdOrDefault() string {
-	return r.obj.GetAnnotations()[ResourceIdAnnotation]
+func (r *AzureDeploymentReconciler) GetResourceIDOrDefault() string {
+	return r.obj.GetAnnotations()[ResourceIDAnnotation]
 }
 
-func (r *AzureDeploymentReconciler) SetResourceId(id string) {
-	r.addAnnotation(ResourceIdAnnotation, id)
+func (r *AzureDeploymentReconciler) SetResourceID(id string) {
+	r.addAnnotation(ResourceIDAnnotation, id)
 }
 
 func (r *AzureDeploymentReconciler) SetResourceProvisioningState(state armclient.ProvisioningState) {
@@ -288,7 +282,7 @@ func (r *AzureDeploymentReconciler) Update(
 		return errors.Wrap(err, "failed to compute resource spec hash")
 	}
 
-	r.SetDeploymentId(deployment.Id)
+	r.SetDeploymentID(deployment.ID)
 	r.SetDeploymentName(deployment.Name)
 	// TODO: Do we want to just use Azure's annotations here? I bet we don't? We probably want to map
 	// TODO: them onto something more robust? For now just use Azure's though.
@@ -298,8 +292,8 @@ func (r *AzureDeploymentReconciler) Update(
 		if deployment.Properties.ProvisioningState == armclient.FailedProvisioningState {
 			r.SetResourceError(deployment.Properties.Error.String())
 		} else if len(deployment.Properties.OutputResources) > 0 {
-			resourceId := deployment.Properties.OutputResources[0].ID
-			r.SetResourceId(resourceId)
+			resourceID := deployment.Properties.OutputResources[0].ID
+			r.SetResourceID(resourceID)
 
 			if status != nil {
 				err = reflecthelpers.SetStatus(r.obj, status)
@@ -342,7 +336,7 @@ func (r *AzureDeploymentReconciler) DetermineCreateOrUpdateAction() (CreateOrUpd
 		return CreateOrUpdateActionNoAction, NoAction, errors.Errorf("resource is currently deleting; it can not be applied")
 	}
 
-	if r.GetDeploymentIdOrDefault() != "" {
+	if _, ok := r.GetDeploymentID(); ok {
 		// There is an ongoing deployment we need to monitor
 		return CreateOrUpdateActionMonitorDeployment, r.MonitorDeployment, nil
 	}
@@ -367,22 +361,20 @@ func (r *AzureDeploymentReconciler) DetermineCreateOrUpdateAction() (CreateOrUpd
 // Actions
 //////////////////////////////////////////
 
-func NoAction(_ context.Context, _ CreateOrUpdateAction) (ctrl.Result, error) {
+func NoAction(_ context.Context) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
 // StartDeleteOfResource will begin the delete of a resource by telling Azure to start deleting it. The resource will be
 // marked with the provisioning state of "Deleting".
-func (r *AzureDeploymentReconciler) StartDeleteOfResource(
-	ctx context.Context,
-	action DeleteAction) (ctrl.Result, error) {
+func (r *AzureDeploymentReconciler) StartDeleteOfResource(ctx context.Context) (ctrl.Result, error) {
 
 	msg := "Starting delete of resource"
 	r.log.Info(msg)
-	r.recorder.Event(r.obj, v1.EventTypeNormal, string(action), msg)
+	r.recorder.Event(r.obj, v1.EventTypeNormal, string(DeleteActionBeginDelete), msg)
 
-	// If we have no resourceId to begin with, the Azure resource was never created
-	if r.GetResourceIdOrDefault() == "" {
+	// If we have no resourceID to begin with, the Azure resource was never created
+	if r.GetResourceIDOrDefault() == "" {
 		return ctrl.Result{}, r.deleteResourceSucceeded(ctx)
 	}
 
@@ -401,7 +393,7 @@ func (r *AzureDeploymentReconciler) StartDeleteOfResource(
 			// TODO: We should confirm the above assumption by performing a HEAD on
 			// TODO: the resource in Azure. This requires GetApiVersion() on  metaObj which
 			// TODO: we don't currently have in the interface.
-			// gr.ARMClient.HeadResource(ctx, data.resourceId, r.obj.GetApiVersion())
+			// gr.ARMClient.HeadResource(ctx, data.resourceID, r.obj.GetApiVersion())
 			return ctrl.Result{}, r.deleteResourceSucceeded(ctx)
 		}
 
@@ -440,13 +432,11 @@ func (r *AzureDeploymentReconciler) StartDeleteOfResource(
 
 // MonitorDelete will call Azure to check if the resource still exists. If so, it will requeue, else,
 // the finalizer will be removed.
-func (r *AzureDeploymentReconciler) MonitorDelete(
-	ctx context.Context,
-	action DeleteAction) (ctrl.Result, error) {
+func (r *AzureDeploymentReconciler) MonitorDelete(ctx context.Context) (ctrl.Result, error) {
 
 	msg := "Continue monitoring deletion"
 	r.log.Info(msg)
-	r.recorder.Event(r.obj, v1.EventTypeNormal, string(action), msg)
+	r.recorder.Event(r.obj, v1.EventTypeNormal, string(DeleteActionMonitorDelete), msg)
 
 	resource, err := r.constructArmResource(ctx)
 	if err != nil {
@@ -476,23 +466,23 @@ func (r *AzureDeploymentReconciler) MonitorDelete(
 	return ctrl.Result{}, client.IgnoreNotFound(err)
 }
 
-func (r *AzureDeploymentReconciler) CreateDeployment(ctx context.Context, action CreateOrUpdateAction) (ctrl.Result, error) {
+func (r *AzureDeploymentReconciler) CreateDeployment(ctx context.Context) (ctrl.Result, error) {
 	deployment, err := r.resourceSpecToDeployment(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	// Try to create deployment:
-	r.log.Info("Starting new deployment to Azure", "action", string(action))
+	r.log.Info("Starting new deployment to Azure", "action", string(CreateOrUpdateActionBeginDeployment))
 	err = r.ARMClient.CreateDeployment(ctx, deployment)
 
 	if err != nil {
 		var reqErr *autorestAzure.RequestError
 		if errors.As(err, &reqErr) && reqErr.StatusCode == http.StatusConflict {
-			deployId, err := deployment.GetEntityPath()
+			deployID, err := deployment.GetEntityPath()
 			if err != nil {
 				// TODO: what if GetEntityPath doesn't work due to malformed deployment?
-				r.log.Info("Deployment already exists", "id", deployId)
+				r.log.Info("Deployment already exists", "id", deployID)
 			}
 
 			// TODO: we need to diff the old/new deployment here and detect if we need to do a redeploy
@@ -500,8 +490,8 @@ func (r *AzureDeploymentReconciler) CreateDeployment(ctx context.Context, action
 			return ctrl.Result{}, err
 		}
 	} else {
-		r.log.Info("Created deployment in Azure", "id", deployment.Id)
-		r.recorder.Eventf(r.obj, v1.EventTypeNormal, string(action), "Created new deployment to Azure with ID %q", deployment.Id)
+		r.log.Info("Created deployment in Azure", "id", deployment.ID)
+		r.recorder.Eventf(r.obj, v1.EventTypeNormal, string(CreateOrUpdateActionBeginDeployment), "Created new deployment to Azure with ID %q", deployment.ID)
 	}
 
 	err = r.Patch(ctx, func(ctx context.Context, mutData *AzureDeploymentReconciler) error {
@@ -524,13 +514,13 @@ func (r *AzureDeploymentReconciler) CreateDeployment(ctx context.Context, action
 }
 
 // TODO: There's a bit too much duplicated code between this and create deployment -- should be a good way to combine them?
-func (r *AzureDeploymentReconciler) MonitorDeployment(ctx context.Context, action CreateOrUpdateAction) (ctrl.Result, error) {
+func (r *AzureDeploymentReconciler) MonitorDeployment(ctx context.Context) (ctrl.Result, error) {
 	deployment, err := r.resourceSpecToDeployment(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	id := deployment.Id // Preserve the ID in case it's overwritten
+	id := deployment.ID // Preserve the ID in case it's overwritten
 	deployment, retryAfter, err := r.ARMClient.GetDeployment(ctx, id)
 	if err != nil {
 		if retryAfter != 0 {
@@ -578,21 +568,21 @@ func (r *AzureDeploymentReconciler) MonitorDeployment(ctx context.Context, actio
 
 	// TODO: Could somehow have a method that grouped both of these calls
 	currentState := r.GetResourceProvisioningState()
-	r.log.V(4).Info("Monitoring deployment", "action", string(action), "id", deployment.Id, "state", currentState)
-	r.recorder.Event(r.obj, v1.EventTypeNormal, string(action), fmt.Sprintf("Monitoring Azure deployment ID=%q, state=%q", deployment.Id, currentState))
+	r.log.V(4).Info("Monitoring deployment", "action", string(CreateOrUpdateActionMonitorDeployment), "id", deployment.ID, "state", currentState)
+	r.recorder.Event(r.obj, v1.EventTypeNormal, string(CreateOrUpdateActionMonitorDeployment), fmt.Sprintf("Monitoring Azure deployment ID=%q, state=%q", deployment.ID, currentState))
 
 	// We do two patches here because if we remove the deployment before we've actually confirmed we persisted
 	// the resource ID, then we will be unable to get the resource ID the next time around. Only once we have
 	// persisted the resource ID can we safely delete the deployment
 	retryAfter = time.Duration(0) // ARM can tell us how long to check after issuing DELETE
 	if deployment.IsTerminalProvisioningState() && !r.GetShouldPreserveDeployment() {
-		r.log.Info("Deleting deployment", "ID", deployment.Id)
-		retryAfter, err = r.ARMClient.DeleteDeployment(ctx, deployment.Id)
+		r.log.Info("Deleting deployment", "ID", deployment.ID)
+		retryAfter, err = r.ARMClient.DeleteDeployment(ctx, deployment.ID)
 		if err != nil {
-			return ctrl.Result{}, errors.Wrapf(err, "deleting deployment %q", deployment.Id)
+			return ctrl.Result{}, errors.Wrapf(err, "deleting deployment %q", deployment.ID)
 		}
 
-		deployment.Id = ""
+		deployment.ID = ""
 		deployment.Name = ""
 
 		err = r.Patch(ctx, func(ctx context.Context, mutData *AzureDeploymentReconciler) error {
@@ -620,8 +610,8 @@ func (r *AzureDeploymentReconciler) MonitorDeployment(ctx context.Context, actio
 	return ctrl.Result{Requeue: true, RequeueAfter: retryAfter}, err
 }
 
-func (r *AzureDeploymentReconciler) ManageOwnership(ctx context.Context, action CreateOrUpdateAction) (ctrl.Result, error) {
-	r.log.V(1).Info("applying ownership", "action", action)
+func (r *AzureDeploymentReconciler) ManageOwnership(ctx context.Context) (ctrl.Result, error) {
+	r.log.V(1).Info("applying ownership", "action", CreateOrUpdateActionManageOwnership)
 	isOwnerReady, err := r.isOwnerReady(ctx)
 
 	if err != nil {
@@ -666,7 +656,7 @@ func (r *AzureDeploymentReconciler) constructArmResource(ctx context.Context) (g
 		return nil, errors.Wrapf(err, "converting to armResourceSpec")
 	}
 	// TODO: Do we need to set status here - right now it's nil
-	resource := genruntime.NewArmResource(deployableSpec.Spec(), nil, r.GetResourceIdOrDefault())
+	resource := genruntime.NewArmResource(deployableSpec.Spec(), nil, r.GetResourceIDOrDefault())
 
 	return resource, nil
 }
@@ -731,12 +721,12 @@ func (r *AzureDeploymentReconciler) resourceSpecToDeployment(ctx context.Context
 	}
 
 	// TODO: get other deployment details from status and avoid creating a new deployment
-	deploymentId, deploymentIdOk := r.GetDeploymentId()
+	deploymentID, deploymentIDOk := r.GetDeploymentID()
 	deploymentName, deploymentNameOk := r.GetDeploymentName()
-	if deploymentIdOk != deploymentNameOk {
+	if deploymentIDOk != deploymentNameOk {
 		return nil, errors.Errorf(
-			"deploymentIdOk: %t, deploymentNameOk: %t expected to match, but didn't",
-			deploymentIdOk,
+			"deploymentIDOk: %t, deploymentNameOk: %t expected to match, but didn't",
+			deploymentIDOk,
 			deploymentNameOk)
 	}
 
@@ -747,14 +737,14 @@ func (r *AzureDeploymentReconciler) resourceSpecToDeployment(ctx context.Context
 		}
 	}
 
-	deployment := r.createDeployment(deploySpec, deploymentName, deploymentId)
+	deployment := r.createDeployment(deploySpec, deploymentName, deploymentID)
 	return deployment, nil
 }
 
 func (r *AzureDeploymentReconciler) createDeployment(
 	deploySpec genruntime.DeployableResource,
 	deploymentName string,
-	deploymentId string) *armclient.Deployment {
+	deploymentID string) *armclient.Deployment {
 
 	var deployment *armclient.Deployment
 	switch res := deploySpec.(type) {
@@ -772,8 +762,8 @@ func (r *AzureDeploymentReconciler) createDeployment(
 		panic(fmt.Sprintf("unknown deployable resource kind: %T", deploySpec))
 	}
 
-	if deploymentId != "" {
-		deployment.Id = deploymentId
+	if deploymentID != "" {
+		deployment.ID = deploymentID
 	}
 
 	return deployment

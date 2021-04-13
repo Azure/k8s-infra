@@ -73,6 +73,7 @@ type ArmResource interface {
 	Spec() ArmResourceSpec
 	Status() ArmResourceStatus
 
+	// TODO: Golang wants this to be GetID
 	GetId() string // TODO: Should this be on Status instead?
 }
 
