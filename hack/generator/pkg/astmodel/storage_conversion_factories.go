@@ -6,7 +6,6 @@
 package astmodel
 
 import (
-	"fmt"
 	"go/token"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
@@ -241,9 +240,7 @@ func assignFromOptionalType(
 			generationContext)
 
 		writeZeroValue := writer(
-			&dst.BasicLit{
-				Value: zeroValue(destinationEndpoint.Type(), conversionContext.types),
-			})
+			destinationEndpoint.Type().AsZero(conversionContext.types, generationContext))
 
 		stmt := &dst.IfStmt{
 			Cond: checkForNil,
@@ -898,54 +895,4 @@ func createTypeDeclaration(name TypeName, generationContext *CodeGenerationConte
 
 	packageName := generationContext.MustGetImportedPackageName(name.PackageReference)
 	return astbuilder.Selector(dst.NewIdent(packageName), name.Name())
-}
-
-func zeroValue(t Type, types Types) string {
-	if isTypeOptional(t) {
-		return "nil"
-	}
-
-	if name, isName := AsTypeName(t); isName {
-		// We've got a type name, need to see what it resolves to
-		actualType, err := types.FullyResolve(name)
-		if err != nil {
-			// This should never happen
-			panic(err)
-		}
-
-		enumType, isEnum := AsEnumType(actualType)
-		if isEnum {
-			// Zero value for an enum is the zero value of the base type
-			return zeroValue(enumType.baseType, types)
-		}
-
-		primitiveType, isPrimitive := AsPrimitiveType(actualType)
-		if isPrimitive {
-			return zeroValue(primitiveType, types)
-		}
-
-		// Otherwise default to an empty instantiation
-		return fmt.Sprintf("%s{}", name.Name())
-	}
-
-	if primitiveType, isPrimitive := AsPrimitiveType(t); isPrimitive {
-		switch primitiveType {
-		case StringType:
-			return "\"\""
-		case IntType:
-			return "0"
-		case FloatType:
-			return "0"
-		case UInt32Type:
-			return "0"
-		case UInt64Type:
-			return "0"
-		case BoolType:
-			return "false"
-		default:
-			panic(fmt.Sprintf("unexpected primitive type %q", t.String()))
-		}
-	}
-
-	panic(fmt.Sprintf("unexpected type %q", t.String()))
 }
