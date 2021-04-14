@@ -165,15 +165,12 @@ func assignFromOptionalType(
 		// using a local (which makes the generated code easier to read). In other cases, we want
 		// to cache the value in a local to avoid repeating any expensive conversion.
 
-		if _, ok := reader.(*dst.Ident); ok {
-			// reading a local variable
+		switch reader.(type) {
+		case *dst.Ident, *dst.SelectorExpr:
+			// reading a local variable or a field
 			cacheOriginal = nil
 			actualReader = reader
-		} else if _, ok := reader.(*dst.SelectorExpr); ok {
-			// reading a field
-			cacheOriginal = nil
-			actualReader = reader
-		} else {
+		default:
 			// Something else, so we cache the original
 			cacheOriginal = astbuilder.SimpleAssignment(
 				dst.NewIdent(local),
