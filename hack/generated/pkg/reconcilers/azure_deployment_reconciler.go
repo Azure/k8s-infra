@@ -388,7 +388,7 @@ func (r *AzureDeploymentReconciler) StartDeleteOfResource(ctx context.Context) (
 		// means that the owner was deleted in Kubernetes. The current
 		// assumption is that that deletion has been propagated to Azure
 		// and so the child resource is already deleted.
-		var typedErr *armresourceresolver.OwnerNotFound
+		var typedErr *armresourceresolver.ReferenceNotFound
 		if errors.As(err, &typedErr) {
 			// TODO: We should confirm the above assumption by performing a HEAD on
 			// TODO: the resource in Azure. This requires GetApiVersion() on  metaObj which
@@ -797,11 +797,11 @@ func (r *AzureDeploymentReconciler) Patch(
 
 // isOwnerReady returns true if the owner is ready or if there is no owner required
 func (r *AzureDeploymentReconciler) isOwnerReady(ctx context.Context) (bool, error) {
-	_, err := r.ResourceResolver.GetOwner(ctx, r.obj)
+	_, err := r.ResourceResolver.ResolveOwner(ctx, r.obj)
 	if err != nil {
-		var typedErr *armresourceresolver.OwnerNotFound
+		var typedErr *armresourceresolver.ReferenceNotFound
 		if errors.As(err, &typedErr) {
-			r.log.V(4).Info("Owner does not yet exist", "NamespacedName", typedErr.OwnerName)
+			r.log.V(4).Info("Owner does not yet exist", "NamespacedName", typedErr.NamespacedName)
 			return false, nil
 		}
 
@@ -812,7 +812,7 @@ func (r *AzureDeploymentReconciler) isOwnerReady(ctx context.Context) (bool, err
 }
 
 func (r *AzureDeploymentReconciler) applyOwnership(ctx context.Context) error {
-	owner, err := r.ResourceResolver.GetOwner(ctx, r.obj)
+	owner, err := r.ResourceResolver.ResolveOwner(ctx, r.obj)
 	if err != nil {
 		return errors.Wrap(err, "failed to get owner")
 	}

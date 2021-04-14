@@ -13,38 +13,38 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-type OwnerNotFound struct {
-	OwnerName types.NamespacedName
-	cause     error
+type ReferenceNotFound struct {
+	NamespacedName types.NamespacedName
+	cause          error
 }
 
-func NewOwnerNotFoundError(ownerName types.NamespacedName, cause error) *OwnerNotFound {
-	return &OwnerNotFound{
-		OwnerName: ownerName,
-		cause:     cause,
+func NewReferenceNotFoundError(name types.NamespacedName, cause error) *ReferenceNotFound {
+	return &ReferenceNotFound{
+		NamespacedName: name,
+		cause:          cause,
 	}
 }
 
-var _ error = &OwnerNotFound{}
+var _ error = &ReferenceNotFound{}
 
-func (e *OwnerNotFound) Error() string {
-	return fmt.Sprintf("%s does not exist", e.OwnerName)
+func (e *ReferenceNotFound) Error() string {
+	return fmt.Sprintf("%s does not exist", e.NamespacedName)
 }
 
-func (e *OwnerNotFound) Is(err error) bool {
-	var typedErr *OwnerNotFound
+func (e *ReferenceNotFound) Is(err error) bool {
+	var typedErr *ReferenceNotFound
 	if errors.As(err, &typedErr) {
-		return e.OwnerName == typedErr.OwnerName
+		return e.NamespacedName == typedErr.NamespacedName
 	}
 	return false
 }
 
-func (e *OwnerNotFound) Cause() error {
+func (e *ReferenceNotFound) Cause() error {
 	return e.cause
 }
 
 // This was adapted from the function in errors
-func (e *OwnerNotFound) Format(s fmt.State, verb rune) {
+func (e *ReferenceNotFound) Format(s fmt.State, verb rune) {
 	switch verb {
 	case 'v':
 		if s.Flag('+') {

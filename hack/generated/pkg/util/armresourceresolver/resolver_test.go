@@ -7,7 +7,6 @@ package armresourceresolver
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -25,6 +24,8 @@ import (
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
 )
+
+const testNamespace = "testnamespace"
 
 func NewTestResolver(s *runtime.Scheme, reconciledResourceLookup map[schema.GroupKind]schema.GroupVersionKind) *Resolver {
 	fakeClient := fake.NewFakeClientWithScheme(s)
@@ -61,10 +62,12 @@ func MakeResourceGVKLookup(scheme *runtime.Scheme) (map[schema.GroupKind]schema.
 func createResourceGroup(name string) *resources.ResourceGroup {
 	return &resources.ResourceGroup{
 		TypeMeta: metav1.TypeMeta{
-			Kind: ResourceGroupKind,
+			Kind:       ResourceGroupKind,
+			APIVersion: resources.GroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
+			Namespace: testNamespace,
 		},
 		Spec: resources.ResourceGroupSpec{
 			Location:  "West US",
@@ -78,10 +81,12 @@ func createResourceGroupRootedResource(rgName string, name string) (genruntime.M
 
 	b := &batch.BatchAccount{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "BatchAccount",
+			Kind:       "BatchAccount",
+			APIVersion: batch.GroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
+			Namespace: testNamespace,
 		},
 		Spec: batch.BatchAccounts_Spec{
 			Owner: genruntime.KnownResourceReference{
@@ -98,8 +103,13 @@ func createDeeplyNestedResource(rgName string, parentName string, name string) R
 	a := createResourceGroup(rgName)
 
 	b := &storage.StorageAccount{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "StorageAccount",
+			APIVersion: storage.GroupVersion.String(),
+		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: parentName,
+			Name:      parentName,
+			Namespace: testNamespace,
 		},
 		Spec: storage.StorageAccounts_Spec{
 			Owner: genruntime.KnownResourceReference{
@@ -110,8 +120,13 @@ func createDeeplyNestedResource(rgName string, parentName string, name string) R
 	}
 
 	c := &storage.StorageAccountsBlobService{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "StorageAccountsBlobService",
+			APIVersion: storage.GroupVersion.String(),
+		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
+			Namespace: testNamespace,
 		},
 		Spec: storage.StorageAccountsBlobServices_Spec{
 			Owner: genruntime.KnownResourceReference{
@@ -122,8 +137,6 @@ func createDeeplyNestedResource(rgName string, parentName string, name string) R
 
 	return ResourceHierarchy{a, b, c}
 }
-
-// ResolveResourceHierarchy tests
 
 func Test_ResolveResourceHierarchy_ResourceGroupOnly(t *testing.T) {
 	g := NewWithT(t)
@@ -206,7 +219,7 @@ func Test_ResolveResourceHierarchy_ResourceGroup_NestedResource(t *testing.T) {
 	}
 }
 
-func Test_ResolveResourceHierarchy_ReturnsOwnerNotFoundError(t *testing.T) {
+func Test_ResolveResourceHierarchy_ReturnsReferenceNotFound(t *testing.T) {
 	g := NewWithT(t)
 	ctx := context.TODO()
 
@@ -226,57 +239,47 @@ func Test_ResolveResourceHierarchy_ReturnsOwnerNotFoundError(t *testing.T) {
 	_, err = resolver.ResolveResourceHierarchy(ctx, b)
 	g.Expect(err).To(HaveOccurred())
 
-	g.Expect(errors.Unwrap(err)).To(BeAssignableToTypeOf(&OwnerNotFound{}))
+	g.Expect(errors.Unwrap(err)).To(BeAssignableToTypeOf(&ReferenceNotFound{}))
 }
 
-// ResourceHierarchy tests
-
-func Test_ResourceHierarchy_ResourceGroupOnly(t *testing.T) {
+func Test_ResolveReference_FindsReference(t *testing.T) {
 	g := NewWithT(t)
+	ctx := context.TODO()
+
+	s := createTestScheme()
+
+	reconciledResourceLookup, err := MakeResourceGVKLookup(s)
+	g.Expect(err).ToNot(HaveOccurred())
+	resolver := NewTestResolver(s, reconciledResourceLookup)
 
 	resourceGroupName := "myrg"
 
-	a := createResourceGroup(resourceGroupName)
-	hierarchy := ResourceHierarchy{a}
+	resourceGroup := createResourceGroup(resourceGroupName)
+	err = resolver.client.Client.Create(ctx, resourceGroup)
+	g.Expect(err).ToNot(HaveOccurred())
 
-	// This is expected to fail
-	_, err := hierarchy.ResourceGroup()
+	ref := genruntime.ResourceReference{Group: ResourceGroupGroup, Kind: ResourceGroupKind, Namespace: testNamespace, Name: resourceGroupName}
+	resolved, err := resolver.ResolveReference(ctx, ref)
+	g.Expect(err).ToNot(HaveOccurred())
+	g.Expect(resolved).To(BeAssignableToTypeOf(&resources.ResourceGroup{}))
+	resolvedRg := resolved.(*resources.ResourceGroup)
+
+	g.Expect(resolvedRg.Spec.Location).To(Equal(resourceGroup.Spec.Location))
+}
+
+func Test_ResolveReference_ReturnsErrorIfReferenceIsNotAKubernetesReference(t *testing.T) {
+	g := NewWithT(t)
+	ctx := context.TODO()
+
+	s := createTestScheme()
+	reconciledResourceLookup, err := MakeResourceGVKLookup(s)
+	g.Expect(err).ToNot(HaveOccurred())
+	resolver := NewTestResolver(s, reconciledResourceLookup)
+
+	ref := genruntime.ResourceReference{ARMID: "abcd"}
+	_, err = resolver.ResolveReference(ctx, ref)
 	g.Expect(err).To(HaveOccurred())
-
-	location, err := hierarchy.Location()
-	g.Expect(err).ToNot(HaveOccurred())
-	g.Expect(a.Spec.Location).To(Equal(location))
-	g.Expect(hierarchy.FullAzureName()).To(Equal(resourceGroupName))
-}
-
-func Test_ResourceHierarchy_ResourceGroup_TopLevelResource(t *testing.T) {
-	g := NewWithT(t)
-
-	resourceGroupName := "myrg"
-	name := "myresource"
-
-	a, b := createResourceGroupRootedResource(resourceGroupName, name)
-	hierarchy := ResourceHierarchy{a, b}
-
-	rg, err := hierarchy.ResourceGroup()
-	g.Expect(err).ToNot(HaveOccurred())
-	g.Expect(rg).To(Equal(resourceGroupName))
-	g.Expect(hierarchy.FullAzureName()).To(Equal(name))
-}
-
-func Test_ResourceHierarchy_ResourceGroup_NestedResource(t *testing.T) {
-	g := NewWithT(t)
-
-	resourceGroupName := "myrg"
-	resourceName := "myresource"
-	childResourceName := "mychildresource"
-
-	hierarchy := createDeeplyNestedResource(resourceGroupName, resourceName, childResourceName)
-
-	rg, err := hierarchy.ResourceGroup()
-	g.Expect(err).ToNot(HaveOccurred())
-	g.Expect(rg).To(Equal(resourceGroupName))
-	g.Expect(hierarchy.FullAzureName()).To(Equal(fmt.Sprintf("%s/%s", hierarchy[1].AzureName(), hierarchy[2].AzureName())))
+	g.Expect(err).To(MatchError("reference abcd is not pointing to a Kubernetes resource"))
 }
 
 func createTestScheme() *runtime.Scheme {

@@ -7,8 +7,6 @@ package armresourceresolver
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -18,93 +16,6 @@ import (
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
 )
-
-type ResourceHierarchyRoot string
-
-const (
-	ResourceHierarchyRootResourceGroup = ResourceHierarchyRoot("ResourceGroup")
-	ResourceHierarchyRootSubscription  = ResourceHierarchyRoot("Subscription")
-)
-
-// If we wanted to type-assert we'd have to solve some circular dependency problems... for now this is ok.
-const ResourceGroupKind = "ResourceGroup"
-
-type ResourceHierarchy []genruntime.MetaObject
-
-// ResourceGroup returns the resource group that the hierarchy is in, or an error if the hierarchy is not rooted
-// in a resource group.
-func (h ResourceHierarchy) ResourceGroup() (string, error) {
-	rootKind := h.RootKind()
-	if rootKind != ResourceHierarchyRootResourceGroup {
-		return "", errors.Errorf("not rooted by a resource group: %s", rootKind)
-	}
-
-	resourceGroup := h[0]
-	return resourceGroup.GetName(), nil
-}
-
-// Location returns the location root of the hierarchy, or an error
-// if the root is not a subscription.
-func (h ResourceHierarchy) Location() (string, error) {
-
-	rootKind := h.RootKind()
-	if rootKind != ResourceHierarchyRootSubscription {
-		return "", errors.Errorf("not rooted in a subscription: %s", rootKind)
-	}
-
-	// There's an assumption here that the top
-	locatable, ok := h[0].(genruntime.LocatableResource)
-	if !ok {
-		return "", errors.Errorf("root does not implement LocatableResource: %T", h[0])
-	}
-
-	return locatable.Location(), nil
-}
-
-// FullAzureName returns the full Azure name for use in creating a resource.
-// This name is the full "path" to the resource being deployed. For example, a Virtual Network Subnet's
-// name might be: "myvnet/mysubnet"
-func (h ResourceHierarchy) FullAzureName() string {
-	var azureNames []string
-
-	rootKind := h.RootKind()
-
-	var resources ResourceHierarchy
-	switch rootKind {
-	case ResourceHierarchyRootResourceGroup:
-		resources = h[1:]
-	case ResourceHierarchyRootSubscription:
-		resources = h
-	default:
-		panic(fmt.Sprintf("unknown root kind: %s", rootKind))
-	}
-
-	for _, res := range resources {
-		azureNames = append(azureNames, res.AzureName())
-	}
-
-	return strings.Join(azureNames, "/")
-}
-
-func (h ResourceHierarchy) RootKind() ResourceHierarchyRoot {
-	// There are 3 cases here:
-	// 1. The hierarchy is comprised solely of a resource group. This is subscription rooted.
-	// 1. The hierarchy has multiple entries and roots up to a resource group. This is RG rooted.
-	// 2. The hierarchy has multiple entries and doesn't root up to a resource group. This is subscription rooted.
-
-	if len(h) == 0 {
-		panic("resource hierarchy cannot be len 0")
-	}
-	gvk := h[0].GetObjectKind().GroupVersionKind()
-	if gvk.Kind == ResourceGroupKind {
-		if len(h) == 1 { // Just resource group
-			return ResourceHierarchyRootSubscription
-		}
-		return ResourceHierarchyRootResourceGroup
-	}
-
-	return ResourceHierarchyRootSubscription
-}
 
 type Resolver struct {
 	client                   *kubeclient.Client
@@ -118,6 +29,35 @@ func NewResolver(client *kubeclient.Client, reconciledResourceLookup map[schema.
 	}
 }
 
+// TODO: I'm not sure that owner has to be as special as it's being made here
+// GetReferenceARMID gets a references ARM ID. If the reference is just pointing to an ARM resource then the ARMID is returned.
+// If the reference is pointing to a Kubernetes resource, that resource is looked up and its ARM ID is computed.
+func (r *Resolver) GetReferenceARMID(ctx context.Context, ref genruntime.ResourceReference) (string, error) {
+	// TODO: is there a cleaner way to make these checks? Maybe I want to transform the flat type to a hierarchical
+	// TODO: for handling internally?
+	if ref.IsDirectARMReference() {
+		return ref.ARMID, nil
+	}
+
+	// TODO: Technically don't need this check as it's handled by ResolveReference
+	if !ref.IsKubernetesReference() {
+		return "", errors.Errorf("ref %s is neither ARM or Kubernetes reference", ref)
+	}
+
+	obj, err := r.ResolveReference(ctx, ref)
+	if err != nil {
+		return "", err
+	}
+
+	hierarchy, err := r.ResolveResourceHierarchy(ctx, obj)
+	if err != nil {
+		return "", err
+	}
+
+	return hierarchy.FullAzureName(), nil
+}
+
+// TODO: Possibly can make this "private"
 // ResolveResourceHierarchy gets the resource hierarchy for a given resource. The result is a slice of
 // resources, with the uppermost parent at position 0 and the resource itself at position len(slice)-1
 func (r *Resolver) ResolveResourceHierarchy(ctx context.Context, obj genruntime.MetaObject) (ResourceHierarchy, error) {
@@ -127,7 +67,7 @@ func (r *Resolver) ResolveResourceHierarchy(ctx context.Context, obj genruntime.
 		return ResourceHierarchy{obj}, nil
 	}
 
-	ownerMeta, err := r.GetOwner(ctx, obj)
+	ownerMeta, err := r.ResolveOwner(ctx, obj)
 	if err != nil {
 		return nil, err
 	}
@@ -140,54 +80,65 @@ func (r *Resolver) ResolveResourceHierarchy(ctx context.Context, obj genruntime.
 	return append(owners, obj), nil
 }
 
-// GetOwner returns the MetaObject for the given resources owner. If the resource is supposed to have
-// an owner but doesn't, this returns an OwnerNotFound error. If the resource is not supposed
+// ResolveReference resolves a reference, or returns an error if the reference is not pointing to a KubernetesResource
+func (r *Resolver) ResolveReference(ctx context.Context, ref genruntime.ResourceReference) (genruntime.MetaObject, error) {
+	refGVK, err := r.findGVK(ref)
+	if err != nil {
+		return nil, err
+	}
+
+	refNamespacedName := types.NamespacedName{
+		Namespace: ref.Namespace,
+		Name:      ref.Name,
+	}
+
+	refObj, err := r.client.GetObject(ctx, refNamespacedName, refGVK)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			err := NewReferenceNotFoundError(refNamespacedName, err)
+			return nil, errors.WithStack(err)
+		}
+
+		return nil, errors.Wrapf(err, "couldn't resolve reference %s", ref.String())
+	}
+
+	metaObj, ok := refObj.(genruntime.MetaObject)
+	if !ok {
+		return nil, errors.Errorf("reference %s (%s) was not of type genruntime.MetaObject", refNamespacedName, refGVK)
+	}
+
+	return metaObj, nil
+}
+
+// ResolveOwner returns the MetaObject for the given resources owner. If the resource is supposed to have
+// an owner but doesn't, this returns an ReferenceNotFound error. If the resource is not supposed
 // to have an owner (for example, ResourceGroup), returns nil.
-func (r *Resolver) GetOwner(ctx context.Context, obj genruntime.MetaObject) (genruntime.MetaObject, error) {
+func (r *Resolver) ResolveOwner(ctx context.Context, obj genruntime.MetaObject) (genruntime.MetaObject, error) {
 	owner := obj.Owner()
 
 	if owner == nil {
 		return nil, nil
 	}
 
-	ownerGvk, err := r.findGVK(owner)
+	ownerMeta, err := r.ResolveReference(ctx, *owner)
 	if err != nil {
 		return nil, err
-	}
-
-	// Kubernetes doesn't support cross-namespace ownership, and all Azure resources are
-	// namespaced, so it should be safe to assume that the owner is in the same namespace as
-	// obj. See https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/
-	ownerNamespacedName := types.NamespacedName{
-		Namespace: obj.GetNamespace(),
-		Name:      owner.Name,
-	}
-
-	ownerObj, err := r.client.GetObject(ctx, ownerNamespacedName, ownerGvk)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			err := NewOwnerNotFoundError(ownerNamespacedName, err)
-			return nil, errors.WithStack(err)
-		}
-
-		return nil, errors.Wrapf(err, "couldn't find owner %s of %s", owner.Name, obj.GetName())
-	}
-
-	ownerMeta, ok := ownerObj.(genruntime.MetaObject)
-	if !ok {
-		return nil, errors.Errorf("owner %s (%s) was not of type genruntime.MetaObject", ownerNamespacedName, ownerGvk)
 	}
 
 	return ownerMeta, nil
 }
 
-func (r *Resolver) findGVK(owner *genruntime.ResourceReference) (schema.GroupVersionKind, error) {
+func (r *Resolver) findGVK(ref genruntime.ResourceReference) (schema.GroupVersionKind, error) {
 	var ownerGvk schema.GroupVersionKind
 
-	groupKind := schema.GroupKind{Group: owner.Group, Kind: owner.Kind}
+	if !ref.IsKubernetesReference() {
+		return ownerGvk, errors.Errorf("reference %s is not pointing to a Kubernetes resource", ref)
+	}
+
+	groupKind := schema.GroupKind{Group: ref.Group, Kind: ref.Kind}
 	gvk, ok := r.reconciledResourceLookup[groupKind]
 	if !ok {
-		return ownerGvk, errors.Errorf("group: %q, kind: %q was not in reconciledResourceLookup", owner.Group, owner.Kind)
+		return ownerGvk, errors.Errorf("group: %q, kind: %q was not in reconciledResourceLookup", ref.Group, ref.Kind)
 	}
 
 	return gvk, nil
