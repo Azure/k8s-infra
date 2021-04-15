@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"go/token"
 	"sort"
+	"strings"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 	"github.com/dave/dst"
@@ -181,4 +182,23 @@ func GetEnumValueId(name string, value EnumValue) string {
 // String implements fmt.Stringer
 func (enum *EnumType) String() string {
 	return fmt.Sprintf("(enum: %s)", enum.baseType.String())
+}
+
+// DebugDescription adds a description of the current enum type, including option names, to the
+// passed builder
+// builder receives the full description
+// types is a dictionary for resolving named types
+func (enum *EnumType) WriteDebugDescription(builder *strings.Builder, types Types) {
+	builder.WriteString("Enum[")
+	enum.baseType.WriteDebugDescription(builder, types)
+	builder.WriteString(":")
+	first := true
+	for _, v := range enum.options {
+		if !first {
+			builder.WriteString("|")
+		}
+		builder.WriteString(v.Identifier)
+		first = false
+	}
+	builder.WriteString("]")
 }

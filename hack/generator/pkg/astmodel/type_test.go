@@ -46,6 +46,9 @@ func TestWriteDebugDescription(t *testing.T) {
 		{"AliasedType", age, "local/test/v1/Age:int"},
 		{"MapOfStringToAge", NewMapType(StringType, age), "Map[string]local/test/v1/Age:int"},
 		{"MapOfPersonIDToAge", NewMapType(personId, age), "Map[local/test/v1/PersonId:string]local/test/v1/Age:int"},
+		{"SuitEnum", suitEnum, "Enum[string:clubs|diamonds|hearts|spades]"}, // alphabetical
+		{"SuitName", suit, "local/test/v1/Suit:Enum[string:clubs|diamonds|hearts|spades]"},
+		{"MapOfSuitToAge", NewMapType(suit, age), "Map[local/test/v1/Suit:Enum[string:clubs|diamonds|hearts|spades]]local/test/v1/Age:int"},
 	}
 
 	for _, c := range cases {
