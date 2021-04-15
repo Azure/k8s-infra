@@ -41,6 +41,8 @@ func TestWriteDebugDescription(t *testing.T) {
 		{"OptionalString", NewOptionalType(StringType), "Optional[string]"},
 		{"ArrayOfString", NewArrayType(StringType), "Array[string]"},
 		{"ArrayOfOptionalString", NewArrayType(NewOptionalType(StringType)), "Array[Optional[string]]"},
+		{"MapOfStringToInt", NewMapType(StringType, IntType), "Map[string]int"},
+		{"MapOfStringToOptionalString", NewMapType(StringType, NewOptionalType(StringType)), "Map[string]Optional[string]"},
 	}
 
 	for _, c := range cases {
