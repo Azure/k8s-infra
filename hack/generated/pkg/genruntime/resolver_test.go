@@ -3,7 +3,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT license.
 */
 
-package armresourceresolver
+package genruntime_test
 
 import (
 	"context"
@@ -27,10 +27,13 @@ import (
 
 const testNamespace = "testnamespace"
 
-func NewTestResolver(s *runtime.Scheme, reconciledResourceLookup map[schema.GroupKind]schema.GroupVersionKind) *Resolver {
+func NewKubeClient(s *runtime.Scheme) *kubeclient.Client {
 	fakeClient := fake.NewFakeClientWithScheme(s)
+	return kubeclient.NewClient(fakeClient, s)
+}
 
-	return NewResolver(kubeclient.NewClient(fakeClient, s), reconciledResourceLookup)
+func NewTestResolver(client *kubeclient.Client, reconciledResourceLookup map[schema.GroupKind]schema.GroupVersionKind) *genruntime.Resolver {
+	return genruntime.NewResolver(client, reconciledResourceLookup)
 }
 
 func MakeResourceGVKLookup(scheme *runtime.Scheme) (map[schema.GroupKind]schema.GroupVersionKind, error) {
@@ -62,7 +65,7 @@ func MakeResourceGVKLookup(scheme *runtime.Scheme) (map[schema.GroupKind]schema.
 func createResourceGroup(name string) *resources.ResourceGroup {
 	return &resources.ResourceGroup{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       ResourceGroupKind,
+			Kind:       genruntime.ResourceGroupKind,
 			APIVersion: resources.GroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -99,7 +102,7 @@ func createResourceGroupRootedResource(rgName string, name string) (genruntime.M
 	return a, b
 }
 
-func createDeeplyNestedResource(rgName string, parentName string, name string) ResourceHierarchy {
+func createDeeplyNestedResource(rgName string, parentName string, name string) genruntime.ResourceHierarchy {
 	a := createResourceGroup(rgName)
 
 	b := &storage.StorageAccount{
@@ -135,7 +138,7 @@ func createDeeplyNestedResource(rgName string, parentName string, name string) R
 		},
 	}
 
-	return ResourceHierarchy{a, b, c}
+	return genruntime.ResourceHierarchy{a, b, c}
 }
 
 func Test_ResolveResourceHierarchy_ResourceGroupOnly(t *testing.T) {
@@ -146,7 +149,7 @@ func Test_ResolveResourceHierarchy_ResourceGroupOnly(t *testing.T) {
 
 	reconciledResourceLookup, err := MakeResourceGVKLookup(s)
 	g.Expect(err).ToNot(HaveOccurred())
-	resolver := NewTestResolver(s, reconciledResourceLookup)
+	resolver := NewTestResolver(NewKubeClient(s), reconciledResourceLookup)
 
 	resourceGroupName := "myrg"
 	a := createResourceGroup(resourceGroupName)
@@ -166,14 +169,15 @@ func Test_ResolveResourceHierarchy_ResourceGroup_TopLevelResource(t *testing.T) 
 
 	reconciledResourceLookup, err := MakeResourceGVKLookup(s)
 	g.Expect(err).ToNot(HaveOccurred())
-	resolver := NewTestResolver(s, reconciledResourceLookup)
+	client := NewKubeClient(s)
+	resolver := NewTestResolver(client, reconciledResourceLookup)
 
 	resourceGroupName := "myrg"
 	resourceName := "myresource"
 
 	a, b := createResourceGroupRootedResource(resourceGroupName, resourceName)
 
-	err = resolver.client.Client.Create(ctx, a)
+	err = client.Client.Create(ctx, a)
 	g.Expect(err).ToNot(HaveOccurred())
 
 	hierarchy, err := resolver.ResolveResourceHierarchy(ctx, b)
@@ -193,7 +197,8 @@ func Test_ResolveResourceHierarchy_ResourceGroup_NestedResource(t *testing.T) {
 
 	reconciledResourceLookup, err := MakeResourceGVKLookup(s)
 	g.Expect(err).ToNot(HaveOccurred())
-	resolver := NewTestResolver(s, reconciledResourceLookup)
+	client := NewKubeClient(s)
+	resolver := NewTestResolver(client, reconciledResourceLookup)
 
 	resourceGroupName := "myrg"
 	resourceName := "myresource"
@@ -202,7 +207,7 @@ func Test_ResolveResourceHierarchy_ResourceGroup_NestedResource(t *testing.T) {
 	originalHierarchy := createDeeplyNestedResource(resourceGroupName, resourceName, childResourceName)
 
 	for _, item := range originalHierarchy {
-		err := resolver.client.Client.Create(ctx, item)
+		err := client.Client.Create(ctx, item)
 		g.Expect(err).ToNot(HaveOccurred())
 	}
 
@@ -227,7 +232,7 @@ func Test_ResolveResourceHierarchy_ReturnsReferenceNotFound(t *testing.T) {
 
 	reconciledResourceLookup, err := MakeResourceGVKLookup(s)
 	g.Expect(err).ToNot(HaveOccurred())
-	resolver := NewTestResolver(s, reconciledResourceLookup)
+	resolver := NewTestResolver(NewKubeClient(s), reconciledResourceLookup)
 
 	resourceGroupName := "myrg"
 	resourceName := "myresource"
@@ -239,7 +244,7 @@ func Test_ResolveResourceHierarchy_ReturnsReferenceNotFound(t *testing.T) {
 	_, err = resolver.ResolveResourceHierarchy(ctx, b)
 	g.Expect(err).To(HaveOccurred())
 
-	g.Expect(errors.Unwrap(err)).To(BeAssignableToTypeOf(&ReferenceNotFound{}))
+	g.Expect(errors.Unwrap(err)).To(BeAssignableToTypeOf(&genruntime.ReferenceNotFound{}))
 }
 
 func Test_ResolveReference_FindsReference(t *testing.T) {
@@ -250,15 +255,16 @@ func Test_ResolveReference_FindsReference(t *testing.T) {
 
 	reconciledResourceLookup, err := MakeResourceGVKLookup(s)
 	g.Expect(err).ToNot(HaveOccurred())
-	resolver := NewTestResolver(s, reconciledResourceLookup)
+	client := NewKubeClient(s)
+	resolver := NewTestResolver(client, reconciledResourceLookup)
 
 	resourceGroupName := "myrg"
 
 	resourceGroup := createResourceGroup(resourceGroupName)
-	err = resolver.client.Client.Create(ctx, resourceGroup)
+	err = client.Client.Create(ctx, resourceGroup)
 	g.Expect(err).ToNot(HaveOccurred())
 
-	ref := genruntime.ResourceReference{Group: ResourceGroupGroup, Kind: ResourceGroupKind, Namespace: testNamespace, Name: resourceGroupName}
+	ref := genruntime.ResourceReference{Group: genruntime.ResourceGroupGroup, Kind: genruntime.ResourceGroupKind, Namespace: testNamespace, Name: resourceGroupName}
 	resolved, err := resolver.ResolveReference(ctx, ref)
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Expect(resolved).To(BeAssignableToTypeOf(&resources.ResourceGroup{}))
@@ -274,7 +280,7 @@ func Test_ResolveReference_ReturnsErrorIfReferenceIsNotAKubernetesReference(t *t
 	s := createTestScheme()
 	reconciledResourceLookup, err := MakeResourceGVKLookup(s)
 	g.Expect(err).ToNot(HaveOccurred())
-	resolver := NewTestResolver(s, reconciledResourceLookup)
+	resolver := NewTestResolver(NewKubeClient(s), reconciledResourceLookup)
 
 	ref := genruntime.ResourceReference{ARMID: "abcd"}
 	_, err = resolver.ResolveReference(ctx, ref)

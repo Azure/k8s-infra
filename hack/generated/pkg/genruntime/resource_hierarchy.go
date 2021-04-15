@@ -3,15 +3,13 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT license.
 */
 
-package armresourceresolver
+package genruntime
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
-
-	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 )
 
 type ResourceHierarchyRoot string
@@ -25,7 +23,7 @@ const (
 const ResourceGroupKind = "ResourceGroup"
 const ResourceGroupGroup = "microsoft.resources.infra.azure.com"
 
-type ResourceHierarchy []genruntime.MetaObject
+type ResourceHierarchy []MetaObject
 
 // ResourceGroup returns the resource group that the hierarchy is in, or an error if the hierarchy is not rooted
 // in a resource group.
@@ -49,7 +47,7 @@ func (h ResourceHierarchy) Location() (string, error) {
 	}
 
 	// There's an assumption here that the top
-	locatable, ok := h[0].(genruntime.LocatableResource)
+	locatable, ok := h[0].(LocatableResource)
 	if !ok {
 		return "", errors.Errorf("root does not implement LocatableResource: %T", h[0])
 	}

@@ -32,7 +32,6 @@ import (
 	"github.com/Azure/k8s-infra/hack/generated/pkg/armclient"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/reflecthelpers"
-	"github.com/Azure/k8s-infra/hack/generated/pkg/util/armresourceresolver"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/patch"
 )
@@ -82,7 +81,7 @@ type AzureDeploymentReconciler struct {
 	recorder             record.EventRecorder
 	ARMClient            armclient.Applier
 	KubeClient           *kubeclient.Client
-	ResourceResolver     *armresourceresolver.Resolver
+	ResourceResolver     *genruntime.Resolver
 	CreateDeploymentName func(obj metav1.Object) (string, error)
 }
 
@@ -92,7 +91,7 @@ func NewAzureDeploymentReconciler(
 	armClient armclient.Applier,
 	eventRecorder record.EventRecorder,
 	kubeClient *kubeclient.Client,
-	resourceResolver *armresourceresolver.Resolver,
+	resourceResolver *genruntime.Resolver,
 	createDeploymentName func(obj metav1.Object) (string, error)) genruntime.Reconciler {
 
 	return &AzureDeploymentReconciler{
@@ -388,7 +387,7 @@ func (r *AzureDeploymentReconciler) StartDeleteOfResource(ctx context.Context) (
 		// means that the owner was deleted in Kubernetes. The current
 		// assumption is that that deletion has been propagated to Azure
 		// and so the child resource is already deleted.
-		var typedErr *armresourceresolver.ReferenceNotFound
+		var typedErr *genruntime.ReferenceNotFound
 		if errors.As(err, &typedErr) {
 			// TODO: We should confirm the above assumption by performing a HEAD on
 			// TODO: the resource in Azure. This requires GetApiVersion() on  metaObj which
@@ -799,7 +798,7 @@ func (r *AzureDeploymentReconciler) Patch(
 func (r *AzureDeploymentReconciler) isOwnerReady(ctx context.Context) (bool, error) {
 	_, err := r.ResourceResolver.ResolveOwner(ctx, r.obj)
 	if err != nil {
-		var typedErr *armresourceresolver.ReferenceNotFound
+		var typedErr *genruntime.ReferenceNotFound
 		if errors.As(err, &typedErr) {
 			r.log.V(4).Info("Owner does not yet exist", "NamespacedName", typedErr.NamespacedName)
 			return false, nil

@@ -3,7 +3,7 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT license.
 */
 
-package armresourceresolver
+package genruntime
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 	"github.com/Azure/k8s-infra/hack/generated/pkg/util/kubeclient"
 )
 
@@ -32,7 +31,7 @@ func NewResolver(client *kubeclient.Client, reconciledResourceLookup map[schema.
 // TODO: I'm not sure that owner has to be as special as it's being made here
 // GetReferenceARMID gets a references ARM ID. If the reference is just pointing to an ARM resource then the ARMID is returned.
 // If the reference is pointing to a Kubernetes resource, that resource is looked up and its ARM ID is computed.
-func (r *Resolver) GetReferenceARMID(ctx context.Context, ref genruntime.ResourceReference) (string, error) {
+func (r *Resolver) GetReferenceARMID(ctx context.Context, ref ResourceReference) (string, error) {
 	// TODO: is there a cleaner way to make these checks? Maybe I want to transform the flat type to a hierarchical
 	// TODO: for handling internally?
 	if ref.IsDirectARMReference() {
@@ -60,7 +59,7 @@ func (r *Resolver) GetReferenceARMID(ctx context.Context, ref genruntime.Resourc
 // TODO: Possibly can make this "private"
 // ResolveResourceHierarchy gets the resource hierarchy for a given resource. The result is a slice of
 // resources, with the uppermost parent at position 0 and the resource itself at position len(slice)-1
-func (r *Resolver) ResolveResourceHierarchy(ctx context.Context, obj genruntime.MetaObject) (ResourceHierarchy, error) {
+func (r *Resolver) ResolveResourceHierarchy(ctx context.Context, obj MetaObject) (ResourceHierarchy, error) {
 
 	owner := obj.Owner()
 	if owner == nil {
@@ -81,7 +80,7 @@ func (r *Resolver) ResolveResourceHierarchy(ctx context.Context, obj genruntime.
 }
 
 // ResolveReference resolves a reference, or returns an error if the reference is not pointing to a KubernetesResource
-func (r *Resolver) ResolveReference(ctx context.Context, ref genruntime.ResourceReference) (genruntime.MetaObject, error) {
+func (r *Resolver) ResolveReference(ctx context.Context, ref ResourceReference) (MetaObject, error) {
 	refGVK, err := r.findGVK(ref)
 	if err != nil {
 		return nil, err
@@ -102,7 +101,7 @@ func (r *Resolver) ResolveReference(ctx context.Context, ref genruntime.Resource
 		return nil, errors.Wrapf(err, "couldn't resolve reference %s", ref.String())
 	}
 
-	metaObj, ok := refObj.(genruntime.MetaObject)
+	metaObj, ok := refObj.(MetaObject)
 	if !ok {
 		return nil, errors.Errorf("reference %s (%s) was not of type genruntime.MetaObject", refNamespacedName, refGVK)
 	}
@@ -113,7 +112,7 @@ func (r *Resolver) ResolveReference(ctx context.Context, ref genruntime.Resource
 // ResolveOwner returns the MetaObject for the given resources owner. If the resource is supposed to have
 // an owner but doesn't, this returns an ReferenceNotFound error. If the resource is not supposed
 // to have an owner (for example, ResourceGroup), returns nil.
-func (r *Resolver) ResolveOwner(ctx context.Context, obj genruntime.MetaObject) (genruntime.MetaObject, error) {
+func (r *Resolver) ResolveOwner(ctx context.Context, obj MetaObject) (MetaObject, error) {
 	owner := obj.Owner()
 
 	if owner == nil {
@@ -128,7 +127,7 @@ func (r *Resolver) ResolveOwner(ctx context.Context, obj genruntime.MetaObject) 
 	return ownerMeta, nil
 }
 
-func (r *Resolver) findGVK(ref genruntime.ResourceReference) (schema.GroupVersionKind, error) {
+func (r *Resolver) findGVK(ref ResourceReference) (schema.GroupVersionKind, error) {
 	var ownerGvk schema.GroupVersionKind
 
 	if !ref.IsKubernetesReference() {

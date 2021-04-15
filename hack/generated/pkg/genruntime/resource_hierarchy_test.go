@@ -3,13 +3,15 @@ Copyright (c) Microsoft Corporation.
 Licensed under the MIT license.
 */
 
-package armresourceresolver
+package genruntime_test
 
 import (
 	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
+
+	"github.com/Azure/k8s-infra/hack/generated/pkg/genruntime"
 )
 
 func Test_ResourceHierarchy_ResourceGroupOnly(t *testing.T) {
@@ -18,7 +20,7 @@ func Test_ResourceHierarchy_ResourceGroupOnly(t *testing.T) {
 	resourceGroupName := "myrg"
 
 	a := createResourceGroup(resourceGroupName)
-	hierarchy := ResourceHierarchy{a}
+	hierarchy := genruntime.ResourceHierarchy{a}
 
 	// This is expected to fail
 	_, err := hierarchy.ResourceGroup()
@@ -37,7 +39,7 @@ func Test_ResourceHierarchy_ResourceGroup_TopLevelResource(t *testing.T) {
 	name := "myresource"
 
 	a, b := createResourceGroupRootedResource(resourceGroupName, name)
-	hierarchy := ResourceHierarchy{a, b}
+	hierarchy := genruntime.ResourceHierarchy{a, b}
 
 	rg, err := hierarchy.ResourceGroup()
 	g.Expect(err).ToNot(HaveOccurred())
