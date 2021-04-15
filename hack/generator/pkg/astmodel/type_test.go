@@ -37,6 +37,8 @@ func TestWriteDebugDescription(t *testing.T) {
 	}{
 		{"Integer", IntType, "int"},
 		{"String", StringType, "string"},
+		{"OptionalInteger", NewOptionalType(IntType), "Optional[int]"},
+		{"OptionalString", NewOptionalType(StringType), "Optional[string]"},
 	}
 
 	for _, c := range cases {
