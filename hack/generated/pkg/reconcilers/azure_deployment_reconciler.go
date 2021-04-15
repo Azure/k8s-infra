@@ -44,7 +44,6 @@ const (
 	DeploymentIDAnnotation   = "deployment-id.infra.azure.com"
 	DeploymentNameAnnotation = "deployment-name.infra.azure.com"
 	ResourceStateAnnotation  = "resource-state.infra.azure.com"
-	ResourceIDAnnotation     = "resource-id.infra.azure.com"
 	ResourceErrorAnnotation  = "resource-error.infra.azure.com"
 	ResourceSigAnnotationKey = "resource-sig.infra.azure.com"
 	// PreserveDeploymentAnnotation is the key which tells the applier to keep or delete the deployment
@@ -160,7 +159,7 @@ func (r *AzureDeploymentReconciler) GetDeploymentID() (string, bool) {
 }
 
 func (r *AzureDeploymentReconciler) SetDeploymentID(id string) {
-	r.addAnnotation(DeploymentIDAnnotation, id)
+	genruntime.AddAnnotation(r.obj, DeploymentIDAnnotation, id)
 }
 
 func (r *AzureDeploymentReconciler) GetDeploymentName() (string, bool) {
@@ -174,7 +173,7 @@ func (r *AzureDeploymentReconciler) GetDeploymentNameOrDefault() string {
 }
 
 func (r *AzureDeploymentReconciler) SetDeploymentName(name string) {
-	r.addAnnotation(DeploymentNameAnnotation, name)
+	genruntime.AddAnnotation(r.obj, DeploymentNameAnnotation, name)
 }
 
 func (r *AzureDeploymentReconciler) GetShouldPreserveDeployment() bool {
@@ -194,25 +193,17 @@ func (r *AzureDeploymentReconciler) GetShouldPreserveDeployment() bool {
 	return preserveDeployment
 }
 
-func (r *AzureDeploymentReconciler) GetResourceIDOrDefault() string {
-	return r.obj.GetAnnotations()[ResourceIDAnnotation]
-}
-
-func (r *AzureDeploymentReconciler) SetResourceID(id string) {
-	r.addAnnotation(ResourceIDAnnotation, id)
-}
-
 func (r *AzureDeploymentReconciler) SetResourceProvisioningState(state armclient.ProvisioningState) {
 	// TODO: It's almost certainly not safe to use this as our serialized format as it's not guaranteed backwards compatible?
-	r.addAnnotation(ResourceStateAnnotation, string(state))
+	genruntime.AddAnnotation(r.obj, ResourceStateAnnotation, string(state))
 }
 
 func (r *AzureDeploymentReconciler) SetResourceError(error string) {
-	r.addAnnotation(ResourceErrorAnnotation, error)
+	genruntime.AddAnnotation(r.obj, ResourceErrorAnnotation, error)
 }
 
 func (r *AzureDeploymentReconciler) SetResourceSignature(sig string) {
-	r.addAnnotation(ResourceSigAnnotationKey, sig)
+	genruntime.AddAnnotation(r.obj, ResourceSigAnnotationKey, sig)
 }
 
 func (r *AzureDeploymentReconciler) HasResourceSpecHashChanged() (bool, error) {
@@ -228,20 +219,6 @@ func (r *AzureDeploymentReconciler) HasResourceSpecHashChanged() (bool, error) {
 	}
 	// check if the last signature matches the new signature
 	return oldSig != newSig, nil
-}
-
-func (r *AzureDeploymentReconciler) addAnnotation(k string, v string) {
-	annotations := r.obj.GetAnnotations()
-	if annotations == nil {
-		annotations = map[string]string{}
-	}
-	// I think this is the behavior we want...
-	if v == "" {
-		delete(annotations, k)
-	} else {
-		annotations[k] = v
-	}
-	r.obj.SetAnnotations(annotations)
 }
 
 // SpecSignature calculates the hash of a spec. This can be used to compare specs and determine
@@ -294,7 +271,7 @@ func (r *AzureDeploymentReconciler) Update(
 			r.SetResourceError(deployment.Properties.Error.String())
 		} else if len(deployment.Properties.OutputResources) > 0 {
 			resourceID := deployment.Properties.OutputResources[0].ID
-			r.SetResourceID(resourceID)
+			genruntime.SetResourceID(r.obj, resourceID)
 
 			if status != nil {
 				err = reflecthelpers.SetStatus(r.obj, status)
@@ -375,7 +352,7 @@ func (r *AzureDeploymentReconciler) StartDeleteOfResource(ctx context.Context) (
 	r.recorder.Event(r.obj, v1.EventTypeNormal, string(DeleteActionBeginDelete), msg)
 
 	// If we have no resourceID to begin with, the Azure resource was never created
-	if r.GetResourceIDOrDefault() == "" {
+	if genruntime.GetResourceIDOrDefault(r.obj) == "" {
 		return ctrl.Result{}, r.deleteResourceSucceeded(ctx)
 	}
 
@@ -657,7 +634,7 @@ func (r *AzureDeploymentReconciler) constructArmResource(ctx context.Context) (g
 		return nil, errors.Wrapf(err, "converting to armResourceSpec")
 	}
 	// TODO: Do we need to set status here - right now it's nil
-	resource := genruntime.NewArmResource(deployableSpec.Spec(), nil, r.GetResourceIDOrDefault())
+	resource := genruntime.NewArmResource(deployableSpec.Spec(), nil, genruntime.GetResourceIDOrDefault(r.obj))
 
 	return resource, nil
 }

@@ -28,20 +28,11 @@ func NewResolver(client *kubeclient.Client, reconciledResourceLookup map[schema.
 	}
 }
 
-// TODO: This is not returning the correct formatted arm id
-// TODO: I'm not sure that owner has to be as special as it's being made here
 // GetReferenceARMID gets a references ARM ID. If the reference is just pointing to an ARM resource then the ARMID is returned.
 // If the reference is pointing to a Kubernetes resource, that resource is looked up and its ARM ID is computed.
 func (r *Resolver) GetReferenceARMID(ctx context.Context, ref ResourceReference) (string, error) {
-	// TODO: is there a cleaner way to make these checks? Maybe I want to transform the flat type to a hierarchical
-	// TODO: for handling internally?
 	if ref.IsDirectARMReference() {
 		return ref.ARMID, nil
-	}
-
-	// TODO: Technically don't need this check as it's handled by ResolveReference
-	if !ref.IsKubernetesReference() {
-		return "", errors.Errorf("ref %s is neither ARM or Kubernetes reference", ref)
 	}
 
 	obj, err := r.ResolveReference(ctx, ref)
@@ -49,12 +40,17 @@ func (r *Resolver) GetReferenceARMID(ctx context.Context, ref ResourceReference)
 		return "", err
 	}
 
-	hierarchy, err := r.ResolveResourceHierarchy(ctx, obj)
-	if err != nil {
-		return "", err
+	// There are two ways to get the ARM ID here, we can look it up using GetResourceID, which will only work if the
+	// resource has actually been successfully deployed to Azure, or we can "compute" it. Currently it's harder to compute
+	// it given that a resource doesn't know what subscription it's deployed in... but we should probably change that
+	// and move to computing it here.
+	id, ok := GetResourceID(obj)
+	if !ok {
+		// Resource doesn't have a resource ID. This probably means it's not done deploying
+		return "", errors.Errorf("ref %s doesn't have an assigned ARM ID", ref)
 	}
 
-	return hierarchy.FullAzureName(), nil
+	return id, nil
 }
 
 // ResolveResourceHierarchy gets the resource hierarchy for a given resource. The result is a slice of

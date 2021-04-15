@@ -303,6 +303,8 @@ func Test_GetReferenceARMID_KubernetesResource_ReturnsExpectedID(t *testing.T) {
 	armID := "/subscriptions/00000000-0000-0000-000000000000/resources/resourceGroups/myrg"
 
 	resourceGroup := createResourceGroup(resourceGroupName)
+	genruntime.SetResourceID(resourceGroup, armID)
+
 	err = client.Client.Create(ctx, resourceGroup)
 	g.Expect(err).ToNot(HaveOccurred())
 
