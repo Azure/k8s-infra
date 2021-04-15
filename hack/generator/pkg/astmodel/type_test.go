@@ -25,6 +25,9 @@ func TestWriteDebugDescription(t *testing.T) {
 	suitEnum := NewEnumType(StringType, diamonds, hearts, clubs, spades)
 	suitDefinition := MakeTypeDefinition(suit, suitEnum)
 
+	armAge := ArmFlag.ApplyTo(age)
+	armSuit := ArmFlag.ApplyTo(suit)
+
 	types := make(Types)
 	types.Add(ageDefinition)
 	types.Add(personIdDefinition)
@@ -49,6 +52,8 @@ func TestWriteDebugDescription(t *testing.T) {
 		{"SuitEnum", suitEnum, "Enum[string:clubs|diamonds|hearts|spades]"}, // alphabetical
 		{"SuitName", suit, "local/test/v1/Suit:Enum[string:clubs|diamonds|hearts|spades]"},
 		{"MapOfSuitToAge", NewMapType(suit, age), "Map[local/test/v1/Suit:Enum[string:clubs|diamonds|hearts|spades]]local/test/v1/Age:int"},
+		{"FlaggedAge", armAge, "local/test/v1/Age:int[#arm]"},
+		{"FlaggedSuit", armSuit, "local/test/v1/Suit:Enum[string:clubs|diamonds|hearts|spades][#arm]"},
 	}
 
 	for _, c := range cases {
