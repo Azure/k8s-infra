@@ -85,6 +85,8 @@ type AzureDeploymentReconciler struct {
 	CreateDeploymentName func(obj metav1.Object) (string, error)
 }
 
+// TODO: It's a bit weird that this is a "reconciler" that operates only on a specific genruntime.MetaObject.
+// TODO: We probably want to refactor this to make metaObj a parameter?
 func NewAzureDeploymentReconciler(
 	metaObj genruntime.MetaObject,
 	log logr.Logger,

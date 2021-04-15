@@ -28,6 +28,7 @@ func NewResolver(client *kubeclient.Client, reconciledResourceLookup map[schema.
 	}
 }
 
+// TODO: This is not returning the correct formatted arm id
 // TODO: I'm not sure that owner has to be as special as it's being made here
 // GetReferenceARMID gets a references ARM ID. If the reference is just pointing to an ARM resource then the ARMID is returned.
 // If the reference is pointing to a Kubernetes resource, that resource is looked up and its ARM ID is computed.
@@ -56,7 +57,6 @@ func (r *Resolver) GetReferenceARMID(ctx context.Context, ref ResourceReference)
 	return hierarchy.FullAzureName(), nil
 }
 
-// TODO: Possibly can make this "private"
 // ResolveResourceHierarchy gets the resource hierarchy for a given resource. The result is a slice of
 // resources, with the uppermost parent at position 0 and the resource itself at position len(slice)-1
 func (r *Resolver) ResolveResourceHierarchy(ctx context.Context, obj MetaObject) (ResourceHierarchy, error) {
