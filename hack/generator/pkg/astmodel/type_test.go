@@ -28,6 +28,8 @@ func TestWriteDebugDescription(t *testing.T) {
 	armAge := ArmFlag.ApplyTo(age)
 	armSuit := ArmFlag.ApplyTo(suit)
 
+	erroredAge := NewErroredType(age, []string{"boom"}, []string{"oh oh"})
+
 	types := make(Types)
 	types.Add(ageDefinition)
 	types.Add(personIdDefinition)
@@ -54,6 +56,7 @@ func TestWriteDebugDescription(t *testing.T) {
 		{"MapOfSuitToAge", NewMapType(suit, age), "Map[local/test/v1/Suit:Enum[string:clubs|diamonds|hearts|spades]]local/test/v1/Age:int"},
 		{"FlaggedAge", armAge, "local/test/v1/Age:int[#arm]"},
 		{"FlaggedSuit", armSuit, "local/test/v1/Suit:Enum[string:clubs|diamonds|hearts|spades][#arm]"},
+		{"ErroredAge", erroredAge, "Error[local/test/v1/Age:int|boom|oh oh]"},
 	}
 
 	for _, c := range cases {
