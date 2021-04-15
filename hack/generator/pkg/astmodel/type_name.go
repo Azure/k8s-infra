@@ -178,5 +178,7 @@ func (typeName TypeName) WriteDebugDescription(builder *strings.Builder, types T
 
 	if definition, ok := types[typeName]; ok {
 		definition.Type().WriteDebugDescription(builder, types)
+	} else {
+		builder.WriteString("NOTDEFINED")
 	}
 }
