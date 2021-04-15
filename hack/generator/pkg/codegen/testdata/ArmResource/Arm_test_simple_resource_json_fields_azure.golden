@@ -110,7 +110,7 @@ type FakeResource_Spec struct {
 var _ genruntime.ARMTransformer = &FakeResource_Spec{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (fakeResourceSpec *FakeResource_Spec) ConvertToARM(name string) (interface{}, error) {
+func (fakeResourceSpec *FakeResource_Spec) ConvertToARM(resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if fakeResourceSpec == nil {
 		return nil, nil
 	}
@@ -122,7 +122,7 @@ func (fakeResourceSpec *FakeResource_Spec) ConvertToARM(name string) (interface{
 		result.JsonObject[key] = elemTyped
 	}
 	result.MandatoryJson = *fakeResourceSpec.MandatoryJson.DeepCopy()
-	result.Name = name
+	result.Name = resolvedReferences.Self()
 	if fakeResourceSpec.OptionalJson != nil {
 		optionalJsonTyped := *(*fakeResourceSpec.OptionalJson).DeepCopy()
 		result.OptionalJson = &optionalJsonTyped

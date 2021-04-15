@@ -9,14 +9,13 @@ import (
 	"fmt"
 	"go/token"
 
+	"github.com/dave/dst"
+
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
-	"github.com/dave/dst"
 )
 
-var KubernetesResourceInterfaceName astmodel.TypeName = astmodel.MakeTypeName(astmodel.GenRuntimeReference, "KubernetesResource")
-
-const nameParameterString = "name"
+const resolvedReferencesParameterString = "resolvedReferences"
 
 type convertToARMBuilder struct {
 	conversionBuilder
@@ -65,7 +64,12 @@ func (builder *convertToARMBuilder) functionDeclaration() *dst.FuncDecl {
 		Body: builder.functionBodyStatements(),
 	}
 
-	fn.AddParameter(nameParameterString, dst.NewIdent("string"))
+	fn.AddParameter(
+		resolvedReferencesParameterString,
+		&dst.SelectorExpr{
+			X:   dst.NewIdent(astmodel.GenRuntimePackageName),
+			Sel: dst.NewIdent("ResolvedReferences"),
+		})
 	fn.AddReturns("interface{}", "error")
 	fn.AddComments("converts from a Kubernetes CRD object to an ARM object")
 
@@ -122,7 +126,12 @@ func (builder *convertToARMBuilder) namePropertyHandler(
 			Sel: dst.NewIdent(string(toProp.PropertyName())),
 		},
 		token.ASSIGN,
-		dst.NewIdent(nameParameterString))
+		&dst.CallExpr{
+			Fun: &dst.SelectorExpr{
+				X:   dst.NewIdent(resolvedReferencesParameterString),
+				Sel: dst.NewIdent("Self"),
+			},
+		})
 
 	return []dst.Stmt{result}
 }
@@ -530,7 +539,7 @@ func callToARMFunction(source dst.Expr, destination dst.Expr, methodName string)
 					Sel: dst.NewIdent(methodName),
 				},
 				Args: []dst.Expr{
-					dst.NewIdent(nameParameterString),
+					dst.NewIdent(resolvedReferencesParameterString),
 				},
 			},
 		},
