@@ -34,7 +34,7 @@ var FloatType = &PrimitiveType{"float64", "0"}
 var BoolType = &PrimitiveType{"bool", "false"}
 
 // AnyType represents the root Go interface type, permitting any object
-var AnyType = &PrimitiveType{"interface{}", "&struct{}{}"}
+var AnyType = &PrimitiveType{"interface{}", "nil"}
 
 // assert that we implemented Type correctly
 var _ Type = (*PrimitiveType)(nil)
