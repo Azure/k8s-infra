@@ -77,8 +77,19 @@ func (typeName TypeName) AsZero(types Types, ctx *CodeGenerationContext) dst.Exp
 
 	if _, isObject := AsObjectType(actualType); isObject {
 		// We reference an object type, so our zero value is an empty struct
-		return &dst.BasicLit{
-			Value: fmt.Sprintf("%s{}", typeName.Name()),
+		// But, we need to qualify it if it is from another package
+		if typeName.PackageReference.Equals(ctx.CurrentPackage()) {
+			// Current package, no qualification needed
+			return &dst.BasicLit{
+				Value: fmt.Sprintf("%s{}", typeName.Name()),
+			}
+		}
+
+		packageName := ctx.MustGetImportedPackageName(typeName.PackageReference)
+
+		return &dst.SelectorExpr{
+			X:   dst.NewIdent(packageName),
+			Sel: dst.NewIdent(fmt.Sprintf("%s{}", typeName.Name())),
 		}
 	}
 
