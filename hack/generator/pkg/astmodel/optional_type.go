@@ -67,7 +67,7 @@ func (optional *OptionalType) AsType(codeGenerationContext *CodeGenerationContex
 
 // AsZero renders an expression for the "zero" value of the type
 // by returning a literal "nil"
-func (optional *OptionalType) AsZero(types Types, ctx *CodeGenerationContext) dst.Expr {
+func (optional *OptionalType) AsZero(_ Types, _ *CodeGenerationContext) dst.Expr {
 	return &dst.BasicLit{
 		Value: "nil",
 	}
