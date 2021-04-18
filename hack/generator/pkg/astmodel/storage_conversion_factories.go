@@ -49,7 +49,7 @@ func init() {
 		// Known types
 		assignKnownReferenceFromKnownReference,
 		// Meta-conversions
-		assignFromOptionalType, // Must go before assignToOptionalType
+		assignFromOptionalType, // Must go before assignToOptionalType so we generate the right zero values
 		assignToOptionalType,
 		assignToEnumerationType,
 		assignFromAliasedPrimitiveType,
