@@ -7,8 +7,6 @@ package astmodel
 
 import (
 	"fmt"
-	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
-
 	"github.com/dave/dst"
 )
 
@@ -43,7 +41,7 @@ func (array *ArrayType) AsType(codeGenerationContext *CodeGenerationContext) dst
 
 // AsZero renders an expression for the "zero" value of the array by calling make()
 func (array *ArrayType) AsZero(_ Types, ctx *CodeGenerationContext) dst.Expr {
-	return astbuilder.CallFunc("make", array.AsType(ctx))
+	return dst.NewIdent("nil")
 }
 
 // RequiredPackageReferences returns a list of packages required by this
