@@ -389,7 +389,7 @@ func (e embeddedResourceRemover) removeEmbeddedResourceProperties() (astmodel.Ty
 			}
 
 			for _, newDef := range updatedTypes {
-				err := result.AddWithEqualityCheck(newDef)
+				err := result.AddAllowDuplicates(newDef)
 				if err != nil {
 					return nil, err
 				}
