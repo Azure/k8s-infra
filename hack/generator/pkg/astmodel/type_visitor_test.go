@@ -6,6 +6,7 @@
 package astmodel
 
 import (
+	"github.com/pkg/errors"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -162,6 +163,131 @@ func TestIdentityVisitorReturnsEqualResult(t *testing.T) {
 			// Test both ways to be paranoid
 			// If this test fails while the previous line passes, there's likely a bug in .Equals()
 			g.Expect(c.subject.Equals(result)).To(BeTrue())
+		})
+	}
+}
+
+func TestMakeTypeVisitorWithInjectedFunctions(t *testing.T) {
+
+	cases := []struct {
+		name          string
+		subject       Type
+		visitation    interface{}
+		expectedType  Type
+		expectedError string
+	}{
+		{
+			"PrimitiveTypeHandler",
+			StringType,
+			func(tv *TypeVisitor, p *PrimitiveType, _ interface{}) (Type, error) {
+				return p, errors.New(p.name)
+			},
+			StringType,
+			"string",
+		},
+		{
+			"PrimitiveTypeSimplified",
+			StringType,
+			func(p *PrimitiveType) (Type, error) {
+				return p, errors.New(p.name)
+			},
+			StringType,
+			"string",
+		},
+		{
+			"OptionalTypeHandler",
+			NewOptionalType(IntType),
+			func(tv *TypeVisitor, ot *OptionalType, _ interface{}) (Type, error) {
+				return ot, errors.New(ot.String())
+			},
+			NewOptionalType(IntType),
+			"optional",
+		},
+		{
+			"OptionalTypeSimplified",
+			NewOptionalType(IntType),
+			func(ot *OptionalType) (Type, error) {
+				return ot, errors.New(ot.String())
+			},
+			NewOptionalType(IntType),
+			"optional",
+		},
+		{
+			"MapTypeHandler",
+			NewMapType(StringType, IntType),
+			func(tv *TypeVisitor, mt *MapType, _ interface{}) (Type, error) {
+				return mt, errors.New(mt.String())
+			},
+			NewMapType(StringType, IntType),
+			"map",
+		},
+		{
+			"MapTypeSimplified",
+			NewMapType(StringType, IntType),
+			func(mt *MapType) (Type, error) {
+				return mt, errors.New(mt.String())
+			},
+			NewMapType(StringType, IntType),
+			"map",
+		},
+		{
+			"ArrayTypeHandler",
+			NewArrayType(StringType),
+			func(tv *TypeVisitor, at *ArrayType, _ interface{}) (Type, error) {
+				return at, errors.New(at.String())
+			},
+			NewArrayType(StringType),
+			"[]string",
+		},
+		{
+			"ArrayTypeSimplified",
+			NewArrayType(StringType),
+			func(at *ArrayType) (Type, error) {
+				return at, errors.New(at.String())
+			},
+			NewArrayType(StringType),
+			"[]string",
+		},
+		{
+			"FlaggedTypeHandler",
+			StorageFlag.ApplyTo(StringType),
+			func(tv *TypeVisitor, ft *FlaggedType, _ interface{}) (Type, error) {
+				return ft, errors.New(ft.String())
+			},
+			StorageFlag.ApplyTo(StringType),
+			"storage",
+		},
+		{
+			"FlaggedTypeSimplified",
+			StorageFlag.ApplyTo(StringType),
+			func(ft *FlaggedType) (Type, error) {
+				return ft, errors.New(ft.String())
+			},
+			StorageFlag.ApplyTo(StringType),
+			"storage",
+		},
+	}
+
+	// TODO: Pending tests for
+	// VisitTypeName:
+	// VisitObjectType:
+	// VisitEnumType:
+	// VisitResourceType:
+	// VisitOneOfType:
+	// VisitAllOfType:
+	// VisitValidatedType:
+	// VisitErroredType:
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			g := NewGomegaWithT(t)
+
+			v := MakeTypeVisitor(c.visitation)
+			typ, err := v.Visit(c.subject, nil)
+			g.Expect(typ.Equals(c.expectedType)).To(BeTrue())
+			g.Expect(err.Error()).To(ContainSubstring(c.expectedError))
 		})
 	}
 }

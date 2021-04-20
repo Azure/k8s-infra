@@ -111,14 +111,32 @@ func (tv *TypeVisitor) VisitDefinitions(definitions Types, ctx interface{}) (Typ
 	return result, nil
 }
 
-// MakeTypeVisitor returns a default (identity transform) visitor, which
-// visits every type in the tree. If you want to actually do something you will
-// need to override the properties on the returned TypeVisitor.
-func MakeTypeVisitor() TypeVisitor {
+// MakeTypeVisitor returns visitor to visit every type in a tree, configured with the functions
+// passed. Further customization can be done by overriding the fields in the returned instance.
+//
+// visitations is a sequence of functions to be wired into the resulting type visitor, each
+// providing a specific desired transformation.
+//
+// The treatment of each function depends on its signature, as follows:
+//
+// func(*TypeVisitor, <specificType>, interface{}) (Type, error)
+//
+//   o  Will be wired in as a handler for <specificType>, replacing any existing visitor
+//   o  If you want to use the *TypeVisitor to visit a nested type, you must do this yourself
+//
+// func (<specificType>) (Type, error)
+//
+//   o  Will be wired in as a handler for <specificType>, replacing any existing visitor
+//   o  The result of the function will be returned directly, it won't be visited automatically
+//
+// All assignments overwrite any existing field values, so if you have multiple functions matching
+// the same field, only the last one will be retained.
+//
+func MakeTypeVisitor(visitations ...interface{}) TypeVisitor {
 	// TODO [performance]: we can do reference comparisons on the results of
 	// recursive invocations of Visit to avoid having to rebuild the tree if the
 	// leaf nodes do not actually change.
-	return TypeVisitor{
+	result := TypeVisitor{
 		VisitTypeName:      IdentityVisitOfTypeName,
 		VisitArrayType:     IdentityVisitOfArrayType,
 		VisitPrimitive:     IdentityVisitOfPrimitiveType,
@@ -133,6 +151,106 @@ func MakeTypeVisitor() TypeVisitor {
 		VisitValidatedType: IdentityVisitOfValidatedType,
 		VisitErroredType:   IdentityVisitOfErroredType,
 	}
+
+	for _, visitation := range visitations {
+		switch v := visitation.(type) {
+		// TypeName
+		case func(*TypeVisitor, TypeName, interface{}) (Type, error):
+			result.VisitTypeName = v
+		case func(TypeName) (Type, error):
+			result.VisitTypeName = func(_ *TypeVisitor, it TypeName, _ interface{}) (Type, error) {
+				return v(it)
+			}
+		// OneOfType
+		case func(*TypeVisitor, *OneOfType, interface{}) (Type, error):
+			result.VisitOneOfType = v
+		case func(*OneOfType) (Type, error):
+			result.VisitOneOfType = func(_ *TypeVisitor, it *OneOfType, _ interface{}) (Type, error) {
+				return v(it)
+			}
+		// AllOfType
+		case func(*TypeVisitor, *AllOfType, interface{}) (Type, error):
+			result.VisitAllOfType = v
+		case func(*AllOfType) (Type, error):
+			result.VisitAllOfType = func(_ *TypeVisitor, it *AllOfType, _ interface{}) (Type, error) {
+				return v(it)
+			}
+		// ArrayType
+		case func(*TypeVisitor, *ArrayType, interface{}) (Type, error):
+			result.VisitArrayType = v
+		case func(*ArrayType) (Type, error):
+			result.VisitArrayType = func(_ *TypeVisitor, it *ArrayType, _ interface{}) (Type, error) {
+				return v(it)
+			}
+		// PrimitiveType
+		case func(*TypeVisitor, *PrimitiveType, interface{}) (Type, error):
+			result.VisitPrimitive = v
+		case func(*PrimitiveType) (Type, error):
+			result.VisitPrimitive = func(_ *TypeVisitor, it *PrimitiveType, _ interface{}) (Type, error) {
+				return v(it)
+			}
+		// ObjectType
+		case func(*TypeVisitor, *ObjectType, interface{}) (Type, error):
+			result.VisitObjectType = v
+		case func(*ObjectType) (Type, error):
+			result.VisitObjectType = func(_ *TypeVisitor, it *ObjectType, _ interface{}) (Type, error) {
+				return v(it)
+			}
+		// MapType
+		case func(*TypeVisitor, *MapType, interface{}) (Type, error):
+			result.VisitMapType = v
+		case func(*MapType) (Type, error):
+			result.VisitMapType = func(_ *TypeVisitor, it *MapType, _ interface{}) (Type, error) {
+				return v(it)
+			}
+		// OptionalType
+		case func(*TypeVisitor, *OptionalType, interface{}) (Type, error):
+			result.VisitOptionalType = v
+		case func(*OptionalType) (Type, error):
+			result.VisitOptionalType = func(_ *TypeVisitor, it *OptionalType, _ interface{}) (Type, error) {
+				return v(it)
+			}
+		// EnumType
+		case func(*TypeVisitor, *EnumType, interface{}) (Type, error):
+			result.VisitEnumType = v
+		case func(*EnumType) (Type, error):
+			result.VisitEnumType = func(_ *TypeVisitor, it *EnumType, _ interface{}) (Type, error) {
+				return v(it)
+			}
+		// ResourceType
+		case func(*TypeVisitor, *ResourceType, interface{}) (Type, error):
+			result.VisitResourceType = v
+		case func(*ResourceType) (Type, error):
+			result.VisitResourceType = func(_ *TypeVisitor, it *ResourceType, _ interface{}) (Type, error) {
+				return v(it)
+			}
+		// FlaggedType
+		case func(*TypeVisitor, *FlaggedType, interface{}) (Type, error):
+			result.VisitFlaggedType = v
+		case func(*FlaggedType) (Type, error):
+			result.VisitFlaggedType = func(_ *TypeVisitor, it *FlaggedType, _ interface{}) (Type, error) {
+				return v(it)
+			}
+		// ErroredType
+		case func(*TypeVisitor, *ErroredType, interface{}) (Type, error):
+			result.VisitErroredType = v
+		case func(*ErroredType) (Type, error):
+			result.VisitErroredType = func(_ *TypeVisitor, it *ErroredType, _ interface{}) (Type, error) {
+				return v(it)
+			}
+		// ValidatedType
+		case func(*TypeVisitor, *ValidatedType, interface{}) (Type, error):
+			result.VisitValidatedType = v
+		case func(*ValidatedType) (Type, error):
+			result.VisitValidatedType = func(_ *TypeVisitor, it *ValidatedType, _ interface{}) (Type, error) {
+				return v(it)
+			}
+		default:
+			panic(fmt.Sprintf("unexpected visitation %#v", v))
+		}
+	}
+
+	return result
 }
 
 func IdentityVisitOfTypeName(_ *TypeVisitor, it TypeName, _ interface{}) (Type, error) {
