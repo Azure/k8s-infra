@@ -66,12 +66,12 @@ func makeStorageTypesVisitor(types astmodel.Types) astmodel.TypeVisitor {
 		types: types,
 	}
 
-	result := astmodel.MakeTypeVisitor()
-	result.VisitValidatedType = factory.visitValidatedType
-	result.VisitTypeName = factory.visitTypeName
-	result.VisitObjectType = factory.visitObjectType
-	result.VisitResourceType = factory.visitResourceType
-	result.VisitFlaggedType = factory.visitFlaggedType
+	result := astmodel.MakeTypeVisitor(
+		factory.visitValidatedType,
+		factory.visitTypeName,
+		factory.visitObjectType,
+		factory.visitResourceType,
+		factory.visitFlaggedType)
 
 	factory.visitor = result
 	factory.propertyConversions = []propertyConversion{

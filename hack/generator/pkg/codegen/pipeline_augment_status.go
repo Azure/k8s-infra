@@ -167,11 +167,10 @@ func generateStatusTypes(swaggerTypes swaggerTypes) (statusTypes, error) {
 }
 
 func makeRenamingVisitor(rename func(astmodel.TypeName) astmodel.TypeName) astmodel.TypeVisitor {
-	visitor := astmodel.MakeTypeVisitor()
-
-	visitor.VisitTypeName = func(this *astmodel.TypeVisitor, it astmodel.TypeName, ctx interface{}) (astmodel.Type, error) {
-		return rename(it), nil
-	}
+	visitor := astmodel.MakeTypeVisitor(
+		func(this *astmodel.TypeVisitor, it astmodel.TypeName, ctx interface{}) (astmodel.Type, error) {
+			return rename(it), nil
+		})
 
 	return visitor
 }

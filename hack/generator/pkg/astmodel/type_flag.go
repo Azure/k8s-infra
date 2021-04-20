@@ -29,10 +29,10 @@ func (f TypeFlag) ApplyTo(t Type) *FlaggedType {
 
 // ApplyTo applies the tag to the provided type
 func (f TypeFlag) RemoveFrom(t Type) (Type, error) {
-	visitor := MakeTypeVisitor()
-	visitor.VisitFlaggedType = func(this *TypeVisitor, it *FlaggedType, ctx interface{}) (Type, error) {
-		return it.WithoutFlag(f), nil
-	}
+	visitor := MakeTypeVisitor(
+		func(this *TypeVisitor, it *FlaggedType, ctx interface{}) (Type, error) {
+			return it.WithoutFlag(f), nil
+		})
 
 	return visitor.Visit(t, nil)
 }
