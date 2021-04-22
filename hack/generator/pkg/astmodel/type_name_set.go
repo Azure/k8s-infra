@@ -45,12 +45,14 @@ func (ts TypeNameSet) Contains(val TypeName) bool {
 
 // Remove removes the specified item if it is in the set. If it is not in
 // the set this is a no-op.
-func (ts TypeNameSet) Remove(val TypeName) {
+func (ts TypeNameSet) Remove(val TypeName) TypeNameSet {
 	if ts == nil {
-		return
+		return ts
 	}
 
 	delete(ts, val)
+
+	return ts
 }
 
 func (ts TypeNameSet) Equals(set TypeNameSet) bool {
@@ -88,12 +90,11 @@ func (ts TypeNameSet) Single() TypeName {
 		panic(fmt.Sprintf("Single() cannot be called with %d types in the set", len(ts)))
 	}
 
-	var result TypeName
 	for name := range ts {
-		result = name
+		return name
 	}
 
-	return result
+	panic("Reached unreachable code")
 }
 
 // SetUnion returns a new set with all of the names in s1 or s2.

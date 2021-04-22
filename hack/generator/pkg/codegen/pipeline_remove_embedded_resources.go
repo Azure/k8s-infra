@@ -46,7 +46,7 @@ import (
 func removeEmbeddedResources() PipelineStage {
 	return MakePipelineStage(
 		"removeEmbeddedResources",
-		"Removes properties that point to embedded resources",
+		"Removes properties that point to embedded resources. Only removes structural aspects of embedded resources, Id/ARMId references are retained.",
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
 
 			remover, err := makeEmbeddedResourceRemover(types)
@@ -77,42 +77,51 @@ func findSubResourcePropertiesTypeNames(types astmodel.Types) (map[astmodel.Type
 			panic(fmt.Sprintf("resource was somehow not a resource: %q", def.Name()))
 		}
 
-		if resource.Owner() != nil {
-			owner := *resource.Owner()
-			if result[owner] == nil {
-				result[owner] = make(astmodel.TypeNameSet)
-			}
+		if resource.Owner() == nil {
+			continue
+		}
 
-			specPropertiesTypeName, statusPropertiesTypeName, err := extractSpecAndStatusPropertiesTypeOrNil(types, resource)
-			if err != nil {
-				errs = append(errs, errors.Wrapf(err, "couldn't extract spec/status properties from %q", def.Name()))
-				continue
-			}
-			if specPropertiesTypeName != nil {
-				result[owner] = result[owner].Add(*specPropertiesTypeName)
-			}
-			if statusPropertiesTypeName != nil {
-				result[owner] = result[owner].Add(*statusPropertiesTypeName)
-			}
+		owner := *resource.Owner()
+		specPropertiesTypeName, statusPropertiesTypeName, err := tryResolveSpecStatusTypes(types, resource)
+		if err != nil {
+			errs = append(errs, errors.Wrapf(err, "couldn't extract spec/status properties from %q", def.Name()))
+			continue
+		}
+		if specPropertiesTypeName != nil {
+			result[owner] = result[owner].Add(*specPropertiesTypeName)
+		}
+		if statusPropertiesTypeName != nil {
+			result[owner] = result[owner].Add(*statusPropertiesTypeName)
 		}
 	}
 
-	if len(errs) > 0 {
-		return nil, kerrors.NewAggregate(errs)
+	err := kerrors.NewAggregate(errs)
+	if err != nil {
+		return nil, err
 	}
 
 	return result, nil
 }
 
-func extractSpecAndStatusPropertiesTypeOrNil(types astmodel.Types, resource *astmodel.ResourceType) (*astmodel.TypeName, *astmodel.TypeName, error) {
-	specPropertiesTypeName, err := extractSpecPropertiesTypeNameOrNil(types, resource)
+// TODO: Should I move this to resourceType?
+func tryResolveSpecStatusTypes(types astmodel.Types, resource *astmodel.ResourceType) (*astmodel.TypeName, *astmodel.TypeName, error) {
+	specName, ok := astmodel.AsTypeName(resource.SpecType())
+	if !ok {
+		return nil, nil, errors.Errorf("resource spec was not a TypeName")
+	}
+
+	specPropertiesTypeName, err := extractPropertiesType(types, specName)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "couldn't extract spec properties")
 	}
 
-	statusPropertiesTypeName, err := extractStatusPropertiesTypeNameOrNil(types, resource)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "couldn't extract status properties")
+	var statusPropertiesTypeName *astmodel.TypeName
+	statusName, ok := astmodel.AsTypeName(resource.StatusType())
+	if ok {
+		statusPropertiesTypeName, err = extractPropertiesType(types, statusName)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "couldn't extract status properties")
+		}
 	}
 
 	return specPropertiesTypeName, statusPropertiesTypeName, nil
@@ -138,7 +147,7 @@ func findAllResourcePropertiesTypes(types astmodel.Types) (astmodel.TypeNameSet,
 			panic(fmt.Sprintf("resource was somehow not a resource: %q", def.Name()))
 		}
 
-		specPropertiesTypeName, statusPropertiesTypeName, err := extractSpecAndStatusPropertiesTypeOrNil(types, resource)
+		specPropertiesTypeName, statusPropertiesTypeName, err := tryResolveSpecStatusTypes(types, resource)
 		if err != nil {
 			errs = append(errs, errors.Wrapf(err, "couldn't extract spec/status properties from %q", def.Name()))
 			continue
@@ -151,8 +160,9 @@ func findAllResourcePropertiesTypes(types astmodel.Types) (astmodel.TypeNameSet,
 		}
 	}
 
-	if len(errs) > 0 {
-		return nil, kerrors.NewAggregate(errs)
+	err := kerrors.NewAggregate(errs)
+	if err != nil {
+		return nil, err
 	}
 
 	return result, nil
@@ -188,15 +198,10 @@ func findAllResourceStatusTypes(types astmodel.Types) astmodel.TypeNameSet {
 	return result
 }
 
-func followTypeNameExtractPropertiesType(types astmodel.Types, typeName astmodel.TypeName) (*astmodel.TypeName, error) {
-	def, ok := types[typeName]
+func extractPropertiesType(types astmodel.Types, typeName astmodel.TypeName) (*astmodel.TypeName, error) {
+	ot, ok := types.ResolveObjectType(typeName)
 	if !ok {
-		return nil, errors.Errorf("couldn't find %q type", typeName)
-	}
-
-	ot, ok := astmodel.AsObjectType(def.Type())
-	if !ok {
-		return nil, errors.Errorf("%q was not of type object", typeName)
+		return nil, errors.Errorf("couldn't find object type %q", typeName)
 	}
 
 	propertiesProp, ok := ot.Property("Properties")
@@ -212,23 +217,6 @@ func followTypeNameExtractPropertiesType(types astmodel.Types, typeName astmodel
 	return &propertiesTypeName, nil
 }
 
-func extractStatusPropertiesTypeNameOrNil(types astmodel.Types, resource *astmodel.ResourceType) (*astmodel.TypeName, error) {
-	statusName, ok := astmodel.AsTypeName(resource.StatusType())
-	if !ok {
-		return nil, nil
-	}
-
-	return followTypeNameExtractPropertiesType(types, statusName)
-}
-
-func extractSpecPropertiesTypeNameOrNil(types astmodel.Types, resource *astmodel.ResourceType) (*astmodel.TypeName, error) {
-	specName, ok := astmodel.AsTypeName(resource.SpecType())
-	if !ok {
-		return nil, errors.Errorf("resource spec was not a TypeName")
-	}
-	return followTypeNameExtractPropertiesType(types, specName)
-}
-
 type resourceRemovalVisitorContext struct {
 	resource      astmodel.TypeName
 	depth         int
@@ -237,6 +225,9 @@ type resourceRemovalVisitorContext struct {
 
 func (e resourceRemovalVisitorContext) WithMoreDepth() resourceRemovalVisitorContext {
 	e.depth += 1
+
+	// Note that e.modifiedTypes is a pointer and so is shared between all instances
+	// in order to allow tracking what types have been modified.
 	return e
 }
 
@@ -279,9 +270,11 @@ func (e embeddedResourceRemover) MakeEmbeddedResourceRemovalTypeVisitor() astmod
 		typedCtx := ctx.(resourceRemovalVisitorContext)
 
 		if typedCtx.depth <= 2 {
-			// If we are not at sufficient depth, don't bother checking for subresource references. The resource itself and its spec type
-			// will not refer to a subresource. There are some instances of resources (such as Microsoft.Web v20160801 Sites) where the resource
-			// and some child resources reuse the same "Properties" type, which could false some of the logic below
+			// Avoid removing top level "Properties", which we never want to do. This is needed because
+			// there are some resources (such as Microsoft.Web v20160801 Sites) where the resource
+			// and some child resources reuse the same "Properties" type. This causes
+			// the logic below to think that a resource is its own subresource. Without this
+			// check the entire resource would be removed, leaving nothing.
 			return astmodel.IdentityVisitOfObjectType(this, it, ctx)
 		}
 
@@ -312,7 +305,7 @@ func (e embeddedResourceRemover) MakeEmbeddedResourceRemovalTypeVisitor() astmod
 	return visitor
 }
 
-func (e embeddedResourceRemover) NewResourceRemovalTypeWalker(visitor astmodel.TypeVisitor) *astmodel.TypeWalker {
+func (e embeddedResourceRemover) NewResourceRemovalTypeWalker(visitor astmodel.TypeVisitor, def astmodel.TypeDefinition) *astmodel.TypeWalker {
 	typeWalker := astmodel.NewTypeWalker(e.types, visitor)
 	typeWalker.AfterVisit = func(original astmodel.TypeDefinition, updated astmodel.TypeDefinition, ctx interface{}) (astmodel.TypeDefinition, error) {
 		typedCtx := ctx.(resourceRemovalVisitorContext)
@@ -321,30 +314,37 @@ func (e embeddedResourceRemover) NewResourceRemovalTypeWalker(visitor astmodel.T
 			panic(fmt.Sprintf("Unexpected name mismatch during type walk: %q -> %q", original.Name(), updated.Name()))
 		}
 
-		if !original.Type().Equals(updated.Type()) {
-			flaggedType := e.typeFlag.ApplyTo(updated.Type())
-			var newName astmodel.TypeName
-			exists := false
-			for count := 0; ; count++ {
-				newName = embeddedResourceTypeName{original: original.Name(), context: typedCtx.resource.Name(), suffix: e.typeSuffix, count: count}.ToTypeName()
-				existing, ok := typedCtx.modifiedTypes[newName]
-				if !ok {
-					break
-				}
-				if existing.Type().Equals(flaggedType) {
-					exists = true
-					// Shape matches what we have already, can proceed
-					break
-				}
-			}
-			updated = updated.WithName(newName)
-			updated = updated.WithType(flaggedType)
-			if !exists {
-				typedCtx.modifiedTypes.Add(updated)
-			}
-
-			klog.V(5).Infof("Updating %q to %q", original.Name(), updated.Name())
+		if original.Type().Equals(updated.Type()) {
+			return updated, nil
 		}
+
+		flaggedType := e.typeFlag.ApplyTo(updated.Type())
+
+		// Generate a unique TypeName for this usage.
+		// A particular type may be used in multiple contexts in the same resource, or in multiple contexts in different resources. Since the pruning we are
+		// doing is context specific, a single type may end up with multiple shapes after pruning. In order to cater for this possibility we generate a
+		// unique name below and then collapse unneeded uniqueness away with simplifyTypeNames.
+		var newName astmodel.TypeName
+		exists := false
+		for count := 0; ; count++ {
+			newName = embeddedResourceTypeName{original: original.Name(), context: typedCtx.resource.Name(), suffix: e.typeSuffix, count: count}.ToTypeName()
+			existing, ok := typedCtx.modifiedTypes[newName]
+			if !ok {
+				break
+			}
+			if existing.Type().Equals(flaggedType) {
+				exists = true
+				// Shape matches what we have already, can proceed
+				break
+			}
+		}
+		updated = updated.WithName(newName)
+		updated = updated.WithType(flaggedType)
+		if !exists {
+			typedCtx.modifiedTypes.Add(updated)
+		}
+
+		klog.V(5).Infof("Updating %q to %q", original.Name(), updated.Name())
 
 		return updated, nil
 	}
@@ -363,6 +363,14 @@ func (e embeddedResourceRemover) NewResourceRemovalTypeWalker(visitor astmodel.T
 		return false, nil // Leave other cycles for now
 	}
 
+	typeWalker.MakeContext = func(it astmodel.TypeName, ctx interface{}) (interface{}, error) {
+		if ctx == nil {
+			return resourceRemovalVisitorContext{resource: def.Name(), depth: 0, modifiedTypes: make(astmodel.Types)}, nil
+		}
+		typedCtx := ctx.(resourceRemovalVisitorContext)
+		return typedCtx.WithMoreDepth(), nil
+	}
+
 	return typeWalker
 }
 
@@ -370,18 +378,10 @@ func (e embeddedResourceRemover) removeEmbeddedResourceProperties() (astmodel.Ty
 	result := make(astmodel.Types)
 
 	visitor := e.MakeEmbeddedResourceRemovalTypeVisitor()
-	typeWalker := e.NewResourceRemovalTypeWalker(visitor)
 
 	for _, def := range e.types {
 		if astmodel.IsResourceDefinition(def) {
-			// TODO: Bit awkward that we're modifying typewalker here... maybe should bring back initial ctx param?
-			typeWalker.MakeContext = func(it astmodel.TypeName, ctx interface{}) (interface{}, error) {
-				if ctx == nil {
-					return resourceRemovalVisitorContext{resource: def.Name(), depth: 0, modifiedTypes: make(astmodel.Types)}, nil
-				}
-				typedCtx := ctx.(resourceRemovalVisitorContext)
-				return typedCtx.WithMoreDepth(), nil
-			}
+			typeWalker := e.NewResourceRemovalTypeWalker(visitor, def)
 
 			updatedTypes, err := typeWalker.Walk(def)
 			if err != nil {
@@ -627,6 +627,7 @@ func parseContextualTypeName(name astmodel.TypeName) (embeddedResourceTypeName, 
 }
 
 // TODO: Is this cleaner as module vars?
+// requiredResourceProperties are properties that must be on a type for it to be considered a resource
 func requiredResourceProperties() []string {
 	return []string{
 		"Name",
@@ -634,6 +635,9 @@ func requiredResourceProperties() []string {
 	}
 }
 
+// optionalResourceProperties are properties which may or may not be on a resource. Technically all resources
+// should have all of these properties, but because we drop the top-level allof that joins resource types with
+// ResourceBase when parsing schemas sometimes they aren't defined.
 func optionalResourceProperties() []string {
 	return []string{
 		"Type",
@@ -663,7 +667,7 @@ func isObjectResourceLookalike(o *astmodel.ObjectType) bool {
 }
 
 // removeResourceLikeProperties examines an astmodel.ObjectType and determines if it looks like an Azure resource.
-// An object is "like" a resource if it has "name", "type" and "properties" properties.
+// An object is "like" a resource if it has "name" and "properties" properties.
 func removeResourceLikeProperties(o *astmodel.ObjectType) *astmodel.ObjectType {
 	if !isObjectResourceLookalike(o) {
 		// Doesn't match the shape we're looking for -- no change
