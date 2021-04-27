@@ -270,7 +270,7 @@ func (s synthesizer) oneOfObject(oneOf *astmodel.OneOfType, propNames []property
 }
 
 func (s synthesizer) intersectTypes(left astmodel.Type, right astmodel.Type) (astmodel.Type, error) {
-	return intersector.Merge(left, right, s)
+	return intersector.MergeWithContext(s, left, right)
 }
 
 var intersector astmodel.TypeMerger
