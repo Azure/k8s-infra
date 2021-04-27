@@ -12,7 +12,18 @@ import (
 )
 
 // TypeMerger is like a visitor for 2 types.
-// The `ctx` argument can be used to “smuggle” additional data down the call-chain.
+//
+// Conceptually it takes (via Add) a list of functions of the form:
+//
+//     func ([ctx interface{},] a <: Type, b <: Type) (Type, error)
+//
+// where `a` and `b` can be concrete types that implement the `Type` interface.
+//
+// When `TypeMerger.Merge(Type, Type)` is invoked, it will iterate through the
+// provided functions and invoke the first one that matches the concrete types
+// passed. If none match then the fallback provided to `NewTypeMerger` will be invoked.
+//
+// The `ctx` argument can optionally be used to “smuggle” additional data down the call-chain.
 type TypeMerger struct {
 	mergers  []mergerRegistration
 	fallback MergerFunc
