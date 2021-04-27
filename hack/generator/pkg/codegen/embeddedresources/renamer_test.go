@@ -3,7 +3,7 @@
  * Licensed under the MIT license.
  */
 
-package codegen
+package embeddedresources
 
 import (
 	"testing"
@@ -16,6 +16,12 @@ import (
 var exampleTypeFlag = astmodel.TypeFlag("flag")
 var resourceTypeName = newTestName("Resource")
 var resourceTypeName2 = newTestName("Resource2")
+
+var goModulePrefix = "github.com/Azure/k8s-infra/testing"
+
+func makeTestLocalPackageReference(group string, version string) astmodel.LocalPackageReference {
+	return astmodel.MakeLocalPackageReference(goModulePrefix, group, version)
+}
 
 func newTestName(name string) astmodel.TypeName {
 	return astmodel.MakeTypeName(makeTestLocalPackageReference("group", "2020-01-01"), name)

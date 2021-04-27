@@ -13,7 +13,6 @@ pluralizeNames                                 Improve resource pluralization
 stripUnreferenced                              Strip unreferenced types
 assertTypesStructureValid                      Asserts that the types collection is valid
 removeEmbeddedResources             azure      Removes properties that point to embedded resources. Only removes structural aspects of embedded resources, Id/ARMId references are retained.
-removeEmptyObjectTypes                         Removes object types that contain no properties, as well as any references to that type
 filterTypes                                    Filter generated types
 stripUnreferenced                              Strip unreferenced types
 replaceAnyTypeWithJSON                         Replacing interface{}s with arbitrary JSON

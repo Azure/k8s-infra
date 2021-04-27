@@ -3,11 +3,9 @@
  * Licensed under the MIT license.
  */
 
-package codegen
+package embeddedresources
 
 import (
-	"context"
-
 	"github.com/pkg/errors"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
@@ -15,28 +13,22 @@ import (
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
 
-// removeEmptyObjectTypes removes empty ObjectTypes and references to them
-func removeEmptyObjectTypes() PipelineStage {
-	return MakePipelineStage(
-		"removeEmptyObjectTypes",
-		"Removes object types that contain no properties, as well as any references to that type",
-		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
-			result := types
-			for {
-				toRemove := findEmptyObjectTypes(result)
-				if len(toRemove) == 0 {
-					break
-				}
+func RemoveEmptyObjects(types astmodel.Types) (astmodel.Types, error) {
+	result := types
+	for {
+		toRemove := findEmptyObjectTypes(result)
+		if len(toRemove) == 0 {
+			break
+		}
 
-				var err error
-				result, err = removeReferencesToTypes(result, toRemove)
-				if err != nil {
-					return nil, err
-				}
-			}
+		var err error
+		result, err = removeReferencesToTypes(result, toRemove)
+		if err != nil {
+			return nil, err
+		}
+	}
 
-			return result, nil
-		})
+	return result, nil
 }
 
 func findEmptyObjectTypes(types astmodel.Types) astmodel.TypeNameSet {
