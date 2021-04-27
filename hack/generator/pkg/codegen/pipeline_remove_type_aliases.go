@@ -22,10 +22,14 @@ func removeTypeAliases() PipelineStage {
 		"removeAliases",
 		"Remove type aliases",
 		func(ctx context.Context, types astmodel.Types) (astmodel.Types, error) {
-			visitor := astmodel.MakeTypeVisitor(
-				func(this *astmodel.TypeVisitor, it astmodel.TypeName, ctx interface{}) (astmodel.Type, error) {
-					return resolveTypeName(this, it, types)
-				})
+
+			removeAlias := func(this *astmodel.TypeVisitor, it astmodel.TypeName, ctx interface{}) (astmodel.Type, error) {
+				return resolveTypeName(this, it, types)
+			}
+
+			visitor := astmodel.TypeVisitorBuilder{
+				VisitTypeName: removeAlias,
+			}.Build()
 
 			var result = make(astmodel.Types)
 

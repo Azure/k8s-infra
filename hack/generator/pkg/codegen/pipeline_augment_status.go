@@ -131,7 +131,7 @@ func (resourceLookup resourceLookup) add(name astmodel.TypeName, theType astmode
 
 // generateStatusTypes returns the statusTypes for the input swaggerTypes
 func generateStatusTypes(swaggerTypes swaggerTypes) (statusTypes, error) {
-	appendStatusToName := func(typeName astmodel.TypeName) astmodel.TypeName {
+	appendStatus := func(typeName astmodel.TypeName) astmodel.Type {
 		return astmodel.MakeTypeName(typeName.PackageReference, typeName.Name()+"_Status")
 	}
 
@@ -164,15 +164,6 @@ func generateStatusTypes(swaggerTypes swaggerTypes) (statusTypes, error) {
 	}
 
 	return statusTypes{resourceLookup, otherTypes}, nil
-}
-
-func makeRenamingVisitor(rename func(astmodel.TypeName) astmodel.TypeName) astmodel.TypeVisitor {
-	visitor := astmodel.MakeTypeVisitor(
-		func(this *astmodel.TypeVisitor, it astmodel.TypeName, ctx interface{}) (astmodel.Type, error) {
-			return rename(it), nil
-		})
-
-	return visitor
 }
 
 var swaggerVersionRegex = regexp.MustCompile(`\d{4}-\d{2}-\d{2}(-preview)?`)
