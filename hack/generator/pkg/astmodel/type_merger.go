@@ -148,7 +148,9 @@ func (m *TypeMerger) Merge(left, right Type, ctx ...interface{}) (Type, error) {
 	for _, merger := range m.mergers {
 		if (merger.left == leftType || merger.left == typeInterface) &&
 			(merger.right == rightType || merger.right == typeInterface) {
+
 			result, err := merger.merge(ctxValue, left, right)
+
 			if (result == nil && err == nil) || errors.Is(err, ContinueMerge) {
 				// these conditions indicate that the merger was not actually applicable,
 				// despite having a type that matched
