@@ -20,25 +20,27 @@ type renamer struct {
 	types astmodel.Types
 }
 
-func (r renamer) singleNameToOriginalName(original astmodel.TypeName, associatedNames astmodel.TypeNameSet) (map[astmodel.TypeName]astmodel.TypeName, error) {
+type renameAction func(original astmodel.TypeName, associatedNames astmodel.TypeNameSet) (astmodel.TypeAssociation, error)
+
+func (r renamer) simplifyEmbeddedNameToOriginalName(original astmodel.TypeName, associatedNames astmodel.TypeNameSet) (astmodel.TypeAssociation, error) {
 	_, originalExists := r.types[original]
 	if originalExists || len(associatedNames) != 1 {
 		return nil, nil
 	}
 
 	klog.V(4).Infof("There are no usages of %q. Collapsing %q into the original for simplicity.", original, associatedNames.Single())
-	renames := make(map[astmodel.TypeName]astmodel.TypeName)
+	renames := make(astmodel.TypeAssociation)
 	renames[associatedNames.Single()] = original
 
 	return renames, nil
 }
 
-func (r renamer) associatedNameUsedInSingleContext(_ astmodel.TypeName, associatedNames astmodel.TypeNameSet) (map[astmodel.TypeName]astmodel.TypeName, error) {
+func (r renamer) simplifyEmbeddedNameRemoveContextAndCount(_ astmodel.TypeName, associatedNames astmodel.TypeNameSet) (astmodel.TypeAssociation, error) {
 	if len(associatedNames) != 1 {
 		return nil, nil
 	}
 
-	renames := make(map[astmodel.TypeName]astmodel.TypeName)
+	renames := make(astmodel.TypeAssociation)
 	associated := associatedNames.Single()
 	embeddedName, err := parseContextualTypeName(associated)
 	if err != nil {
@@ -52,7 +54,7 @@ func (r renamer) associatedNameUsedInSingleContext(_ astmodel.TypeName, associat
 	return renames, nil
 }
 
-func (r renamer) associatedNameUsedInSingleContextMultipleCounts(_ astmodel.TypeName, associatedNames astmodel.TypeNameSet) (map[astmodel.TypeName]astmodel.TypeName, error) {
+func (r renamer) simplifyEmbeddedNameRemoveContext(_ astmodel.TypeName, associatedNames astmodel.TypeNameSet) (astmodel.TypeAssociation, error) {
 	// Gather information about the associated types
 	associatedCountPerContext := make(map[string]int)
 	for associated := range associatedNames {
@@ -68,7 +70,7 @@ func (r renamer) associatedNameUsedInSingleContextMultipleCounts(_ astmodel.Type
 	}
 
 	// If all updated names share the same context, the context is not adding any disambiguation value so we can remove it
-	renames := make(map[astmodel.TypeName]astmodel.TypeName)
+	renames := make(astmodel.TypeAssociation)
 	for associated := range associatedNames {
 		embeddedName, err := parseContextualTypeName(associated)
 		if err != nil {
@@ -81,10 +83,10 @@ func (r renamer) associatedNameUsedInSingleContextMultipleCounts(_ astmodel.Type
 	return renames, nil
 }
 
-func (r renamer) simplifyRemainingAssociatedNames(_ astmodel.TypeName, associatedNames astmodel.TypeNameSet) (map[astmodel.TypeName]astmodel.TypeName, error) {
+func (r renamer) simplifyEmbeddedName(_ astmodel.TypeName, associatedNames astmodel.TypeNameSet) (astmodel.TypeAssociation, error) {
 	// remove _0, which especially for the cases where there's only a single
 	// kind of usage will make the type name much clearer
-	renames := make(map[astmodel.TypeName]astmodel.TypeName)
+	renames := make(astmodel.TypeAssociation)
 	for associated := range associatedNames {
 		embeddedName, err := parseContextualTypeName(associated)
 		if err != nil {
@@ -101,7 +103,7 @@ func (r renamer) simplifyRemainingAssociatedNames(_ astmodel.TypeName, associate
 }
 
 func (r renamer) performRenames(
-	renames map[astmodel.TypeName]astmodel.TypeName,
+	renames astmodel.TypeAssociation,
 	flag astmodel.TypeFlag) (astmodel.Types, error) {
 
 	result := make(astmodel.Types)
@@ -133,8 +135,6 @@ func (r renamer) performRenames(
 
 // simplifyTypeNames simplifies contextual type names if possible.
 func simplifyTypeNames(types astmodel.Types, flag astmodel.TypeFlag) (astmodel.Types, error) {
-	renames := make(map[astmodel.TypeName]astmodel.TypeName)
-
 	// Find all of the type names that have the flag we're interested in
 	updatedNames := make(map[astmodel.TypeName]astmodel.TypeNameSet)
 	for _, def := range types {
@@ -144,20 +144,19 @@ func simplifyTypeNames(types astmodel.Types, flag astmodel.TypeFlag) (astmodel.T
 				return nil, err
 			}
 
-			associatedNames := updatedNames[embeddedName.original]
-			associatedNames = associatedNames.Add(def.Name())
-			updatedNames[embeddedName.original] = associatedNames
+			updatedNames[embeddedName.original] = updatedNames[embeddedName.original].Add(def.Name())
 		}
 	}
 
 	renamer := renamer{types: types}
-	renameActions := []func(_ astmodel.TypeName, associatedNames astmodel.TypeNameSet) (map[astmodel.TypeName]astmodel.TypeName, error){
-		renamer.singleNameToOriginalName,
-		renamer.associatedNameUsedInSingleContext,
-		renamer.associatedNameUsedInSingleContextMultipleCounts,
-		renamer.simplifyRemainingAssociatedNames,
+	renameActions := []renameAction{
+		renamer.simplifyEmbeddedNameToOriginalName,
+		renamer.simplifyEmbeddedNameRemoveContextAndCount,
+		renamer.simplifyEmbeddedNameRemoveContext,
+		renamer.simplifyEmbeddedName,
 	}
 
+	renames := make(astmodel.TypeAssociation)
 	for original, associatedNames := range updatedNames {
 		for _, action := range renameActions {
 			result, err := action(original, associatedNames)
