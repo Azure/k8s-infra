@@ -50,4 +50,3 @@ func TestDifferentTypeAssociation_AreNotEqual(t *testing.T) {
 	g.Expect(x.Equals(y)).To(BeFalse())
 	g.Expect(y.Equals(x)).To(BeFalse())
 }
-

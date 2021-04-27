@@ -43,7 +43,7 @@ func (a *A) AzureName() string {
 // Owner returns the ResourceReference of the owner, or nil if there is no owner
 func (a *A) Owner() *genruntime.ResourceReference {
 	group, kind := genruntime.LookupOwnerGroupKind(a.Spec)
-	return &genruntime.ResourceReference{Name: a.Spec.Owner.Name, Group: group, Kind: kind}
+	return &genruntime.ResourceReference{Group: group, Kind: kind, Namespace: a.Namespace, Name: a.Spec.Owner.Name}
 }
 
 // +kubebuilder:object:root=true
@@ -54,34 +54,34 @@ type AList struct {
 	Items           []A `json:"items"`
 }
 
-type A_SpecArm struct {
+type A_SpecARM struct {
 	ApiVersion ASpecApiVersion `json:"apiVersion"`
 	Name       string          `json:"name"`
-	Properties *APropertiesArm `json:"properties,omitempty"`
+	Properties *APropertiesARM `json:"properties,omitempty"`
 	Type       ASpecType       `json:"type"`
 }
 
-var _ genruntime.ArmResourceSpec = &A_SpecArm{}
+var _ genruntime.ARMResourceSpec = &A_SpecARM{}
 
 // GetApiVersion returns the ApiVersion of the resource
-func (aSpecArm A_SpecArm) GetApiVersion() string {
-	return string(aSpecArm.ApiVersion)
+func (aSpecARM A_SpecARM) GetApiVersion() string {
+	return string(aSpecARM.ApiVersion)
 }
 
 // GetName returns the Name of the resource
-func (aSpecArm A_SpecArm) GetName() string {
-	return aSpecArm.Name
+func (aSpecARM A_SpecARM) GetName() string {
+	return aSpecARM.Name
 }
 
 // GetType returns the Type of the resource
-func (aSpecArm A_SpecArm) GetType() string {
-	return string(aSpecArm.Type)
+func (aSpecARM A_SpecARM) GetType() string {
+	return string(aSpecARM.Type)
 }
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/AProperties
-type APropertiesArm struct {
-	Left  *Left_SubResourceEmbeddedArm    `json:"left,omitempty"`
-	Right *Right_SubResourceEmbedded_1Arm `json:"right,omitempty"`
+type APropertiesARM struct {
+	Left  *Left_SubResourceEmbeddedARM    `json:"left,omitempty"`
+	Right *Right_SubResourceEmbedded_1ARM `json:"right,omitempty"`
 }
 
 // +kubebuilder:validation:Enum={"2020-06-01"}
@@ -104,45 +104,45 @@ type A_Spec struct {
 	Properties *AProperties                      `json:"properties,omitempty"`
 }
 
-var _ genruntime.ArmTransformer = &A_Spec{}
+var _ genruntime.ARMTransformer = &A_Spec{}
 
-// ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (aSpec *A_Spec) ConvertToArm(name string) (interface{}, error) {
+// ConvertToARM converts from a Kubernetes CRD object to an ARM object
+func (aSpec *A_Spec) ConvertToARM(name string) (interface{}, error) {
 	if aSpec == nil {
 		return nil, nil
 	}
-	var result A_SpecArm
+	var result A_SpecARM
 	result.ApiVersion = ASpecApiVersion20200601
 	result.Name = name
 	if aSpec.Properties != nil {
-		properties, err := (*aSpec.Properties).ConvertToArm(name)
+		properties, err := (*aSpec.Properties).ConvertToARM(name)
 		if err != nil {
 			return nil, err
 		}
-		propertiesTyped := properties.(APropertiesArm)
+		propertiesTyped := properties.(APropertiesARM)
 		result.Properties = &propertiesTyped
 	}
 	result.Type = ASpecTypeMicrosoftAzureA
 	return result, nil
 }
 
-// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
-func (aSpec *A_Spec) CreateEmptyArmValue() interface{} {
-	return A_SpecArm{}
+// CreateEmptyARMValue returns an empty ARM value suitable for deserializing into
+func (aSpec *A_Spec) CreateEmptyARMValue() interface{} {
+	return A_SpecARM{}
 }
 
-// PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
-func (aSpec *A_Spec) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(A_SpecArm)
+// PopulateFromARM populates a Kubernetes CRD object from an Azure ARM object
+func (aSpec *A_Spec) PopulateFromARM(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(A_SpecARM)
 	if !ok {
-		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected A_SpecArm, got %T", armInput)
+		return fmt.Errorf("unexpected type supplied for PopulateFromARM() function. Expected A_SpecARM, got %T", armInput)
 	}
-	aSpec.SetAzureName(genruntime.ExtractKubernetesResourceNameFromArmName(typedInput.Name))
+	aSpec.SetAzureName(genruntime.ExtractKubernetesResourceNameFromARMName(typedInput.Name))
 	aSpec.Owner = owner
 	var err error
 	if typedInput.Properties != nil {
 		var properties AProperties
-		err = properties.PopulateFromArm(owner, *typedInput.Properties)
+		err = properties.PopulateFromARM(owner, *typedInput.Properties)
 		if err != nil {
 			return err
 		}
@@ -161,48 +161,48 @@ type AProperties struct {
 	Right *Right_SubResourceEmbedded_1 `json:"right,omitempty"`
 }
 
-var _ genruntime.ArmTransformer = &AProperties{}
+var _ genruntime.ARMTransformer = &AProperties{}
 
-// ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (aProperties *AProperties) ConvertToArm(name string) (interface{}, error) {
+// ConvertToARM converts from a Kubernetes CRD object to an ARM object
+func (aProperties *AProperties) ConvertToARM(name string) (interface{}, error) {
 	if aProperties == nil {
 		return nil, nil
 	}
-	var result APropertiesArm
+	var result APropertiesARM
 	if aProperties.Left != nil {
-		left, err := (*aProperties.Left).ConvertToArm(name)
+		left, err := (*aProperties.Left).ConvertToARM(name)
 		if err != nil {
 			return nil, err
 		}
-		leftTyped := left.(Left_SubResourceEmbeddedArm)
+		leftTyped := left.(Left_SubResourceEmbeddedARM)
 		result.Left = &leftTyped
 	}
 	if aProperties.Right != nil {
-		right, err := (*aProperties.Right).ConvertToArm(name)
+		right, err := (*aProperties.Right).ConvertToARM(name)
 		if err != nil {
 			return nil, err
 		}
-		rightTyped := right.(Right_SubResourceEmbedded_1Arm)
+		rightTyped := right.(Right_SubResourceEmbedded_1ARM)
 		result.Right = &rightTyped
 	}
 	return result, nil
 }
 
-// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
-func (aProperties *AProperties) CreateEmptyArmValue() interface{} {
-	return APropertiesArm{}
+// CreateEmptyARMValue returns an empty ARM value suitable for deserializing into
+func (aProperties *AProperties) CreateEmptyARMValue() interface{} {
+	return APropertiesARM{}
 }
 
-// PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
-func (aProperties *AProperties) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(APropertiesArm)
+// PopulateFromARM populates a Kubernetes CRD object from an Azure ARM object
+func (aProperties *AProperties) PopulateFromARM(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(APropertiesARM)
 	if !ok {
-		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected APropertiesArm, got %T", armInput)
+		return fmt.Errorf("unexpected type supplied for PopulateFromARM() function. Expected APropertiesARM, got %T", armInput)
 	}
 	var err error
 	if typedInput.Left != nil {
 		var left Left_SubResourceEmbedded
-		err = left.PopulateFromArm(owner, *typedInput.Left)
+		err = left.PopulateFromARM(owner, *typedInput.Left)
 		if err != nil {
 			return err
 		}
@@ -211,7 +211,7 @@ func (aProperties *AProperties) PopulateFromArm(owner genruntime.KnownResourceRe
 	}
 	if typedInput.Right != nil {
 		var right Right_SubResourceEmbedded_1
-		err = right.PopulateFromArm(owner, *typedInput.Right)
+		err = right.PopulateFromARM(owner, *typedInput.Right)
 		if err != nil {
 			return err
 		}
@@ -222,33 +222,33 @@ func (aProperties *AProperties) PopulateFromArm(owner genruntime.KnownResourceRe
 }
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/Left
-type Left_SubResourceEmbeddedArm struct {
+type Left_SubResourceEmbeddedARM struct {
 	Name       *string                              `json:"name,omitempty"`
-	Properties *LeftPropertiesArm                   `json:"properties,omitempty"`
-	RefField   *FakeResource_SubResourceEmbeddedArm `json:"refField,omitempty"`
+	Properties *LeftPropertiesARM                   `json:"properties,omitempty"`
+	RefField   *FakeResource_SubResourceEmbeddedARM `json:"refField,omitempty"`
 }
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/Right
-type Right_SubResourceEmbedded_1Arm struct {
+type Right_SubResourceEmbedded_1ARM struct {
 	Name       *string                                `json:"name,omitempty"`
-	Properties *RightPropertiesArm                    `json:"properties,omitempty"`
-	RefField   *FakeResource_SubResourceEmbedded_1Arm `json:"refField,omitempty"`
+	Properties *RightPropertiesARM                    `json:"properties,omitempty"`
+	RefField   *FakeResource_SubResourceEmbedded_1ARM `json:"refField,omitempty"`
 }
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/FakeResource
-type FakeResource_SubResourceEmbeddedArm struct {
+type FakeResource_SubResourceEmbeddedARM struct {
 	Name       *string                                        `json:"name,omitempty"`
-	Properties *FakeResourceProperties_SubResourceEmbeddedArm `json:"properties,omitempty"`
+	Properties *FakeResourceProperties_SubResourceEmbeddedARM `json:"properties,omitempty"`
 }
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/FakeResource
-type FakeResource_SubResourceEmbedded_1Arm struct {
+type FakeResource_SubResourceEmbedded_1ARM struct {
 	Name       *string                                          `json:"name,omitempty"`
-	Properties *FakeResourceProperties_SubResourceEmbedded_1Arm `json:"properties,omitempty"`
+	Properties *FakeResourceProperties_SubResourceEmbedded_1ARM `json:"properties,omitempty"`
 }
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/LeftProperties
-type LeftPropertiesArm struct {
+type LeftPropertiesARM struct {
 	StrField *string `json:"strField,omitempty"`
 }
 
@@ -259,47 +259,47 @@ type Left_SubResourceEmbedded struct {
 	RefField   *FakeResource_SubResourceEmbedded `json:"refField,omitempty"`
 }
 
-var _ genruntime.ArmTransformer = &Left_SubResourceEmbedded{}
+var _ genruntime.ARMTransformer = &Left_SubResourceEmbedded{}
 
-// ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (leftSubResourceEmbedded *Left_SubResourceEmbedded) ConvertToArm(name string) (interface{}, error) {
+// ConvertToARM converts from a Kubernetes CRD object to an ARM object
+func (leftSubResourceEmbedded *Left_SubResourceEmbedded) ConvertToARM(name string) (interface{}, error) {
 	if leftSubResourceEmbedded == nil {
 		return nil, nil
 	}
-	var result Left_SubResourceEmbeddedArm
+	var result Left_SubResourceEmbeddedARM
 	if leftSubResourceEmbedded.Name != nil {
 		nameTyped := *leftSubResourceEmbedded.Name
 		result.Name = &nameTyped
 	}
 	if leftSubResourceEmbedded.Properties != nil {
-		properties, err := (*leftSubResourceEmbedded.Properties).ConvertToArm(name)
+		properties, err := (*leftSubResourceEmbedded.Properties).ConvertToARM(name)
 		if err != nil {
 			return nil, err
 		}
-		propertiesTyped := properties.(LeftPropertiesArm)
+		propertiesTyped := properties.(LeftPropertiesARM)
 		result.Properties = &propertiesTyped
 	}
 	if leftSubResourceEmbedded.RefField != nil {
-		refField, err := (*leftSubResourceEmbedded.RefField).ConvertToArm(name)
+		refField, err := (*leftSubResourceEmbedded.RefField).ConvertToARM(name)
 		if err != nil {
 			return nil, err
 		}
-		refFieldTyped := refField.(FakeResource_SubResourceEmbeddedArm)
+		refFieldTyped := refField.(FakeResource_SubResourceEmbeddedARM)
 		result.RefField = &refFieldTyped
 	}
 	return result, nil
 }
 
-// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
-func (leftSubResourceEmbedded *Left_SubResourceEmbedded) CreateEmptyArmValue() interface{} {
-	return Left_SubResourceEmbeddedArm{}
+// CreateEmptyARMValue returns an empty ARM value suitable for deserializing into
+func (leftSubResourceEmbedded *Left_SubResourceEmbedded) CreateEmptyARMValue() interface{} {
+	return Left_SubResourceEmbeddedARM{}
 }
 
-// PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
-func (leftSubResourceEmbedded *Left_SubResourceEmbedded) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(Left_SubResourceEmbeddedArm)
+// PopulateFromARM populates a Kubernetes CRD object from an Azure ARM object
+func (leftSubResourceEmbedded *Left_SubResourceEmbedded) PopulateFromARM(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(Left_SubResourceEmbeddedARM)
 	if !ok {
-		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected Left_SubResourceEmbeddedArm, got %T", armInput)
+		return fmt.Errorf("unexpected type supplied for PopulateFromARM() function. Expected Left_SubResourceEmbeddedARM, got %T", armInput)
 	}
 	if typedInput.Name != nil {
 		nameTyped := *typedInput.Name
@@ -308,7 +308,7 @@ func (leftSubResourceEmbedded *Left_SubResourceEmbedded) PopulateFromArm(owner g
 	var err error
 	if typedInput.Properties != nil {
 		var properties LeftProperties
-		err = properties.PopulateFromArm(owner, *typedInput.Properties)
+		err = properties.PopulateFromARM(owner, *typedInput.Properties)
 		if err != nil {
 			return err
 		}
@@ -317,7 +317,7 @@ func (leftSubResourceEmbedded *Left_SubResourceEmbedded) PopulateFromArm(owner g
 	}
 	if typedInput.RefField != nil {
 		var refField FakeResource_SubResourceEmbedded
-		err = refField.PopulateFromArm(owner, *typedInput.RefField)
+		err = refField.PopulateFromARM(owner, *typedInput.RefField)
 		if err != nil {
 			return err
 		}
@@ -328,7 +328,7 @@ func (leftSubResourceEmbedded *Left_SubResourceEmbedded) PopulateFromArm(owner g
 }
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/RightProperties
-type RightPropertiesArm struct {
+type RightPropertiesARM struct {
 	StrField *string `json:"strField,omitempty"`
 }
 
@@ -339,47 +339,47 @@ type Right_SubResourceEmbedded_1 struct {
 	RefField   *FakeResource_SubResourceEmbedded_1 `json:"refField,omitempty"`
 }
 
-var _ genruntime.ArmTransformer = &Right_SubResourceEmbedded_1{}
+var _ genruntime.ARMTransformer = &Right_SubResourceEmbedded_1{}
 
-// ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (rightSubResourceEmbedded1 *Right_SubResourceEmbedded_1) ConvertToArm(name string) (interface{}, error) {
+// ConvertToARM converts from a Kubernetes CRD object to an ARM object
+func (rightSubResourceEmbedded1 *Right_SubResourceEmbedded_1) ConvertToARM(name string) (interface{}, error) {
 	if rightSubResourceEmbedded1 == nil {
 		return nil, nil
 	}
-	var result Right_SubResourceEmbedded_1Arm
+	var result Right_SubResourceEmbedded_1ARM
 	if rightSubResourceEmbedded1.Name != nil {
 		nameTyped := *rightSubResourceEmbedded1.Name
 		result.Name = &nameTyped
 	}
 	if rightSubResourceEmbedded1.Properties != nil {
-		properties, err := (*rightSubResourceEmbedded1.Properties).ConvertToArm(name)
+		properties, err := (*rightSubResourceEmbedded1.Properties).ConvertToARM(name)
 		if err != nil {
 			return nil, err
 		}
-		propertiesTyped := properties.(RightPropertiesArm)
+		propertiesTyped := properties.(RightPropertiesARM)
 		result.Properties = &propertiesTyped
 	}
 	if rightSubResourceEmbedded1.RefField != nil {
-		refField, err := (*rightSubResourceEmbedded1.RefField).ConvertToArm(name)
+		refField, err := (*rightSubResourceEmbedded1.RefField).ConvertToARM(name)
 		if err != nil {
 			return nil, err
 		}
-		refFieldTyped := refField.(FakeResource_SubResourceEmbedded_1Arm)
+		refFieldTyped := refField.(FakeResource_SubResourceEmbedded_1ARM)
 		result.RefField = &refFieldTyped
 	}
 	return result, nil
 }
 
-// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
-func (rightSubResourceEmbedded1 *Right_SubResourceEmbedded_1) CreateEmptyArmValue() interface{} {
-	return Right_SubResourceEmbedded_1Arm{}
+// CreateEmptyARMValue returns an empty ARM value suitable for deserializing into
+func (rightSubResourceEmbedded1 *Right_SubResourceEmbedded_1) CreateEmptyARMValue() interface{} {
+	return Right_SubResourceEmbedded_1ARM{}
 }
 
-// PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
-func (rightSubResourceEmbedded1 *Right_SubResourceEmbedded_1) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(Right_SubResourceEmbedded_1Arm)
+// PopulateFromARM populates a Kubernetes CRD object from an Azure ARM object
+func (rightSubResourceEmbedded1 *Right_SubResourceEmbedded_1) PopulateFromARM(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(Right_SubResourceEmbedded_1ARM)
 	if !ok {
-		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected Right_SubResourceEmbedded_1Arm, got %T", armInput)
+		return fmt.Errorf("unexpected type supplied for PopulateFromARM() function. Expected Right_SubResourceEmbedded_1ARM, got %T", armInput)
 	}
 	if typedInput.Name != nil {
 		nameTyped := *typedInput.Name
@@ -388,7 +388,7 @@ func (rightSubResourceEmbedded1 *Right_SubResourceEmbedded_1) PopulateFromArm(ow
 	var err error
 	if typedInput.Properties != nil {
 		var properties RightProperties
-		err = properties.PopulateFromArm(owner, *typedInput.Properties)
+		err = properties.PopulateFromARM(owner, *typedInput.Properties)
 		if err != nil {
 			return err
 		}
@@ -397,7 +397,7 @@ func (rightSubResourceEmbedded1 *Right_SubResourceEmbedded_1) PopulateFromArm(ow
 	}
 	if typedInput.RefField != nil {
 		var refField FakeResource_SubResourceEmbedded_1
-		err = refField.PopulateFromArm(owner, *typedInput.RefField)
+		err = refField.PopulateFromARM(owner, *typedInput.RefField)
 		if err != nil {
 			return err
 		}
@@ -408,13 +408,13 @@ func (rightSubResourceEmbedded1 *Right_SubResourceEmbedded_1) PopulateFromArm(ow
 }
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/FakeResourceProperties
-type FakeResourceProperties_SubResourceEmbeddedArm struct {
-	Loop2 *Right_SubResourceEmbeddedArm `json:"loop2,omitempty"`
+type FakeResourceProperties_SubResourceEmbeddedARM struct {
+	Loop2 *Right_SubResourceEmbeddedARM `json:"loop2,omitempty"`
 }
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/FakeResourceProperties
-type FakeResourceProperties_SubResourceEmbedded_1Arm struct {
-	Loop1 *Left_SubResourceEmbedded_1Arm `json:"loop1,omitempty"`
+type FakeResourceProperties_SubResourceEmbedded_1ARM struct {
+	Loop1 *Left_SubResourceEmbedded_1ARM `json:"loop1,omitempty"`
 }
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/FakeResource
@@ -423,39 +423,39 @@ type FakeResource_SubResourceEmbedded struct {
 	Properties *FakeResourceProperties_SubResourceEmbedded `json:"properties,omitempty"`
 }
 
-var _ genruntime.ArmTransformer = &FakeResource_SubResourceEmbedded{}
+var _ genruntime.ARMTransformer = &FakeResource_SubResourceEmbedded{}
 
-// ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (fakeResourceSubResourceEmbedded *FakeResource_SubResourceEmbedded) ConvertToArm(name string) (interface{}, error) {
+// ConvertToARM converts from a Kubernetes CRD object to an ARM object
+func (fakeResourceSubResourceEmbedded *FakeResource_SubResourceEmbedded) ConvertToARM(name string) (interface{}, error) {
 	if fakeResourceSubResourceEmbedded == nil {
 		return nil, nil
 	}
-	var result FakeResource_SubResourceEmbeddedArm
+	var result FakeResource_SubResourceEmbeddedARM
 	if fakeResourceSubResourceEmbedded.Name != nil {
 		nameTyped := *fakeResourceSubResourceEmbedded.Name
 		result.Name = &nameTyped
 	}
 	if fakeResourceSubResourceEmbedded.Properties != nil {
-		properties, err := (*fakeResourceSubResourceEmbedded.Properties).ConvertToArm(name)
+		properties, err := (*fakeResourceSubResourceEmbedded.Properties).ConvertToARM(name)
 		if err != nil {
 			return nil, err
 		}
-		propertiesTyped := properties.(FakeResourceProperties_SubResourceEmbeddedArm)
+		propertiesTyped := properties.(FakeResourceProperties_SubResourceEmbeddedARM)
 		result.Properties = &propertiesTyped
 	}
 	return result, nil
 }
 
-// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
-func (fakeResourceSubResourceEmbedded *FakeResource_SubResourceEmbedded) CreateEmptyArmValue() interface{} {
-	return FakeResource_SubResourceEmbeddedArm{}
+// CreateEmptyARMValue returns an empty ARM value suitable for deserializing into
+func (fakeResourceSubResourceEmbedded *FakeResource_SubResourceEmbedded) CreateEmptyARMValue() interface{} {
+	return FakeResource_SubResourceEmbeddedARM{}
 }
 
-// PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
-func (fakeResourceSubResourceEmbedded *FakeResource_SubResourceEmbedded) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(FakeResource_SubResourceEmbeddedArm)
+// PopulateFromARM populates a Kubernetes CRD object from an Azure ARM object
+func (fakeResourceSubResourceEmbedded *FakeResource_SubResourceEmbedded) PopulateFromARM(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(FakeResource_SubResourceEmbeddedARM)
 	if !ok {
-		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected FakeResource_SubResourceEmbeddedArm, got %T", armInput)
+		return fmt.Errorf("unexpected type supplied for PopulateFromARM() function. Expected FakeResource_SubResourceEmbeddedARM, got %T", armInput)
 	}
 	if typedInput.Name != nil {
 		nameTyped := *typedInput.Name
@@ -464,7 +464,7 @@ func (fakeResourceSubResourceEmbedded *FakeResource_SubResourceEmbedded) Populat
 	var err error
 	if typedInput.Properties != nil {
 		var properties FakeResourceProperties_SubResourceEmbedded
-		err = properties.PopulateFromArm(owner, *typedInput.Properties)
+		err = properties.PopulateFromARM(owner, *typedInput.Properties)
 		if err != nil {
 			return err
 		}
@@ -480,39 +480,39 @@ type FakeResource_SubResourceEmbedded_1 struct {
 	Properties *FakeResourceProperties_SubResourceEmbedded_1 `json:"properties,omitempty"`
 }
 
-var _ genruntime.ArmTransformer = &FakeResource_SubResourceEmbedded_1{}
+var _ genruntime.ARMTransformer = &FakeResource_SubResourceEmbedded_1{}
 
-// ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (fakeResourceSubResourceEmbedded1 *FakeResource_SubResourceEmbedded_1) ConvertToArm(name string) (interface{}, error) {
+// ConvertToARM converts from a Kubernetes CRD object to an ARM object
+func (fakeResourceSubResourceEmbedded1 *FakeResource_SubResourceEmbedded_1) ConvertToARM(name string) (interface{}, error) {
 	if fakeResourceSubResourceEmbedded1 == nil {
 		return nil, nil
 	}
-	var result FakeResource_SubResourceEmbedded_1Arm
+	var result FakeResource_SubResourceEmbedded_1ARM
 	if fakeResourceSubResourceEmbedded1.Name != nil {
 		nameTyped := *fakeResourceSubResourceEmbedded1.Name
 		result.Name = &nameTyped
 	}
 	if fakeResourceSubResourceEmbedded1.Properties != nil {
-		properties, err := (*fakeResourceSubResourceEmbedded1.Properties).ConvertToArm(name)
+		properties, err := (*fakeResourceSubResourceEmbedded1.Properties).ConvertToARM(name)
 		if err != nil {
 			return nil, err
 		}
-		propertiesTyped := properties.(FakeResourceProperties_SubResourceEmbedded_1Arm)
+		propertiesTyped := properties.(FakeResourceProperties_SubResourceEmbedded_1ARM)
 		result.Properties = &propertiesTyped
 	}
 	return result, nil
 }
 
-// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
-func (fakeResourceSubResourceEmbedded1 *FakeResource_SubResourceEmbedded_1) CreateEmptyArmValue() interface{} {
-	return FakeResource_SubResourceEmbedded_1Arm{}
+// CreateEmptyARMValue returns an empty ARM value suitable for deserializing into
+func (fakeResourceSubResourceEmbedded1 *FakeResource_SubResourceEmbedded_1) CreateEmptyARMValue() interface{} {
+	return FakeResource_SubResourceEmbedded_1ARM{}
 }
 
-// PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
-func (fakeResourceSubResourceEmbedded1 *FakeResource_SubResourceEmbedded_1) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(FakeResource_SubResourceEmbedded_1Arm)
+// PopulateFromARM populates a Kubernetes CRD object from an Azure ARM object
+func (fakeResourceSubResourceEmbedded1 *FakeResource_SubResourceEmbedded_1) PopulateFromARM(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(FakeResource_SubResourceEmbedded_1ARM)
 	if !ok {
-		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected FakeResource_SubResourceEmbedded_1Arm, got %T", armInput)
+		return fmt.Errorf("unexpected type supplied for PopulateFromARM() function. Expected FakeResource_SubResourceEmbedded_1ARM, got %T", armInput)
 	}
 	if typedInput.Name != nil {
 		nameTyped := *typedInput.Name
@@ -521,7 +521,7 @@ func (fakeResourceSubResourceEmbedded1 *FakeResource_SubResourceEmbedded_1) Popu
 	var err error
 	if typedInput.Properties != nil {
 		var properties FakeResourceProperties_SubResourceEmbedded_1
-		err = properties.PopulateFromArm(owner, *typedInput.Properties)
+		err = properties.PopulateFromARM(owner, *typedInput.Properties)
 		if err != nil {
 			return err
 		}
@@ -536,14 +536,14 @@ type LeftProperties struct {
 	StrField *string `json:"strField,omitempty"`
 }
 
-var _ genruntime.ArmTransformer = &LeftProperties{}
+var _ genruntime.ARMTransformer = &LeftProperties{}
 
-// ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (leftProperties *LeftProperties) ConvertToArm(name string) (interface{}, error) {
+// ConvertToARM converts from a Kubernetes CRD object to an ARM object
+func (leftProperties *LeftProperties) ConvertToARM(name string) (interface{}, error) {
 	if leftProperties == nil {
 		return nil, nil
 	}
-	var result LeftPropertiesArm
+	var result LeftPropertiesARM
 	if leftProperties.StrField != nil {
 		strFieldTyped := *leftProperties.StrField
 		result.StrField = &strFieldTyped
@@ -551,16 +551,16 @@ func (leftProperties *LeftProperties) ConvertToArm(name string) (interface{}, er
 	return result, nil
 }
 
-// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
-func (leftProperties *LeftProperties) CreateEmptyArmValue() interface{} {
-	return LeftPropertiesArm{}
+// CreateEmptyARMValue returns an empty ARM value suitable for deserializing into
+func (leftProperties *LeftProperties) CreateEmptyARMValue() interface{} {
+	return LeftPropertiesARM{}
 }
 
-// PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
-func (leftProperties *LeftProperties) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(LeftPropertiesArm)
+// PopulateFromARM populates a Kubernetes CRD object from an Azure ARM object
+func (leftProperties *LeftProperties) PopulateFromARM(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(LeftPropertiesARM)
 	if !ok {
-		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected LeftPropertiesArm, got %T", armInput)
+		return fmt.Errorf("unexpected type supplied for PopulateFromARM() function. Expected LeftPropertiesARM, got %T", armInput)
 	}
 	if typedInput.StrField != nil {
 		strFieldTyped := *typedInput.StrField
@@ -574,14 +574,14 @@ type RightProperties struct {
 	StrField *string `json:"strField,omitempty"`
 }
 
-var _ genruntime.ArmTransformer = &RightProperties{}
+var _ genruntime.ARMTransformer = &RightProperties{}
 
-// ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (rightProperties *RightProperties) ConvertToArm(name string) (interface{}, error) {
+// ConvertToARM converts from a Kubernetes CRD object to an ARM object
+func (rightProperties *RightProperties) ConvertToARM(name string) (interface{}, error) {
 	if rightProperties == nil {
 		return nil, nil
 	}
-	var result RightPropertiesArm
+	var result RightPropertiesARM
 	if rightProperties.StrField != nil {
 		strFieldTyped := *rightProperties.StrField
 		result.StrField = &strFieldTyped
@@ -589,16 +589,16 @@ func (rightProperties *RightProperties) ConvertToArm(name string) (interface{}, 
 	return result, nil
 }
 
-// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
-func (rightProperties *RightProperties) CreateEmptyArmValue() interface{} {
-	return RightPropertiesArm{}
+// CreateEmptyARMValue returns an empty ARM value suitable for deserializing into
+func (rightProperties *RightProperties) CreateEmptyARMValue() interface{} {
+	return RightPropertiesARM{}
 }
 
-// PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
-func (rightProperties *RightProperties) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(RightPropertiesArm)
+// PopulateFromARM populates a Kubernetes CRD object from an Azure ARM object
+func (rightProperties *RightProperties) PopulateFromARM(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(RightPropertiesARM)
 	if !ok {
-		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected RightPropertiesArm, got %T", armInput)
+		return fmt.Errorf("unexpected type supplied for PopulateFromARM() function. Expected RightPropertiesARM, got %T", armInput)
 	}
 	if typedInput.StrField != nil {
 		strFieldTyped := *typedInput.StrField
@@ -612,40 +612,40 @@ type FakeResourceProperties_SubResourceEmbedded struct {
 	Loop2 *Right_SubResourceEmbedded `json:"loop2,omitempty"`
 }
 
-var _ genruntime.ArmTransformer = &FakeResourceProperties_SubResourceEmbedded{}
+var _ genruntime.ARMTransformer = &FakeResourceProperties_SubResourceEmbedded{}
 
-// ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (fakeResourcePropertiesSubResourceEmbedded *FakeResourceProperties_SubResourceEmbedded) ConvertToArm(name string) (interface{}, error) {
+// ConvertToARM converts from a Kubernetes CRD object to an ARM object
+func (fakeResourcePropertiesSubResourceEmbedded *FakeResourceProperties_SubResourceEmbedded) ConvertToARM(name string) (interface{}, error) {
 	if fakeResourcePropertiesSubResourceEmbedded == nil {
 		return nil, nil
 	}
-	var result FakeResourceProperties_SubResourceEmbeddedArm
+	var result FakeResourceProperties_SubResourceEmbeddedARM
 	if fakeResourcePropertiesSubResourceEmbedded.Loop2 != nil {
-		loop2, err := (*fakeResourcePropertiesSubResourceEmbedded.Loop2).ConvertToArm(name)
+		loop2, err := (*fakeResourcePropertiesSubResourceEmbedded.Loop2).ConvertToARM(name)
 		if err != nil {
 			return nil, err
 		}
-		loop2Typed := loop2.(Right_SubResourceEmbeddedArm)
+		loop2Typed := loop2.(Right_SubResourceEmbeddedARM)
 		result.Loop2 = &loop2Typed
 	}
 	return result, nil
 }
 
-// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
-func (fakeResourcePropertiesSubResourceEmbedded *FakeResourceProperties_SubResourceEmbedded) CreateEmptyArmValue() interface{} {
-	return FakeResourceProperties_SubResourceEmbeddedArm{}
+// CreateEmptyARMValue returns an empty ARM value suitable for deserializing into
+func (fakeResourcePropertiesSubResourceEmbedded *FakeResourceProperties_SubResourceEmbedded) CreateEmptyARMValue() interface{} {
+	return FakeResourceProperties_SubResourceEmbeddedARM{}
 }
 
-// PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
-func (fakeResourcePropertiesSubResourceEmbedded *FakeResourceProperties_SubResourceEmbedded) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(FakeResourceProperties_SubResourceEmbeddedArm)
+// PopulateFromARM populates a Kubernetes CRD object from an Azure ARM object
+func (fakeResourcePropertiesSubResourceEmbedded *FakeResourceProperties_SubResourceEmbedded) PopulateFromARM(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(FakeResourceProperties_SubResourceEmbeddedARM)
 	if !ok {
-		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected FakeResourceProperties_SubResourceEmbeddedArm, got %T", armInput)
+		return fmt.Errorf("unexpected type supplied for PopulateFromARM() function. Expected FakeResourceProperties_SubResourceEmbeddedARM, got %T", armInput)
 	}
 	var err error
 	if typedInput.Loop2 != nil {
 		var loop2 Right_SubResourceEmbedded
-		err = loop2.PopulateFromArm(owner, *typedInput.Loop2)
+		err = loop2.PopulateFromARM(owner, *typedInput.Loop2)
 		if err != nil {
 			return err
 		}
@@ -660,40 +660,40 @@ type FakeResourceProperties_SubResourceEmbedded_1 struct {
 	Loop1 *Left_SubResourceEmbedded_1 `json:"loop1,omitempty"`
 }
 
-var _ genruntime.ArmTransformer = &FakeResourceProperties_SubResourceEmbedded_1{}
+var _ genruntime.ARMTransformer = &FakeResourceProperties_SubResourceEmbedded_1{}
 
-// ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (fakeResourcePropertiesSubResourceEmbedded1 *FakeResourceProperties_SubResourceEmbedded_1) ConvertToArm(name string) (interface{}, error) {
+// ConvertToARM converts from a Kubernetes CRD object to an ARM object
+func (fakeResourcePropertiesSubResourceEmbedded1 *FakeResourceProperties_SubResourceEmbedded_1) ConvertToARM(name string) (interface{}, error) {
 	if fakeResourcePropertiesSubResourceEmbedded1 == nil {
 		return nil, nil
 	}
-	var result FakeResourceProperties_SubResourceEmbedded_1Arm
+	var result FakeResourceProperties_SubResourceEmbedded_1ARM
 	if fakeResourcePropertiesSubResourceEmbedded1.Loop1 != nil {
-		loop1, err := (*fakeResourcePropertiesSubResourceEmbedded1.Loop1).ConvertToArm(name)
+		loop1, err := (*fakeResourcePropertiesSubResourceEmbedded1.Loop1).ConvertToARM(name)
 		if err != nil {
 			return nil, err
 		}
-		loop1Typed := loop1.(Left_SubResourceEmbedded_1Arm)
+		loop1Typed := loop1.(Left_SubResourceEmbedded_1ARM)
 		result.Loop1 = &loop1Typed
 	}
 	return result, nil
 }
 
-// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
-func (fakeResourcePropertiesSubResourceEmbedded1 *FakeResourceProperties_SubResourceEmbedded_1) CreateEmptyArmValue() interface{} {
-	return FakeResourceProperties_SubResourceEmbedded_1Arm{}
+// CreateEmptyARMValue returns an empty ARM value suitable for deserializing into
+func (fakeResourcePropertiesSubResourceEmbedded1 *FakeResourceProperties_SubResourceEmbedded_1) CreateEmptyARMValue() interface{} {
+	return FakeResourceProperties_SubResourceEmbedded_1ARM{}
 }
 
-// PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
-func (fakeResourcePropertiesSubResourceEmbedded1 *FakeResourceProperties_SubResourceEmbedded_1) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(FakeResourceProperties_SubResourceEmbedded_1Arm)
+// PopulateFromARM populates a Kubernetes CRD object from an Azure ARM object
+func (fakeResourcePropertiesSubResourceEmbedded1 *FakeResourceProperties_SubResourceEmbedded_1) PopulateFromARM(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(FakeResourceProperties_SubResourceEmbedded_1ARM)
 	if !ok {
-		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected FakeResourceProperties_SubResourceEmbedded_1Arm, got %T", armInput)
+		return fmt.Errorf("unexpected type supplied for PopulateFromARM() function. Expected FakeResourceProperties_SubResourceEmbedded_1ARM, got %T", armInput)
 	}
 	var err error
 	if typedInput.Loop1 != nil {
 		var loop1 Left_SubResourceEmbedded_1
-		err = loop1.PopulateFromArm(owner, *typedInput.Loop1)
+		err = loop1.PopulateFromARM(owner, *typedInput.Loop1)
 		if err != nil {
 			return err
 		}
@@ -704,15 +704,15 @@ func (fakeResourcePropertiesSubResourceEmbedded1 *FakeResourceProperties_SubReso
 }
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/Left
-type Left_SubResourceEmbedded_1Arm struct {
+type Left_SubResourceEmbedded_1ARM struct {
 	Name       *string            `json:"name,omitempty"`
-	Properties *LeftPropertiesArm `json:"properties,omitempty"`
+	Properties *LeftPropertiesARM `json:"properties,omitempty"`
 }
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/Right
-type Right_SubResourceEmbeddedArm struct {
+type Right_SubResourceEmbeddedARM struct {
 	Name       *string             `json:"name,omitempty"`
-	Properties *RightPropertiesArm `json:"properties,omitempty"`
+	Properties *RightPropertiesARM `json:"properties,omitempty"`
 }
 
 //Generated from: https://test.test/schemas/2020-01-01/test.json#/definitions/Left
@@ -721,39 +721,39 @@ type Left_SubResourceEmbedded_1 struct {
 	Properties *LeftProperties `json:"properties,omitempty"`
 }
 
-var _ genruntime.ArmTransformer = &Left_SubResourceEmbedded_1{}
+var _ genruntime.ARMTransformer = &Left_SubResourceEmbedded_1{}
 
-// ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (leftSubResourceEmbedded1 *Left_SubResourceEmbedded_1) ConvertToArm(name string) (interface{}, error) {
+// ConvertToARM converts from a Kubernetes CRD object to an ARM object
+func (leftSubResourceEmbedded1 *Left_SubResourceEmbedded_1) ConvertToARM(name string) (interface{}, error) {
 	if leftSubResourceEmbedded1 == nil {
 		return nil, nil
 	}
-	var result Left_SubResourceEmbedded_1Arm
+	var result Left_SubResourceEmbedded_1ARM
 	if leftSubResourceEmbedded1.Name != nil {
 		nameTyped := *leftSubResourceEmbedded1.Name
 		result.Name = &nameTyped
 	}
 	if leftSubResourceEmbedded1.Properties != nil {
-		properties, err := (*leftSubResourceEmbedded1.Properties).ConvertToArm(name)
+		properties, err := (*leftSubResourceEmbedded1.Properties).ConvertToARM(name)
 		if err != nil {
 			return nil, err
 		}
-		propertiesTyped := properties.(LeftPropertiesArm)
+		propertiesTyped := properties.(LeftPropertiesARM)
 		result.Properties = &propertiesTyped
 	}
 	return result, nil
 }
 
-// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
-func (leftSubResourceEmbedded1 *Left_SubResourceEmbedded_1) CreateEmptyArmValue() interface{} {
-	return Left_SubResourceEmbedded_1Arm{}
+// CreateEmptyARMValue returns an empty ARM value suitable for deserializing into
+func (leftSubResourceEmbedded1 *Left_SubResourceEmbedded_1) CreateEmptyARMValue() interface{} {
+	return Left_SubResourceEmbedded_1ARM{}
 }
 
-// PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
-func (leftSubResourceEmbedded1 *Left_SubResourceEmbedded_1) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(Left_SubResourceEmbedded_1Arm)
+// PopulateFromARM populates a Kubernetes CRD object from an Azure ARM object
+func (leftSubResourceEmbedded1 *Left_SubResourceEmbedded_1) PopulateFromARM(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(Left_SubResourceEmbedded_1ARM)
 	if !ok {
-		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected Left_SubResourceEmbedded_1Arm, got %T", armInput)
+		return fmt.Errorf("unexpected type supplied for PopulateFromARM() function. Expected Left_SubResourceEmbedded_1ARM, got %T", armInput)
 	}
 	if typedInput.Name != nil {
 		nameTyped := *typedInput.Name
@@ -762,7 +762,7 @@ func (leftSubResourceEmbedded1 *Left_SubResourceEmbedded_1) PopulateFromArm(owne
 	var err error
 	if typedInput.Properties != nil {
 		var properties LeftProperties
-		err = properties.PopulateFromArm(owner, *typedInput.Properties)
+		err = properties.PopulateFromARM(owner, *typedInput.Properties)
 		if err != nil {
 			return err
 		}
@@ -778,39 +778,39 @@ type Right_SubResourceEmbedded struct {
 	Properties *RightProperties `json:"properties,omitempty"`
 }
 
-var _ genruntime.ArmTransformer = &Right_SubResourceEmbedded{}
+var _ genruntime.ARMTransformer = &Right_SubResourceEmbedded{}
 
-// ConvertToArm converts from a Kubernetes CRD object to an ARM object
-func (rightSubResourceEmbedded *Right_SubResourceEmbedded) ConvertToArm(name string) (interface{}, error) {
+// ConvertToARM converts from a Kubernetes CRD object to an ARM object
+func (rightSubResourceEmbedded *Right_SubResourceEmbedded) ConvertToARM(name string) (interface{}, error) {
 	if rightSubResourceEmbedded == nil {
 		return nil, nil
 	}
-	var result Right_SubResourceEmbeddedArm
+	var result Right_SubResourceEmbeddedARM
 	if rightSubResourceEmbedded.Name != nil {
 		nameTyped := *rightSubResourceEmbedded.Name
 		result.Name = &nameTyped
 	}
 	if rightSubResourceEmbedded.Properties != nil {
-		properties, err := (*rightSubResourceEmbedded.Properties).ConvertToArm(name)
+		properties, err := (*rightSubResourceEmbedded.Properties).ConvertToARM(name)
 		if err != nil {
 			return nil, err
 		}
-		propertiesTyped := properties.(RightPropertiesArm)
+		propertiesTyped := properties.(RightPropertiesARM)
 		result.Properties = &propertiesTyped
 	}
 	return result, nil
 }
 
-// CreateEmptyArmValue returns an empty ARM value suitable for deserializing into
-func (rightSubResourceEmbedded *Right_SubResourceEmbedded) CreateEmptyArmValue() interface{} {
-	return Right_SubResourceEmbeddedArm{}
+// CreateEmptyARMValue returns an empty ARM value suitable for deserializing into
+func (rightSubResourceEmbedded *Right_SubResourceEmbedded) CreateEmptyARMValue() interface{} {
+	return Right_SubResourceEmbeddedARM{}
 }
 
-// PopulateFromArm populates a Kubernetes CRD object from an Azure ARM object
-func (rightSubResourceEmbedded *Right_SubResourceEmbedded) PopulateFromArm(owner genruntime.KnownResourceReference, armInput interface{}) error {
-	typedInput, ok := armInput.(Right_SubResourceEmbeddedArm)
+// PopulateFromARM populates a Kubernetes CRD object from an Azure ARM object
+func (rightSubResourceEmbedded *Right_SubResourceEmbedded) PopulateFromARM(owner genruntime.KnownResourceReference, armInput interface{}) error {
+	typedInput, ok := armInput.(Right_SubResourceEmbeddedARM)
 	if !ok {
-		return fmt.Errorf("unexpected type supplied for PopulateFromArm() function. Expected Right_SubResourceEmbeddedArm, got %T", armInput)
+		return fmt.Errorf("unexpected type supplied for PopulateFromARM() function. Expected Right_SubResourceEmbeddedARM, got %T", armInput)
 	}
 	if typedInput.Name != nil {
 		nameTyped := *typedInput.Name
@@ -819,7 +819,7 @@ func (rightSubResourceEmbedded *Right_SubResourceEmbedded) PopulateFromArm(owner
 	var err error
 	if typedInput.Properties != nil {
 		var properties RightProperties
-		err = properties.PopulateFromArm(owner, *typedInput.Properties)
+		err = properties.PopulateFromARM(owner, *typedInput.Properties)
 		if err != nil {
 			return err
 		}
