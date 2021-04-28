@@ -129,13 +129,11 @@ func (oneOf *OneOfType) String() string {
 // types is a dictionary for resolving named types
 func (oneOf *OneOfType) WriteDebugDescription(builder *strings.Builder, types Types) {
 	builder.WriteString("OneOf[")
-	first := true
 	oneOf.types.ForEach(func(t Type, ix int) {
-		if !first {
+		if ix > 0 {
 			builder.WriteString("|")
 		}
 		t.WriteDebugDescription(builder, types)
-		first = false
 	})
 	builder.WriteString("]")
 }

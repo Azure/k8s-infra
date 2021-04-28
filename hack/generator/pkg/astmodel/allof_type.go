@@ -165,13 +165,11 @@ func (allOf *AllOfType) String() string {
 // types is a dictionary for resolving named types
 func (allOf *AllOfType) WriteDebugDescription(builder *strings.Builder, types Types) {
 	builder.WriteString("AllOf[")
-	first := true
 	allOf.types.ForEach(func(t Type, ix int) {
-		if !first {
+		if ix > 0 {
 			builder.WriteString("|")
 		}
 		t.WriteDebugDescription(builder, types)
-		first = false
 	})
 	builder.WriteString("]")
 }
