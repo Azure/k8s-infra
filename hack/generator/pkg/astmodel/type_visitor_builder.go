@@ -34,19 +34,19 @@ type TypeVisitorBuilder struct {
 
 func (b TypeVisitorBuilder) Build() TypeVisitor {
 	return TypeVisitor{
-		VisitTypeName:      b.buildVisitTypeName(),
-		VisitOneOfType:     b.buildVisitOneOfType(),
-		VisitAllOfType:     b.buildVisitAllOfType(),
-		VisitArrayType:     b.buildVisitArrayType(),
-		VisitPrimitive:     b.buildVisitPrimitive(),
-		VisitObjectType:    b.buildVisitObjectType(),
-		VisitMapType:       b.buildVisitMapType(),
-		VisitOptionalType:  b.buildVisitOptionalType(),
-		VisitEnumType:      b.buildVisitEnumType(),
-		VisitResourceType:  b.buildVisitResourceType(),
-		VisitFlaggedType:   b.buildVisitFlaggedType(),
-		VisitValidatedType: b.buildVisitValidatedType(),
-		VisitErroredType:   b.buildVisitErroredType(),
+		visitTypeName:      b.buildVisitTypeName(),
+		visitOneOfType:     b.buildVisitOneOfType(),
+		visitAllOfType:     b.buildVisitAllOfType(),
+		visitArrayType:     b.buildVisitArrayType(),
+		visitPrimitive:     b.buildVisitPrimitive(),
+		visitObjectType:    b.buildVisitObjectType(),
+		visitMapType:       b.buildVisitMapType(),
+		visitOptionalType:  b.buildVisitOptionalType(),
+		visitEnumType:      b.buildVisitEnumType(),
+		visitResourceType:  b.buildVisitResourceType(),
+		visitFlaggedType:   b.buildVisitFlaggedType(),
+		visitValidatedType: b.buildVisitValidatedType(),
+		visitErroredType:   b.buildVisitErroredType(),
 	}
 }
 

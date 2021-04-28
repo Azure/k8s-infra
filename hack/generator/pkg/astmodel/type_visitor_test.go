@@ -298,14 +298,14 @@ func TestMakeTypeVisitorWithInjectedFunctions(t *testing.T) {
 	}
 
 	// TODO: Pending tests for
-	// VisitTypeName:
-	// VisitObjectType:
-	// VisitEnumType:
-	// VisitResourceType:
-	// VisitOneOfType:
-	// VisitAllOfType:
-	// VisitValidatedType:
-	// VisitErroredType:
+	// visitTypeName:
+	// visitObjectType:
+	// visitEnumType:
+	// visitResourceType:
+	// visitOneOfType:
+	// visitAllOfType:
+	// visitValidatedType:
+	// visitErroredType:
 
 	for _, c := range cases {
 		c := c

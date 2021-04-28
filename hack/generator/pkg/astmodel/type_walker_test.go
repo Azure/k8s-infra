@@ -274,7 +274,7 @@ func TestTypeWalker_VisitorApplied(t *testing.T) {
 
 	types := makeSimpleTestTypeGraph()
 	visitor := TypeVisitorBuilder{}.Build()
-	visitor.VisitObjectType = func(this *TypeVisitor, it *ObjectType, ctx interface{}) (Type, error) {
+	visitor.visitObjectType = func(this *TypeVisitor, it *ObjectType, ctx interface{}) (Type, error) {
 		_ = ctx.(int) // Ensure context is the right shape
 
 		// Find any properties of type string and remove them
