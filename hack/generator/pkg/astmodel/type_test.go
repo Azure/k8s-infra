@@ -30,8 +30,8 @@ func TestWriteDebugDescription(t *testing.T) {
 	suitEnum := NewEnumType(StringType, diamonds, hearts, clubs, spades)
 	suitDefinition := MakeTypeDefinition(suit, suitEnum)
 
-	armAge := ArmFlag.ApplyTo(age)
-	armSuit := ArmFlag.ApplyTo(suit)
+	armAge := ARMFlag.ApplyTo(age)
+	armSuit := ARMFlag.ApplyTo(suit)
 
 	erroredAge := NewErroredType(age, []string{"boom"}, []string{"oh oh"})
 
