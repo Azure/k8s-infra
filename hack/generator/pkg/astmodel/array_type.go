@@ -74,7 +74,7 @@ func (array *ArrayType) String() string {
 	return fmt.Sprintf("[]%s", array.element.String())
 }
 
-// DebugDescription adds a description of the current array type to the passed builder
+// WriteDebugDescription adds a description of the current array type to the passed builder
 // builder receives the full description, including nested types
 // types is a dictionary for resolving named types
 func (array *ArrayType) WriteDebugDescription(builder *strings.Builder, types Types) {

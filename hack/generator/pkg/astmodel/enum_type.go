@@ -184,7 +184,7 @@ func (enum *EnumType) String() string {
 	return fmt.Sprintf("(enum: %s)", enum.baseType.String())
 }
 
-// DebugDescription adds a description of the current enum type, including option names, to the
+// WriteDebugDescription adds a description of the current enum type, including option names, to the
 // passed builder
 // builder receives the full description
 // types is a dictionary for resolving named types

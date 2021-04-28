@@ -232,7 +232,7 @@ func (v ValidatedType) Unwrap() Type {
 	return v.element
 }
 
-// DebugDescription adds a description of the current type to the passed builder
+// WriteDebugDescription adds a description of the current type to the passed builder
 // builder receives the full description, including nested types
 // types is a dictionary for resolving named types
 func (v ValidatedType) WriteDebugDescription(builder *strings.Builder, types Types) {

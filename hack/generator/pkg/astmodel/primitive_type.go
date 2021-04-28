@@ -88,7 +88,7 @@ func (prim *PrimitiveType) String() string {
 	return prim.name
 }
 
-// DebugDescription adds a description of this primitive type to the passed builder
+// WriteDebugDescription adds a description of this primitive type to the passed builder
 func (prim *PrimitiveType) WriteDebugDescription(builder *strings.Builder, _ Types) {
 	builder.WriteString(prim.name)
 }

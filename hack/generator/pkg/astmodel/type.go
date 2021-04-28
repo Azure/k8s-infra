@@ -41,7 +41,7 @@ type Type interface {
 	// This doesn't need to be a full representation of the type.
 	fmt.Stringer
 
-	// DebugDescription adds a description of the current type to the passed builder
+	// WriteDebugDescription adds a description of the current type to the passed builder
 	// builder receives the full description, including nested types
 	// types is a dictionary for resolving named types
 	WriteDebugDescription(builder *strings.Builder, types Types)

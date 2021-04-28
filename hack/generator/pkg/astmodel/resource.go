@@ -452,7 +452,7 @@ func (resource *ResourceType) HasTestCases() bool {
 	return len(resource.testcases) > 0
 }
 
-// DebugDescription adds a description of the current type to the passed builder
+// WriteDebugDescription adds a description of the current type to the passed builder
 // builder receives the full description, including nested types
 // types is a dictionary for resolving named types
 func (resource *ResourceType) WriteDebugDescription(builder *strings.Builder, types Types) {
