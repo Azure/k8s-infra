@@ -174,11 +174,13 @@ func (typeName TypeName) WriteDebugDescription(builder *strings.Builder, types T
 	builder.WriteString(typeName.PackageReference.String())
 	builder.WriteString("/")
 	builder.WriteString(typeName.name)
-	builder.WriteString(":")
 
-	if definition, ok := types[typeName]; ok {
-		definition.Type().WriteDebugDescription(builder, types)
-	} else {
-		builder.WriteString("NOTDEFINED")
+	if _, ok := typeName.PackageReference.AsLocalPackage(); ok {
+		builder.WriteString(":")
+		if definition, ok := types[typeName]; ok {
+			definition.Type().WriteDebugDescription(builder, types)
+		} else {
+			builder.WriteString("NOTDEFINED")
+		}
 	}
 }
