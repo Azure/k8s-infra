@@ -100,7 +100,7 @@ func TestTypeWalker_IdentityWalkReturnsIdenticalTypes(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	types := makeSimpleTestTypeGraph()
-	visitor := MakeTypeVisitor()
+	visitor := TypeVisitorBuilder{}.Build()
 	walker := NewTypeWalker(types, visitor)
 
 	var walked []string
@@ -130,7 +130,7 @@ func TestTypeWalker_DuplicateTypesAreWalkedOnceEach_ReturnedOnce(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	types := makeDuplicateReferencesTypeGraph()
-	visitor := MakeTypeVisitor()
+	visitor := TypeVisitorBuilder{}.Build()
 	walker := NewTypeWalker(types, visitor)
 
 	var walked []TypeDefinition
@@ -160,7 +160,7 @@ func TestTypeWalker_CyclesAllowed_AreNotWalked(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	types := makeCycleTypeGraph()
-	visitor := MakeTypeVisitor()
+	visitor := TypeVisitorBuilder{}.Build()
 	walker := NewTypeWalker(types, visitor)
 
 	var walked []string
@@ -190,7 +190,7 @@ func TestTypeWalker_CanPruneCycles(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	types := makeCycleTypeGraph()
-	visitor := MakeTypeVisitor()
+	visitor := TypeVisitorBuilder{}.Build()
 	walker := NewTypeWalker(types, visitor)
 
 	var walked []string
@@ -233,7 +233,7 @@ func TestTypeWalker_ContextPropagated(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	types := makeSimpleTestTypeGraph()
-	visitor := MakeTypeVisitor()
+	visitor := TypeVisitorBuilder{}.Build()
 	walker := NewTypeWalker(types, visitor)
 
 	walked := make(map[TypeName]int)
@@ -273,7 +273,7 @@ func TestTypeWalker_VisitorApplied(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	types := makeSimpleTestTypeGraph()
-	visitor := MakeTypeVisitor()
+	visitor := TypeVisitorBuilder{}.Build()
 	visitor.VisitObjectType = func(this *TypeVisitor, it *ObjectType, ctx interface{}) (Type, error) {
 		_ = ctx.(int) // Ensure context is the right shape
 
@@ -315,7 +315,7 @@ func TestTypeWalker_CanChangeNameInOnlyCertainPlaces(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	types := makeDuplicateReferencesTypeGraph()
-	visitor := MakeTypeVisitor()
+	visitor := TypeVisitorBuilder{}.Build()
 	walker := NewTypeWalker(types, visitor)
 
 	left2TypeName := MakeTypeName(leftTypeName.PackageReference, "Left2")
