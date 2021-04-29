@@ -99,13 +99,13 @@ type FakeResource_Spec struct {
 var _ genruntime.ARMTransformer = &FakeResource_Spec{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (fakeResourceSpec *FakeResource_Spec) ConvertToARM(resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
+func (fakeResourceSpec *FakeResource_Spec) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if fakeResourceSpec == nil {
 		return nil, nil
 	}
 	var result FakeResource_SpecARM
 	result.ApiVersion = FakeResourceSpecApiVersion20200601
-	result.Name = resolvedReferences.Self()
+	result.Name = name
 	result.Type = FakeResourceSpecTypeMicrosoftAzureFakeResource
 	return result, nil
 }

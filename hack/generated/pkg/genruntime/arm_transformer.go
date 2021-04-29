@@ -11,7 +11,7 @@ import (
 
 type ToARMConverter interface {
 	// ConvertToArm converts this to an ARM resource. The name parameter is the fully qualified name of the resource in Azure ("a/b/c").
-	ConvertToARM(resolvedReferences ResolvedReferences) (interface{}, error)
+	ConvertToARM(name string, resolvedReferences ResolvedReferences) (interface{}, error)
 }
 
 type FromARMConverter interface {

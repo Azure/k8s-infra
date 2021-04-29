@@ -300,13 +300,13 @@ type A_Spec struct {
 var _ genruntime.ARMTransformer = &A_Spec{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (aSpec *A_Spec) ConvertToARM(resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
+func (aSpec *A_Spec) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if aSpec == nil {
 		return nil, nil
 	}
 	var result A_SpecARM
 	result.ApiVersion = ASpecApiVersion20200601
-	result.Name = resolvedReferences.Self()
+	result.Name = name
 	result.Type = ASpecTypeMicrosoftAzureA
 	return result, nil
 }
@@ -352,13 +352,13 @@ type B_Spec struct {
 var _ genruntime.ARMTransformer = &B_Spec{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (bSpec *B_Spec) ConvertToARM(resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
+func (bSpec *B_Spec) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if bSpec == nil {
 		return nil, nil
 	}
 	var result B_SpecARM
 	result.ApiVersion = BSpecApiVersion20200601
-	result.Name = resolvedReferences.Self()
+	result.Name = name
 	result.Type = BSpecTypeMicrosoftAzureB
 	return result, nil
 }
@@ -404,13 +404,13 @@ type C_Spec struct {
 var _ genruntime.ARMTransformer = &C_Spec{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (cSpec *C_Spec) ConvertToARM(resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
+func (cSpec *C_Spec) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if cSpec == nil {
 		return nil, nil
 	}
 	var result C_SpecARM
 	result.ApiVersion = CSpecApiVersion20200601
-	result.Name = resolvedReferences.Self()
+	result.Name = name
 	result.Type = CSpecTypeMicrosoftAzureC
 	return result, nil
 }
@@ -456,13 +456,13 @@ type D_Spec struct {
 var _ genruntime.ARMTransformer = &D_Spec{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (dSpec *D_Spec) ConvertToARM(resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
+func (dSpec *D_Spec) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if dSpec == nil {
 		return nil, nil
 	}
 	var result D_SpecARM
 	result.ApiVersion = DSpecApiVersion20200601
-	result.Name = resolvedReferences.Self()
+	result.Name = name
 	result.Type = DSpecTypeMicrosoftAzureD
 	return result, nil
 }

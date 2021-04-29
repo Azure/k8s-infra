@@ -30,7 +30,7 @@ func Test_NewResourceGroupDeployment(t *testing.T) {
 	g.Expect(err).ToNot(HaveOccurred())
 
 	resourceGroup := testContext.NewTestResourceGroup()
-	resourceGroupSpec, err := resourceGroup.Spec.ConvertToARM(genruntime.MakeResolvedReferences(resourceGroup.Name, nil))
+	resourceGroupSpec, err := resourceGroup.Spec.ConvertToARM(resourceGroup.Name, genruntime.MakeResolvedReferences(nil))
 	g.Expect(err).ToNot(HaveOccurred())
 
 	typedResourceGroupSpec := resourceGroupSpec.(resources.ResourceGroupSpecArm)
@@ -87,7 +87,7 @@ func Test_NewResourceGroupDeployment_Error(t *testing.T) {
 		},
 	}
 
-	resourceGroupSpec, err := resourceGroup.Spec.ConvertToARM(genruntime.MakeResolvedReferences(resourceGroup.Name, nil))
+	resourceGroupSpec, err := resourceGroup.Spec.ConvertToARM(resourceGroup.Name, genruntime.MakeResolvedReferences(nil))
 	g.Expect(err).ToNot(HaveOccurred())
 
 	deployment := armclient.NewSubscriptionDeployment(

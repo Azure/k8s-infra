@@ -60,7 +60,7 @@ func ConvertResourceToDeployableResource(
 		return nil, err
 	}
 
-	armSpec, err := armTransformer.ConvertToARM(genruntime.MakeResolvedReferences(resourceHierarchy.FullAzureName(), resolvedRefs))
+	armSpec, err := armTransformer.ConvertToARM(resourceHierarchy.FullAzureName(), genruntime.MakeResolvedReferences(resolvedRefs))
 	if err != nil {
 		return nil, errors.Wrapf(err, "transforming resource %s to ARM", metaObject.GetName())
 	}

@@ -15,6 +15,7 @@ import (
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astmodel"
 )
 
+const nameParameterString = "name"
 const resolvedReferencesParameterString = "resolvedReferences"
 
 type convertToARMBuilder struct {
@@ -64,6 +65,7 @@ func (builder *convertToARMBuilder) functionDeclaration() *dst.FuncDecl {
 		Body: builder.functionBodyStatements(),
 	}
 
+	fn.AddParameter(nameParameterString, dst.NewIdent("string"))
 	fn.AddParameter(
 		resolvedReferencesParameterString,
 		&dst.SelectorExpr{
@@ -119,19 +121,14 @@ func (builder *convertToARMBuilder) namePropertyHandler(
 
 	// we do not read from AzureName() but instead use
 	// the passed-in 'name' parameter which contains
-	// a full ARM ID including any owners, etc
+	// a full name including any owners, etc
 	result := astbuilder.SimpleAssignment(
 		&dst.SelectorExpr{
 			X:   dst.NewIdent(builder.resultIdent),
 			Sel: dst.NewIdent(string(toProp.PropertyName())),
 		},
 		token.ASSIGN,
-		&dst.CallExpr{
-			Fun: &dst.SelectorExpr{
-				X:   dst.NewIdent(resolvedReferencesParameterString),
-				Sel: dst.NewIdent("Self"),
-			},
-		})
+		dst.NewIdent(nameParameterString))
 
 	return []dst.Stmt{result}
 }
@@ -539,6 +536,7 @@ func callToARMFunction(source dst.Expr, destination dst.Expr, methodName string)
 					Sel: dst.NewIdent(methodName),
 				},
 				Args: []dst.Expr{
+					dst.NewIdent(nameParameterString),
 					dst.NewIdent(resolvedReferencesParameterString),
 				},
 			},
