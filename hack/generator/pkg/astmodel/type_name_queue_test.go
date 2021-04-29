@@ -60,10 +60,11 @@ func TestTypeNameQueue_Process(t *testing.T) {
 	initialQueueSize := queue.Len()
 	processed := 0
 
-	queue.Process(func(n TypeName) error {
+	err := queue.Process(func(n TypeName) error {
 		processed++
 		return nil
 	})
 
+	g.Expect(err).To(BeNil())
 	g.Expect(processed).To(Equal(initialQueueSize))
 }
