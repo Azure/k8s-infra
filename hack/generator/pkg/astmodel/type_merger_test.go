@@ -87,3 +87,92 @@ func TestCanMergeWithUnorderedMerger(t *testing.T) {
 	g.Expect(err).To(Not(HaveOccurred()))
 	g.Expect(result).To(Equal(StringType))
 }
+
+var leftFallback MergerFunc = func(ctx interface{}, left, right Type) (Type, error) { return left, nil }
+
+func TestAddPanicsWhenPassedANonFunction(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	merger := NewTypeMerger(leftFallback)
+
+	g.Expect(func() { merger.Add(123) }).To(PanicWith("merger must be a function"))
+}
+
+func TestMergerFuncMustTakeTwoOrThreeArguments(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	merger := NewTypeMerger(leftFallback)
+
+	msg := "merger must take 2 arguments (left Type, right Type) or 3 arguments (ctx interface{}, left Type, right Type)"
+
+	g.Expect(func() { merger.Add(func() (Type, error) { return nil, nil }) }).To(PanicWith(msg))
+	g.Expect(func() { merger.Add(func(x Type) (Type, error) { return x, nil }) }).To(PanicWith(msg))
+	g.Expect(func() { merger.Add(func(x, _, _, _ Type) (Type, error) { return x, nil }) }).To(PanicWith(msg))
+}
+
+func TestMergerFuncWithThreeArgumentsMustTakeCtxAsFirst(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	merger := NewTypeMerger(leftFallback)
+
+	msg := "with 3 arguments, first (context) argument must be of type interface{}"
+
+	g.Expect(func() { merger.Add(func(x, _, _ Type) (Type, error) { return x, nil }) }).To(PanicWith(msg))
+}
+
+func TestMergerFuncMustTakeTypesAssignableToTypeAsArguments(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	merger := NewTypeMerger(leftFallback)
+
+	msg := "merger must take in types assignable to Type"
+
+	// left side wrong
+	g.Expect(func() { merger.Add(func(_ int, _ Type) (Type, error) { return nil, nil }) }).To(PanicWith(msg))
+	g.Expect(func() { merger.Add(func(_ int, _ EnumType) (Type, error) { return nil, nil }) }).To(PanicWith(msg))
+	g.Expect(func() { merger.Add(func(_ interface{}, x int, _ Type) (Type, error) { return nil, nil }) }).To(PanicWith(msg))
+	g.Expect(func() { merger.Add(func(_ interface{}, _ int, _ EnumType) (Type, error) { return nil, nil }) }).To(PanicWith(msg))
+
+	// right side wrong
+	g.Expect(func() { merger.Add(func(_ Type, _ int) (Type, error) { return nil, nil }) }).To(PanicWith(msg))
+	g.Expect(func() { merger.Add(func(_ EnumType, _ int) (Type, error) { return nil, nil }) }).To(PanicWith(msg))
+	g.Expect(func() { merger.Add(func(_ interface{}, _ Type, _ int) (Type, error) { return nil, nil }) }).To(PanicWith(msg))
+	g.Expect(func() { merger.Add(func(_ interface{}, _ EnumType, _ int) (Type, error) { return nil, nil }) }).To(PanicWith(msg))
+}
+
+func TestFuncMustTakeTypesAssignableToTypeAsArguments(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	merger := NewTypeMerger(leftFallback)
+
+	msg := "merger must return (Type, error)"
+
+	g.Expect(func() { merger.Add(func(_, _ Type) Type { return nil }) }).To(PanicWith(msg))
+	g.Expect(func() { merger.Add(func(_ interface{}, _, _ Type) Type { return nil }) }).To(PanicWith(msg))
+}
+
+func TestMergeReturnsNonNilSide(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	merger := NewTypeMerger(leftFallback)
+
+	var ctx interface{} = nil
+
+	// left side
+	result, err := merger.Merge(StringType, nil)
+	g.Expect(err).ToNot(HaveOccurred())
+	g.Expect(result).To(Equal(StringType))
+
+	result, err = merger.MergeWithContext(ctx, StringType, nil)
+	g.Expect(err).ToNot(HaveOccurred())
+	g.Expect(result).To(Equal(StringType))
+
+	// right side
+	result, err = merger.Merge(nil, StringType)
+	g.Expect(err).ToNot(HaveOccurred())
+	g.Expect(result).To(Equal(StringType))
+
+	result, err = merger.MergeWithContext(ctx, nil, StringType)
+	g.Expect(err).ToNot(HaveOccurred())
+	g.Expect(result).To(Equal(StringType))
+}

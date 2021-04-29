@@ -43,6 +43,7 @@ func NewTypeMerger(fallback MergerFunc) TypeMerger {
 var typeInterface reflect.Type = reflect.TypeOf((*Type)(nil)).Elem() // yuck
 var errorInterface reflect.Type = reflect.TypeOf((*error)(nil)).Elem()
 var mergerFuncType reflect.Type = reflect.TypeOf((*MergerFunc)(nil)).Elem()
+var interfaceInterface reflect.Type = reflect.TypeOf((*interface{})(nil)).Elem()
 
 type validatedMerger struct {
 	merger                    reflect.Value
@@ -59,12 +60,18 @@ func validateMerger(merger interface{}) validatedMerger {
 	mergerType := it.Type()
 
 	if mergerType.NumIn() != 2 && mergerType.NumIn() != 3 {
-		panic("merger must take 2 arguments (Type, Type) or 3 arguments (X, Type, Type)")
+		panic("merger must take 2 arguments (left Type, right Type) or 3 arguments (ctx interface{}, left Type, right Type)")
 	}
 
 	argOffset := mergerType.NumIn() - 2
+
+	needsCtx := argOffset != 0
 	leftArg := mergerType.In(argOffset + 0)
 	rightArg := mergerType.In(argOffset + 1)
+
+	if needsCtx && mergerType.In(0) != interfaceInterface {
+		panic("with 3 arguments, first (context) argument must be of type interface{}")
+	}
 
 	if !leftArg.AssignableTo(typeInterface) || !rightArg.AssignableTo(typeInterface) {
 		panic("merger must take in types assignable to Type")
@@ -80,7 +87,7 @@ func validateMerger(merger interface{}) validatedMerger {
 		merger:       it,
 		leftArgType:  leftArg,
 		rightArgType: rightArg,
-		needsCtx:     argOffset != 0,
+		needsCtx:     needsCtx,
 	}
 }
 
