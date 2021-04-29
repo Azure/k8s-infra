@@ -43,7 +43,7 @@ func (e resourceRemovalVisitorContext) WithMoreDepth() resourceRemovalVisitorCon
 //    v20181001 Microsoft.Networking Connection.Spec.Properties.LocalNetworkGateway2.Properties.
 //    The LocalNetworkGateway2 property is of type "LocalNetworkGateway" which is itself a resource.
 //    The ideal shape of Connection.Spec.Properties.LocalNetworkGate2 would just be a reference to a
-//    LocalNetworkGateway resource. TODO: Talk about how sure we are of this
+//    LocalNetworkGateway resource.
 // 2. A subresource embedding. For the same reasons above, embedded subresources don't make sense in Kubernetes.
 //    In the case of embedded subresources, the ideal shape would be a complete removal of the reference. We forbid
 //    parent resources directly referencing child resources as it complicates the Watches scenario for each resource
@@ -88,6 +88,38 @@ func MakeEmbeddedResourceRemover(types astmodel.Types) (EmbeddedResourceRemover,
 	return remover, nil
 }
 
+// RemoveEmbeddedResources removes any embedded resources according to the
+func (e EmbeddedResourceRemover) RemoveEmbeddedResources() (astmodel.Types, error) {
+	result := make(astmodel.Types)
+
+	visitor := e.makeEmbeddedResourceRemovalTypeVisitor()
+
+	for _, def := range e.types {
+		if astmodel.IsResourceDefinition(def) {
+			typeWalker := e.newResourceRemovalTypeWalker(visitor, def)
+
+			updatedTypes, err := typeWalker.Walk(def)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, newDef := range updatedTypes {
+				err := result.AddAllowDuplicates(newDef)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
+	result, err := simplifyTypeNames(result, e.typeFlag)
+	if err != nil {
+		return nil, err
+	}
+
+	return RemoveEmptyObjects(result)
+}
+
 func (e EmbeddedResourceRemover) makeEmbeddedResourceRemovalTypeVisitor() astmodel.TypeVisitor {
 	visitor := astmodel.MakeTypeVisitor()
 	visitor.VisitObjectType = func(this *astmodel.TypeVisitor, it *astmodel.ObjectType, ctx interface{}) (astmodel.Type, error) {
@@ -102,6 +134,7 @@ func (e EmbeddedResourceRemover) makeEmbeddedResourceRemovalTypeVisitor() astmod
 			return astmodel.IdentityVisitOfObjectType(this, it, ctx)
 		}
 
+		// TODO: This is confusing...?
 		// Before visiting, check if any properties are just referring to one of our sub-resources and remove them
 		subResources := e.resourceToSubresourceMap[typedCtx.resource]
 		for _, prop := range it.Properties() {
@@ -179,6 +212,17 @@ func (e EmbeddedResourceRemover) newResourceRemovalTypeWalker(visitor astmodel.T
 			return true, nil
 		}
 
+		// TODO: Should this be replaced with a hardcoded list of resources (since most offending resources are in networking?)
+		// This is here because some microsoft.networking resources are resources (in the sense that they have ARM IDs)
+		// but can only be created as children of another resource. The resources in question don't have
+		// their own PUT and so are not actually classified as a top level resource by the JSON schema. We don't want to
+		// remove ALL cycles in the type graph currently as we can't know for sure that the cycles are structurally meaningless.
+		// This is an attempt at a middle-ground heuristic that lets us find cycles between things that are resource-like.
+		// For example see the cycle between NetworkInterfaceIPConfiguration in microsoft.network 20180601:
+		// NetworkInterfaceIPConfiguration_Status -> NetworkInterfaceIPConfigurationPropertiesFormat_Status ->
+		// ApplicationGatewayBackendAddressPool_Status -> ApplicationGatewayBackendAddressPoolPropertiesFormat_Status -> NetworkInterfaceIPConfiguration_Status
+		// Sometimes these resource-like things are promoted to real resources in future APIs as in the case of Subnet in the 2017-06-01
+		// API version.
 		if isTypeResourceLookalike(def.Type()) {
 			klog.V(5).Infof("Type %q is a resource lookalike", def.Name())
 			return true, nil
@@ -196,38 +240,6 @@ func (e EmbeddedResourceRemover) newResourceRemovalTypeWalker(visitor astmodel.T
 	}
 
 	return typeWalker
-}
-
-// RemoveEmbeddedResources removes any embedded resources according to the
-func (e EmbeddedResourceRemover) RemoveEmbeddedResources() (astmodel.Types, error) {
-	result := make(astmodel.Types)
-
-	visitor := e.makeEmbeddedResourceRemovalTypeVisitor()
-
-	for _, def := range e.types {
-		if astmodel.IsResourceDefinition(def) {
-			typeWalker := e.newResourceRemovalTypeWalker(visitor, def)
-
-			updatedTypes, err := typeWalker.Walk(def)
-			if err != nil {
-				return nil, err
-			}
-
-			for _, newDef := range updatedTypes {
-				err := result.AddAllowDuplicates(newDef)
-				if err != nil {
-					return nil, err
-				}
-			}
-		}
-	}
-
-	result, err := simplifyTypeNames(result, e.typeFlag)
-	if err != nil {
-		return nil, err
-	}
-
-	return RemoveEmptyObjects(result)
 }
 
 // findSubResourcePropertiesTypeNames finds the "Properties" type of each subresource and returns a map of
@@ -276,7 +288,7 @@ func findSubResourcePropertiesTypeNames(types astmodel.Types) (map[astmodel.Type
 	return result, nil
 }
 
-// TODO: Should I move this to resourceType?
+// TODO: Move this to resourceType?
 func tryResolveSpecStatusTypes(types astmodel.Types, resource *astmodel.ResourceType) (*astmodel.TypeName, *astmodel.TypeName, error) {
 	specName, ok := astmodel.AsTypeName(resource.SpecType())
 	if !ok {

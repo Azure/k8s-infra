@@ -45,7 +45,7 @@ func findEmptyObjectTypes(types astmodel.Types) astmodel.TypeNameSet {
 			continue
 		}
 
-		klog.V(0).Infof("Removing %q as it has no properties", def.Name())
+		klog.V(4).Infof("Removing %q as it has no properties", def.Name())
 		result.Add(def.Name())
 	}
 
