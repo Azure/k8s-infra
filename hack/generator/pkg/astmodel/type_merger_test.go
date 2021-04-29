@@ -103,21 +103,11 @@ func TestMergerFuncMustTakeTwoOrThreeArguments(t *testing.T) {
 
 	merger := NewTypeMerger(leftFallback)
 
-	msg := "merger must take 2 arguments (left Type, right Type) or 3 arguments (ctx interface{}, left Type, right Type)"
+	msg := "merger must take 2 arguments (left Type, right Type) or 3 arguments (ctx X, left Type, right Type)"
 
 	g.Expect(func() { merger.Add(func() (Type, error) { return nil, nil }) }).To(PanicWith(msg))
 	g.Expect(func() { merger.Add(func(x Type) (Type, error) { return x, nil }) }).To(PanicWith(msg))
 	g.Expect(func() { merger.Add(func(x, _, _, _ Type) (Type, error) { return x, nil }) }).To(PanicWith(msg))
-}
-
-func TestMergerFuncWithThreeArgumentsMustTakeCtxAsFirst(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	merger := NewTypeMerger(leftFallback)
-
-	msg := "with 3 arguments, first (context) argument must be of type interface{}"
-
-	g.Expect(func() { merger.Add(func(x, _, _ Type) (Type, error) { return x, nil }) }).To(PanicWith(msg))
 }
 
 func TestMergerFuncMustTakeTypesAssignableToTypeAsArguments(t *testing.T) {
