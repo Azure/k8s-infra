@@ -30,8 +30,9 @@ type TypeMerger struct {
 }
 
 type mergerRegistration struct {
-	left, right reflect.Type
-	merge       MergerFunc
+	left  reflect.Type
+	right reflect.Type
+	merge MergerFunc
 }
 
 type MergerFunc func(ctx interface{}, left, right Type) (Type, error)
