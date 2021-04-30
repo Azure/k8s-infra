@@ -169,7 +169,7 @@ type A_Spec struct {
 var _ genruntime.ARMTransformer = &A_Spec{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (aSpec *A_Spec) ConvertToARM(name string) (interface{}, error) {
+func (aSpec *A_Spec) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if aSpec == nil {
 		return nil, nil
 	}
@@ -177,7 +177,7 @@ func (aSpec *A_Spec) ConvertToARM(name string) (interface{}, error) {
 	result.ApiVersion = ASpecApiVersion20200601
 	result.Name = name
 	if aSpec.Properties != nil {
-		properties, err := (*aSpec.Properties).ConvertToARM(name)
+		properties, err := (*aSpec.Properties).ConvertToARM(name, resolvedReferences)
 		if err != nil {
 			return nil, err
 		}
@@ -240,7 +240,7 @@ type B_Spec struct {
 var _ genruntime.ARMTransformer = &B_Spec{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (bSpec *B_Spec) ConvertToARM(name string) (interface{}, error) {
+func (bSpec *B_Spec) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if bSpec == nil {
 		return nil, nil
 	}
@@ -248,7 +248,7 @@ func (bSpec *B_Spec) ConvertToARM(name string) (interface{}, error) {
 	result.ApiVersion = BSpecApiVersion20200601
 	result.Name = name
 	if bSpec.Properties != nil {
-		properties, err := (*bSpec.Properties).ConvertToARM(name)
+		properties, err := (*bSpec.Properties).ConvertToARM(name, resolvedReferences)
 		if err != nil {
 			return nil, err
 		}
@@ -303,7 +303,7 @@ type CommonProperties struct {
 var _ genruntime.ARMTransformer = &CommonProperties{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (commonProperties *CommonProperties) ConvertToARM(name string) (interface{}, error) {
+func (commonProperties *CommonProperties) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if commonProperties == nil {
 		return nil, nil
 	}

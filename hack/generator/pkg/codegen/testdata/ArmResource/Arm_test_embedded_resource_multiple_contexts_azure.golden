@@ -107,7 +107,7 @@ type A_Spec struct {
 var _ genruntime.ARMTransformer = &A_Spec{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (aSpec *A_Spec) ConvertToARM(name string) (interface{}, error) {
+func (aSpec *A_Spec) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if aSpec == nil {
 		return nil, nil
 	}
@@ -115,7 +115,7 @@ func (aSpec *A_Spec) ConvertToARM(name string) (interface{}, error) {
 	result.ApiVersion = ASpecApiVersion20200601
 	result.Name = name
 	if aSpec.Properties != nil {
-		properties, err := (*aSpec.Properties).ConvertToARM(name)
+		properties, err := (*aSpec.Properties).ConvertToARM(name, resolvedReferences)
 		if err != nil {
 			return nil, err
 		}
@@ -164,13 +164,13 @@ type AProperties struct {
 var _ genruntime.ARMTransformer = &AProperties{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (aProperties *AProperties) ConvertToARM(name string) (interface{}, error) {
+func (aProperties *AProperties) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if aProperties == nil {
 		return nil, nil
 	}
 	var result APropertiesARM
 	if aProperties.Left != nil {
-		left, err := (*aProperties.Left).ConvertToARM(name)
+		left, err := (*aProperties.Left).ConvertToARM(name, resolvedReferences)
 		if err != nil {
 			return nil, err
 		}
@@ -178,7 +178,7 @@ func (aProperties *AProperties) ConvertToARM(name string) (interface{}, error) {
 		result.Left = &leftTyped
 	}
 	if aProperties.Right != nil {
-		right, err := (*aProperties.Right).ConvertToARM(name)
+		right, err := (*aProperties.Right).ConvertToARM(name, resolvedReferences)
 		if err != nil {
 			return nil, err
 		}
@@ -262,7 +262,7 @@ type Left_SubResourceEmbedded struct {
 var _ genruntime.ARMTransformer = &Left_SubResourceEmbedded{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (leftSubResourceEmbedded *Left_SubResourceEmbedded) ConvertToARM(name string) (interface{}, error) {
+func (leftSubResourceEmbedded *Left_SubResourceEmbedded) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if leftSubResourceEmbedded == nil {
 		return nil, nil
 	}
@@ -272,7 +272,7 @@ func (leftSubResourceEmbedded *Left_SubResourceEmbedded) ConvertToARM(name strin
 		result.Name = &nameTyped
 	}
 	if leftSubResourceEmbedded.Properties != nil {
-		properties, err := (*leftSubResourceEmbedded.Properties).ConvertToARM(name)
+		properties, err := (*leftSubResourceEmbedded.Properties).ConvertToARM(name, resolvedReferences)
 		if err != nil {
 			return nil, err
 		}
@@ -280,7 +280,7 @@ func (leftSubResourceEmbedded *Left_SubResourceEmbedded) ConvertToARM(name strin
 		result.Properties = &propertiesTyped
 	}
 	if leftSubResourceEmbedded.RefField != nil {
-		refField, err := (*leftSubResourceEmbedded.RefField).ConvertToARM(name)
+		refField, err := (*leftSubResourceEmbedded.RefField).ConvertToARM(name, resolvedReferences)
 		if err != nil {
 			return nil, err
 		}
@@ -342,7 +342,7 @@ type Right_SubResourceEmbedded_1 struct {
 var _ genruntime.ARMTransformer = &Right_SubResourceEmbedded_1{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (rightSubResourceEmbedded1 *Right_SubResourceEmbedded_1) ConvertToARM(name string) (interface{}, error) {
+func (rightSubResourceEmbedded1 *Right_SubResourceEmbedded_1) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if rightSubResourceEmbedded1 == nil {
 		return nil, nil
 	}
@@ -352,7 +352,7 @@ func (rightSubResourceEmbedded1 *Right_SubResourceEmbedded_1) ConvertToARM(name 
 		result.Name = &nameTyped
 	}
 	if rightSubResourceEmbedded1.Properties != nil {
-		properties, err := (*rightSubResourceEmbedded1.Properties).ConvertToARM(name)
+		properties, err := (*rightSubResourceEmbedded1.Properties).ConvertToARM(name, resolvedReferences)
 		if err != nil {
 			return nil, err
 		}
@@ -360,7 +360,7 @@ func (rightSubResourceEmbedded1 *Right_SubResourceEmbedded_1) ConvertToARM(name 
 		result.Properties = &propertiesTyped
 	}
 	if rightSubResourceEmbedded1.RefField != nil {
-		refField, err := (*rightSubResourceEmbedded1.RefField).ConvertToARM(name)
+		refField, err := (*rightSubResourceEmbedded1.RefField).ConvertToARM(name, resolvedReferences)
 		if err != nil {
 			return nil, err
 		}
@@ -426,7 +426,7 @@ type FakeResource_SubResourceEmbedded struct {
 var _ genruntime.ARMTransformer = &FakeResource_SubResourceEmbedded{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (fakeResourceSubResourceEmbedded *FakeResource_SubResourceEmbedded) ConvertToARM(name string) (interface{}, error) {
+func (fakeResourceSubResourceEmbedded *FakeResource_SubResourceEmbedded) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if fakeResourceSubResourceEmbedded == nil {
 		return nil, nil
 	}
@@ -436,7 +436,7 @@ func (fakeResourceSubResourceEmbedded *FakeResource_SubResourceEmbedded) Convert
 		result.Name = &nameTyped
 	}
 	if fakeResourceSubResourceEmbedded.Properties != nil {
-		properties, err := (*fakeResourceSubResourceEmbedded.Properties).ConvertToARM(name)
+		properties, err := (*fakeResourceSubResourceEmbedded.Properties).ConvertToARM(name, resolvedReferences)
 		if err != nil {
 			return nil, err
 		}
@@ -483,7 +483,7 @@ type FakeResource_SubResourceEmbedded_1 struct {
 var _ genruntime.ARMTransformer = &FakeResource_SubResourceEmbedded_1{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (fakeResourceSubResourceEmbedded1 *FakeResource_SubResourceEmbedded_1) ConvertToARM(name string) (interface{}, error) {
+func (fakeResourceSubResourceEmbedded1 *FakeResource_SubResourceEmbedded_1) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if fakeResourceSubResourceEmbedded1 == nil {
 		return nil, nil
 	}
@@ -493,7 +493,7 @@ func (fakeResourceSubResourceEmbedded1 *FakeResource_SubResourceEmbedded_1) Conv
 		result.Name = &nameTyped
 	}
 	if fakeResourceSubResourceEmbedded1.Properties != nil {
-		properties, err := (*fakeResourceSubResourceEmbedded1.Properties).ConvertToARM(name)
+		properties, err := (*fakeResourceSubResourceEmbedded1.Properties).ConvertToARM(name, resolvedReferences)
 		if err != nil {
 			return nil, err
 		}
@@ -539,7 +539,7 @@ type LeftProperties struct {
 var _ genruntime.ARMTransformer = &LeftProperties{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (leftProperties *LeftProperties) ConvertToARM(name string) (interface{}, error) {
+func (leftProperties *LeftProperties) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if leftProperties == nil {
 		return nil, nil
 	}
@@ -577,7 +577,7 @@ type RightProperties struct {
 var _ genruntime.ARMTransformer = &RightProperties{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (rightProperties *RightProperties) ConvertToARM(name string) (interface{}, error) {
+func (rightProperties *RightProperties) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if rightProperties == nil {
 		return nil, nil
 	}
@@ -615,13 +615,13 @@ type FakeResourceProperties_SubResourceEmbedded struct {
 var _ genruntime.ARMTransformer = &FakeResourceProperties_SubResourceEmbedded{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (fakeResourcePropertiesSubResourceEmbedded *FakeResourceProperties_SubResourceEmbedded) ConvertToARM(name string) (interface{}, error) {
+func (fakeResourcePropertiesSubResourceEmbedded *FakeResourceProperties_SubResourceEmbedded) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if fakeResourcePropertiesSubResourceEmbedded == nil {
 		return nil, nil
 	}
 	var result FakeResourceProperties_SubResourceEmbeddedARM
 	if fakeResourcePropertiesSubResourceEmbedded.Loop2 != nil {
-		loop2, err := (*fakeResourcePropertiesSubResourceEmbedded.Loop2).ConvertToARM(name)
+		loop2, err := (*fakeResourcePropertiesSubResourceEmbedded.Loop2).ConvertToARM(name, resolvedReferences)
 		if err != nil {
 			return nil, err
 		}
@@ -663,13 +663,13 @@ type FakeResourceProperties_SubResourceEmbedded_1 struct {
 var _ genruntime.ARMTransformer = &FakeResourceProperties_SubResourceEmbedded_1{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (fakeResourcePropertiesSubResourceEmbedded1 *FakeResourceProperties_SubResourceEmbedded_1) ConvertToARM(name string) (interface{}, error) {
+func (fakeResourcePropertiesSubResourceEmbedded1 *FakeResourceProperties_SubResourceEmbedded_1) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if fakeResourcePropertiesSubResourceEmbedded1 == nil {
 		return nil, nil
 	}
 	var result FakeResourceProperties_SubResourceEmbedded_1ARM
 	if fakeResourcePropertiesSubResourceEmbedded1.Loop1 != nil {
-		loop1, err := (*fakeResourcePropertiesSubResourceEmbedded1.Loop1).ConvertToARM(name)
+		loop1, err := (*fakeResourcePropertiesSubResourceEmbedded1.Loop1).ConvertToARM(name, resolvedReferences)
 		if err != nil {
 			return nil, err
 		}
@@ -724,7 +724,7 @@ type Left_SubResourceEmbedded_1 struct {
 var _ genruntime.ARMTransformer = &Left_SubResourceEmbedded_1{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (leftSubResourceEmbedded1 *Left_SubResourceEmbedded_1) ConvertToARM(name string) (interface{}, error) {
+func (leftSubResourceEmbedded1 *Left_SubResourceEmbedded_1) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if leftSubResourceEmbedded1 == nil {
 		return nil, nil
 	}
@@ -734,7 +734,7 @@ func (leftSubResourceEmbedded1 *Left_SubResourceEmbedded_1) ConvertToARM(name st
 		result.Name = &nameTyped
 	}
 	if leftSubResourceEmbedded1.Properties != nil {
-		properties, err := (*leftSubResourceEmbedded1.Properties).ConvertToARM(name)
+		properties, err := (*leftSubResourceEmbedded1.Properties).ConvertToARM(name, resolvedReferences)
 		if err != nil {
 			return nil, err
 		}
@@ -781,7 +781,7 @@ type Right_SubResourceEmbedded struct {
 var _ genruntime.ARMTransformer = &Right_SubResourceEmbedded{}
 
 // ConvertToARM converts from a Kubernetes CRD object to an ARM object
-func (rightSubResourceEmbedded *Right_SubResourceEmbedded) ConvertToARM(name string) (interface{}, error) {
+func (rightSubResourceEmbedded *Right_SubResourceEmbedded) ConvertToARM(name string, resolvedReferences genruntime.ResolvedReferences) (interface{}, error) {
 	if rightSubResourceEmbedded == nil {
 		return nil, nil
 	}
@@ -791,7 +791,7 @@ func (rightSubResourceEmbedded *Right_SubResourceEmbedded) ConvertToARM(name str
 		result.Name = &nameTyped
 	}
 	if rightSubResourceEmbedded.Properties != nil {
-		properties, err := (*rightSubResourceEmbedded.Properties).ConvertToARM(name)
+		properties, err := (*rightSubResourceEmbedded.Properties).ConvertToARM(name, resolvedReferences)
 		if err != nil {
 			return nil, err
 		}
