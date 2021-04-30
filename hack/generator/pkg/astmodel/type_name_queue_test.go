@@ -39,11 +39,14 @@ func TestTypeNameQueue_Dequeue(t *testing.T) {
 
 	initialLength := queue.Len()
 
-	n, err := queue.Dequeue()
+	n, ok := queue.Dequeue()
 
-	g.Expect(err).To(BeNil())
+	g.Expect(ok).To(BeTrue())
 	g.Expect(queue.Len() < initialLength).To(BeTrue())
 	g.Expect(n).To(Equal(email))
+
+	_, ok = queue.Dequeue()
+	g.Expect(ok).To(BeFalse())
 }
 
 func TestTypeNameQueue_Process(t *testing.T) {

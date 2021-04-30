@@ -5,10 +5,6 @@
 
 package astmodel
 
-import (
-	"github.com/pkg/errors"
-)
-
 // TypeNameQueue is a classic FIFO queue of TypeNames
 type TypeNameQueue struct {
 	queue []TypeName
@@ -27,14 +23,17 @@ func (q *TypeNameQueue) Enqueue(name TypeName) {
 
 // Dequeue removes the front item from the queue
 // An error will be returned if no item is available
-func (q *TypeNameQueue) Dequeue() (TypeName, error) {
+func (q *TypeNameQueue) Dequeue() (TypeName, bool) {
 	if len(q.queue) == 0 {
-		return TypeName{}, errors.New("queue is empty")
+		return TypeName{}, false
 	}
 
+	// TODO: There's a gotcha here that the slices retain the underlying array
+	// so along lived queue that never empties will prevent a bunch of stuff
+	// from being cleaned up by the GC
 	result := q.queue[0]
 	q.queue = q.queue[1:]
-	return result, nil
+	return result, true
 }
 
 // Len returns the length of the queue
@@ -48,12 +47,13 @@ func (q *TypeNameQueue) Len() int {
 // error returned
 func (q *TypeNameQueue) Process(processor func(TypeName) error) error {
 	for len(q.queue) > 0 {
-		def, err := q.Dequeue()
-		if err != nil {
-			return err
+		def, ok := q.Dequeue()
+		if !ok {
+			// Emptied the queue, we're done
+			return nil
 		}
 
-		err = processor(def)
+		err := processor(def)
 		if err != nil {
 			return err
 		}
