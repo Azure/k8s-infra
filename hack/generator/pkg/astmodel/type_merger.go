@@ -15,9 +15,9 @@ import (
 //
 // Conceptually it takes (via Add) a list of functions of the form:
 //
-//     func ([ctx interface{},] a <: Type, b <: Type) (Type, error)
+//     func ([ctx interface{},] left {some Type}, right {some Type}) (Type, error)
 //
-// where `a` and `b` can be concrete types that implement the `Type` interface.
+// where `left` and `right` can be concrete types that implement the `Type` interface.
 //
 // When `TypeMerger.Merge(Type, Type)` is invoked, it will iterate through the
 // provided functions and invoke the first one that matches the concrete types
@@ -58,7 +58,7 @@ func validateMerger(merger interface{}) validatedMerger {
 
 	mergerType := it.Type()
 
-	badArgumentsMsg := "merger must take take arguments of type (left Type, right Type) or (ctx X, left Type, right Type)"
+	badArgumentsMsg := "merger must take take arguments of type (left [some Type], right [some Type]) or (ctx X, left [some Type], right [some Type])"
 	if mergerType.NumIn() < 2 || mergerType.NumIn() > 3 {
 		panic(badArgumentsMsg)
 	}

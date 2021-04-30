@@ -103,7 +103,7 @@ func TestMergerFuncMustTakeTwoOrThreeArguments(t *testing.T) {
 
 	merger := NewTypeMerger(leftFallback)
 
-	msg := "merger must take take arguments of type (left Type, right Type) or (ctx X, left Type, right Type)"
+	msg := "merger must take take arguments of type (left [some Type], right [some Type]) or (ctx X, left [some Type], right [some Type])"
 
 	g.Expect(func() { merger.Add(func() (Type, error) { return nil, nil }) }).To(PanicWith(msg))
 	g.Expect(func() { merger.Add(func(x Type) (Type, error) { return x, nil }) }).To(PanicWith(msg))
@@ -115,7 +115,7 @@ func TestMergerFuncMustTakeTypesAssignableToTypeAsArguments(t *testing.T) {
 
 	merger := NewTypeMerger(leftFallback)
 
-	msg := "merger must take take arguments of type (left Type, right Type) or (ctx X, left Type, right Type)"
+	msg := "merger must take take arguments of type (left [some Type], right [some Type]) or (ctx X, left [some Type], right [some Type])"
 
 	// left side wrong
 	g.Expect(func() { merger.Add(func(_ int, _ Type) (Type, error) { return nil, nil }) }).To(PanicWith(msg))
