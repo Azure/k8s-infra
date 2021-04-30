@@ -58,8 +58,9 @@ func validateMerger(merger interface{}) validatedMerger {
 
 	mergerType := it.Type()
 
-	if mergerType.NumIn() != 2 && mergerType.NumIn() != 3 {
-		panic("merger must take 2 arguments (left Type, right Type) or 3 arguments (ctx X, left Type, right Type)")
+	badArgumentsMsg := "merger must take take arguments of type (left Type, right Type) or (ctx X, left Type, right Type)"
+	if mergerType.NumIn() < 2 || mergerType.NumIn() > 3 {
+		panic(badArgumentsMsg)
 	}
 
 	argOffset := mergerType.NumIn() - 2
@@ -69,7 +70,7 @@ func validateMerger(merger interface{}) validatedMerger {
 	rightArg := mergerType.In(argOffset + 1)
 
 	if !leftArg.AssignableTo(typeInterface) || !rightArg.AssignableTo(typeInterface) {
-		panic("merger must take in types assignable to Type")
+		panic(badArgumentsMsg)
 	}
 
 	if mergerType.NumOut() != 2 ||
