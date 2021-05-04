@@ -17,7 +17,7 @@ import (
  * WithTestCase() tests
  */
 
-func TestResourceType_WithTestCase_ReturnsExpectedObject(t *testing.T) {
+func TestResourceType_WithTestCase_ReturnsExpectedInstance(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	spec := NewObjectType()

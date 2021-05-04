@@ -171,15 +171,12 @@ func (objectType *ObjectType) HasFunctionWithName(name string) bool {
 
 // AsType implements Type for ObjectType
 func (objectType *ObjectType) AsType(codeGenerationContext *CodeGenerationContext) dst.Expr {
-	embedded := objectType.EmbeddedProperties()
-	properties := objectType.Properties()
 	var fields []*dst.Field
-
-	for _, f := range embedded {
+	for _, f := range objectType.EmbeddedProperties() {
 		fields = append(fields, f.AsField(codeGenerationContext))
 	}
 
-	for _, f := range properties {
+	for _, f := range objectType.Properties() {
 		fields = append(fields, f.AsField(codeGenerationContext))
 	}
 
