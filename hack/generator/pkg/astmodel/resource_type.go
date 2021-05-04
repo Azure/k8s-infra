@@ -8,6 +8,7 @@ package astmodel
 import (
 	"fmt"
 	"go/token"
+	"sort"
 	"strings"
 
 	"github.com/dave/dst"
@@ -123,6 +124,9 @@ func NewAzureResourceType(specType Type, statusType Type, typeName TypeName) *Re
 
 // Ensure ResourceType implements the Type interface correctly
 var _ Type = &ResourceType{}
+
+// Ensure ResourceType implements the PropertyContainer interface correctly
+var _ PropertyContainer = &ResourceType{}
 
 // Ensure ResourceType implements the FunctionContainer interface correctly
 var _ FunctionContainer = &ResourceType{}
@@ -264,6 +268,44 @@ func (resource *ResourceType) Equals(other Type) bool {
 	return true
 }
 
+// EmbeddedProperties returns all the embedded properties for this resource type
+// An ordered slice is returned to preserve immutability and provide determinism
+func (resource *ResourceType) EmbeddedProperties() []*PropertyDefinition {
+
+	typeMetaType := MakeTypeName(MetaV1PackageReference, "TypeMeta")
+	typeMetaProperty := NewPropertyDefinition("", "", typeMetaType).
+		WithTag("json", "inline")
+
+	objectMetaType := MakeTypeName(MetaV1PackageReference, "ObjectMeta")
+	objectMetaProperty := NewPropertyDefinition("", "metadata", objectMetaType).
+		WithTag("json", "omitempty")
+
+	return []*PropertyDefinition{
+		typeMetaProperty,
+		objectMetaProperty,
+	}
+}
+
+// Properties returns all the properties from this resource type
+// An ordered slice is returned to preserve immutability and provide determinism
+func (resource *ResourceType) Properties() []*PropertyDefinition {
+
+	specProperty := NewPropertyDefinition("Spec", "spec", resource.spec).
+		WithTag("json", "omitempty")
+
+	result := []*PropertyDefinition{
+		specProperty,
+	}
+
+	if resource.status != nil {
+		statusProperty := NewPropertyDefinition("Status", "status", resource.status).
+			WithTag("json", "omitempty")
+		result = append(result, statusProperty)
+	}
+
+	return result
+}
+
 // Functions returns all the function implementations
 // A sorted slice is returned to preserve immutability and provide determinism
 func (resource *ResourceType) Functions() []Function {
@@ -328,11 +370,6 @@ func (resource *ResourceType) RequiredPackageReferences() *PackageReferenceSet {
 
 // AsDeclarations converts the resource type to a set of go declarations
 func (resource *ResourceType) AsDeclarations(codeGenerationContext *CodeGenerationContext, declContext DeclarationContext) []dst.Decl {
-	packageName := codeGenerationContext.MustGetImportedPackageName(MetaV1PackageReference)
-
-	typeMetaField := defineField("", dst.NewIdent(fmt.Sprintf("%s.TypeMeta", packageName)), "`json:\",inline\"`")
-	objectMetaField := defineField("", dst.NewIdent(fmt.Sprintf("%s.ObjectMeta", packageName)), "`json:\"metadata,omitempty\"`")
-
 	/*
 		start off with:
 			metav1.TypeMeta   `json:",inline"`
@@ -340,18 +377,19 @@ func (resource *ResourceType) AsDeclarations(codeGenerationContext *CodeGenerati
 
 		then the Spec/Status properties
 	*/
-	fields := []*dst.Field{
-		typeMetaField,
-		objectMetaField,
-		defineField("Spec", resource.spec.AsType(codeGenerationContext), "`json:\"spec,omitempty\"`"),
+	var fields []*dst.Field
+	for _, f := range resource.EmbeddedProperties() {
+		fields = append(fields, f.AsField(codeGenerationContext))
 	}
 
-	if resource.status != nil {
-		statusType := resource.status.AsType(codeGenerationContext)
-		// ErroredTypes can be present as status but might not generate an actual status type
-		if statusType != nil {
-			fields = append(fields, defineField("Status", statusType, "`json:\"status,omitempty\"`"))
-		}
+	for _, f := range resource.Properties() {
+		fields = append(fields, f.AsField(codeGenerationContext))
+	}
+
+	if len(fields) > 0 {
+		// if first field has Before:EmptyLine decoration, switch it to NewLine
+		// this makes the output look nicer 🙂
+		fields[0].Decs.Before = dst.NewLine
 	}
 
 	resourceTypeSpec := &dst.TypeSpec{
