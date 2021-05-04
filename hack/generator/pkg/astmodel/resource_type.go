@@ -378,12 +378,18 @@ func (resource *ResourceType) AsDeclarations(codeGenerationContext *CodeGenerati
 		then the Spec/Status properties
 	*/
 	var fields []*dst.Field
-	for _, f := range resource.EmbeddedProperties() {
-		fields = append(fields, f.AsField(codeGenerationContext))
+	for _, property := range resource.EmbeddedProperties() {
+		f := property.AsField(codeGenerationContext)
+		if f != nil {
+			fields = append(fields, f)
+		}
 	}
 
-	for _, f := range resource.Properties() {
-		fields = append(fields, f.AsField(codeGenerationContext))
+	for _, property := range resource.Properties() {
+		f := property.AsField(codeGenerationContext)
+		if f != nil {
+			fields = append(fields, f)
+		}
 	}
 
 	if len(fields) > 0 {
