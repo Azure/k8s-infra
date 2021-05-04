@@ -30,6 +30,12 @@ var EmptyObjectType = NewObjectType()
 // Ensure ObjectType implements the Type interface correctly
 var _ Type = &ObjectType{}
 
+// Ensure ObjectType implements the PropertyContainer interface correctly
+var _ PropertyContainer = &ObjectType{}
+
+// Ensure ObjectType implements the FunctionContainer interface correctly
+var _ FunctionContainer = &ObjectType{}
+
 // NewObjectType is a factory method for creating a new ObjectType
 func NewObjectType() *ObjectType {
 	return &ObjectType{
@@ -70,17 +76,7 @@ func (objectType *ObjectType) AsDeclarations(codeGenerationContext *CodeGenerati
 func (objectType *ObjectType) generateMethodDecls(codeGenerationContext *CodeGenerationContext, typeName TypeName) []dst.Decl {
 	var result []dst.Decl
 
-	// Functions must be ordered by name for deterministic output
-	var functions []Function
-	for _, f := range objectType.functions {
-		functions = append(functions, f)
-	}
-
-	sort.Slice(functions, func(i int, j int) bool {
-		return functions[i].Name() < functions[j].Name()
-	})
-
-	for _, f := range functions {
+	for _, f := range objectType.Functions() {
 		funcDef := f.AsFunc(codeGenerationContext, typeName)
 		result = append(result, funcDef)
 	}
@@ -149,6 +145,22 @@ func (objectType *ObjectType) EmbeddedProperties() []*PropertyDefinition {
 	})
 
 	return result
+}
+
+// Functions returns all the function implementations
+// A sorted slice is returned to preserve immutability and provide determinism
+func (objectType *ObjectType) Functions() []Function {
+
+	var functions []Function
+	for _, f := range objectType.functions {
+		functions = append(functions, f)
+	}
+
+	sort.Slice(functions, func(i int, j int) bool {
+		return functions[i].Name() < functions[j].Name()
+	})
+
+	return functions
 }
 
 // HasFunctionWithName determines if this object has a function with the given name
