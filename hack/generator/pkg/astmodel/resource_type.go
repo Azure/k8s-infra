@@ -89,7 +89,7 @@ func NewAzureResourceType(specType Type, statusType Type, typeName TypeName) *Re
 		if nameProperty == nil {
 			klog.V(1).Infof("resource %s is missing field 'Name', fabricating one...", typeName)
 
-			nameProperty = NewPropertyDefinition(PropertyName("Name"), "name", StringType)
+			nameProperty = NewPropertyDefinition("Name", "name", StringType)
 			nameProperty.WithDescription("The name of the resource")
 			isNameOptional = true
 		}
@@ -213,7 +213,7 @@ func (resource *ResourceType) AsType(_ *CodeGenerationContext) dst.Expr {
 }
 
 // AsZero always panics because a resource has no direct AST representation
-func (resource *ResourceType) AsZero(types Types, ctx *CodeGenerationContext) dst.Expr {
+func (resource *ResourceType) AsZero(_ Types, _ *CodeGenerationContext) dst.Expr {
 	panic("a resource cannot be used directly as a type")
 }
 
@@ -393,8 +393,8 @@ func (resource *ResourceType) AsDeclarations(codeGenerationContext *CodeGenerati
 	}
 
 	if len(fields) > 0 {
-		// if first field has Before:EmptyLine decoration, switch it to NewLine
-		// this makes the output look nicer 🙂
+		// A Before:EmptyLine decoration on the first field looks odd, so we force it to Before:NewLine
+		// This makes the output look nicer 🙂
 		fields[0].Decs.Before = dst.NewLine
 	}
 

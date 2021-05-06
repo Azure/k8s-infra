@@ -181,8 +181,8 @@ func (objectType *ObjectType) AsType(codeGenerationContext *CodeGenerationContex
 	}
 
 	if len(fields) > 0 {
-		// if first field has Before:EmptyLine decoration, switch it to NewLine
-		// this makes the output look nicer 🙂
+		// A Before:EmptyLine decoration on the first field looks odd, so we force it to Before:NewLine
+		// This makes the output look nicer 🙂
 		fields[0].Decs.Before = dst.NewLine
 	}
 
@@ -198,7 +198,7 @@ func (objectType *ObjectType) AsType(codeGenerationContext *CodeGenerationContex
 // ctx allows current imports to be correctly identified where needed
 // We can only generate a zero value for a named object type (and that's handled by TypeName, so
 // we'll only end up here if it is an anonymous type.)
-func (objectType *ObjectType) AsZero(types Types, ctx *CodeGenerationContext) dst.Expr {
+func (objectType *ObjectType) AsZero(_ Types, _ *CodeGenerationContext) dst.Expr {
 	panic("cannot create a zero value for an object type")
 }
 
@@ -549,6 +549,6 @@ func extractEmbeddedTypeName(t Type) (TypeName, error) {
 // WriteDebugDescription adds a description of the current type to the passed builder
 // builder receives the full description, including nested types
 // types is a dictionary for resolving named types
-func (objectType *ObjectType) WriteDebugDescription(builder *strings.Builder, types Types) {
+func (objectType *ObjectType) WriteDebugDescription(builder *strings.Builder, _ Types) {
 	builder.WriteString("Object")
 }
