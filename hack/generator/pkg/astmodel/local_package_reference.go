@@ -32,6 +32,8 @@ func MakeLocalPackageReference(prefix string, group string, version string) Loca
 	}
 }
 
+// CreateLocalPackageNameFromVersion transforms a version string (2018-06-01) into a package
+// name (v1alpha1api20180601)
 func CreateLocalPackageNameFromVersion(version string) string {
 	return generatorVersionPrefix + sanitizePackageName(version)
 }
