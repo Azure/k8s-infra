@@ -9,27 +9,21 @@ import (
 	"fmt"
 	"go/token"
 	"sort"
+	"strings"
 
 	"github.com/Azure/k8s-infra/hack/generator/pkg/astbuilder"
 	"github.com/dave/dst"
 	"github.com/pkg/errors"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/klog/v2"
 )
-
-// StoragePropertyConversion represents a function that generates the correct AST to convert a single property value
-// Different functions will be used, depending on the types of the properties to be converted.
-// source is an expression for the source value that will be read.
-// destination is an expression the target value that will be written.
-type StoragePropertyConversion func(
-	source dst.Expr, destination dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt
 
 // StorageConversionFunction represents a function that performs conversions for storage versions
 type StorageConversionFunction struct {
 	// name of this conversion function
 	name string
-	// otherType is the type we are converting to (or from). This will be a type which is "closer"
+	// otherDefinition is the type we are converting to (or from). This will be a type which is "closer"
 	// to the hub storage type, making this a building block of the final conversion.
-	otherType TypeDefinition
+	otherDefinition TypeDefinition
 	// conversions is a map of all property conversions we are going to use, keyed by name of the
 	// receiver property
 	conversions map[string]StoragePropertyConversion
@@ -42,6 +36,13 @@ type StorageConversionFunction struct {
 	// conversionContext is additional information about the context in which this conversion was made
 	conversionContext *StorageConversionContext
 }
+
+// StoragePropertyConversion represents a function that generates the correct AST to convert a single property value
+// Different functions will be used, depending on the types of the properties to be converted.
+// source is an expression for the source value that will be read.
+// destination is an expression the target value that will be written.
+type StoragePropertyConversion func(
+	source dst.Expr, destination dst.Expr, generationContext *CodeGenerationContext) []dst.Stmt
 
 // StorageConversionDirection specifies the direction of conversion we're implementing with this function
 type StorageConversionDirection int
@@ -64,7 +65,7 @@ func NewStorageConversionFromFunction(
 	conversionContext *StorageConversionContext,
 ) (*StorageConversionFunction, error) {
 	result := &StorageConversionFunction{
-		otherType:           otherType,
+		otherDefinition:     otherType,
 		idFactory:           idFactory,
 		conversionDirection: ConvertFrom,
 		conversions:         make(map[string]StoragePropertyConversion),
@@ -73,9 +74,9 @@ func NewStorageConversionFromFunction(
 
 	version := idFactory.CreateIdentifier(otherType.Name().PackageReference.PackageName(), Exported)
 	result.name = "ConvertFrom" + version
-	result.conversionContext = conversionContext.WithFunctionName(result.name)
+	result.conversionContext = conversionContext.WithFunctionName(result.name).WithKnownLocals(result.knownLocals)
 
-	err := result.createConversions(receiver)
+	err := result.createConversions(receiver, conversionContext.types)
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating '%s()'", result.name)
 	}
@@ -91,7 +92,7 @@ func NewStorageConversionToFunction(
 	conversionContext *StorageConversionContext,
 ) (*StorageConversionFunction, error) {
 	result := &StorageConversionFunction{
-		otherType:           otherType,
+		otherDefinition:     otherType,
 		idFactory:           idFactory,
 		conversionDirection: ConvertTo,
 		conversions:         make(map[string]StoragePropertyConversion),
@@ -100,9 +101,9 @@ func NewStorageConversionToFunction(
 
 	version := idFactory.CreateIdentifier(otherType.Name().PackageReference.PackageName(), Exported)
 	result.name = "ConvertTo" + version
-	result.conversionContext = conversionContext.WithFunctionName(result.name)
+	result.conversionContext = conversionContext.WithFunctionName(result.name).WithKnownLocals(result.knownLocals)
 
-	err := result.createConversions(receiver)
+	err := result.createConversions(receiver, conversionContext.types)
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating '%s()'", result.name)
 	}
@@ -119,14 +120,14 @@ func (fn *StorageConversionFunction) Name() string {
 func (fn *StorageConversionFunction) RequiredPackageReferences() *PackageReferenceSet {
 	result := NewPackageReferenceSet(
 		ErrorsReference,
-		fn.otherType.Name().PackageReference)
+		fn.otherDefinition.Name().PackageReference)
 
 	return result
 }
 
 // References returns the set of types referenced by this function
 func (fn *StorageConversionFunction) References() TypeNameSet {
-	return NewTypeNameSet(fn.otherType.Name())
+	return NewTypeNameSet(fn.otherDefinition.Name())
 }
 
 // Equals checks to see if the supplied function is the same as this one
@@ -163,10 +164,10 @@ func (fn *StorageConversionFunction) AsFunc(generationContext *CodeGenerationCon
 	switch fn.conversionDirection {
 	case ConvertFrom:
 		parameterName = "source"
-		description = fmt.Sprintf("populates our %s from the provided source %s", receiver.Name(), fn.otherType.Name().Name())
+		description = fmt.Sprintf("populates our %s from the provided source %s", receiver.Name(), fn.otherDefinition.Name().Name())
 	case ConvertTo:
 		parameterName = "destination"
-		description = fmt.Sprintf("populates the provided destination %s from our %s", fn.otherType.Name().Name(), receiver.Name())
+		description = fmt.Sprintf("populates the provided destination %s from our %s", fn.otherDefinition.Name().Name(), receiver.Name())
 	default:
 		panic(fmt.Sprintf("unexpected conversion direction %q", fn.conversionDirection))
 	}
@@ -175,19 +176,19 @@ func (fn *StorageConversionFunction) AsFunc(generationContext *CodeGenerationCon
 
 	funcDetails := &astbuilder.FuncDetails{
 		ReceiverIdent: receiverName,
-		ReceiverType:  receiver.AsType(generationContext),
+		ReceiverType:  NewOptionalType(receiver).AsType(generationContext),
 		Name:          fn.Name(),
 		Body:          fn.generateBody(receiverName, parameterName, generationContext),
 	}
 
-	parameterPackage := generationContext.MustGetImportedPackageName(fn.otherType.Name().PackageReference)
+	parameterPackage := generationContext.MustGetImportedPackageName(fn.otherDefinition.Name().PackageReference)
 
 	funcDetails.AddParameter(
 		parameterName,
 		&dst.StarExpr{
 			X: &dst.SelectorExpr{
 				X:   dst.NewIdent(parameterPackage),
-				Sel: dst.NewIdent(fn.otherType.Name().Name()),
+				Sel: dst.NewIdent(fn.otherDefinition.Name().Name()),
 			},
 		})
 
@@ -276,29 +277,41 @@ func (fn *StorageConversionFunction) generateAssignments(
 
 // createConversions iterates through the properties on our receiver type, matching them up with
 // our other type and generating conversions where possible
-func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) error {
+func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition, types Types) error {
 
-	receiverObject, ok := AsObjectType(receiver.Type())
+	receiverContainer, ok := fn.asPropertyContainer(receiver.theType)
 	if !ok {
+		var typeDescription strings.Builder
+		receiver.Type().WriteDebugDescription(&typeDescription, types)
+
 		return errors.Errorf(
-			"expected TypeDefinition %q to wrap receiver object type, but found %q",
+			"expected receiver TypeDefinition %q to be either resource or object type, but found %q",
 			receiver.name.String(),
-			receiver.Type())
+			typeDescription.String())
 	}
 
-	var otherObject *ObjectType
-	otherObject, ok = AsObjectType(fn.otherType.Type())
+	otherContainer, ok := fn.asPropertyContainer(fn.otherDefinition.theType)
 	if !ok {
-		return errors.Errorf("expected TypeDefinition %q to wrap object type, but none found", fn.otherType.Name().String())
+		var typeDescription strings.Builder
+		fn.otherDefinition.Type().WriteDebugDescription(&typeDescription, types)
+
+		return errors.Errorf(
+			"expected other TypeDefinition %q to be either resource or object type, but found %q",
+			fn.otherDefinition.Name().String(),
+			typeDescription.String())
 	}
 
-	var errs []error
+	receiverProperties := fn.createPropertyMap(receiverContainer)
+	otherProperties := fn.createPropertyMap(otherContainer)
+
+	var properties []string
+	first := true
 
 	// Flag receiver name as used
 	fn.knownLocals.Add(receiver.Name().Name())
 
-	for _, receiverProperty := range receiverObject.Properties() {
-		otherProperty, ok := otherObject.Property(receiverProperty.propertyName)
+	for _, receiverProperty := range receiverProperties {
+		otherProperty, ok := otherProperties[receiverProperty.propertyName]
 		//TODO: Handle renames
 		if ok {
 			var conv StoragePropertyConversion
@@ -314,7 +327,14 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 
 			if err != nil {
 				// An error was returned; this can happen even if a conversion was created as well.
-				errs = append(errs, err)
+				if first {
+					klog.V(2).Infof("Generating conversion function %s() for %s", fn.name, receiver.name)
+					first = false
+				}
+
+				// err will include the details of which property, don't need to log here
+				klog.V(2).Infof("Error: %s", err)
+				properties = append(properties, string(receiverProperty.propertyName))
 				continue
 			}
 
@@ -325,7 +345,38 @@ func (fn *StorageConversionFunction) createConversions(receiver TypeDefinition) 
 		}
 	}
 
-	return kerrors.NewAggregate(errs)
+	if len(properties) > 0 {
+		label := "properties"
+		if len(properties) == 1 {
+			label = "property"
+		}
+		klog.V(2).Infof("Errors with %d %s", len(properties), label)
+		return errors.Errorf("Errors with %d %s: %s", len(properties), label, strings.Join(properties, "; "))
+	}
+
+	return nil
+}
+
+// AsPropertyContainer converts a type into a property container
+func (fn *StorageConversionFunction) asPropertyContainer(theType Type) (PropertyContainer, bool) {
+	switch t := theType.(type) {
+	case PropertyContainer:
+		return t, true
+	case MetaType:
+		return fn.asPropertyContainer(t.Unwrap())
+	default:
+		return nil, false
+	}
+}
+
+// createPropertyMap extracts the properties from a PropertyContainer and returns them as a map
+func (fn *StorageConversionFunction) createPropertyMap(container PropertyContainer) map[PropertyName]*PropertyDefinition {
+	result := make(map[PropertyName]*PropertyDefinition)
+	for _, p := range container.Properties() {
+		result[p.PropertyName()] = p
+	}
+
+	return result
 }
 
 // createPropertyConversion tries to create a property conversion between the two provided properties, using all of the
@@ -344,7 +395,7 @@ func (fn *StorageConversionFunction) createPropertyConversion(
 	if err != nil {
 		return nil, errors.Wrapf(
 			err,
-			"trying to assign %q (%s) from %q (%s)",
+			"trying to assign %q [%s] by converting from from %q [%s]",
 			destinationProperty.PropertyName(),
 			destinationProperty.PropertyType(),
 			sourceProperty.PropertyName(),
